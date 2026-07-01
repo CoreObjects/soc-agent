@@ -55,9 +55,22 @@ GOAD **自带**一套完整遥测栈（**Sysmon SwiftOnSecurity v74 + Winlogbeat
 ```
 理由：Sysmon 配置、Winlogbeat 通道、ELK 都现成且测过;我们只加"高级审计"和"ES→图 的归一化",不重造采集端。旧 SOC 也是"读 SIEM/ES 归一"，路子一致。
 
-## 5. 实机核实（live-verify，待跑）
-配置层已确定 logs_windows 从未执行 → 几乎可断定当前**无 Sysmon/Winlogbeat/集中采集**;唯一要确认的是**各 DC 默认审计粒度**(是否已产 4624/4768/4769)。在 GOAD 宿主用 goad venv 的 ansible 对 VM 抽查(可选)：
-- 查 Sysmon 服务是否存在、查 `auditpol /get /category:*`、查 Security 日志里近期有无 4769/4624。
+## 5. 实机核实结果（2026-07-01 · 5 台 VM 全可达）
+
+| 主机 | Sysmon/Winlogbeat | Process Creation | DS Access | Kerberos | 近 2h Security |
+|---|---|---|---|---|---|
+| dc01 | ABSENT / ABSENT | No Auditing | **Success** | **Success** | 4624:297 · 4769:11 · 4768:5 · 4662:2 |
+| dc02 | ABSENT / ABSENT | No Auditing | Success | Success | 4624:514 · 4769:456 · 4768:210 |
+| dc03 | ABSENT / ABSENT | No Auditing | Success | Success | 4624:312 · 4769:8 · 4768:8 · 4662:2 |
+| srv02 | ABSENT / ABSENT | No Auditing | Success | Success | 4624:487 |
+| srv03 | ABSENT / ABSENT | No Auditing | Success | Success | 4624:7 |
+
+**关键修正（实机比配置分析乐观）：**
+- ✅ **身份层审计已开**（比预期好）：Logon=Success+Failure(4624/4625，全机)、Kerberos AS/TGS=Success(4768/4769，DC 在产)、**DS Access=Success(4662，DC 在产)**。→ Kerberoast / AS-REP / DCSync / PtT / PtH / 委派 的**身份层证据现在就在生成，无需补审计**。（配置分析误判为"高级审计 0%"，实为 security 阶段/GPO 已开——故实机核实必要。）
+- ✗ **Sysmon / Winlogbeat 全无** → 无集中采集，**主机层完全无数据**（Process/File/Registry/DNS/NetworkFlow）。
+- ✗ **Process Creation=No Auditing**（4688 不产）→ 主机层进程靠 **Sysmon**（EID1 带 guid/parent/cmdline，优于 4688）。
+
+**结论：真正要做的只有两件——(1) 部署 `logs_windows`(Sysmon+Winlogbeat) 补主机层 + 集中采集；(2) 立起 ELK 落库点。身份层审计已就绪，不用补。**
 
 ---
-_下一步：据此设计数据接入层——(a) 决定采集出口(复用 ELK vs 直连);(b) 写"ES 事件→图模型实体"的归一化映射(上表即雏形);(c) 补高级审计的 ansible。应用层数据源另议。_
+_下一步：数据接入层落地——(a) 立 ELK(宿主容器 or 一台 Linux VM)；(b) 部署 logs_windows→ELK；(c) 接入层从 ES 读、按第 1 节映射进图。应用层另议。_
