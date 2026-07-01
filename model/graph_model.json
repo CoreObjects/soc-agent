@@ -1,12 +1,13 @@
 {
   "$schema_note": "全场景安全告警研判知识图谱 · 单一事实源(Single Source of Truth)。文档(docs/graph-model/design-v0.3.md)与可视化(model/graph-model.html)均由本文件派生。改模型只改此文件。",
-  "version": "0.3",
-  "status": "定稿候选 (pre-DB freeze)",
+  "version": "0.4",
+  "status": "经验层增补 (pre-DB freeze)",
   "principles": [
     "四类对象严格分层：观测事实(对象/事件) / 资源 / 富化知识 / 研判产物",
     "对象 vs 事件：有动作/时间/因果-相关之争/需跨源融合者一律事件化",
     "单一事实源：本 JSON 权威，文档与图从此派生",
-    "稳定核心 + 场景扩展：新场景加实体/关系而非重构"
+    "稳定核心 + 场景扩展：新场景加实体/关系而非重构",
+    "经验复用检索 = 图召回相似(pattern_key/AttackPattern → 相似 Alert/Case/Experience) + RAG 读经验文本 + Agent 判适用；图负责找准场景，RAG 读懂文本，Agent 判能否套用"
   ],
   "meta_fields": {
     "observation": ["raw_ref", "source", "sensor", "event_time", "ingest_time", "confidence"],
@@ -60,8 +61,10 @@
 
     {"name": "Alert", "layer": "L4_verdict", "keys": ["pattern_key"], "props": ["source", "rule_id", "severity", "pattern_key", "techniques", "raw_ref", "time"], "note": "pattern_key 为 IP 无关指纹(非事实键)；techniques[] 冗余快照，权威以 MAPS_TO 边为准"},
     {"name": "ActivityCluster", "layer": "L4_verdict", "keys": ["cluster_id"], "props": ["cluster_id", "strategy", "confidence", "time_range", "features"], "note": "聚类结果，非真实攻击者身份"},
-    {"name": "Case", "layer": "L4_verdict", "deferred": true, "props": ["verdict", "confidence", "timeline"], "note": "研判扩展层，第一阶段可不落库"},
-    {"name": "Finding", "layer": "L4_verdict", "deferred": true, "props": ["confidence"], "note": "研判扩展层，第一阶段可不落库"}
+    {"name": "Case", "layer": "L4_verdict", "keys": ["case_id"], "props": ["case_id", "verdict", "confidence", "timeline", "created_at"], "note": "研判工件(Alert→Case)；经验来源；一期最小落库"},
+    {"name": "Finding", "layer": "L4_verdict", "keys": ["finding_id"], "props": ["finding_id", "statement", "confidence"], "note": "研判结论；一期最小落库"},
+    {"name": "Experience", "layer": "L4_verdict", "keys": ["exp_id"], "props": ["exp_id", "title", "scenario", "verdict_pattern", "evidence_pattern", "false_positive_reason", "true_positive_reason", "handling_advice", "applicable_conditions", "exclusion_conditions", "confidence", "source_case"], "temporal_validity": true, "note": "历史经验(经验复用核心)：结构化字段做图召回 + 经验文本走 RAG + Agent 判适用"},
+    {"name": "AttackPattern", "layer": "L3_enrichment", "keys": ["pattern_id", "pattern_key"], "props": ["pattern_id", "pattern_key", "tier", "attack_type", "technique_ids", "normalized_uri", "method", "param_keys", "payload_features", "waf_rule_ids", "file_write_features"], "note": "攻击模式(组合特征，非单字段)：相似召回的锚。全场景：tier 区分层，应用层字段如示例，主机/身份/网络层各加自己特征"}
   ],
   "edges": [
     {"name": "PARENT_OF", "from": "Process", "to": "Process", "category": "structural"},
@@ -120,10 +123,18 @@
     {"name": "GROUPS", "from": "ActivityCluster", "to": "@observable", "category": "inference", "props": ["strategy", "confidence"]},
     {"name": "ABOUT", "from": "Alert", "to": "@observable", "category": "inference"},
 
-    {"name": "ABOUT", "from": "Case", "to": "Alert", "category": "verdict", "deferred": true},
-    {"name": "HAS_FINDING", "from": "Case", "to": "Finding", "category": "verdict", "deferred": true},
-    {"name": "SUPPORTED_BY", "from": "Finding", "to": "@observable", "category": "verdict", "deferred": true},
-    {"name": "MAPS_TO", "from": "Finding", "to": "Technique", "category": "verdict", "deferred": true}
+    {"name": "ABOUT", "from": "Case", "to": "Alert", "category": "verdict"},
+    {"name": "HAS_FINDING", "from": "Case", "to": "Finding", "category": "verdict"},
+    {"name": "SUPPORTED_BY", "from": "Finding", "to": "@observable", "category": "verdict"},
+    {"name": "MAPS_TO", "from": "Finding", "to": "Technique", "category": "verdict"},
+
+    {"name": "DERIVED_FROM", "from": "Experience", "to": "Case", "category": "experience"},
+    {"name": "HAS_FINDING", "from": "Experience", "to": "Finding", "category": "experience"},
+    {"name": "APPLIES_TO", "from": "Experience", "to": ["Alert", "Technique", "Service", "Uri"], "category": "experience"},
+    {"name": "HAS_EVIDENCE", "from": "Experience", "to": "@observable", "category": "experience"},
+    {"name": "MATCHES_PATTERN", "from": "Experience", "to": "AttackPattern", "category": "experience"},
+    {"name": "MATCHES_PATTERN", "from": "Alert", "to": "AttackPattern", "category": "experience"},
+    {"name": "MATCHES_PATTERN", "from": "HttpRequest", "to": "AttackPattern", "category": "experience", "note": "全场景：其他观测事件同理可 MATCHES_PATTERN"}
   ],
   "connection_keys": {
     "strong": ["event_uid", "logon_guid", "process_guid", "sid/upn", "asset_id"],
@@ -140,7 +151,8 @@
     "app": {"label": "应用", "color": "#7c3aed"},
     "mapping": {"label": "映射/富化", "color": "#16a34a"},
     "inference": {"label": "推理(带置信度)", "color": "#dc2626"},
-    "verdict": {"label": "研判产物(延后)", "color": "#9ca3af"}
+    "verdict": {"label": "研判产物", "color": "#e11d48"},
+    "experience": {"label": "经验复用", "color": "#ca8a04"}
   },
   "alert_coverage": [
     {"alert": "Kerberoast", "path": "Account(spn) -PERFORMED- AuthEvent(TGS-REQ,RC4) -REQUESTED- Ticket(TGS); 4769", "ok": true},

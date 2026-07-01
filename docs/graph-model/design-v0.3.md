@@ -1,5 +1,7 @@
 # 全场景图模型设计 · v0.3（可落库前 · 定稿候选）
 
+> ⚠️ **已由 [`design-v0.4.md`](design-v0.4.md) 增补经验复用层**（新增 Experience / AttackPattern，Case/Finding 转一期落库）。结构主体仍以本文件为准，最终以 `model/graph_model.json` 为权威。
+
 > 迭代自 v0.2（已被取代）。v0.2 解决了**结构性**问题（事实/事件/富化/研判四分）；**v0.3 解决实现级：唯一性、方向语义、事件粒度、落库**。
 > 依据研究：[`../research/alert-triage-methodology.md`](../research/alert-triage-methodology.md)。**本轮只做图模型，不含数据接入/Agent/实现。**
 
