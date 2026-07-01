@@ -1,5 +1,7 @@
 # 全场景图模型设计 · v0.2（评审后收敛）
 
+> ⚠️ **已被 [`design-v0.3.md`](design-v0.3.md) 取代**（实现级修正：event_uid 唯一性、AuthEvent 主机角色拆分、RegistryEvent、DnsQuery SENT_TO 等）。保留作迭代历史。
+
 > 迭代自 v0.1（见 `design-v0.1.md`，已被本文件取代）。本版落实评审核心意见：
 > **事实对象 ≠ 事件对象 ≠ 研判结论 ≠ 推理聚类** —— 四类分层，不再把事件语义塞进状态节点。
 > 依据研究：[`../research/alert-triage-methodology.md`](../research/alert-triage-methodology.md)。**本轮只做图模型，不含数据接入/Agent/实现。**
