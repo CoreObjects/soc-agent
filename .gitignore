@@ -1,0 +1,32 @@
+# --- 密钥 / 环境（绝不入库）---
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+secrets/
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# --- Node / 前端 ---
+node_modules/
+dist/
+.vite/
+*.local
+
+# --- OS / 编辑器 ---
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.log
