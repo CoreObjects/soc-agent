@@ -1,7 +1,7 @@
 {
   "$schema_note": "全场景安全告警研判知识图谱 · 单一事实源(Single Source of Truth)。文档(docs/graph-model/design-v0.3.md)与可视化(model/graph-model.html)均由本文件派生。改模型只改此文件。",
-  "version": "0.4",
-  "status": "经验层增补 (pre-DB freeze)",
+  "version": "1.0",
+  "status": "已锁定 (LOCKED · 定稿)",
   "principles": [
     "四类对象严格分层：观测事实(对象/事件) / 资源 / 富化知识 / 研判产物",
     "对象 vs 事件：有动作/时间/因果-相关之争/需跨源融合者一律事件化",
@@ -58,6 +58,7 @@
     {"name": "Technique", "layer": "L3_enrichment", "keys": ["attack_id"], "props": ["attack_id", "tactic"]},
     {"name": "AssetProfile", "layer": "L3_enrichment", "props": ["criticality", "owner", "os", "patch", "zone"], "temporal_validity": true, "note": "每 Host"},
     {"name": "IdentityBaseline", "layer": "L3_enrichment", "props": ["role", "dept", "usual_hours", "geo", "history"], "temporal_validity": true, "note": "每 Account"},
+    {"name": "BusinessBaseline", "layer": "L3_enrichment", "props": ["expected_callers", "param_shapes", "normal_methods", "volume_baseline", "timing"], "temporal_validity": true, "note": "每 Service/Uri 的正常业务基线：判'是否正常业务'的正向依据(区别于历史判定)"},
 
     {"name": "Alert", "layer": "L4_verdict", "keys": ["pattern_key"], "props": ["source", "rule_id", "severity", "pattern_key", "techniques", "raw_ref", "time"], "note": "pattern_key 为 IP 无关指纹(非事实键)；techniques[] 冗余快照，权威以 MAPS_TO 边为准"},
     {"name": "ActivityCluster", "layer": "L4_verdict", "keys": ["cluster_id"], "props": ["cluster_id", "strategy", "confidence", "time_range", "features"], "note": "聚类结果，非真实攻击者身份"},
@@ -118,6 +119,8 @@
     {"name": "MATCHES", "from": "IoC", "to": ["IPAddress", "Domain", "File"], "category": "mapping"},
     {"name": "HAS_PROFILE", "from": "Host", "to": "AssetProfile", "category": "mapping"},
     {"name": "HAS_BASELINE", "from": "Account", "to": "IdentityBaseline", "category": "mapping"},
+    {"name": "HAS_BASELINE", "from": "Service", "to": "BusinessBaseline", "category": "mapping"},
+    {"name": "HAS_BASELINE", "from": "Uri", "to": "BusinessBaseline", "category": "mapping"},
 
     {"name": "DERIVED_FROM", "from": "LogonSession", "to": "LogonSession", "category": "inference", "props": ["confidence", "evidence_keys", "correlation_rule", "time_window"], "note": "跨机横向，推理非事实"},
     {"name": "GROUPS", "from": "ActivityCluster", "to": "@observable", "category": "inference", "props": ["strategy", "confidence"]},
