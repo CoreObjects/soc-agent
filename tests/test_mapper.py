@@ -175,3 +175,15 @@ def test_map_eid1_actor():
     actor = _edges(m, "ACTOR")
     assert len(actor) == 1 and actor[0].src is m.event
     assert actor[0].dst.key.get("sam") == "robb.stark"
+
+
+# ---- raw_ref 线程化:Event 带"回 ES 取全文"的指针(index:_id) ----
+
+def test_map_event_threads_raw_ref_onto_event():
+    m = map_event(DOC_4769_ROAST, raw_ref="winlogbeat-7.17.22-2026.07.02:AbC123")
+    assert m.event.props["raw_ref"] == "winlogbeat-7.17.22-2026.07.02:AbC123"
+
+
+def test_map_event_without_raw_ref_absent():
+    m = map_event(DOC_4769_ROAST)
+    assert m.event.props.get("raw_ref") is None

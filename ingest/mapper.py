@@ -78,6 +78,7 @@ class _Ctx:
     record_id: object = None
     event_time: object = None
     raw: object = None
+    raw_ref: object = None
 
 
 def _base_event(ctx: _Ctx, category: str, action: str,
@@ -92,6 +93,8 @@ def _base_event(ctx: _Ctx, category: str, action: str,
     }
     if outcome is not None:
         props["outcome"] = outcome
+    if ctx.raw_ref:
+        props["raw_ref"] = ctx.raw_ref          # 回 ES 取全文的指针(index:_id)
     if leaf:
         props.update({k: v for k, v in leaf.items() if v is not None})
     event = Node(labels=("Event", _label(category)), key={"event_uid": uid}, props=props)
@@ -176,8 +179,8 @@ _WINLOG = {
 
 # ---------------------------------------------------------------- 入口
 
-def map_event(doc: dict) -> Mapping:
-    """一条 ES 文档 → Mapping(:Event + 对象 + 角色边)。"""
+def map_event(doc: dict, raw_ref=None) -> Mapping:
+    """一条 ES 文档 → Mapping(:Event + 对象 + 角色边)。raw_ref=ES 的 index:_id,挂到 Event 供回取全文。"""
     if "winlog" in doc:
         wl = doc["winlog"]
         code = str(wl.get("event_id"))
@@ -189,6 +192,7 @@ def map_event(doc: dict) -> Mapping:
             computer=wl.get("computer_name"),
             record_id=wl.get("record_id"),
             event_time=doc.get("@timestamp"),
+            raw_ref=raw_ref,
         )
         handler = _WINLOG.get(code)
         if handler is None:
