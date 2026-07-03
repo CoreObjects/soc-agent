@@ -1,0 +1,4 @@
+# 接入层运行 / 测试依赖(Python 3.11)
+pytest>=8.0            # 跑映射器 TDD
+neo4j>=5.14,<6         # Neo4j 5.x 官方驱动(写图)
+requests>=2.31         # 拉第一台 ES(HTTP)
