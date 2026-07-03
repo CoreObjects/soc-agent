@@ -13,9 +13,10 @@
 
 | 分支 | 公式 | 用于 |
 |---|---|---|
-| **优先** | `hash(source + sensor + native_record_id)` | Windows：`native_record_id = winlog.record_id`；WAF：`= transaction.unique_id` |
-| **兜底** | `hash(source + sensor + event_time + raw_hash)` | 无原生记录号时；`raw_hash = hash(原始文档体)` |
+| **优先** | `hash(source + host + sensor + native_record_id)` | Windows：`host = winlog.computer_name`、`native = winlog.record_id`；WAF：`native = transaction.unique_id`（本就全局唯一，host 可空） |
+| **兜底** | `hash(source + host + sensor + event_time + raw_hash)` | 无原生记录号时；`raw_hash = hash(原始文档体)` |
 
+- **必须含 host**：`winlog.record_id` 是"每主机每通道"计数器，不含 host 会跨主机撞（dc01/dc02/dc03 同号）→ `MERGE by event_uid` 静默塌图。（v1.1.1 修正）
 - **不强依赖 event_time**；event_time 仅在兜底分支出现，且必与 raw_hash 同用。
 - 实测：当前证据湖无重复（Beats 至今未重投），但幂等 `MERGE by event_uid` 仍必须做（"至少一次"投递的防御）。
 
@@ -53,7 +54,7 @@
 
 ## 6. 逐事件映射（block 形式，避免宽表列错位）
 
-> 通用约定：所有事件 `ON_HOST → Host(=winlog.computer_name)`，下略。对象用强键落图：Account=SID、Process=ProcessGuid、LogonSession=LogonGuid。`event_uid` 除 WAF 外均 = `hash(winlogbeat + <channel> + winlog.record_id)`。
+> 通用约定：所有事件 `ON_HOST → Host(=winlog.computer_name)`，下略。对象用强键落图：Account=SID、Process=ProcessGuid、LogonSession=LogonGuid。`event_uid` 除 WAF 外均 = `hash(winlogbeat + winlog.computer_name + <channel> + winlog.record_id)`（含 host，见 §1）。
 
 ```
 ■ 4624  authentication·logon·success

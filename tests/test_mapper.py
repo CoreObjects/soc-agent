@@ -33,6 +33,16 @@ def test_event_uid_requires_record_id_or_raw():
         event_uid(source="x", sensor="y")
 
 
+def test_event_uid_includes_host_so_same_record_id_on_different_hosts_differ():
+    # winlog.record_id 是"每主机每通道"计数器,跨主机会撞。同 record_id 不同观测主机
+    # = 不同事件,uid 必须不同(否则 Neo4j MERGE by event_uid 会把三台 DC 的同号事件塌成一个)。
+    a = event_uid(source="winlogbeat", sensor="Security", record_id="700001", host="dc01")
+    b = event_uid(source="winlogbeat", sensor="Security", record_id="700001", host="dc02")
+    assert a != b, "同 record_id 不同主机必须产不同 uid"
+    # 同主机同 record_id 仍确定性一致
+    assert a == event_uid(source="winlogbeat", sensor="Security", record_id="700001", host="dc01")
+
+
 # ============ 4769 Kerberoast → authentication·service_ticket ============
 
 DOC_4769_ROAST = {
@@ -70,7 +80,8 @@ def test_map_4769_event_envelope():
     assert p["ticket_options"] == "0x40810000"
     assert p["weak_link"] is False
     assert m.event.key["event_uid"] == event_uid(
-        source="winlogbeat", sensor="Security", record_id="700001")
+        source="winlogbeat", sensor="Security", record_id="700001",
+        host="winterfell.north.sevenkingdoms.local")
 
 
 def test_map_4769_roles():

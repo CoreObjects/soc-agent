@@ -15,17 +15,20 @@ def _sha(text: str) -> str:
     return hashlib.sha256(text.encode("utf-8")).hexdigest()
 
 
-def event_uid(*, source: str, sensor: str, record_id=None,
+def event_uid(*, source: str, sensor: str, record_id=None, host=None,
               event_time=None, raw=None) -> str:
     """事件唯一标识(强键)。
 
-    优先: hash(source + sensor + native_record_id)  —— Windows=winlog.record_id, WAF=transaction.unique_id
-    兜底: hash(source + sensor + event_time + raw_hash) —— 无原生记录号时;不强依赖 event_time
+    优先: hash(source + host + sensor + native_record_id)
+        —— Windows: host=winlog.computer_name, native=winlog.record_id
+           (record_id 是"每主机每通道"计数器,不含 host 会跨主机撞→MERGE 塌图)
+        —— WAF: native=transaction.unique_id(本就全局唯一,host 可空)
+    兜底: hash(source + host + sensor + event_time + raw_hash) —— 无原生记录号时;不强依赖 event_time
     """
     if record_id is not None:
-        return _sha("|".join([source, sensor, str(record_id)]))
+        return _sha("|".join([source, host or "", sensor, str(record_id)]))
     if raw is not None:
-        return _sha("|".join([source, sensor, str(event_time or ""), _sha(str(raw))]))
+        return _sha("|".join([source, host or "", sensor, str(event_time or ""), _sha(str(raw))]))
     raise ValueError("event_uid 需要 record_id(优先)或 raw(兜底)")
 
 
@@ -81,7 +84,7 @@ def _base_event(ctx: _Ctx, category: str, action: str,
                 outcome=None, weak_link=False, leaf=None):
     """建 :Event 节点 + ON_HOST 边(所有事件共有)。返回 (event, nodes, edges)。"""
     uid = event_uid(source=ctx.source, sensor=ctx.sensor, record_id=ctx.record_id,
-                    event_time=ctx.event_time, raw=ctx.raw)
+                    host=ctx.computer, event_time=ctx.event_time, raw=ctx.raw)
     props = {
         "event_uid": uid, "event_time": ctx.event_time, "source": ctx.source,
         "sensor": ctx.sensor, "event_code": ctx.code, "category": category,

@@ -1,8 +1,9 @@
 {
   "$schema_note": "全场景安全告警研判知识图谱 · 单一事实源(Single Source of Truth)。v1.1 事件层泛化。事件落图映射见 docs/data-ingestion/ingest-mapping-spec.md;可视化 model/graph-model.html 由本文件派生。改模型只改此文件。",
-  "version": "1.1",
-  "status": "已锁定 (LOCKED · v1.1 事件层泛化)",
+  "version": "1.1.1",
+  "status": "已锁定 (LOCKED · v1.1.1)",
   "changelog": [
+    "v1.1.1 (2026-07-03): 修正 event_uid_rule —— 主键/兜底键加入 host(观测主机)。原 hash(source+sensor+record_id) 因 winlog.record_id 是'每主机每通道'计数器→跨主机(dc01/dc02/dc03 同号)会撞→MERGE by event_uid 静默塌图。改为 hash(source+host+sensor+record_id)。接入层实现阶段发现并修。",
     "v1.1 (2026-07-02): 事件层泛化 —— 原 8+ 个事件 label(AuthEvent/DirectoryAccess/DnsQuery/NetworkFlow/HttpRequest/FileWriteEvent/RegistryEvent/WafHit)收敛为单一 :Event 超类 + category 第二 label;事件专属边收敛为 8 条通用角色边(Event→Object:ON_HOST/ACTOR/TARGET/PRODUCES/FROM/TO/USES/RELATED_TO);新增 category/action 受控可扩展登记表、event_uid 生成规则、RELATED_TO 必带属性、weak_link 定义;Service 增 kind=certificate_authority。共享对象层与 L4 研判层不变。经真实 ES 证据湖(56.8万事件)实测校准。",
     "v1.0 (2026-07-01): 首个锁定版(每类事件一 label,32 实体/62 关系)。"
   ],
@@ -16,9 +17,10 @@
     "经验复用检索 = 图召回相似(pattern_key/AttackPattern) + RAG 读经验文本 + Agent 判适用"
   ],
   "event_uid_rule": {
-    "primary": "hash(source + sensor + native_record_id)",
+    "primary": "hash(source + host + sensor + native_record_id)",
+    "host": "Windows = winlog.computer_name(观测主机)。record_id 是每主机每通道计数器,不含 host 会跨主机撞(dc01/dc02/dc03 同号)→MERGE 塌图。WAF native 本就全局唯一,host 可空",
     "native_record_id": "Windows = winlog.record_id;WAF = transaction.unique_id",
-    "fallback": "hash(source + sensor + event_time + raw_hash) —— 无原生记录号时;raw_hash = hash(原始文档体)",
+    "fallback": "hash(source + host + sensor + event_time + raw_hash) —— 无原生记录号时;raw_hash = hash(原始文档体)",
     "note": "不强依赖 event_time;event_time 仅在兜底分支出现,且必与 raw_hash 同用"
   },
   "meta_fields": {
