@@ -1,0 +1,23 @@
+{
+  "_note": "接入层噪声黑名单。channel_eventid=纯噪声(永不映射的事件);instance_rules=某类事件里的良性实例。连接性事件(4624/4769/EID1/EID3...)不进此表。改这里即调噪声策略。",
+  "channel_eventid": [
+    ["Security", "4634"],
+    ["Security", "4672"],
+    ["Security", "4799"],
+    ["Security", "5379"],
+    ["Security", "4907"],
+    ["Security", "5058"],
+    ["Security", "5059"],
+    ["Security", "5061"]
+  ],
+  "instance_rules": [
+    {
+      "channel": "Microsoft-Windows-Sysmon/Operational",
+      "event_id": "10",
+      "field": "SourceImage",
+      "op": "endswith",
+      "value": "VBoxService.exe",
+      "reason": "benign_vbox_selfaccess"
+    }
+  ]
+}
