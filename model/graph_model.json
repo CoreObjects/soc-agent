@@ -3,7 +3,7 @@
   "version": "1.2",
   "status": "已锁定 (LOCKED · v1.2)",
   "changelog": [
-    "v1.2 (2026-07-06): 告警入图 + 事实节点去下游污染 —— (1) Alert 从 L4_verdict 提为观测事实层 L1_alert:重键 pattern_key→alert_uid(见 alert_uid_rule,入图即知、天生不含 IP),去掉 pattern_key(相似召回=pattern 是 Agent 下游的事,不是入图事实,原始告警根本没有);props 只留原始告警真有的字段;经 ABOUT→观测 Event(同一 Windows 事件用 eventRecordID+computer 重算出同一 event_uid 精确连)、ON_HOST→Host、MAPS_TO→Technique 连图。(2) Event 信封去掉 confidence(原始观测日志无此属性,接入层本就没灌 —— 典型的'model 有/原始没有'强加)。★下游实体(AttackPattern/pattern_key、L4 Case/Finding/Experience/ActivityCluster、L3 富化基线)全部保留,作 Agent 后填的占位,入图时不碰、不强加。目标:告警与日志同在一张图,Agent 只和图交互。原则:入图节点只承载原始数据真有的属性。",
+    "v1.2 (2026-07-06): 告警入图 + 事实节点去下游污染 —— (1) Alert 从 L4_verdict 提为观测事实层 L1_alert:重键 pattern_key→alert_uid(见 alert_uid_rule,入图即知、天生不含 IP),去掉 pattern_key(相似召回=pattern 是 Agent 下游的事,不是入图事实,原始告警根本没有);props 只留原始告警真有的字段;★经 INVOLVES→具体实体(账号/主机/进程/文件/IP/服务/域,从告警字段解析、同强键 MERGE 到观测层同一节点)挂到具体实体上、不只挂事件;另 ABOUT→观测 Event(eventRecordID+computer 重算 event_uid 精确连,best-effort)、ON_HOST→Host、MAPS_TO→Technique 连图。(2) Event 信封去掉 confidence(原始观测日志无此属性,接入层本就没灌 —— 典型的'model 有/原始没有'强加)。★下游实体(AttackPattern/pattern_key、L4 Case/Finding/Experience/ActivityCluster、L3 富化基线)全部保留,作 Agent 后填的占位,入图时不碰、不强加。目标:告警与日志同在一张图,Agent 只和图交互。原则:入图节点只承载原始数据真有的属性。",
     "v1.1.1 (2026-07-03): 修正 event_uid_rule —— 主键/兜底键加入 host(观测主机)。原 hash(source+sensor+record_id) 因 winlog.record_id 是'每主机每通道'计数器→跨主机(dc01/dc02/dc03 同号)会撞→MERGE by event_uid 静默塌图。改为 hash(source+host+sensor+record_id)。接入层实现阶段发现并修。",
     "v1.1 (2026-07-02): 事件层泛化 —— 原 8+ 个事件 label(AuthEvent/DirectoryAccess/DnsQuery/NetworkFlow/HttpRequest/FileWriteEvent/RegistryEvent/WafHit)收敛为单一 :Event 超类 + category 第二 label;事件专属边收敛为 8 条通用角色边(Event→Object:ON_HOST/ACTOR/TARGET/PRODUCES/FROM/TO/USES/RELATED_TO);新增 category/action 受控可扩展登记表、event_uid 生成规则、RELATED_TO 必带属性、weak_link 定义;Service 增 kind=certificate_authority。共享对象层与 L4 研判层不变。经真实 ES 证据湖(56.8万事件)实测校准。",
     "v1.0 (2026-07-01): 首个锁定版(每类事件一 label,32 实体/62 关系)。"
@@ -158,8 +158,9 @@
 
     {"name": "DERIVED_FROM", "from": "LogonSession", "to": "LogonSession", "category": "inference", "props": ["confidence", "evidence_keys", "correlation_rule", "time_window"], "note": "跨机横向,推理非事实"},
     {"name": "GROUPS", "from": "ActivityCluster", "to": "@observable", "category": "inference", "props": ["strategy", "confidence"]},
-    {"name": "ABOUT", "from": "Alert", "to": "@observable", "category": "alert", "note": "告警指向它所讲的观测事件/对象;主指同一底层 Windows 事件的 Event(eventRecordID+computer 重算 event_uid 精确连),及相关 Host/Account"},
-    {"name": "ON_HOST", "from": "Alert", "to": "Host", "category": "alert", "note": "告警的被监控主机(Wazuh agent.name)"},
+    {"name": "INVOLVES", "from": "Alert", "to": ["Host", "Account", "Process", "File", "RegistryKey", "LogonSession", "IPAddress", "Service", "Domain", "DirectoryObject"], "category": "alert", "note": "★告警涉及的具体实体:从告警字段(data.win.eventdata 等)解析,与观测事件同强键(SID/ProcessGuid/ip…)→ MERGE 到观测层同一实体节点(非新建)。Agent 拿告警直接落到具体账号/主机/进程/IP/服务上;同一实体的多告警聚合于该节点"},
+    {"name": "ABOUT", "from": "Alert", "to": "Event", "category": "alert", "note": "告警所判的底层观测事件:用 eventRecordID+computer 重算 event_uid 精确连;best-effort(该事件若被接入层噪声过滤未入图则无此边,实体仍经 INVOLVES 挂上)"},
+    {"name": "ON_HOST", "from": "Alert", "to": "Host", "category": "alert", "note": "告警的被监控主机(Wazuh agent 的 computer)"},
 
     {"name": "ABOUT", "from": "Case", "to": "Alert", "category": "verdict"},
     {"name": "HAS_FINDING", "from": "Case", "to": "Finding", "category": "verdict"},
