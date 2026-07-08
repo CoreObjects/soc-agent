@@ -43,7 +43,7 @@
   },
   "entities": [
     {"name": "Host", "keys": ["asset_id"], "fallback_key": ["fqdn"], "props": ["hostname", "fqdn", "os", "role", "criticality", "zone"], "note": "IP 经 HAS_IP 边"},
-    {"name": "Account", "keys": ["sid"], "fallback_key": ["upn", "sam"], "props": ["sid", "sam", "upn", "domain", "type"], "temporal_state_props": ["privileged", "spn", "delegation_flag", "preauth_flag"], "note": "可变状态属性带时效"},
+    {"name": "Account", "keys": ["sam", "domain"], "fallback_key": ["sid"], "props": ["sam", "domain", "sid", "upn", "type"], "temporal_state_props": ["privileged", "spn", "delegation_flag", "preauth_flag"], "note": "★统一身份:按 (sam小写, 域NetBIOS) 建键(避免同一人从 SID键/sam键/UPN 各成节点、RAN_AS 2×、pivot 断半);SID/UPN 降为属性;无 sam 时退 SID 键。域归一=FQDN 首段大写(NORTH.SEVENKINGDOMS.LOCAL→NORTH)。可变状态属性带时效"},
     {"name": "Group", "keys": ["sid"], "fallback_key": ["name", "domain"], "props": ["sid", "name", "domain", "scope"]},
     {"name": "Process", "keys": ["process_guid"], "props": ["process_guid", "pid", "image", "command_line", "start_time"], "note": "由 ProcessCreate 生成;结构边 SPAWNED(父→子)/RAN_AS→Account"},
     {"name": "File", "keys": ["sha256"], "fallback_key": ["path", "host"], "props": ["path", "md5", "sha256"], "note": "无 hash 时用 path+host 兜底键"},
