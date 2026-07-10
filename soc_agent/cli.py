@@ -16,7 +16,7 @@ from .schema import graph_schema
 from .skills_runtime import SkillRegistry
 from .tools import default_toolbox
 
-__all__ = ["investigate_alert", "render_result", "AlertNotFound", "main"]
+__all__ = ["investigate_alert", "render_result", "render_trace", "AlertNotFound", "main"]
 
 _REPO_ROOT = Path(__file__).resolve().parents[1]
 
@@ -62,6 +62,26 @@ def render_result(result) -> str:
     return "\n".join(lines)
 
 
+def render_trace(result) -> str:
+    """研判留痕:每步工具调用(只打查询 + 行数/错误,不打行数据)。"""
+    lines = [f"# 研判留痕({len(result.trace or [])} 步工具调用)"]
+    for i, step in enumerate(result.trace or [], 1):
+        tool = step.get("tool")
+        args = step.get("args") or {}
+        res = step.get("result") or {}
+        if tool == "run_cypher":
+            q = " ".join((args.get("query") or "").split())
+            if isinstance(res, dict) and "error" in res:
+                lines.append(f"[{i}] run_cypher ✗ {res['error']}")
+            else:
+                rows = res.get("rows") if isinstance(res, dict) else None
+                lines.append(f"[{i}] run_cypher → {len(rows or [])} 行")
+            lines.append(f"     q: {q[:240]}")
+        else:
+            lines.append(f"[{i}] {tool}: {args}")
+    return "\n".join(lines)
+
+
 def build(config: Config):
     """按配置装配真客户端 + 研判器。"""
     graph = Neo4jGraph(config.neo4j_uri, config.neo4j_user, config.neo4j_password, config.neo4j_database)
@@ -78,6 +98,7 @@ def main(argv=None):
     ap = argparse.ArgumentParser(description="研判单条告警(慢通道)")
     ap.add_argument("alert_uid", help="要研判的 :Alert 的 alert_uid")
     ap.add_argument("--dotenv", default=str(_REPO_ROOT / ".env"), help=".env 路径(端点/口令)")
+    ap.add_argument("--trace", action="store_true", help="打印研判留痕(每步 run_cypher + 行数)")
     args = ap.parse_args(argv)
 
     config = Config.from_env(dotenv_path=args.dotenv)
@@ -86,6 +107,9 @@ def main(argv=None):
         result = investigate_alert(graph, investigator, args.alert_uid)
     finally:
         graph.close()
+    if args.trace:
+        print(render_trace(result))
+        print()
     print(render_result(result))
     return 0
 

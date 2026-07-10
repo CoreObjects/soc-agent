@@ -4,7 +4,7 @@
 """
 import pytest
 
-from soc_agent.cli import AlertNotFound, investigate_alert, render_result
+from soc_agent.cli import AlertNotFound, investigate_alert, render_result, render_trace
 from soc_agent.models import Alert, InvestigationResult, Verdict
 
 
@@ -58,3 +58,16 @@ def test_render_result_readable():
                                               rationale="RC4 扇出", agent="qwen32b-ft"))
     txt = render_result(res)
     assert "true_positive" in txt and "a1" in txt and "kerberoast" in txt
+
+
+def test_render_trace_shows_queries_and_row_counts():
+    res = InvestigationResult(alert_uid="a1", path="B", verdict=None, trace=[
+        {"tool": "run_cypher", "args": {"query": "MATCH (a:Alert) RETURN a"},
+         "result": {"rows": [{"x": 1}, {"x": 2}]}},
+        {"tool": "run_cypher", "args": {"query": "MATCH (a) SET a.x=1"},
+         "result": {"error": "只读守卫拒绝"}},
+    ])
+    txt = render_trace(res)
+    assert "run_cypher" in txt
+    assert "2 行" in txt              # 行数,不打行数据(避免刷屏/泄数据)
+    assert "只读守卫拒绝" in txt        # 错误可见

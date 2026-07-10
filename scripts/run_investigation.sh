@@ -22,4 +22,4 @@ if [ $# -lt 1 ]; then
 fi
 
 echo "== 研判 alert_uid=$1 =="
-PYTHONUTF8=1 "$PY" -m soc_agent.cli "$1"
+PYTHONUTF8=1 "$PY" -m soc_agent.cli "$@"
