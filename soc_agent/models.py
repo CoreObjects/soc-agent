@@ -9,6 +9,11 @@ from typing import Any, Optional
 from uuid import uuid4
 
 VERDICTS = {"true_positive", "false_positive", "benign", "suspicious"}
+# 处置动作受控词表(避免 LLM 自由发挥出不可执行的"废话动作");未知动作归一为 escalate
+DISPOSITION_ACTIONS = {
+    "disable_account", "block_ip", "isolate_host", "kill_process", "reset_password",
+    "revoke_sessions", "quarantine_file", "escalate", "monitor", "none",
+}
 DISPOSITION_STATUS = {"proposed", "executed", "failed", "simulated"}
 RISKS = {"low", "high"}
 DISPOSITION_BY = {"auto", "analyst"}

@@ -91,6 +91,14 @@ def test_exhausts_to_suspicious_when_never_finalizes(tmp_path):
     assert r.verdict.missing_evidence                   # 说明未结论/证据不足
 
 
+def test_freeform_disposition_action_normalized_to_escalate(tmp_path):
+    llm = FakeLLMClient([LLMResponse(tool_calls=[ToolCall("c1", "finalize_verdict", {
+        "verdict": "suspicious", "confidence": 0.5, "rationale": "x",
+        "dispositions": [{"action": "推动淘汰RC4等弱加密", "target": "NORTH", "risk": "high"}]})])])
+    r = _inv(tmp_path, llm, FakeGraph()).investigate(_alert(), seed={})
+    assert r.dispositions[0].action == "escalate"      # 词表外的自由发挥 → 归一为升级人工
+
+
 def test_invalid_verdict_from_llm_normalized_to_suspicious(tmp_path):
     llm = FakeLLMClient([LLMResponse(tool_calls=[ToolCall(
         "c1", "finalize_verdict", {"verdict": "PWNED", "confidence": 1.0, "rationale": "x"})])])

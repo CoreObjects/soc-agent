@@ -11,9 +11,11 @@ class FakeGraph:
         self.rows = rows if rows is not None else []
         self.err = err
         self.queries = []
+        self.last_params = None
 
-    def run_cypher(self, q):
+    def run_cypher(self, q, **params):
         self.queries.append(q)
+        self.last_params = params
         if self.err:
             raise self.err
         return self.rows
@@ -33,6 +35,19 @@ def test_run_cypher_dispatch_returns_rows():
     out = default_toolbox(g).dispatch("run_cypher", {"query": "MATCH (a:Account) RETURN a.sam AS sam"})
     assert out["rows"] == [{"sam": "jon.snow"}]
     assert g.queries[0].startswith("MATCH")
+
+
+def test_run_cypher_passes_params():
+    g = FakeGraph(rows=[{"n": 1}])
+    out = default_toolbox(g).dispatch(
+        "run_cypher", {"query": "MATCH (a:Account) WHERE a.sam=$sam RETURN a", "params": {"sam": "jon.snow"}})
+    assert out["rows"] == [{"n": 1}]
+    assert g.last_params == {"sam": "jon.snow"}       # 参数透传到图
+
+
+def test_run_cypher_bad_params_type_errors():
+    out = default_toolbox(FakeGraph()).dispatch("run_cypher", {"query": "MATCH (n) RETURN n", "params": "nope"})
+    assert "error" in out
 
 
 def test_run_cypher_blocks_writes_via_guard():

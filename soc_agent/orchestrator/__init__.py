@@ -6,7 +6,7 @@
 """
 import json
 
-from ..models import RISKS, VERDICTS, Alert, Disposition, InvestigationResult, Verdict
+from ..models import DISPOSITION_ACTIONS, RISKS, VERDICTS, Alert, Disposition, InvestigationResult, Verdict
 from ..skills_runtime import SkillNotFound
 from ..tools import FINALIZE
 
@@ -35,7 +35,12 @@ _SCAFFOLD = (
     "2) 用 run_cypher 按上面方法论**只读取证**(可多次;查到 A 再顺着查 B)。\n"
     "3) 判序:先证伪(最可能的良性解释)→看基线新颖度→看权限/资产价值→看时序与扇出→看横向落地。\n"
     "4) 证据充分、或确认图里已无更多可查 → 调用 finalize_verdict 给出结论并结束。\n"
-    "取证只从图取,不臆造。**证据不足就 verdict=suspicious 并在 missing_evidence 写清缺什么,别硬判 TP/FP。**"
+    "取证只从图取,不臆造。**证据不足就 verdict=suspicious 并在 missing_evidence 写清缺什么,别硬判 TP/FP。**\n"
+    "\n## 工具用法\n"
+    "- run_cypher 可传 params 对象绑定 $ 参数(如 {query:'...WHERE a.sam=$sam', params:{sam:'jon.snow'}}),"
+    "或直接把具体值内联进查询;seed 里给了触发事件的账号/时间/主机等具体值,别用没有值的 $ 参数。\n"
+    "- 处置动作只能从词表选:disable_account/block_ip/isolate_host/kill_process/reset_password/"
+    "revoke_sessions/quarantine_file/escalate/monitor/none。**verdict=suspicious 或证据不足时用 escalate/monitor,别提高危动作。**"
 )
 
 
@@ -108,8 +113,10 @@ class AgentInvestigator:
         dispositions = []
         for d in args.get("dispositions") or []:
             risk = d.get("risk") if d.get("risk") in RISKS else "low"
-            dispositions.append(Disposition(action=d.get("action") or "none",
-                                            target=d.get("target"), risk=risk))  # 默认 status=proposed
+            act = d.get("action") or "none"
+            if act not in DISPOSITION_ACTIONS:       # 自由发挥的动作 → 归一为升级人工,不落废话
+                act = "escalate"
+            dispositions.append(Disposition(action=act, target=d.get("target"), risk=risk))  # 默认 proposed
         return InvestigationResult(
             alert_uid=alert.alert_uid, path="B", verdict=verdict, dispositions=dispositions,
             skill=(skill.name if skill else None), trace=trace,

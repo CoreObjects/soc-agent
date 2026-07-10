@@ -9,6 +9,7 @@ from dataclasses import dataclass
 from typing import Callable, Optional
 
 from ..graph.guard import ReadOnlyViolation, assert_read_only
+from ..models import DISPOSITION_ACTIONS
 
 __all__ = ["Tool", "ToolBox", "default_toolbox", "FINALIZE"]
 
@@ -51,13 +52,17 @@ class ToolBox:
 
 def _run_cypher_tool(graph) -> Tool:
     def handler(args: dict):
-        q = (args or {}).get("query", "")
+        args = args or {}
+        q = args.get("query", "")
+        params = args.get("params") or {}
+        if not isinstance(params, dict):
+            return {"error": "params 必须是对象(键→值),用于绑定 Cypher 里的 $参数"}
         try:
             assert_read_only(q)
         except ReadOnlyViolation as e:
             return {"error": str(e)}
         try:
-            return {"rows": graph.run_cypher(q)}
+            return {"rows": graph.run_cypher(q, **params)}
         except Exception as e:                      # 图查询失败 → 回错误让 LLM 改写,不崩
             return {"error": f"查询失败: {e}"}
 
@@ -67,7 +72,11 @@ def _run_cypher_tool(graph) -> Tool:
                      "禁止 CREATE/MERGE/DELETE/SET/REMOVE 等写操作)。返回 {rows:[...]}。"),
         parameters={
             "type": "object",
-            "properties": {"query": {"type": "string", "description": "只读 Cypher 查询"}},
+            "properties": {
+                "query": {"type": "string", "description": "只读 Cypher 查询;要么内联具体值,要么用 $参数配合 params"},
+                "params": {"type": "object",
+                           "description": "可选:绑定查询里的 $参数,如 {\"sam\":\"jon.snow\",\"t0\":123}"},
+            },
             "required": ["query"],
         },
         handler=handler,
@@ -95,11 +104,13 @@ def _finalize_verdict_tool() -> Tool:
                 "dispositions": {
                     "type": "array",
                     "items": {"type": "object", "properties": {
-                        "action": {"type": "string"},
-                        "target": {"type": "string"},
+                        "action": {"type": "string", "enum": sorted(DISPOSITION_ACTIONS),
+                                   "description": "只能从词表里选;别自由发挥"},
+                        "target": {"type": "string", "description": "作用实体(账号/IP/主机/进程)"},
                         "risk": {"type": "string", "enum": ["low", "high"]},
                     }, "required": ["action"]},
-                    "description": "建议处置(第一版仅建议,不自动执行)",
+                    "description": ("建议处置(仅建议,不自动执行)。verdict=suspicious 或证据不足时"
+                                    "用 escalate/monitor,别提高危动作。"),
                 },
             },
             "required": ["verdict", "confidence", "rationale"],
