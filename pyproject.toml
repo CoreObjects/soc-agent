@@ -1,0 +1,26 @@
+[project]
+name = "soc-agent"
+version = "0.1.0"
+description = "SOC 告警研判+处置 Agent —— 只跟 v3 知识图谱(server1)+ 本地 LLM(server2)交互,headless"
+requires-python = ">=3.10"
+# 运行时依赖(真集成在 server2 装/跑);本机纯逻辑单测只需 pytest。
+# 纯逻辑模块(schema/skills_runtime/orchestrator/guards/models)不导入这些重依赖,便于离线单测。
+dependencies = [
+    "neo4j>=5.14",
+    "openai>=1.30",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0"]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["soc_agent*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+pythonpath = ["."]
