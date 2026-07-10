@@ -2,7 +2,7 @@
 
 安全告警研判 Agent —— 以**本体知识图谱 + GraphRAG 上下文召回 + 大模型自主研判**，对 SOC 告警做自动化研判与攻击链还原。
 
-> 🚧 早期阶段：架构设计进行中，尚无实现代码。设计见 [`docs/DESIGN.md`](docs/DESIGN.md)。
+> 🚧 建设中（P1：慢通道单类闭环）。架构见 plan / `docs/`，研判知识见 `docs/research/alert-investigation-playbooks.md`。
 
 ## 这是什么
 
@@ -20,9 +20,34 @@
 - **图引擎（Neo4j）** = server1 的 Docker 容器，不在任何代码仓。
 - 图模型 JSON 只此一份（本仓库权威）；pipeline 侧按契约实现、不复制 JSON，避免两份漂移。改模型 → 改本仓库 `model/graph_model.json` + 同步 pipeline 的 `ingest/cypher.py` 白名单/映射 spec。
 
-## 状态
+## 运行
 
-初始化中。架构与技术选型待对齐（见 `docs/DESIGN.md`），确定后再落地代码。
+**本机（纯逻辑单测，不需服务器）：**
+```
+python -m venv .venv && ./.venv/bin/pip install -q pytest
+./.venv/bin/python -m pytest        # 引擎逻辑全绿
+```
+
+**server2（真研判，接 server1 图 + 本地 qwen）：**
+```
+cp .env.example .env    # 填 NEO4J_*（→server1）、LLM_API_BASE（→本地 qwen :8000）
+python scripts/preflight.py                     # 验连通 + 列可研判的 alert_uid
+bash scripts/run_investigation.sh <alert_uid>   # 慢通道研判一条告警（结果写回图经验层）
+```
+
+## 引擎结构（`soc_agent/`）
+
+| 模块 | 作用 |
+|---|---|
+| `schema` | 从 `model/graph_model.json` 生成 v3 schema，注入 LLM 提示 |
+| `graph` | Neo4j 客户端：只读取证（READ 事务 + 守卫双保险）+ 写回经验层 |
+| `llm` | 可插拔 Investigator 接口 + qwen（OpenAI 兼容，`trust_env=False`）|
+| `skills_runtime` | 加载 skill（`skills/<layer>/<type>/SKILL.md` 方法论）+ 按告警选取 |
+| `tools` | 给 LLM 的工具：`run_cypher`（过守卫）、`finalize_verdict`（终结）|
+| `orchestrator` | 慢通道自主研判循环（schema+方法论→系统提示→tool-calling→结论）|
+| `cli` | 研判单条告警：取告警→seed→研判→写回图 |
+
+**知识 = skills**（`skills/`，方法论初始态，取证脚本/模式判别后续沉淀）。经验分两处：图里放每条告警历史台账（`Verdict`/`Disposition`）；可复用经验（取证脚本、模式判别→处置）在 skills，不在图。
 
 ## 配置与密钥
 
