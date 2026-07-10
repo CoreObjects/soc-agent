@@ -4,6 +4,7 @@
 os.environ 覆盖 .env 文件。极简 .env 解析,免 python-dotenv 依赖。
 """
 import os
+import re
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional
@@ -24,6 +25,7 @@ def load_dotenv(path) -> dict:
         if not line or line.startswith("#") or "=" not in line:
             continue
         k, _, v = line.partition("=")
+        v = re.split(r"\s+#", v, maxsplit=1)[0]      # 剥行内注释(值后 "空格+#…";在原始值上做,避免 strip 后 # 顶到行首)
         env[k.strip()] = v.strip().strip('"').strip("'")
     return env
 

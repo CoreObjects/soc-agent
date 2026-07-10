@@ -15,6 +15,26 @@ def test_load_dotenv_missing_file_returns_empty(tmp_path):
     assert load_dotenv(tmp_path / "nope.env") == {}
 
 
+def test_load_dotenv_strips_inline_comments(tmp_path):
+    # .env.example 的行内注释(值后跟 " # 说明")必须被剥,否则 int(MAX_ITERATIONS) 炸
+    f = tmp_path / ".env"
+    f.write_text("MAX_ITERATIONS=12        # 轮数\nNEO4J_URI=bolt://x:7687\n"
+                 "NEO4J_DATABASE=          # 可空\nPW=p@ss#word\n", encoding="utf-8")
+    env = load_dotenv(f)
+    assert env["MAX_ITERATIONS"] == "12"          # 行内注释剥掉
+    assert env["NEO4J_URI"] == "bolt://x:7687"    # 无注释不变
+    assert env["NEO4J_DATABASE"] == ""            # 只剩注释 → 空值
+    assert env["PW"] == "p@ss#word"               # 值内 #(无空格前缀)保留
+
+
+def test_config_max_iterations_with_commented_dotenv(tmp_path):
+    # 复现 server2 崩:cp -n .env.example .env 后 MAX_ITERATIONS 带注释
+    f = tmp_path / ".env"
+    f.write_text("MAX_ITERATIONS=12        # 慢通道单次研判最大轮数\n", encoding="utf-8")
+    cfg = Config.from_env(env={}, dotenv_path=f)
+    assert cfg.max_iterations == 12
+
+
 def test_config_from_env_defaults_and_values():
     cfg = Config.from_env(env={"NEO4J_URI": "bolt://s1:7687", "NEO4J_PASSWORD": "pw",
                                "LLM_API_BASE": "http://s2:8000/v1"})
