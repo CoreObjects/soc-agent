@@ -30,7 +30,7 @@ FB="feedback/inv-${AUID:0:12}.out"
   echo "=== investigate $AUID  $(date -u '+%F %H:%MZ' 2>/dev/null || true) ==="
   PYTHONUTF8=1 "$PY" -m soc_agent.cli "$@"
   echo "=== done $(date -u '+%F %H:%MZ' 2>/dev/null || true) ==="
-} 2>&1 | tee "$FB"
+} 2>&1 | tee "$FB" || true      # 研判即使崩了也继续:保证 traceback 也被 ferry 回来
 
 # 回推 feedback(ferry:我 pull 就能读)
 git add "$FB" >/dev/null 2>&1 || true
