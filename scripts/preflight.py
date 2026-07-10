@@ -11,12 +11,21 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from soc_agent.config import Config  # noqa: E402
 
 
+def _mask(url):
+    """隐去 host,只留 scheme+port —— 避免真实地址进公开仓。"""
+    import re
+    if not url:
+        return "(空!需填)"
+    m = re.match(r"(\w+://)([^:/]+)(:\d+)?", url)
+    return f"{m.group(1)}***{m.group(3) or ''}" if m else "***"
+
+
 def main():
     root = Path(__file__).resolve().parents[1]
     cfg = Config.from_env(dotenv_path=str(root / ".env"))
-    print("== 配置 ==")
-    print("NEO4J_URI   :", cfg.neo4j_uri or "(空!需填)")
-    print("LLM_API_BASE:", cfg.llm_api_base or "(空!需填)", "| model:", cfg.llm_model)
+    print("== 配置(端点已打码)==")
+    print("NEO4J_URI   :", _mask(cfg.neo4j_uri))
+    print("LLM_API_BASE:", _mask(cfg.llm_api_base), "| model:", cfg.llm_model)
 
     # ---- 图连通 + 列 Kerberoast 告警 ----
     from soc_agent.graph.client import Neo4jGraph

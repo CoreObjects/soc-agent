@@ -21,5 +21,23 @@ if [ $# -lt 1 ]; then
   exit 1
 fi
 
-echo "== 研判 alert_uid=$1 =="
-PYTHONUTF8=1 "$PY" -m soc_agent.cli "$@"
+UID="$1"
+mkdir -p feedback
+FB="feedback/inv-${UID:0:12}.out"
+
+# 研判 + tee 到 feedback(输出仅含 GOAD 公开靶场名,真实端点/口令只在 .env 不会打印)
+{
+  echo "=== investigate $UID  $(date -u '+%F %H:%MZ' 2>/dev/null || true) ==="
+  PYTHONUTF8=1 "$PY" -m soc_agent.cli "$@"
+  echo "=== done $(date -u '+%F %H:%MZ' 2>/dev/null || true) ==="
+} 2>&1 | tee "$FB"
+
+# 回推 feedback(ferry:我 pull 就能读)
+git add "$FB" >/dev/null 2>&1 || true
+git commit -q -m "feedback: investigate ${UID:0:12} $(date -u '+%m-%d %H:%MZ' 2>/dev/null || echo)" >/dev/null 2>&1 || true
+if git push origin HEAD >/dev/null 2>&1 \
+   || { git pull --rebase -q origin main >/dev/null 2>&1 && git push origin HEAD >/dev/null 2>&1; }; then
+  echo "✅ 已推 $FB,Claude 可 pull"
+else
+  echo "!! push 失败,可手动: git push origin HEAD"
+fi
