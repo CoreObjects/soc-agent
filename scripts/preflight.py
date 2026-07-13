@@ -33,17 +33,13 @@ def main():
     try:
         n = g.run_cypher("MATCH (a:Alert) RETURN count(a) AS n")[0]["n"]
         print(f"\n== 图 == 连通 OK,:Alert 共 {n} 条")
+        print("按技战术分组(每类给一个样例 uid,挑来研判):")
         rows = g.run_cypher(
-            "MATCH (a:Alert) WHERE any(t IN a.technique_ids WHERE t STARTS WITH 'T1558.003') "
-            "RETURN a.alert_uid AS uid, a.technique_ids AS tech, a.rule_id AS rule LIMIT 5")
-        if rows:
-            print("Kerberoast(T1558.003)告警样例(挑一个 uid 研判):")
-            for r in rows:
-                print("  ", r["uid"], r["tech"], "rule=", r["rule"])
-        else:
-            print("无 T1558.003;随便列几条:")
-            for r in g.run_cypher("MATCH (a:Alert) RETURN a.alert_uid AS uid, a.technique_ids AS tech LIMIT 5"):
-                print("  ", r["uid"], r["tech"])
+            "MATCH (a:Alert) UNWIND coalesce(a.technique_ids,['(none)']) AS t "
+            "WITH t, count(*) AS n, collect(a.alert_uid)[0] AS sample "
+            "RETURN t AS tech, n, sample ORDER BY n DESC LIMIT 20")
+        for r in rows:
+            print(f"  {str(r['tech']):18} 共{r['n']:>6}  样例 uid={r['sample']}")
     finally:
         g.close()
 
