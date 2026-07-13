@@ -8,9 +8,32 @@ import json
 
 from ..models import DISPOSITION_ACTIONS, RISKS, VERDICTS, Alert, Disposition, InvestigationResult, Verdict
 from ..skills_runtime import SkillNotFound
-from ..tools import FINALIZE
+from ..tools import FINALIZE, finalize_spec
 
-__all__ = ["AgentInvestigator", "infer_layer"]
+__all__ = ["AgentInvestigator", "RecipeInvestigator", "build_result", "infer_layer"]
+
+
+def build_result(alert, skill_name, args, agent_name, trace=None, path="B") -> InvestigationResult:
+    """finalize 参数 → InvestigationResult(verdict 归一、处置动作限定词表)。两种研判器共用。"""
+    v = args.get("verdict")
+    if v not in VERDICTS:
+        v = "suspicious"
+    verdict = Verdict(
+        verdict=v, confidence=float(args.get("confidence") or 0.0),
+        summary=args.get("summary") or "", rationale=args.get("rationale") or "",
+        evidence_refs=list(args.get("evidence_refs") or []),
+        missing_evidence=list(args.get("missing_evidence") or []),
+        pattern=args.get("pattern"), agent=agent_name,
+    )
+    dispositions = []
+    for d in args.get("dispositions") or []:
+        risk = d.get("risk") if d.get("risk") in RISKS else "low"
+        act = d.get("action") or "none"
+        if act not in DISPOSITION_ACTIONS:
+            act = "escalate"
+        dispositions.append(Disposition(action=act, target=d.get("target"), risk=risk))
+    return InvestigationResult(alert_uid=alert.alert_uid, path=path, verdict=verdict,
+                               dispositions=dispositions, skill=skill_name, trace=trace or [])
 
 # technique → 层(仅用于"未命中具体 skill 时选该层通用兜底";具体 skill 按 technique 直配)
 _LAYER_BY_PREFIX = {
@@ -101,30 +124,7 @@ class AgentInvestigator:
 
     # ---- 结果构建 ----
     def _build_result(self, alert, skill, args, trace) -> InvestigationResult:
-        v = args.get("verdict")
-        if v not in VERDICTS:            # LLM 偶尔自由措辞/非法 → 归一,不崩
-            v = "suspicious"
-        verdict = Verdict(
-            verdict=v,
-            confidence=float(args.get("confidence") or 0.0),
-            summary=args.get("summary") or "",
-            rationale=args.get("rationale") or "",
-            evidence_refs=list(args.get("evidence_refs") or []),
-            missing_evidence=list(args.get("missing_evidence") or []),
-            pattern=args.get("pattern"),
-            agent=self.agent_name,
-        )
-        dispositions = []
-        for d in args.get("dispositions") or []:
-            risk = d.get("risk") if d.get("risk") in RISKS else "low"
-            act = d.get("action") or "none"
-            if act not in DISPOSITION_ACTIONS:       # 自由发挥的动作 → 归一为升级人工,不落废话
-                act = "escalate"
-            dispositions.append(Disposition(action=act, target=d.get("target"), risk=risk))  # 默认 proposed
-        return InvestigationResult(
-            alert_uid=alert.alert_uid, path="B", verdict=verdict, dispositions=dispositions,
-            skill=(skill.name if skill else None), trace=trace,
-        )
+        return build_result(alert, skill.name if skill else None, args, self.agent_name, trace)
 
     def _fallback(self, alert, skill, trace, reason) -> InvestigationResult:
         verdict = Verdict(verdict="suspicious", confidence=0.0,
@@ -172,3 +172,66 @@ class AgentInvestigator:
                 trace.append({"tool": tc.name, "args": tc.arguments, "result": result})
                 messages.append(self._tool_msg(tc.id, result))
         return self._fallback(alert, skill, trace, "达到最大研判轮次仍未结论")
+
+
+_RECIPE_SCAFFOLD = (
+    "## 定性(证据已备齐,不用再查图)\n"
+    "下面「证据」是按方法论**已经确定性取好的**。你只需据此**定性**,直接调用 finalize_verdict:\n"
+    "- **先证伪**:请求者域与目标域之间若有 **TRUSTS**(见证据「跨域信任」)= 跨域信任的正常 RC4 = "
+    "**false_positive**;尤其请求者是机器账号/域控($ 结尾)+ 目标是被信任域时,基本可定 FP。\n"
+    "- 再看:目标是否特权/属特权组、请求者 enc 基线、SPN 扇出。\n"
+    "- 证据足 → 给明确 verdict;确实不足 → suspicious 并在 missing_evidence 写清缺什么。处置动作用限定词表。"
+)
+
+
+class RecipeInvestigator:
+    """确定性取证脚本(recipe)+ LLM 定性。
+
+    orchestrator 跑 skill 的 recipe 把关键证据(含跨域信任)一次性收齐 → 喂给 LLM →
+    LLM **只判断、不规划查询**(扬长避短:模型推理强、规划弱)。covered 告警类型走这条,稳。
+    """
+
+    def __init__(self, llm, graph, schema, registry, agent_name="agent"):
+        self.llm = llm
+        self.graph = graph
+        self.schema = schema
+        self.registry = registry
+        self.agent_name = agent_name
+
+    def has_recipe(self, alert) -> bool:
+        try:
+            s = self.registry.select(alert, layer=infer_layer(alert))
+        except SkillNotFound:
+            return False
+        return s.recipe is not None
+
+    def _prompt(self, skill) -> str:
+        parts = ["你是资深 SOC 研判分析师,只依据给你的证据判断,不臆造。",
+                 "## 图 Schema(理解证据用)\n" + self.schema]
+        if skill is not None:
+            parts.append(f"## 方法论(skill: {skill.name})\n{skill.methodology}")
+        parts.append(_RECIPE_SCAFFOLD)
+        return "\n\n".join(parts)
+
+    def investigate(self, alert: Alert, seed=None) -> InvestigationResult:
+        skill = self.registry.select(alert, layer=infer_layer(alert))
+        trace = []
+        evidence = skill.recipe(self.graph, alert, seed) or {}      # ★确定性取证(含跨域信任)
+        for name, res in evidence.items():
+            trace.append({"tool": "recipe_step", "step": name,
+                          "rows": len(res) if isinstance(res, list) else 1})
+        user = "待研判告警 + 已备齐证据:\n" + json.dumps(
+            {"alert": {"alert_uid": alert.alert_uid, "rule_id": alert.rule_id,
+                       "technique_ids": alert.technique_ids, "time": alert.time},
+             "证据": evidence}, ensure_ascii=False, indent=2, default=str)
+        resp = self.llm.chat(
+            [{"role": "system", "content": self._prompt(skill)},
+             {"role": "user", "content": user}],
+            tools=finalize_spec(), tool_choice="required")   # 只给 finalize,逼它直接定性
+        for tc in (resp.tool_calls or []):
+            if tc.name == FINALIZE:
+                return build_result(alert, skill.name, tc.arguments or {}, self.agent_name, trace)
+        return build_result(alert, skill.name, {
+            "verdict": "suspicious", "confidence": 0.0,
+            "rationale": "recipe 已取证但模型未给结论", "missing_evidence": ["模型未 finalize"],
+        }, self.agent_name, trace)

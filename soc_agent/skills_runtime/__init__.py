@@ -8,6 +8,7 @@ skill = 一个目录:
 选择:告警 technique 命中具体 skill;未覆盖 → 该层通用兜底(_generic/<layer>)。
 frontmatter 用极简自解析(免 yaml 依赖):`key: value`,列表写 `[a, b]`。
 """
+import importlib.util
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Optional
@@ -57,8 +58,19 @@ class Skill:
     methodology: str            # SKILL.md 正文(方法论决策树)
     path: Path
     is_generic: bool = False
-    recipes: list = field(default_factory=list)    # ① 取证脚本(P3)
+    recipe: Optional[object] = None                # ① 确定性取证脚本 collect(graph,alert,seed)→证据(sink①)
     patterns: list = field(default_factory=list)   # ② 模式判别→处置(P4)
+
+
+def _load_recipe(dir_path: Path):
+    """加载 skill 目录里的 recipe.py 的 collect 函数(确定性取证脚本);无则 None。"""
+    rp = dir_path / "recipe.py"
+    if not rp.exists():
+        return None
+    spec = importlib.util.spec_from_file_location(f"skill_recipe_{dir_path.name}", rp)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return getattr(mod, "collect", None)
 
 
 def load_skill(dir_path, is_generic: bool = False) -> Skill:
@@ -75,6 +87,7 @@ def load_skill(dir_path, is_generic: bool = False) -> Skill:
         methodology=body.strip(),
         path=dir_path,
         is_generic=is_generic,
+        recipe=_load_recipe(dir_path),
     )
 
 

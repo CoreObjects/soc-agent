@@ -4,8 +4,39 @@
 """
 import pytest
 
-from soc_agent.cli import AlertNotFound, investigate_alert, render_result, render_trace
+from soc_agent.cli import (AlertNotFound, choose_investigator, investigate_alert,
+                           render_result, render_trace)
 from soc_agent.models import Alert, InvestigationResult, Verdict
+
+
+class _RecInv:
+    def __init__(self, ok):
+        self._ok = ok
+
+    def has_recipe(self, alert):
+        return self._ok
+
+
+def _alert():
+    return Alert.from_node({"alert_uid": "a1", "technique_ids": ["T1558.003"]})
+
+
+def test_choose_investigator_prefers_recipe_when_available():
+    agent = object()
+    inv, label = choose_investigator(_alert(), "recipe", agent, _RecInv(True))
+    assert inv is not agent and "recipe" in label
+
+
+def test_choose_investigator_auto_mode_uses_agent():
+    agent = object()
+    inv, label = choose_investigator(_alert(), "auto", agent, _RecInv(True))
+    assert inv is agent and label == "auto"
+
+
+def test_choose_investigator_falls_back_to_agent_without_recipe():
+    agent = object()
+    inv, label = choose_investigator(_alert(), "recipe", agent, _RecInv(False))
+    assert inv is agent
 
 
 class FakeGraph:

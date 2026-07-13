@@ -6,7 +6,7 @@ InvestigationResult(path=B,处置默认 proposed)。含证据不足/非法 verdi
 """
 from soc_agent.llm import FakeLLMClient, LLMResponse, ToolCall
 from soc_agent.models import Alert
-from soc_agent.orchestrator import AgentInvestigator
+from soc_agent.orchestrator import AgentInvestigator, RecipeInvestigator
 from soc_agent.skills_runtime import SkillRegistry
 from soc_agent.tools import default_toolbox
 
@@ -16,7 +16,7 @@ class FakeGraph:
         self.rows = rows if rows is not None else []
         self.queries = []
 
-    def run_cypher(self, q):
+    def run_cypher(self, q, **params):
         self.queries.append(q)
         return self.rows
 
@@ -117,6 +117,48 @@ def test_freeform_disposition_action_normalized_to_escalate(tmp_path):
     ])
     r = _inv(tmp_path, llm, FakeGraph()).investigate(_alert(), seed={})
     assert r.dispositions[0].action == "escalate"      # 词表外的自由发挥 → 归一为升级人工
+
+
+def _kerberoast_skill_with_recipe(base, recipe_ret):
+    d = base / "identity" / "kerberoast"
+    d.mkdir(parents=True, exist_ok=True)
+    (d / "SKILL.md").write_text(
+        "---\nname: kerberoast\nlayer: identity\ntechnique_ids: [T1558.003]\n---\n方法论:跨域信任→FP。\n",
+        encoding="utf-8")
+    (d / "recipe.py").write_text(
+        "def collect(graph, alert, seed=None):\n    return " + repr(recipe_ret) + "\n", encoding="utf-8")
+
+
+def test_recipe_investigator_runs_recipe_then_llm_only_judges(tmp_path):
+    _kerberoast_skill_with_recipe(tmp_path, {"跨域信任": {"trusts": ["sevenkingdoms.local"]}})
+    reg = SkillRegistry(tmp_path)
+    llm = FakeLLMClient([LLMResponse(tool_calls=[ToolCall("c1", "finalize_verdict",
+          {"verdict": "false_positive", "confidence": 0.9, "rationale": "跨域信任正常 RC4"})])])
+    inv = RecipeInvestigator(llm=llm, graph=FakeGraph(), schema="SCHEMA", registry=reg, agent_name="qwen32b-ft")
+    a = _alert()
+    assert inv.has_recipe(a) is True
+    r = inv.investigate(a, seed={})
+    assert r.verdict.verdict == "false_positive"
+    assert r.skill == "kerberoast"
+    assert any(t.get("tool") == "recipe_step" for t in r.trace)       # recipe 步进了 trace
+    assert "跨域信任" in llm.calls[0]["messages"][1]["content"]         # 证据喂进了 user 消息
+    assert llm.calls[0]["tools"][0]["function"]["name"] == "finalize_verdict"   # 只给 finalize
+    assert llm.calls[0]["tool_choice"] == "required"                  # 逼它直接定性
+
+
+def test_recipe_investigator_fallback_when_llm_gives_no_finalize(tmp_path):
+    _kerberoast_skill_with_recipe(tmp_path, {"x": 1})
+    reg = SkillRegistry(tmp_path)
+    llm = FakeLLMClient([LLMResponse(content="我随便说说")])            # 没调 finalize
+    inv = RecipeInvestigator(llm=llm, graph=FakeGraph(), schema="S", registry=reg, agent_name="q")
+    assert inv.investigate(_alert(), seed={}).verdict.verdict == "suspicious"
+
+
+def test_recipe_investigator_has_recipe_false_without_recipe(tmp_path):
+    _kerberoast_skill(tmp_path)                                       # 只有 SKILL.md,无 recipe.py
+    inv = RecipeInvestigator(llm=FakeLLMClient([]), graph=FakeGraph(),
+                             schema="S", registry=SkillRegistry(tmp_path))
+    assert inv.has_recipe(_alert()) is False
 
 
 def test_invalid_verdict_from_llm_normalized_to_suspicious(tmp_path):

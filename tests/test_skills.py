@@ -49,6 +49,21 @@ def test_registry_raises_when_nothing_matches(tmp_path):
         reg.select(a)
 
 
+def test_load_skill_loads_recipe_if_present(tmp_path):
+    # skill 目录里有 recipe.py → 加载其 collect(确定性取证脚本 sink①)
+    p = _write_skill(tmp_path, "identity/kerberoast",
+                     "name: kerberoast\nlayer: identity\ntechnique_ids: [T1558.003]")
+    (p / "recipe.py").write_text("def collect(graph, alert, seed):\n    return {'ok': 1}\n", encoding="utf-8")
+    s = load_skill(p)
+    assert s.recipe is not None
+    assert s.recipe(None, None, None) == {"ok": 1}
+
+
+def test_skill_recipe_none_when_absent(tmp_path):
+    p = _write_skill(tmp_path, "host/lsass_dump", "name: lsass_dump\nlayer: host\ntechnique_ids: [T1003.001]")
+    assert load_skill(p).recipe is None
+
+
 def test_registry_loads_all_skills(tmp_path):
     _write_skill(tmp_path, "identity/kerberoast", "name: kerberoast\nlayer: identity\ntechnique_ids: [T1558.003]")
     _write_skill(tmp_path, "host/lsass_dump", "name: lsass_dump\nlayer: host\ntechnique_ids: [T1003.001]")

@@ -123,3 +123,10 @@ def _finalize_verdict_tool() -> Tool:
 def default_toolbox(graph) -> ToolBox:
     """P1 默认工具箱:run_cypher + finalize_verdict。graph 需有 run_cypher(query)->list[dict]。"""
     return ToolBox([_run_cypher_tool(graph), _finalize_verdict_tool()])
+
+
+def finalize_spec() -> list:
+    """只含 finalize_verdict 的 tools spec(recipe 模式:证据已备齐,LLM 只需定性)。"""
+    t = _finalize_verdict_tool()
+    return [{"type": "function", "function": {
+        "name": t.name, "description": t.description, "parameters": t.parameters}}]

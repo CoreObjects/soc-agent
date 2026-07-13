@@ -11,7 +11,7 @@ from .config import Config
 from .graph.client import Neo4jGraph
 from .llm.qwen import QwenClient
 from .models import Alert
-from .orchestrator import AgentInvestigator
+from .orchestrator import AgentInvestigator, RecipeInvestigator
 from .schema import graph_schema
 from .skills_runtime import SkillRegistry
 from .tools import default_toolbox
@@ -77,6 +77,8 @@ def render_trace(result) -> str:
                 rows = res.get("rows") if isinstance(res, dict) else None
                 lines.append(f"[{i}] run_cypher → {len(rows or [])} 行")
             lines.append(f"     q: {q[:240]}")
+        elif tool == "recipe_step":
+            lines.append(f"[{i}] recipe取证「{step.get('step')}」→ {step.get('rows')} 行")
         elif tool == "no_tool_call":
             lines.append(f"[{i}] ⚠ 未调工具,只吐文本: {(step.get('content') or '')[:240]}")
         elif tool == "finalize_too_early":
@@ -87,28 +89,46 @@ def render_trace(result) -> str:
 
 
 def build(config: Config):
-    """按配置装配真客户端 + 研判器。"""
+    """按配置装配真客户端 + 两种研判器(recipe 确定性取证 / auto 自主)。"""
     graph = Neo4jGraph(config.neo4j_uri, config.neo4j_user, config.neo4j_password, config.neo4j_database)
     llm = QwenClient(base_url=config.llm_api_base, model=config.llm_model, api_key=config.llm_api_key)
-    investigator = AgentInvestigator(
-        llm=llm, toolbox=default_toolbox(graph), schema=graph_schema(),
-        registry=SkillRegistry(config.skills_dir), agent_name=config.llm_model,
-        max_iterations=config.max_iterations,
-    )
-    return graph, investigator
+    schema = graph_schema()
+    registry = SkillRegistry(config.skills_dir)
+    agent_inv = AgentInvestigator(
+        llm=llm, toolbox=default_toolbox(graph), schema=schema, registry=registry,
+        agent_name=config.llm_model, max_iterations=config.max_iterations)
+    recipe_inv = RecipeInvestigator(
+        llm=llm, graph=graph, schema=schema, registry=registry, agent_name=config.llm_model)
+    return graph, agent_inv, recipe_inv
+
+
+def choose_investigator(alert, mode, agent_inv, recipe_inv):
+    """mode=auto → 自主;mode=recipe/默认 → 有 recipe 走 recipe,没有退自主。"""
+    if mode == "auto":
+        return agent_inv, "auto"
+    if recipe_inv.has_recipe(alert):
+        return recipe_inv, "recipe"
+    return agent_inv, "auto(无 recipe 退)"
 
 
 def main(argv=None):
     ap = argparse.ArgumentParser(description="研判单条告警(慢通道)")
     ap.add_argument("alert_uid", help="要研判的 :Alert 的 alert_uid")
     ap.add_argument("--dotenv", default=str(_REPO_ROOT / ".env"), help=".env 路径(端点/口令)")
-    ap.add_argument("--trace", action="store_true", help="打印研判留痕(每步 run_cypher + 行数)")
+    ap.add_argument("--trace", action="store_true", help="打印研判留痕")
+    ap.add_argument("--mode", choices=["recipe", "auto"], default="recipe",
+                    help="recipe=确定性取证+LLM定性(默认,稳);auto=LLM 自主规划查询(对比用)")
     args = ap.parse_args(argv)
 
     config = Config.from_env(dotenv_path=args.dotenv)
-    graph, investigator = build(config)
+    graph, agent_inv, recipe_inv = build(config)
     try:
-        result = investigate_alert(graph, investigator, args.alert_uid)
+        node = graph.get_alert(args.alert_uid)
+        if node is None:
+            raise AlertNotFound(f"图里没有 alert_uid={args.alert_uid} 的 :Alert")
+        inv, picked = choose_investigator(Alert.from_node(node), args.mode, agent_inv, recipe_inv)
+        print(f"[研判模式] {picked}")
+        result = investigate_alert(graph, inv, args.alert_uid)
     finally:
         graph.close()
     if args.trace:
