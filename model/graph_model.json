@@ -50,7 +50,7 @@
     {"name": "RegistryKey", "keys": ["hive", "key_path"], "props": ["hive", "key_path"]},
     {"name": "RegistryValue", "keys": ["hive", "key_path", "value_name"], "props": ["hive", "key_path", "value_name"], "note": "改动经事件(谓语 SET);value_data 作事件标量"},
     {"name": "IPAddress", "keys": ["ip"], "props": ["ip", "version", "type", "geo", "asn", "reputation", "first_seen", "last_seen"], "note": "ip 为弱键(SNAT/NAT 干扰)"},
-    {"name": "Domain", "keys": ["fqdn"], "props": ["fqdn", "first_seen", "reputation"]},
+    {"name": "Domain", "keys": ["fqdn"], "props": ["fqdn", "netbios", "dc", "first_seen", "reputation"], "note": "AD 域实例化后带 netbios(与 Account.domain 对齐)+ dc;域间 TRUSTS 边"},
     {"name": "Service", "keys": ["service_id"], "props": ["service_id", "name", "kind", "port", "protocol", "host_header"], "note": "kind ∈ {web, mssql, certificate_authority, ...}"},
     {"name": "LogonSession", "keys": ["logon_id", "logon_guid"], "props": ["logon_id", "logon_guid", "logon_type", "start_time"]},
     {"name": "Certificate", "keys": ["thumbprint"], "fallback_key": ["serial", "ca"], "props": ["thumbprint", "serial", "template", "subject", "ca"], "note": "有物料时实体化;ADCS 盲区时 CA 用 Service(kind=certificate_authority)代"},
@@ -110,7 +110,8 @@
       {"name": "HAS_IP", "from": "Host", "to": "IPAddress", "props": ["first_seen", "last_seen"]},
       {"name": "RESOLVES_TO", "from": "Domain", "to": "IPAddress"},
       {"name": "AUTHENTICATED_AS", "from": "LogonSession", "to": "Account"},
-      {"name": "BELONGS_TO", "from": "Service", "to": "Host"}
+      {"name": "BELONGS_TO", "from": "Service", "to": "Host"},
+      {"name": "TRUSTS", "from": "Domain", "to": "Domain", "note": "域间信任(父子/林间;双向落两条有向边)。跨域认证正常 → 判跨域 RC4 误报靠它"}
     ]
   },
   "alert_layer": {
