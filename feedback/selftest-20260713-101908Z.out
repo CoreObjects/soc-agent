@@ -1,0 +1,1362 @@
+=== selftest 2026-07-13 10:19Z ===
+# 批量自测  范围=tech=T1558.003  取样=recent  待研判 12 条  模式=recipe  写回图=否(自测不落库)  (IP 已打码)
+
+待研判清单:
+  T1558.003          该类共     66  uid=055b644985a7f74c77de611d753b50271e3069e636857ef6b48db8f7cdb6c65b
+  T1558.003          该类共     66  uid=67c9db3bb192ae222a9134c507a7401051328296fb20930ada6215f2076bf055
+  T1558.003          该类共     66  uid=0176efc84f29069f59bfa4dcd8ffc6b2eaf87029cef53d13919874f950114f51
+  T1558.003          该类共     66  uid=eea7c6b69e3b21452b3460eb621a7cb21664a37771606673c718be837fe09945
+  T1558.003          该类共     66  uid=2b39b4f1dd0a107202e0d0d92f6071500686b216532235ccfdff5081a9bbb472
+  T1558.003          该类共     66  uid=0ca6a5688b0f837fd4f312055ad7fa7fd21ff96e8813250504ae0adc1f4cdf53
+  T1558.003          该类共     66  uid=01e7bdc055f76261623a5ca049fc3f848b356f292f4c90143bc800a6ff72060f
+  T1558.003          该类共     66  uid=c4e5bf8042ec614b9fd1007bbe385c48aa7ffffc7413b82e5bcc0b48e5fce1cf
+  T1558.003          该类共     66  uid=5de56f18f07e51a3f6869ed610c859cc64398a3d0a498c0cf5036b4066bd7322
+  T1558.003          该类共     66  uid=82f291decc84b414880dbe0c2282b5949e0357935d569ce13eb0f28ba39ace48
+  T1558.003          该类共     66  uid=2a1eba434e8dd87afcd49a5e1221e90638d9eccfffa135d91f6d96d43a794b8e
+  T1558.003          该类共     66  uid=a16fce74a87c02482af17bf3bd87806699868cb59bd2713bd32ae283dfccc9e1
+
+============================================================================
+## [1/12] technique=T1558.003   该类共 66 条   uid=055b644985a7f74c77de611d753b50271e3069e636857ef6b48db8f7cdb6c65b
+============================================================================
+### ① 原始告警节点(:Alert)
+{
+  "severity": 10,
+  "first_seen": "2026-07-13T03:58:14.452489600Z",
+  "last_seen": "2026-07-13T03:58:14.452489600Z",
+  "arrival_ms": 1783915096155,
+  "technique_ids": [
+    "T1558.003"
+  ],
+  "source": "wazuh",
+  "rule_id": "100801",
+  "stream": "soc-hids-alert-*",
+  "alert_uid": "055b644985a7f74c77de611d753b50271e3069e636857ef6b48db8f7cdb6c65b",
+  "rule_description": "Kerberoast: RC4(0x17) TGS request for service SEVENKINGDOMS.LOCAL",
+  "sensor": "wazuh-hids",
+  "raw_ref": "soc-hids-alert-2026.07.13:XBSgWZ8B3gPM8FAeLIpF",
+  "time": "2026-07-13T03:58:15.322+0000"
+}
+
+### ② 触发上下文(seed:触发事件 / 主语 / 宾语 / 次要实体)
+{
+  "event": {
+    "ticket_options": "0x40810000",
+    "ingest_time": 1783915206685,
+    "stream": "winlogbeat-*",
+    "event_code": "4769",
+    "arrival_ms": 1783915096117,
+    "sensor": "Security",
+    "enc_type": "0x17",
+    "raw_ref": "soc-hids-alert-2026.07.13:XBSgWZ8B3gPM8FAeLIpF",
+    "source": "winlogbeat",
+    "event_time": "2026-07-13T03:58:14.452489600Z",
+    "outcome": "success",
+    "event_uid": "09a52bb82579f7a8024a3b082a889b5950d2ac1ab6e5334bade0dd41c83608eb"
+  },
+  "subject": {
+    "_labels": [
+      "Account"
+    ],
+    "upn": "WINTERFELL$@NORTH.SEVENKINGDOMS.LOCAL",
+    "first_seen": "2026-06-26T10:28:49.227Z",
+    "last_seen": "2026-07-13T10:14:48.123Z",
+    "domain": "NORTH",
+    "sam": "winterfell$",
+    "sid": "S-1-5-21-1229275207-304159137-1120826147-1001"
+  },
+  "related": [
+    {
+      "node": {
+        "_labels": [
+          "Host"
+        ],
+        "hostname": "winterfell.north.sevenkingdoms.local",
+        "role": "domain_controller",
+        "first_seen": "2026-07-02T02:32:07.265Z",
+        "has_adcs": false,
+        "last_seen": "2026-07-13T10:14:49.185Z",
+        "domain": "north.sevenkingdoms.local",
+        "criticality": "critical",
+        "is_dc": true
+      },
+      "rel": "ON_HOST"
+    },
+    {
+      "node": {
+        "_labels": [
+          "IPAddress"
+        ],
+        "first_seen": "2026-06-30T05:46:53.934Z",
+        "last_seen": "2026-07-13T10:14:48.980Z",
+        "ip": "::1"
+      },
+      "rel": "FROM"
+    },
+    {
+      "node": {
+        "_labels": [
+          "Account"
+        ],
+        "first_seen": "2026-06-26T10:28:51.824Z",
+        "last_seen": "2026-07-13T03:58:14.452Z",
+        "domain": "NORTH",
+        "sam": "sevenkingdoms.local",
+        "sid": "S-1-5-21-1229275207-304159137-1120826147-0"
+      },
+      "rel": "REQUESTED"
+    }
+  ]
+}
+
+### ③ 研判   [skill] kerberoast   [模式] recipe
+# 研判留痕(7 步)
+[1] recall_similar: None
+[2] recipe取证「请求与目标」→ 1 行
+[3] recipe取证「目标估值」→ 1 行
+[4] recipe取证「请求者enc基线」→ 2 行
+[5] recipe取证「跨域信任」→ 1 行
+[6] recipe取证「SPN扇出」→ 1 行
+[7] recipe取证「历史相似判例(情报)」→ 2 行
+
+# 研判结果  alert=055b644985a7f74c77de611d753b50271e3069e636857ef6b48db8f7cdb6c65b  path=B  skill=kerberoast
+verdict   : false_positive  (confidence=0.8)
+summary   : 跨域信任的正常 RC4 票据请求
+rationale : 请求者域 NORTH 与目标域 sevenkingdoms.local 存在信任关系。根据域信任配置，跨域服务票据请求使用 RC4 加密类型是正常行为。请求者账户 winterfell$ 是机器账号，其请求 enc_type=0x17 (RC4) 的服务票据符合跨域认证的预期模式。
+evidence  : ['事件4769: TGS-REQ winterfell$@NORTH 请求 sevenkingdoms.local 服务']
+pattern   : cross_domain_auth
+agent     : qwen32b-ft
+处置(建议): none -> winterfell$  risk=low  status=proposed
+
+============================================================================
+## [2/12] technique=T1558.003   该类共 66 条   uid=67c9db3bb192ae222a9134c507a7401051328296fb20930ada6215f2076bf055
+============================================================================
+### ① 原始告警节点(:Alert)
+{
+  "severity": 10,
+  "first_seen": "2026-07-13T03:12:10.568686300Z",
+  "last_seen": "2026-07-13T03:12:10.568686300Z",
+  "arrival_ms": 1783912332635,
+  "technique_ids": [
+    "T1558.003"
+  ],
+  "source": "wazuh",
+  "rule_id": "100801",
+  "stream": "soc-hids-alert-*",
+  "alert_uid": "67c9db3bb192ae222a9134c507a7401051328296fb20930ada6215f2076bf055",
+  "rule_description": "Kerberoast: RC4(0x17) TGS request for service NORTH.SEVENKINGDOMS.LOCAL",
+  "sensor": "wazuh-hids",
+  "raw_ref": "soc-hids-alert-2026.07.13:5BR2WZ8B3gPM8FAeAV1G",
+  "time": "2026-07-13T03:12:11.443+0000"
+}
+
+### ② 触发上下文(seed:触发事件 / 主语 / 宾语 / 次要实体)
+{
+  "event": {
+    "ticket_options": "0x40810000",
+    "ingest_time": 1783912504887,
+    "stream": "winlogbeat-*",
+    "event_code": "4769",
+    "arrival_ms": 1783912332257,
+    "sensor": "Security",
+    "enc_type": "0x17",
+    "raw_ref": "soc-hids-alert-2026.07.13:5BR2WZ8B3gPM8FAeAV1G",
+    "source": "winlogbeat",
+    "event_time": "2026-07-13T03:12:10.568686300Z",
+    "outcome": "success",
+    "event_uid": "b8812b563c0018a6eba09c9daf35d2c7c682d72141b14604030a0e74c467fc08"
+  },
+  "subject": {
+    "_labels": [
+      "Account"
+    ],
+    "upn": "KINGSLANDING$@SEVENKINGDOMS.LOCAL",
+    "first_seen": "2026-06-26T10:05:29.972Z",
+    "last_seen": "2026-07-13T10:14:48.980Z",
+    "domain": "SEVENKINGDOMS",
+    "sam": "kingslanding$",
+    "sid": "S-1-5-18"
+  },
+  "related": [
+    {
+      "node": {
+        "_labels": [
+          "Host"
+        ],
+        "hostname": "kingslanding.sevenkingdoms.local",
+        "role": "domain_controller",
+        "first_seen": "2026-07-02T02:32:09.289Z",
+        "has_adcs": true,
+        "last_seen": "2026-07-13T10:14:48.980Z",
+        "domain": "sevenkingdoms.local",
+        "criticality": "critical",
+        "is_dc": true
+      },
+      "rel": "ON_HOST"
+    },
+    {
+      "node": {
+        "_labels": [
+          "IPAddress"
+        ],
+        "first_seen": "2026-06-30T05:46:53.934Z",
+        "last_seen": "2026-07-13T10:14:48.980Z",
+        "ip": "::1"
+      },
+      "rel": "FROM"
+    },
+    {
+      "node": {
+        "_labels": [
+          "Account"
+        ],
+        "first_seen": "2026-06-26T10:43:47.118Z",
+        "last_seen": "2026-07-13T03:12:10.568Z",
+        "domain": "SEVENKINGDOMS",
+        "sam": "north.sevenkingdoms.local",
+        "sid": "S-1-5-21-3669086071-63869131-912362612-0"
+      },
+      "rel": "REQUESTED"
+    }
+  ]
+}
+
+### ③ 研判   [skill] kerberoast   [模式] recipe
+# 研判留痕(7 步)
+[1] recall_similar: None
+[2] recipe取证「请求与目标」→ 1 行
+[3] recipe取证「目标估值」→ 1 行
+[4] recipe取证「请求者enc基线」→ 2 行
+[5] recipe取证「跨域信任」→ 1 行
+[6] recipe取证「SPN扇出」→ 1 行
+[7] recipe取证「历史相似判例(情报)」→ 2 行
+
+# 研判结果  alert=67c9db3bb192ae222a9134c507a7401051328296fb20930ada6215f2076bf055  path=B  skill=kerberoast
+verdict   : false_positive  (confidence=0.8)
+summary   : 跨域信任的正常 RC4 票据请求
+rationale : 请求者域与目标域之间存在信任关系，这是跨域信任的正常 RC4 票据请求，不是攻击行为。
+evidence  : ['请求与目标', '跨域信任']
+pattern   : T1558.003
+agent     : qwen32b-ft
+处置(建议): none -> 无  risk=low  status=proposed
+
+============================================================================
+## [3/12] technique=T1558.003   该类共 66 条   uid=0176efc84f29069f59bfa4dcd8ffc6b2eaf87029cef53d13919874f950114f51
+============================================================================
+### ① 原始告警节点(:Alert)
+{
+  "severity": 10,
+  "first_seen": "2026-07-13T02:32:43.474520600Z",
+  "last_seen": "2026-07-13T02:32:43.474520600Z",
+  "arrival_ms": 1783909965341,
+  "technique_ids": [
+    "T1558.003"
+  ],
+  "source": "wazuh",
+  "rule_id": "100801",
+  "stream": "soc-hids-alert-*",
+  "alert_uid": "0176efc84f29069f59bfa4dcd8ffc6b2eaf87029cef53d13919874f950114f51",
+  "rule_description": "Kerberoast: RC4(0x17) TGS request for service SEVENKINGDOMS.LOCAL",
+  "sensor": "wazuh-hids",
+  "raw_ref": "soc-hids-alert-2026.07.13:uxRRWZ8B3gPM8FAe4jcI",
+  "time": "2026-07-13T02:32:44.358+0000"
+}
+
+### ② 触发上下文(seed:触发事件 / 主语 / 宾语 / 次要实体)
+{
+  "event": {
+    "ticket_options": "0x40810000",
+    "ingest_time": 1783910105423,
+    "stream": "winlogbeat-*",
+    "event_code": "4769",
+    "arrival_ms": 1783909965312,
+    "sensor": "Security",
+    "enc_type": "0x17",
+    "raw_ref": "soc-hids-alert-2026.07.13:uxRRWZ8B3gPM8FAe4jcI",
+    "source": "winlogbeat",
+    "event_time": "2026-07-13T02:32:43.474520600Z",
+    "outcome": "success",
+    "event_uid": "f3facc2aef3e7a0314ae3fc9a02c5a8922f344297dbf703e0746d2fd8e68aaec"
+  },
+  "subject": {
+    "_labels": [
+      "Account"
+    ],
+    "upn": "WINTERFELL$@NORTH.SEVENKINGDOMS.LOCAL",
+    "first_seen": "2026-06-26T10:28:49.227Z",
+    "last_seen": "2026-07-13T10:14:48.123Z",
+    "domain": "NORTH",
+    "sam": "winterfell$",
+    "sid": "S-1-5-21-1229275207-304159137-1120826147-1001"
+  },
+  "related": [
+    {
+      "node": {
+        "_labels": [
+          "IPAddress"
+        ],
+        "first_seen": "2026-06-30T05:46:53.934Z",
+        "last_seen": "2026-07-13T10:14:48.980Z",
+        "ip": "::1"
+      },
+      "rel": "FROM"
+    },
+    {
+      "node": {
+        "_labels": [
+          "Account"
+        ],
+        "first_seen": "2026-06-26T10:28:51.824Z",
+        "last_seen": "2026-07-13T03:58:14.452Z",
+        "domain": "NORTH",
+        "sam": "sevenkingdoms.local",
+        "sid": "S-1-5-21-1229275207-304159137-1120826147-0"
+      },
+      "rel": "REQUESTED"
+    },
+    {
+      "node": {
+        "_labels": [
+          "Host"
+        ],
+        "hostname": "winterfell.north.sevenkingdoms.local",
+        "role": "domain_controller",
+        "first_seen": "2026-07-02T02:32:07.265Z",
+        "has_adcs": false,
+        "last_seen": "2026-07-13T10:14:49.185Z",
+        "domain": "north.sevenkingdoms.local",
+        "criticality": "critical",
+        "is_dc": true
+      },
+      "rel": "ON_HOST"
+    }
+  ]
+}
+
+### ③ 研判   [skill] kerberoast   [模式] recipe
+# 研判留痕(7 步)
+[1] recall_similar: None
+[2] recipe取证「请求与目标」→ 1 行
+[3] recipe取证「目标估值」→ 1 行
+[4] recipe取证「请求者enc基线」→ 2 行
+[5] recipe取证「跨域信任」→ 1 行
+[6] recipe取证「SPN扇出」→ 1 行
+[7] recipe取证「历史相似判例(情报)」→ 2 行
+
+# 研判结果  alert=0176efc84f29069f59bfa4dcd8ffc6b2eaf87029cef53d13919874f950114f51  path=B  skill=kerberoast
+verdict   : false_positive  (confidence=0.8)
+summary   : 跨域信任的正常 RC4 票据请求
+rationale : 请求者域 NORTH.sevenkingdoms.local 与目标域 sevenkingdoms.local 存在信任关系。在跨域信任场景下，RC4（0x17）类型的票据请求是正常行为，不属于攻击活动。
+evidence  : ['请求与目标', '跨域信任']
+pattern   : T1558.003
+agent     : qwen32b-ft
+处置(建议): none -> NORTH$  risk=low  status=proposed
+
+============================================================================
+## [4/12] technique=T1558.003   该类共 66 条   uid=eea7c6b69e3b21452b3460eb621a7cb21664a37771606673c718be837fe09945
+============================================================================
+### ① 原始告警节点(:Alert)
+{
+  "severity": 10,
+  "first_seen": "2026-07-12T17:12:10.475817400Z",
+  "last_seen": "2026-07-12T17:12:10.475817400Z",
+  "arrival_ms": 1783876336057,
+  "technique_ids": [
+    "T1558.003"
+  ],
+  "source": "wazuh",
+  "rule_id": "100801",
+  "stream": "soc-hids-alert-*",
+  "alert_uid": "eea7c6b69e3b21452b3460eb621a7cb21664a37771606673c718be837fe09945",
+  "rule_description": "Kerberoast: RC4(0x17) TGS request for service NORTH.SEVENKINGDOMS.LOCAL",
+  "sensor": "wazuh-hids",
+  "raw_ref": "soc-hids-alert-2026.07.12:phJQV58B3gPM8FAevRuj",
+  "time": "2026-07-12T17:12:11.447+0000"
+}
+
+### ② 触发上下文(seed:触发事件 / 主语 / 宾语 / 次要实体)
+{
+  "event": {
+    "ticket_options": "0x40810000",
+    "ingest_time": 1783876504663,
+    "stream": "winlogbeat-*",
+    "event_code": "4769",
+    "arrival_ms": 1783876332062,
+    "sensor": "Security",
+    "enc_type": "0x17",
+    "raw_ref": "soc-hids-alert-2026.07.12:phJQV58B3gPM8FAevRuj",
+    "source": "winlogbeat",
+    "event_time": "2026-07-12T17:12:10.475817400Z",
+    "outcome": "success",
+    "event_uid": "3928f8c00d29895de63c92320e5ff3583956ae763b63f5b2ed29ddd2468cdcb8"
+  },
+  "subject": {
+    "_labels": [
+      "Account"
+    ],
+    "upn": "KINGSLANDING$@SEVENKINGDOMS.LOCAL",
+    "first_seen": "2026-06-26T10:05:29.972Z",
+    "last_seen": "2026-07-13T10:19:49.018Z",
+    "domain": "SEVENKINGDOMS",
+    "sam": "kingslanding$",
+    "sid": "S-1-5-18"
+  },
+  "related": [
+    {
+      "node": {
+        "_labels": [
+          "Host"
+        ],
+        "hostname": "kingslanding.sevenkingdoms.local",
+        "role": "domain_controller",
+        "first_seen": "2026-07-02T02:32:09.289Z",
+        "has_adcs": true,
+        "last_seen": "2026-07-13T10:19:49.018Z",
+        "domain": "sevenkingdoms.local",
+        "criticality": "critical",
+        "is_dc": true
+      },
+      "rel": "ON_HOST"
+    },
+    {
+      "node": {
+        "_labels": [
+          "Account"
+        ],
+        "first_seen": "2026-06-26T10:43:47.118Z",
+        "last_seen": "2026-07-13T03:12:10.568Z",
+        "domain": "SEVENKINGDOMS",
+        "sam": "north.sevenkingdoms.local",
+        "sid": "S-1-5-21-3669086071-63869131-912362612-0"
+      },
+      "rel": "REQUESTED"
+    },
+    {
+      "node": {
+        "_labels": [
+          "IPAddress"
+        ],
+        "first_seen": "2026-06-30T05:46:53.934Z",
+        "last_seen": "2026-07-13T10:19:49.018Z",
+        "ip": "::1"
+      },
+      "rel": "FROM"
+    }
+  ]
+}
+
+### ③ 研判   [skill] kerberoast   [模式] recipe
+# 研判留痕(7 步)
+[1] recall_similar: None
+[2] recipe取证「请求与目标」→ 1 行
+[3] recipe取证「目标估值」→ 1 行
+[4] recipe取证「请求者enc基线」→ 2 行
+[5] recipe取证「跨域信任」→ 1 行
+[6] recipe取证「SPN扇出」→ 1 行
+[7] recipe取证「历史相似判例(情报)」→ 2 行
+
+# 研判结果  alert=eea7c6b69e3b21452b3460eb621a7cb21664a37771606673c718be837fe09945  path=B  skill=kerberoast
+verdict   : false_positive  (confidence=0.8)
+summary   : 跨域信任的正常 RC4 票据请求
+rationale : 请求者域与目标域之间存在信任关系，这是跨域信任的正常 RC4 票据请求。这种行为在多域林环境中是常见的，并不表示恶意活动。
+evidence  : ['请求与目标', '跨域信任']
+pattern   : T1558.003
+agent     : qwen32b-ft
+处置(建议): none -> eea7c6b69e3b21452b3460eb621a7cb21664a37771606673c718be837fe09945  risk=low  status=proposed
+
+============================================================================
+## [5/12] technique=T1558.003   该类共 66 条   uid=2b39b4f1dd0a107202e0d0d92f6071500686b216532235ccfdff5081a9bbb472
+============================================================================
+### ① 原始告警节点(:Alert)
+{
+  "severity": 10,
+  "first_seen": "2026-07-12T17:02:18.119625600Z",
+  "last_seen": "2026-07-12T17:02:18.119625600Z",
+  "arrival_ms": 1783875743749,
+  "technique_ids": [
+    "T1558.003"
+  ],
+  "source": "wazuh",
+  "rule_id": "100801",
+  "stream": "soc-hids-alert-*",
+  "alert_uid": "2b39b4f1dd0a107202e0d0d92f6071500686b216532235ccfdff5081a9bbb472",
+  "rule_description": "Kerberoast: RC4(0x17) TGS request for service SEVENKINGDOMS.LOCAL",
+  "sensor": "wazuh-hids",
+  "raw_ref": "soc-hids-alert-2026.07.12:ARJHV58B3gPM8FAesxLv",
+  "time": "2026-07-12T17:02:18.727+0000"
+}
+
+### ② 触发上下文(seed:触发事件 / 主语 / 宾语 / 次要实体)
+{
+  "event": {
+    "ticket_options": "0x40810000",
+    "ingest_time": 1783875905590,
+    "stream": "winlogbeat-*",
+    "event_code": "4769",
+    "arrival_ms": 1783875739008,
+    "sensor": "Security",
+    "enc_type": "0x17",
+    "raw_ref": "soc-hids-alert-2026.07.12:ARJHV58B3gPM8FAesxLv",
+    "source": "winlogbeat",
+    "event_time": "2026-07-12T17:02:18.119625600Z",
+    "outcome": "success",
+    "event_uid": "89bb4d6e10deed08200a4c036bd6bf683dca86f07e507fca341c2149c8059f81"
+  },
+  "subject": {
+    "_labels": [
+      "Account"
+    ],
+    "upn": "WINTERFELL$@NORTH.SEVENKINGDOMS.LOCAL",
+    "first_seen": "2026-06-26T10:28:49.227Z",
+    "last_seen": "2026-07-13T10:19:48.150Z",
+    "domain": "NORTH",
+    "sam": "winterfell$",
+    "sid": "S-1-5-21-1229275207-304159137-1120826147-1001"
+  },
+  "related": [
+    {
+      "node": {
+        "_labels": [
+          "IPAddress"
+        ],
+        "first_seen": "2026-06-30T05:46:53.934Z",
+        "last_seen": "2026-07-13T10:19:49.018Z",
+        "ip": "::1"
+      },
+      "rel": "FROM"
+    },
+    {
+      "node": {
+        "_labels": [
+          "Host"
+        ],
+        "hostname": "winterfell.north.sevenkingdoms.local",
+        "role": "domain_controller",
+        "first_seen": "2026-07-02T02:32:07.265Z",
+        "has_adcs": false,
+        "last_seen": "2026-07-13T10:19:50.741Z",
+        "domain": "north.sevenkingdoms.local",
+        "criticality": "critical",
+        "is_dc": true
+      },
+      "rel": "ON_HOST"
+    },
+    {
+      "node": {
+        "_labels": [
+          "Account"
+        ],
+        "first_seen": "2026-06-26T10:28:51.824Z",
+        "last_seen": "2026-07-13T03:58:14.452Z",
+        "domain": "NORTH",
+        "sam": "sevenkingdoms.local",
+        "sid": "S-1-5-21-1229275207-304159137-1120826147-0"
+      },
+      "rel": "REQUESTED"
+    }
+  ]
+}
+
+### ③ 研判   [skill] kerberoast   [模式] recipe
+# 研判留痕(7 步)
+[1] recall_similar: None
+[2] recipe取证「请求与目标」→ 1 行
+[3] recipe取证「目标估值」→ 1 行
+[4] recipe取证「请求者enc基线」→ 2 行
+[5] recipe取证「跨域信任」→ 1 行
+[6] recipe取证「SPN扇出」→ 1 行
+[7] recipe取证「历史相似判例(情报)」→ 2 行
+
+# 研判结果  alert=2b39b4f1dd0a107202e0d0d92f6071500686b216532235ccfdff5081a9bbb472  path=B  skill=kerberoast
+verdict   : false_positive  (confidence=0.8)
+summary   : 跨域信任的正常 RC4 票据请求
+rationale : 请求者域 NORTH.sevenkingdoms.local 与目标域 sevenkingdoms.local 之间存在信任关系。在多域林环境中，跨域信任的正常 RC4 票据请求是常见的误报场景。此外，请求者为 winterfell$ 的历史请求中，RC4 加密类型出现过 124 次，表明这是正常基线行为。
+evidence  : ['请求与目标', '跨域信任', '请求者enc基线']
+agent     : qwen32b-ft
+处置(建议): none -> winterfell$  risk=low  status=proposed
+
+============================================================================
+## [6/12] technique=T1558.003   该类共 66 条   uid=0ca6a5688b0f837fd4f312055ad7fa7fd21ff96e8813250504ae0adc1f4cdf53
+============================================================================
+### ① 原始告警节点(:Alert)
+{
+  "severity": 10,
+  "first_seen": "2026-07-12T16:57:03.235135300Z",
+  "last_seen": "2026-07-12T16:57:03.235135300Z",
+  "arrival_ms": 1783875427591,
+  "technique_ids": [
+    "T1558.003"
+  ],
+  "source": "wazuh",
+  "rule_id": "100801",
+  "stream": "soc-hids-alert-*",
+  "alert_uid": "0ca6a5688b0f837fd4f312055ad7fa7fd21ff96e8813250504ae0adc1f4cdf53",
+  "rule_description": "Kerberoast: RC4(0x17) TGS request for service SEVENKINGDOMS.LOCAL",
+  "sensor": "wazuh-hids",
+  "raw_ref": "soc-hids-alert-2026.07.12:BBJCV58B3gPM8FAe4A3z",
+  "time": "2026-07-12T16:57:04.120+0000"
+}
+
+### ② 触发上下文(seed:触发事件 / 主语 / 宾语 / 次要实体)
+{
+  "event": {
+    "ticket_options": "0x40810000",
+    "ingest_time": 1783875606600,
+    "stream": "winlogbeat-*",
+    "event_code": "4769",
+    "arrival_ms": 1783875424530,
+    "sensor": "Security",
+    "enc_type": "0x17",
+    "raw_ref": "soc-hids-alert-2026.07.12:BBJCV58B3gPM8FAe4A3z",
+    "source": "winlogbeat",
+    "event_time": "2026-07-12T16:57:03.235135300Z",
+    "outcome": "success",
+    "event_uid": "6dcd29c2e1eb28eb354eeb8481e497eb7fdf92853167439afcc06c0db690bada"
+  },
+  "subject": {
+    "_labels": [
+      "Account"
+    ],
+    "upn": "WINTERFELL$@NORTH.SEVENKINGDOMS.LOCAL",
+    "first_seen": "2026-06-26T10:28:49.227Z",
+    "last_seen": "2026-07-13T10:19:48.150Z",
+    "domain": "NORTH",
+    "sam": "winterfell$",
+    "sid": "S-1-5-21-1229275207-304159137-1120826147-1001"
+  },
+  "related": [
+    {
+      "node": {
+        "_labels": [
+          "Account"
+        ],
+        "first_seen": "2026-06-26T10:28:51.824Z",
+        "last_seen": "2026-07-13T03:58:14.452Z",
+        "domain": "NORTH",
+        "sam": "sevenkingdoms.local",
+        "sid": "S-1-5-21-1229275207-304159137-1120826147-0"
+      },
+      "rel": "REQUESTED"
+    },
+    {
+      "node": {
+        "_labels": [
+          "IPAddress"
+        ],
+        "first_seen": "2026-06-30T05:46:53.934Z",
+        "last_seen": "2026-07-13T10:19:49.018Z",
+        "ip": "::1"
+      },
+      "rel": "FROM"
+    },
+    {
+      "node": {
+        "_labels": [
+          "Host"
+        ],
+        "hostname": "winterfell.north.sevenkingdoms.local",
+        "role": "domain_controller",
+        "first_seen": "2026-07-02T02:32:07.265Z",
+        "has_adcs": false,
+        "last_seen": "2026-07-13T10:19:50.741Z",
+        "domain": "north.sevenkingdoms.local",
+        "criticality": "critical",
+        "is_dc": true
+      },
+      "rel": "ON_HOST"
+    }
+  ]
+}
+
+### ③ 研判   [skill] kerberoast   [模式] recipe
+# 研判留痕(7 步)
+[1] recall_similar: None
+[2] recipe取证「请求与目标」→ 1 行
+[3] recipe取证「目标估值」→ 1 行
+[4] recipe取证「请求者enc基线」→ 2 行
+[5] recipe取证「跨域信任」→ 1 行
+[6] recipe取证「SPN扇出」→ 1 行
+[7] recipe取证「历史相似判例(情报)」→ 2 行
+
+# 研判结果  alert=0ca6a5688b0f837fd4f312055ad7fa7fd21ff96e8813250504ae0adc1f4cdf53  path=B  skill=kerberoast
+verdict   : false_positive  (confidence=0.6)
+summary   : 跨域信任的正常 RC4 票据请求
+rationale : 请求者域 NORTH 与目标域 sevenkingdoms.local 存在信任关系。根据域信任配置，跨域请求 RC4 加密类型的服务票据是正常行为。
+evidence  : ['请求与目标', '跨域信任']
+pattern   : cross_domain_rc4_request
+agent     : qwen32b-ft
+处置(建议): none -> winterfell$  risk=low  status=proposed
+
+============================================================================
+## [7/12] technique=T1558.003   该类共 66 条   uid=01e7bdc055f76261623a5ca049fc3f848b356f292f4c90143bc800a6ff72060f
+============================================================================
+### ① 原始告警节点(:Alert)
+{
+  "severity": 10,
+  "first_seen": "2026-07-12T15:58:13.665478400Z",
+  "last_seen": "2026-07-12T15:58:13.665478400Z",
+  "arrival_ms": 1783871894793,
+  "technique_ids": [
+    "T1558.003"
+  ],
+  "source": "wazuh",
+  "rule_id": "100801",
+  "stream": "soc-hids-alert-*",
+  "alert_uid": "01e7bdc055f76261623a5ca049fc3f848b356f292f4c90143bc800a6ff72060f",
+  "rule_description": "Kerberoast: RC4(0x17) TGS request for service SEVENKINGDOMS.LOCAL",
+  "sensor": "wazuh-hids",
+  "raw_ref": "soc-hids-alert-2026.07.12:ZBEMV58B3gPM8FAe-NPz",
+  "time": "2026-07-12T15:58:14.553+0000"
+}
+
+### ② 触发上下文(seed:触发事件 / 主语 / 宾语 / 次要实体)
+{
+  "event": {
+    "ticket_options": "0x40810000",
+    "ingest_time": 1783872007393,
+    "stream": "winlogbeat-*",
+    "event_code": "4769",
+    "arrival_ms": 1783871894779,
+    "sensor": "Security",
+    "enc_type": "0x17",
+    "raw_ref": "soc-hids-alert-2026.07.12:ZBEMV58B3gPM8FAe-NPz",
+    "source": "winlogbeat",
+    "event_time": "2026-07-12T15:58:13.665478400Z",
+    "outcome": "success",
+    "event_uid": "ff4bcf8d710d20548e62944ceccabd0d4a7953939751f7935784baf03a1ef83a"
+  },
+  "subject": {
+    "_labels": [
+      "Account"
+    ],
+    "upn": "WINTERFELL$@NORTH.SEVENKINGDOMS.LOCAL",
+    "first_seen": "2026-06-26T10:28:49.227Z",
+    "last_seen": "2026-07-13T10:19:48.150Z",
+    "domain": "NORTH",
+    "sam": "winterfell$",
+    "sid": "S-1-5-21-1229275207-304159137-1120826147-1001"
+  },
+  "related": [
+    {
+      "node": {
+        "_labels": [
+          "Account"
+        ],
+        "first_seen": "2026-06-26T10:28:51.824Z",
+        "last_seen": "2026-07-13T03:58:14.452Z",
+        "domain": "NORTH",
+        "sam": "sevenkingdoms.local",
+        "sid": "S-1-5-21-1229275207-304159137-1120826147-0"
+      },
+      "rel": "REQUESTED"
+    },
+    {
+      "node": {
+        "_labels": [
+          "Host"
+        ],
+        "hostname": "winterfell.north.sevenkingdoms.local",
+        "role": "domain_controller",
+        "first_seen": "2026-07-02T02:32:07.265Z",
+        "has_adcs": false,
+        "last_seen": "2026-07-13T10:19:50.741Z",
+        "domain": "north.sevenkingdoms.local",
+        "criticality": "critical",
+        "is_dc": true
+      },
+      "rel": "ON_HOST"
+    },
+    {
+      "node": {
+        "_labels": [
+          "IPAddress"
+        ],
+        "first_seen": "2026-06-30T05:46:53.934Z",
+        "last_seen": "2026-07-13T10:19:49.018Z",
+        "ip": "::1"
+      },
+      "rel": "FROM"
+    }
+  ]
+}
+
+### ③ 研判   [skill] kerberoast   [模式] recipe
+# 研判留痕(7 步)
+[1] recall_similar: None
+[2] recipe取证「请求与目标」→ 1 行
+[3] recipe取证「目标估值」→ 1 行
+[4] recipe取证「请求者enc基线」→ 2 行
+[5] recipe取证「跨域信任」→ 1 行
+[6] recipe取证「SPN扇出」→ 1 行
+[7] recipe取证「历史相似判例(情报)」→ 2 行
+
+# 研判结果  alert=01e7bdc055f76261623a5ca049fc3f848b356f292f4c90143bc800a6ff72060f  path=B  skill=kerberoast
+verdict   : false_positive  (confidence=0.8)
+summary   : 跨域信任的正常 RC4 票据请求
+rationale : 请求者域 NORTH.sevenkingdoms.local 与目标域 sevenkingdoms.local 之间存在信任关系。在多域林环境中，跨域信任的正常 RC4 票据请求是常见的误报场景。此外，请求者为 winterfell$ 的历史请求中，RC4 票据的使用占比达 17.5%(124/708)，符合基线行为模式。
+evidence  : ['事件代码4769', '请求者账户winterfell$']
+pattern   : 跨域信任 RC4 票据请求
+agent     : qwen32b-ft
+处置(建议): none -> winterfell$  risk=low  status=proposed
+
+============================================================================
+## [8/12] technique=T1558.003   该类共 66 条   uid=c4e5bf8042ec614b9fd1007bbe385c48aa7ffffc7413b82e5bcc0b48e5fce1cf
+============================================================================
+### ① 原始告警节点(:Alert)
+{
+  "severity": 10,
+  "first_seen": "2026-07-12T08:12:10.497489900Z",
+  "last_seen": "2026-07-12T08:12:10.497489900Z",
+  "arrival_ms": 1783843935097,
+  "technique_ids": [
+    "T1558.003"
+  ],
+  "source": "wazuh",
+  "rule_id": "100801",
+  "stream": "soc-hids-alert-*",
+  "alert_uid": "c4e5bf8042ec614b9fd1007bbe385c48aa7ffffc7413b82e5bcc0b48e5fce1cf",
+  "rule_description": "Kerberoast: RC4(0x17) TGS request for service NORTH.SEVENKINGDOMS.LOCAL",
+  "sensor": "wazuh-hids",
+  "raw_ref": "soc-hids-alert-2026.07.12:pxBiVZ8B3gPM8FAeVw9k",
+  "time": "2026-07-12T08:12:11.458+0000"
+}
+
+### ② 触发上下文(seed:触发事件 / 主语 / 宾语 / 次要实体)
+{
+  "event": {
+    "ticket_options": "0x40810000",
+    "ingest_time": 1783844105189,
+    "stream": "winlogbeat-*",
+    "event_code": "4769",
+    "arrival_ms": 1783843932349,
+    "sensor": "Security",
+    "enc_type": "0x17",
+    "raw_ref": "soc-hids-alert-2026.07.12:pxBiVZ8B3gPM8FAeVw9k",
+    "source": "winlogbeat",
+    "event_time": "2026-07-12T08:12:10.497489900Z",
+    "outcome": "success",
+    "event_uid": "dd3704cfa53efaf9994946b4f4869bdc007a18200f51eb129560b850db56eef0"
+  },
+  "subject": {
+    "_labels": [
+      "Account"
+    ],
+    "upn": "KINGSLANDING$@SEVENKINGDOMS.LOCAL",
+    "first_seen": "2026-06-26T10:05:29.972Z",
+    "last_seen": "2026-07-13T10:19:49.018Z",
+    "domain": "SEVENKINGDOMS",
+    "sam": "kingslanding$",
+    "sid": "S-1-5-18"
+  },
+  "related": [
+    {
+      "node": {
+        "_labels": [
+          "Host"
+        ],
+        "hostname": "kingslanding.sevenkingdoms.local",
+        "role": "domain_controller",
+        "first_seen": "2026-07-02T02:32:09.289Z",
+        "has_adcs": true,
+        "last_seen": "2026-07-13T10:19:49.018Z",
+        "domain": "sevenkingdoms.local",
+        "criticality": "critical",
+        "is_dc": true
+      },
+      "rel": "ON_HOST"
+    },
+    {
+      "node": {
+        "_labels": [
+          "IPAddress"
+        ],
+        "first_seen": "2026-06-30T05:46:53.934Z",
+        "last_seen": "2026-07-13T10:19:49.018Z",
+        "ip": "::1"
+      },
+      "rel": "FROM"
+    },
+    {
+      "node": {
+        "_labels": [
+          "Account"
+        ],
+        "first_seen": "2026-06-26T10:43:47.118Z",
+        "last_seen": "2026-07-13T03:12:10.568Z",
+        "domain": "SEVENKINGDOMS",
+        "sam": "north.sevenkingdoms.local",
+        "sid": "S-1-5-21-3669086071-63869131-912362612-0"
+      },
+      "rel": "REQUESTED"
+    }
+  ]
+}
+
+### ③ 研判   [skill] kerberoast   [模式] recipe
+# 研判留痕(7 步)
+[1] recall_similar: None
+[2] recipe取证「请求与目标」→ 1 行
+[3] recipe取证「目标估值」→ 1 行
+[4] recipe取证「请求者enc基线」→ 2 行
+[5] recipe取证「跨域信任」→ 1 行
+[6] recipe取证「SPN扇出」→ 1 行
+[7] recipe取证「历史相似判例(情报)」→ 2 行
+
+# 研判结果  alert=c4e5bf8042ec614b9fd1007bbe385c48aa7ffffc7413b82e5bcc0b48e5fce1cf  path=B  skill=kerberoast
+verdict   : false_positive  (confidence=0.8)
+summary   : 跨域信任的正常 RC4 票据请求
+rationale : 请求者域与目标域之间存在信任关系，且请求者为机器账号。这表明该 RC4 票据请求是正常的跨域信任行为。
+evidence  : ['请求与目标', '跨域信任']
+pattern   : T1558.003
+agent     : qwen32b-ft
+处置(建议): none -> sevenkingdoms.local  risk=low  status=proposed
+
+============================================================================
+## [9/12] technique=T1558.003   该类共 66 条   uid=5de56f18f07e51a3f6869ed610c859cc64398a3d0a498c0cf5036b4066bd7322
+============================================================================
+### ① 原始告警节点(:Alert)
+{
+  "severity": 10,
+  "first_seen": "2026-07-12T07:32:53.379228500Z",
+  "last_seen": "2026-07-12T07:32:53.379228500Z",
+  "arrival_ms": 1783841575718,
+  "technique_ids": [
+    "T1558.003"
+  ],
+  "source": "wazuh",
+  "rule_id": "100801",
+  "stream": "soc-hids-alert-*",
+  "alert_uid": "5de56f18f07e51a3f6869ed610c859cc64398a3d0a498c0cf5036b4066bd7322",
+  "rule_description": "Kerberoast: RC4(0x17) TGS request for service SEVENKINGDOMS.LOCAL",
+  "sensor": "wazuh-hids",
+  "raw_ref": "soc-hids-alert-2026.07.12:0w8-VZ8B3gPM8FAeV-kQ",
+  "time": "2026-07-12T07:32:54.305+0000"
+}
+
+### ② 触发上下文(seed:触发事件 / 主语 / 宾语 / 次要实体)
+{
+  "event": {
+    "ticket_options": "0x40810000",
+    "ingest_time": 1783841705292,
+    "stream": "winlogbeat-*",
+    "event_code": "4769",
+    "arrival_ms": 1783841575038,
+    "sensor": "Security",
+    "enc_type": "0x17",
+    "raw_ref": "soc-hids-alert-2026.07.12:0w8-VZ8B3gPM8FAeV-kQ",
+    "source": "winlogbeat",
+    "event_time": "2026-07-12T07:32:53.379228500Z",
+    "outcome": "success",
+    "event_uid": "5c853b4fb67b16afec57f34e196561b85f9919106db3e75f4fbb646fd96b9bdc"
+  },
+  "subject": {
+    "_labels": [
+      "Account"
+    ],
+    "upn": "WINTERFELL$@NORTH.SEVENKINGDOMS.LOCAL",
+    "first_seen": "2026-06-26T10:28:49.227Z",
+    "last_seen": "2026-07-13T10:19:48.150Z",
+    "domain": "NORTH",
+    "sam": "winterfell$",
+    "sid": "S-1-5-21-1229275207-304159137-1120826147-1001"
+  },
+  "related": [
+    {
+      "node": {
+        "_labels": [
+          "IPAddress"
+        ],
+        "first_seen": "2026-06-30T05:46:53.934Z",
+        "last_seen": "2026-07-13T10:19:49.018Z",
+        "ip": "::1"
+      },
+      "rel": "FROM"
+    },
+    {
+      "node": {
+        "_labels": [
+          "Host"
+        ],
+        "hostname": "winterfell.north.sevenkingdoms.local",
+        "role": "domain_controller",
+        "first_seen": "2026-07-02T02:32:07.265Z",
+        "has_adcs": false,
+        "last_seen": "2026-07-13T10:19:50.741Z",
+        "domain": "north.sevenkingdoms.local",
+        "criticality": "critical",
+        "is_dc": true
+      },
+      "rel": "ON_HOST"
+    },
+    {
+      "node": {
+        "_labels": [
+          "Account"
+        ],
+        "first_seen": "2026-06-26T10:28:51.824Z",
+        "last_seen": "2026-07-13T03:58:14.452Z",
+        "domain": "NORTH",
+        "sam": "sevenkingdoms.local",
+        "sid": "S-1-5-21-1229275207-304159137-1120826147-0"
+      },
+      "rel": "REQUESTED"
+    }
+  ]
+}
+
+### ③ 研判   [skill] kerberoast   [模式] recipe
+# 研判留痕(7 步)
+[1] recall_similar: None
+[2] recipe取证「请求与目标」→ 1 行
+[3] recipe取证「目标估值」→ 1 行
+[4] recipe取证「请求者enc基线」→ 2 行
+[5] recipe取证「跨域信任」→ 1 行
+[6] recipe取证「SPN扇出」→ 1 行
+[7] recipe取证「历史相似判例(情报)」→ 2 行
+
+# 研判结果  alert=5de56f18f07e51a3f6869ed610c859cc64398a3d0a498c0cf5036b4066bd7322  path=B  skill=kerberoast
+verdict   : false_positive  (confidence=0.8)
+summary   : 跨域信任的正常 RC4 票据请求
+rationale : 请求者域 NORTH.sevenkingdoms.local 与目标域 sevenkingdoms.local 之间存在信任关系。在多域林环境中，跨域信任的正常 RC4 票据请求是常见的误报场景。此外，请求者为 winterfell$ 的请票行为已建立基线，历史记录显示主要使用 AES 加密类型（enc_type=0x12），本次 RC4 请求也未超出正常扇出范围（总 813 次请票中占 124 次）。
+evidence  : ['请求与目标', '请求者enc基线', '跨域信任']
+pattern   : T1558.003
+agent     : qwen32b-ft
+处置(建议): none -> winterfell$  risk=low  status=proposed
+
+============================================================================
+## [10/12] technique=T1558.003   该类共 66 条   uid=82f291decc84b414880dbe0c2282b5949e0357935d569ce13eb0f28ba39ace48
+============================================================================
+### ① 原始告警节点(:Alert)
+{
+  "severity": 10,
+  "first_seen": "2026-07-12T03:58:12.727906100Z",
+  "last_seen": "2026-07-12T03:58:12.727906100Z",
+  "arrival_ms": 1783828695306,
+  "technique_ids": [
+    "T1558.003"
+  ],
+  "source": "wazuh",
+  "rule_id": "100801",
+  "stream": "soc-hids-alert-*",
+  "alert_uid": "82f291decc84b414880dbe0c2282b5949e0357935d569ce13eb0f28ba39ace48",
+  "rule_description": "Kerberoast: RC4(0x17) TGS request for service SEVENKINGDOMS.LOCAL",
+  "sensor": "wazuh-hids",
+  "raw_ref": "soc-hids-alert-2026.07.12:Mw95VJ8B3gPM8FAezBv0",
+  "time": "2026-07-12T03:58:13.732+0000"
+}
+
+### ② 触发上下文(seed:触发事件 / 主语 / 宾语 / 次要实体)
+{
+  "event": {
+    "ticket_options": "0x40810000",
+    "ingest_time": 1783828805936,
+    "stream": "winlogbeat-*",
+    "event_code": "4769",
+    "arrival_ms": 1783828693926,
+    "sensor": "Security",
+    "enc_type": "0x17",
+    "raw_ref": "soc-hids-alert-2026.07.12:Mw95VJ8B3gPM8FAezBv0",
+    "source": "winlogbeat",
+    "event_time": "2026-07-12T03:58:12.727906100Z",
+    "outcome": "success",
+    "event_uid": "fdb28e3ecccf381452628dbee39bd4831d2c01f0b6ad093725ca81ee670cc021"
+  },
+  "subject": {
+    "_labels": [
+      "Account"
+    ],
+    "upn": "WINTERFELL$@NORTH.SEVENKINGDOMS.LOCAL",
+    "first_seen": "2026-06-26T10:28:49.227Z",
+    "last_seen": "2026-07-13T10:24:48.176Z",
+    "domain": "NORTH",
+    "sam": "winterfell$",
+    "sid": "S-1-5-21-1229275207-304159137-1120826147-1001"
+  },
+  "related": [
+    {
+      "node": {
+        "_labels": [
+          "Account"
+        ],
+        "first_seen": "2026-06-26T10:28:51.824Z",
+        "last_seen": "2026-07-13T03:58:14.452Z",
+        "domain": "NORTH",
+        "sam": "sevenkingdoms.local",
+        "sid": "S-1-5-21-1229275207-304159137-1120826147-0"
+      },
+      "rel": "REQUESTED"
+    },
+    {
+      "node": {
+        "_labels": [
+          "IPAddress"
+        ],
+        "first_seen": "2026-06-30T05:46:53.934Z",
+        "last_seen": "2026-07-13T10:24:49.057Z",
+        "ip": "::1"
+      },
+      "rel": "FROM"
+    },
+    {
+      "node": {
+        "_labels": [
+          "Host"
+        ],
+        "hostname": "winterfell.north.sevenkingdoms.local",
+        "role": "domain_controller",
+        "first_seen": "2026-07-02T02:32:07.265Z",
+        "has_adcs": false,
+        "last_seen": "2026-07-13T10:24:50.783Z",
+        "domain": "north.sevenkingdoms.local",
+        "criticality": "critical",
+        "is_dc": true
+      },
+      "rel": "ON_HOST"
+    }
+  ]
+}
+
+### ③ 研判   [skill] kerberoast   [模式] recipe
+# 研判留痕(7 步)
+[1] recall_similar: None
+[2] recipe取证「请求与目标」→ 1 行
+[3] recipe取证「目标估值」→ 1 行
+[4] recipe取证「请求者enc基线」→ 2 行
+[5] recipe取证「跨域信任」→ 1 行
+[6] recipe取证「SPN扇出」→ 1 行
+[7] recipe取证「历史相似判例(情报)」→ 2 行
+
+# 研判结果  alert=82f291decc84b414880dbe0c2282b5949e0357935d569ce13eb0f28ba39ace48  path=B  skill=kerberoast
+verdict   : false_positive  (confidence=0.8)
+summary   : 跨域信任的正常 RC4 票据请求
+rationale : 请求者域 NORTH.sevenkingdoms.local 与目标域 sevenkingdoms.local 存在信任关系。在多域林环境中，跨域信任的正常 RC4 票据请求是常见现象，尤其是在使用 NetBIOS 域名的环境中。此外，请求者是计算机账户（winterfell$）而非普通用户账户，这进一步表明这是正常的域间认证活动。
+evidence  : ['请求与目标', '跨域信任']
+pattern   : cross_domain_trust
+agent     : qwen32b-ft
+处置(建议): 无
+
+============================================================================
+## [11/12] technique=T1558.003   该类共 66 条   uid=2a1eba434e8dd87afcd49a5e1221e90638d9eccfffa135d91f6d96d43a794b8e
+============================================================================
+### ① 原始告警节点(:Alert)
+{
+  "severity": 10,
+  "first_seen": "2026-07-11T22:12:10.312643100Z",
+  "last_seen": "2026-07-11T22:12:10.312643100Z",
+  "arrival_ms": 1783807931563,
+  "technique_ids": [
+    "T1558.003"
+  ],
+  "source": "wazuh",
+  "rule_id": "100801",
+  "stream": "soc-hids-alert-*",
+  "alert_uid": "2a1eba434e8dd87afcd49a5e1221e90638d9eccfffa135d91f6d96d43a794b8e",
+  "rule_description": "Kerberoast: RC4(0x17) TGS request for service NORTH.SEVENKINGDOMS.LOCAL",
+  "sensor": "wazuh-hids",
+  "raw_ref": "soc-hids-alert-2026.07.11:LQ08U58B3gPM8FAe-M6V",
+  "time": "2026-07-11T22:12:11.272+0000"
+}
+
+### ② 触发上下文(seed:触发事件 / 主语 / 宾语 / 次要实体)
+{
+  "event": {
+    "ticket_options": "0x40810000",
+    "ingest_time": 1783808105041,
+    "stream": "winlogbeat-*",
+    "event_code": "4769",
+    "arrival_ms": 1783807932215,
+    "sensor": "Security",
+    "enc_type": "0x17",
+    "raw_ref": "soc-hids-alert-2026.07.11:LQ08U58B3gPM8FAe-M6V",
+    "source": "winlogbeat",
+    "event_time": "2026-07-11T22:12:10.312643100Z",
+    "outcome": "success",
+    "event_uid": "95d5fd493e6e02bc82fce76fd6e6c403b254c402736cd61f859f7bed576fd2f5"
+  },
+  "subject": {
+    "_labels": [
+      "Account"
+    ],
+    "upn": "KINGSLANDING$@SEVENKINGDOMS.LOCAL",
+    "first_seen": "2026-06-26T10:05:29.972Z",
+    "last_seen": "2026-07-13T10:24:49.057Z",
+    "domain": "SEVENKINGDOMS",
+    "sam": "kingslanding$",
+    "sid": "S-1-5-18"
+  },
+  "related": [
+    {
+      "node": {
+        "_labels": [
+          "IPAddress"
+        ],
+        "first_seen": "2026-06-30T05:46:53.934Z",
+        "last_seen": "2026-07-13T10:24:49.057Z",
+        "ip": "::1"
+      },
+      "rel": "FROM"
+    },
+    {
+      "node": {
+        "_labels": [
+          "Host"
+        ],
+        "hostname": "kingslanding.sevenkingdoms.local",
+        "role": "domain_controller",
+        "first_seen": "2026-07-02T02:32:09.289Z",
+        "has_adcs": true,
+        "last_seen": "2026-07-13T10:24:49.057Z",
+        "domain": "sevenkingdoms.local",
+        "criticality": "critical",
+        "is_dc": true
+      },
+      "rel": "ON_HOST"
+    },
+    {
+      "node": {
+        "_labels": [
+          "Account"
+        ],
+        "first_seen": "2026-06-26T10:43:47.118Z",
+        "last_seen": "2026-07-13T03:12:10.568Z",
+        "domain": "SEVENKINGDOMS",
+        "sam": "north.sevenkingdoms.local",
+        "sid": "S-1-5-21-3669086071-63869131-912362612-0"
+      },
+      "rel": "REQUESTED"
+    }
+  ]
+}
+
+### ③ 研判   [skill] kerberoast   [模式] recipe
+# 研判留痕(7 步)
+[1] recall_similar: None
+[2] recipe取证「请求与目标」→ 1 行
+[3] recipe取证「目标估值」→ 1 行
+[4] recipe取证「请求者enc基线」→ 2 行
+[5] recipe取证「跨域信任」→ 1 行
+[6] recipe取证「SPN扇出」→ 1 行
+[7] recipe取证「历史相似判例(情报)」→ 2 行
+
+# 研判结果  alert=2a1eba434e8dd87afcd49a5e1221e90638d9eccfffa135d91f6d96d43a794b8e  path=B  skill=kerberoast
+verdict   : false_positive  (confidence=0.8)
+summary   : 跨域信任的正常 RC4 票据请求
+rationale : 请求者域与目标域之间存在信任关系，且请求者为机器账号。这表明该 RC4 票据请求是正常的跨域信任行为。
+evidence  : ['请求与目标', '跨域信任']
+pattern   : T1558.003
+agent     : qwen32b-ft
+处置(建议): none -> sevenkingdoms.local  risk=low  status=proposed
+
+============================================================================
+## [12/12] technique=T1558.003   该类共 66 条   uid=a16fce74a87c02482af17bf3bd87806699868cb59bd2713bd32ae283dfccc9e1
+============================================================================
+### ① 原始告警节点(:Alert)
+{
+  "severity": 10,
+  "first_seen": "2026-07-11T22:02:27.700785400Z",
+  "last_seen": "2026-07-11T22:02:27.700785400Z",
+  "arrival_ms": 1783807353201,
+  "technique_ids": [
+    "T1558.003"
+  ],
+  "source": "wazuh",
+  "rule_id": "100801",
+  "stream": "soc-hids-alert-*",
+  "alert_uid": "a16fce74a87c02482af17bf3bd87806699868cb59bd2713bd32ae283dfccc9e1",
+  "rule_description": "Kerberoast: RC4(0x17) TGS request for service SEVENKINGDOMS.LOCAL",
+  "sensor": "wazuh-hids",
+  "raw_ref": "soc-hids-alert-2026.07.11:tg00U58B3gPM8FAeJcRc",
+  "time": "2026-07-11T22:02:28.620+0000"
+}
+
+### ② 触发上下文(seed:触发事件 / 主语 / 宾语 / 次要实体)
+{
+  "event": {
+    "ticket_options": "0x40810000",
+    "ingest_time": 1783807504808,
+    "stream": "winlogbeat-*",
+    "event_code": "4769",
+    "arrival_ms": 1783807349512,
+    "sensor": "Security",
+    "enc_type": "0x17",
+    "raw_ref": "soc-hids-alert-2026.07.11:tg00U58B3gPM8FAeJcRc",
+    "source": "winlogbeat",
+    "event_time": "2026-07-11T22:02:27.700785400Z",
+    "outcome": "success",
+    "event_uid": "0faccc2a89fa14a3f6a02327252d150d9d2644a14ec9784715bda72a3d5fae76"
+  },
+  "subject": {
+    "_labels": [
+      "Account"
+    ],
+    "upn": "WINTERFELL$@NORTH.SEVENKINGDOMS.LOCAL",
+    "first_seen": "2026-06-26T10:28:49.227Z",
+    "last_seen": "2026-07-13T10:24:48.176Z",
+    "domain": "NORTH",
+    "sam": "winterfell$",
+    "sid": "S-1-5-21-1229275207-304159137-1120826147-1001"
+  },
+  "related": [
+    {
+      "node": {
+        "_labels": [
+          "Host"
+        ],
+        "hostname": "winterfell.north.sevenkingdoms.local",
+        "role": "domain_controller",
+        "first_seen": "2026-07-02T02:32:07.265Z",
+        "has_adcs": false,
+        "last_seen": "2026-07-13T10:24:50.783Z",
+        "domain": "north.sevenkingdoms.local",
+        "criticality": "critical",
+        "is_dc": true
+      },
+      "rel": "ON_HOST"
+    },
+    {
+      "node": {
+        "_labels": [
+          "Account"
+        ],
+        "first_seen": "2026-06-26T10:28:51.824Z",
+        "last_seen": "2026-07-13T03:58:14.452Z",
+        "domain": "NORTH",
+        "sam": "sevenkingdoms.local",
+        "sid": "S-1-5-21-1229275207-304159137-1120826147-0"
+      },
+      "rel": "REQUESTED"
+    },
+    {
+      "node": {
+        "_labels": [
+          "IPAddress"
+        ],
+        "first_seen": "2026-06-30T05:46:53.934Z",
+        "last_seen": "2026-07-13T10:24:49.057Z",
+        "ip": "::1"
+      },
+      "rel": "FROM"
+    }
+  ]
+}
+
+### ③ 研判   [skill] kerberoast   [模式] recipe
+# 研判留痕(7 步)
+[1] recall_similar: None
+[2] recipe取证「请求与目标」→ 1 行
+[3] recipe取证「目标估值」→ 1 行
+[4] recipe取证「请求者enc基线」→ 2 行
+[5] recipe取证「跨域信任」→ 1 行
+[6] recipe取证「SPN扇出」→ 1 行
+[7] recipe取证「历史相似判例(情报)」→ 2 行
+
+# 研判结果  alert=a16fce74a87c02482af17bf3bd87806699868cb59bd2713bd32ae283dfccc9e1  path=B  skill=kerberoast
+verdict   : false_positive  (confidence=0.6)
+summary   : 跨域信任的正常 RC4 票据请求
+rationale : 请求者域 NORTH 与目标域 sevenkingdoms.local 存在信任关系。根据域信任配置，跨域场景下 RC4 (0x17) 类型的票据请求是正常行为。此外，请求者为 winterfell$（机器账号）进一步表明这是合法的域间票据请求流程。
+evidence  : ['请求与目标', '跨域信任']
+pattern   : T1558.003
+agent     : qwen32b-ft
+处置(建议): none -> N/A  risk=low  status=proposed
+
+# 批量自测完成
+=== done 2026-07-13 10:28Z ===
