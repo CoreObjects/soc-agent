@@ -1,0 +1,13 @@
+=== investigate 489cc44e063bdac63f9dcf39dc87e8f99e1908e30a438afe970ebd2c11796624  2026-07-10 09:39Z ===
+# 研判留痕(0 步工具调用)
+
+# 研判结果  alert=489cc44e063bdac63f9dcf39dc87e8f99e1908e30a438afe970ebd2c11796624  path=B  skill=kerberoast
+verdict   : suspicious  (confidence=0.8)
+summary   : 检测到RC4(0x17)类型的TGS请求,可能表明存在Kerberoasting攻击活动。
+rationale : 事件4769显示了一个RC4(0x17)类型的票据请求,这通常与Kerberoasting攻击相关联。虽然无法直接确定请求者的身份和意图,但RC4加密类型的使用以及服务类别的缺失增加了进一步调查的必要性。
+evidence  : ['事件UID: 5e170299b4e7b2f5fe1e3d09962fca995c06ea55717479f8ed54c373a7d91ad4', '账户: winterfell$@NORTH.SEVENKINGDOMS.LOCAL']
+missing   : ['请求者的身份信息', '更详细的服务请求信息', '历史活动模式']
+pattern   : T1558.003
+agent     : qwen32b-ft
+处置(建议): escalate -> security_team  risk=high  status=proposed
+=== done 2026-07-10 09:40Z ===
