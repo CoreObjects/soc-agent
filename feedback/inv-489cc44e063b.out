@@ -1,23 +1,20 @@
-=== investigate 489cc44e063bdac63f9dcf39dc87e8f99e1908e30a438afe970ebd2c11796624  2026-07-13 02:14Z ===
-# 研判留痕(3 步)
+=== investigate 489cc44e063bdac63f9dcf39dc87e8f99e1908e30a438afe970ebd2c11796624  2026-07-13 03:04Z ===
+# 研判留痕(4 步)
 [1] run_cypher → 1 行
      q: MATCH (a:Alert {alert_uid:$alert_uid})<-[:TRIGGERED]-(e:Event {event_code:'4769'})-[:BY]->(req:Account) RETURN req.sam, req.domain, req.type, req.privileged, e.enc_type, e.ticket_options
 [2] run_cypher → 1 行
-     q: MATCH (a:Alert {alert_uid:$alert_uid})<-[:TRIGGERED]-(e:Event {event_code:'4769'})-[:REQUESTED]->(tgt) OPTIONAL MATCH (tgt)-[:MEMBER_OF]->(g:Group) RETURN tgt.sam, tgt.privileged, collect(g.name) AS groups
-[3] run_cypher → 2 行
-     q: MATCH (req:Account {sam: $req_sam})<-[:BY]-(ev:Event {event_code: '4769'}) RETURN ev.enc_type AS enc, count(*) AS n ORDER BY n DESC
+     q: MATCH (a:Alert {alert_uid:$alert_uid})<-[:TRIGGERED]-(e:Event {event_code:'4769'})-[:REQUESTED]->(tgt) OPTIONAL MATCH (tgt)-[:MEMBER_OF]->(g:Group) RETURN tgt.sam, tgt.privileged, collect(DISTINCT g.name) AS groups
+[3] run_cypher → 1 行
+     q: MATCH (a:Alert {alert_uid:$alert_uid})<-[:TRIGGERED]-(e:Event {event_code:'4769'})-[:BY]->(req:Account) RETURN req.sam, req.domain, req.type, req.privileged, e.enc_type, e.ticket_options
+[4] run_cypher → 1 行
+     q: MATCH (a:Alert {alert_uid:$alert_uid})<-[:TRIGGERED]-(e:Event {event_code:'4769'})-[:REQUESTED]->(tgt) OPTIONAL MATCH (tgt)-[:MEMBER_OF]->(g:Group) RETURN tgt.sam, tgt.privileged, collect(DISTINCT g.name) AS groups
 
 # 研判结果  alert=489cc44e063bdac63f9dcf39dc87e8f99e1908e30a438afe970ebd2c11796624  path=B  skill=kerberoast
-verdict   : suspicious  (confidence=0.85)
-summary   : 检测到 Kerberoasting 攻击模式：请求者 winterfell$ 请求了服务账户 sevenkingdoms.local 的 RC4 票据 (enc_type=0x17)，该请求者历史基线显示 RC4 使用频繁但近期 RC4 票据请求量异常偏高 (122 次)，且目标服务账户未关联特权组。需进一步核查该账户是否为蜜罐/是否被授权扫描器使用
-rationale : 1. 请求者 winterfell$ 是机器账号 (sam 以 $ 结尾)
-2. 目标 sevenkingdoms.local 是服务账号但未显示特权属性
-3. RC4 票据 (0x17) 请求量在近基线期异常增加 (122 次)
-4. 服务账户未加入任何特权组
-5. 票据选项 0x40810000(Forwardable) 符合 Kerberoast 攻击特征
-evidence  : ['Event:5e170299b4e7b2f5fe1e3d09962fca995c06ea55717479f8ed54c373a7d91ad4', 'Account:NORTH\\winterfell$', 'Account:sevenkingdoms.local']
-missing   : ['服务账户 sevenkingdoms.local 的蜜罐标记状态', 'winterfell$ 主机是否部署授权扫描器', '域信任拓扑(需排除跨域 RC4 基线)']
+verdict   : suspicious  (confidence=0.6)
+summary   : 检测到一次可能的Kerberoasting攻击，需要进一步调查。
+rationale : 请求者是一个机器账号，且请求了RC4加密类型的服务票据，这可能是Kerberoasting攻击的迹象。然而，由于缺乏进一步的信息，无法确定这是否为恶意活动。
+evidence  : ['5e170299b4e7b2f5fe1e3d09962fca995c06ea55717479f8ed54c373a7d91ad4']
+missing   : ['请求者的活动基线', '目标服务账号的特权和所属组']
 agent     : qwen32b-ft
-处置(建议): monitor -> Account:NORTH\winterfell$  risk=high  status=proposed
-处置(建议): monitor -> Account:sevenkingdoms.local  risk=high  status=proposed
-=== done 2026-07-13 02:16Z ===
+处置(建议): monitor -> winterfell$  risk=low  status=proposed
+=== done 2026-07-13 03:07Z ===
