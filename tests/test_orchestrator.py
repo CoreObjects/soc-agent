@@ -149,6 +149,30 @@ def test_recipe_investigator_runs_recipe_then_llm_only_judges(tmp_path):
     assert llm.calls[0]["tool_choice"] == "required"                  # 逼它直接定性
 
 
+def test_recipe_investigator_recalls_similar_cases_as_intel(tmp_path):
+    # 图里有同技术历史判例 → 作情报召回,喂进 LLM(user 消息)+ 记 trace(recall_similar)
+    _kerberoast_skill_with_recipe(tmp_path, {"x": 1})
+    reg = SkillRegistry(tmp_path)
+    graph = FakeGraph(rows=[{"verdict": "false_positive", "n": 42, "examples": ["跨域 RC4 正常"]}])
+    llm = FakeLLMClient([LLMResponse(tool_calls=[ToolCall("c1", "finalize_verdict",
+          {"verdict": "false_positive", "confidence": 0.8, "rationale": "历史同类多为 FP"})])])
+    inv = RecipeInvestigator(llm=llm, graph=graph, schema="S", registry=reg, agent_name="q")
+    r = inv.investigate(_alert(), seed={}, skill=reg.by_name("kerberoast"))
+    assert any(t.get("tool") == "recall_similar" for t in r.trace)        # 情报召回记入 trace
+    assert "历史相似判例" in llm.calls[0]["messages"][1]["content"]         # 情报喂进 user 消息
+
+
+def test_recipe_investigator_no_recall_when_no_history(tmp_path):
+    # 图里无历史判例(空)→ 不加情报、不记 recall_similar,只有 recipe_step
+    _kerberoast_skill_with_recipe(tmp_path, {"x": 1})
+    reg = SkillRegistry(tmp_path)
+    llm = FakeLLMClient([LLMResponse(tool_calls=[ToolCall("c1", "finalize_verdict",
+          {"verdict": "benign", "confidence": 0.5, "rationale": "无历史"})])])
+    inv = RecipeInvestigator(llm=llm, graph=FakeGraph(), schema="S", registry=reg, agent_name="q")
+    r = inv.investigate(_alert(), seed={}, skill=reg.by_name("kerberoast"))
+    assert not any(t.get("tool") == "recall_similar" for t in r.trace)
+
+
 def test_recipe_investigator_fallback_when_llm_gives_no_finalize(tmp_path):
     _kerberoast_skill_with_recipe(tmp_path, {"x": 1})
     reg = SkillRegistry(tmp_path)

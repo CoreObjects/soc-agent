@@ -37,8 +37,9 @@ def build_result(alert, skill_name, args, agent_name, trace=None, path="B") -> I
 
 # technique → 层(仅用于"未命中具体 skill 时选该层通用兜底";具体 skill 按 technique 直配)
 _LAYER_BY_PREFIX = {
-    "identity": ["T1558", "T1649", "T1003.006", "T1550", "T1021", "T1207", "T1484"],
-    "host": ["T1003.001", "T1003.002", "T1105", "T1547", "T1112", "T1059", "T1055", "T1218", "T1543"],
+    "identity": ["T1558", "T1649", "T1003.006", "T1550", "T1021", "T1207", "T1484", "T1556"],
+    "host": ["T1003.001", "T1003.002", "T1105", "T1547", "T1112", "T1059", "T1055", "T1218",
+             "T1543", "T1140", "T1027", "T1204", "T1053", "T1569"],
     "application": ["T1190", "T1505"],
     "network": ["T1071", "T1568", "T1571", "T1090", "T1041", "T1048"],
 }
@@ -249,9 +250,29 @@ class RecipeInvestigator:
         parts.append(_RECIPE_SCAFFOLD)
         return "\n\n".join(parts)
 
+    def _recall_similar(self, alert):
+        """情报:图里同技术的历史判例(过去同类告警怎么判的),喂给 LLM 作参考。"""
+        techs = alert.technique_ids or []
+        if not techs:
+            return None
+        try:
+            rows = self.graph.run_cypher(
+                "MATCH (al:Alert)-[:CONCLUDED]->(v:Verdict) "
+                "WHERE al.alert_uid <> $uid AND any(t IN coalesce(al.technique_ids,[]) WHERE t IN $techs) "
+                "RETURN v.verdict AS verdict, count(*) AS n, collect(v.summary)[0..2] AS examples "
+                "ORDER BY n DESC LIMIT 5",
+                uid=alert.alert_uid, techs=techs)
+            return rows or None
+        except Exception:
+            return None
+
     def investigate(self, alert: Alert, seed=None, skill=None) -> InvestigationResult:
         trace = []                                                  # skill 由 SkillRouter 预选传入
         evidence = skill.recipe(self.graph, alert, seed) or {}      # ★确定性取证(含跨域信任)
+        sim = self._recall_similar(alert)                           # ★情报召回:历史相似判例
+        if sim:
+            evidence["历史相似判例(情报)"] = sim
+            trace.append({"tool": "recall_similar", "step": "历史相似判例", "rows": len(sim)})
         for name, res in evidence.items():
             trace.append({"tool": "recipe_step", "step": name,
                           "rows": len(res) if isinstance(res, list) else 1})

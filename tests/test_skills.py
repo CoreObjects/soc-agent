@@ -78,6 +78,20 @@ def test_real_skills_dir_all_valid():
     names = {s.name for s in skills}
     assert {"kerberoast", "adcs", "dcsync", "lateral_movement"} <= names           # 身份层四类
     assert {"lsass_dump", "ingress_tool_transfer", "registry_persistence", "suspicious_process"} <= names  # 主机层四类
+    assert {"c2_beacon", "suspicious_outbound"} <= names                            # 网络层
+    assert {"web_exploit", "webshell"} <= names                                     # 应用层
+    # 每层通用兜底
+    assert {"generic_identity", "generic_host", "generic_application", "generic_network"} <= names
+
+
+def test_every_layer_has_generic_fallback():
+    # 守卫:四层各有一个 _generic 兜底,且可被该层未覆盖告警选中
+    from pathlib import Path
+    reg = SkillRegistry(Path(__file__).resolve().parents[1] / "skills")
+    for layer in ("identity", "host", "application", "network"):
+        g = reg.generic_for_layer(layer)
+        assert g is not None, f"{layer} 层缺 _generic 兜底"
+        assert g.is_generic and g.recipe, f"{layer} 兜底须是 generic 且带 recipe"
 
 
 def test_real_recipes_run_on_empty_graph():
