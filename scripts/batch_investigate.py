@@ -6,7 +6,8 @@
 用法(经 wrapper 自动建 venv):bash scripts/selftest.sh [每类条数=1] [技术类数上限=10]
   只测一类(一条一条改就一条一条测):bash scripts/selftest.sh --tech T1059
   只测一条:                          bash scripts/selftest.sh --uid <alert_uid>
-直接:  .venv/bin/python scripts/batch_investigate.py [per_tech] [max_tech] [--tech T] [--uid U] [--mode recipe|auto] [--write]
+  挖真攻击(每类取最新 8 条):        bash scripts/selftest.sh 8 10 --order recent
+直接:  .venv/bin/python scripts/batch_investigate.py [per_tech] [max_tech] [--tech T] [--uid U] [--order recent|severity|first] [--mode recipe|auto] [--write]
 输出:IP 一律打码(只留末段供关联);GOAD 靶场实体名(主机/账号/域)为公开信息予以保留。
 """
 import json
@@ -21,6 +22,13 @@ from soc_agent.config import Config                                             
 from soc_agent.models import Alert                                              # noqa: E402
 
 _IPV4 = re.compile(r"\b(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})\b")
+
+# 取样排序(通用,非用户注入):挖真攻击默认取最新;severity 取高危优先;first=扫描序(旧行为)
+_ORDER = {
+    "recent": "coalesce(a.arrival_ms,0) DESC",
+    "severity": "coalesce(a.severity,0) DESC, coalesce(a.arrival_ms,0) DESC",
+    "first": None,
+}
 
 
 def _mask_ips(s):
@@ -53,6 +61,14 @@ def main():
         i = argv.index("--uid")
         only_uid = argv[i + 1]
         del argv[i:i + 2]
+    order = "recent"               # --order recent|severity|first:每类取样的排序(挖真攻击默认取最新)
+    if "--order" in argv:
+        i = argv.index("--order")
+        order = argv[i + 1]
+        del argv[i:i + 2]
+    if order not in _ORDER:
+        order = "recent"
+    order_by = _ORDER[order]       # 通用排序表达式(固定字典,非用户注入);None=不排序(扫描序)
     per_tech = int(argv[0]) if len(argv) > 0 else 1
     max_tech = int(argv[1]) if len(argv) > 1 else 10
 
@@ -67,22 +83,24 @@ def main():
             t0 = (node0.get("technique_ids") or ["(none)"])[0] if node0 else "(指定)"
             picks = [(t0, "?", only_uid)]
         elif tech:                                          # 只测某一类技战术
+            ob = f"WITH a ORDER BY {order_by} " if order_by else ""
             r = graph.run_cypher(
                 "MATCH (a:Alert) WHERE $tech IN coalesce(a.technique_ids,['(none)']) "
-                "RETURN count(*) AS n, collect(a.alert_uid)[0..$k] AS uids",
+                + ob + "RETURN count(a) AS n, collect(a.alert_uid)[0..$k] AS uids",
                 tech=tech, k=per_tech)
             r = r[0] if r else {"n": 0, "uids": []}
             picks = [(tech, r["n"], u) for u in r["uids"]]
         else:                                               # 每类各抽 per_tech,取前 max_tech 类
+            ob = f"WITH t, a ORDER BY {order_by} " if order_by else ""
             rows = graph.run_cypher(
                 "MATCH (a:Alert) UNWIND coalesce(a.technique_ids,['(none)']) AS t "
-                "WITH t, count(*) AS n, collect(a.alert_uid)[0..$k] AS uids "
+                + ob + "WITH t, count(a) AS n, collect(a.alert_uid)[0..$k] AS uids "
                 "RETURN t AS tech, n, uids ORDER BY n DESC LIMIT $m",
                 k=per_tech, m=max_tech)
             picks = [(r["tech"], r["n"], u) for r in rows for u in r["uids"]]
 
         scope = f"tech={tech}" if tech else (f"uid={only_uid[:12]}…" if only_uid else "全类")
-        print(f"# 批量自测  范围={scope}  待研判 {len(picks)} 条  "
+        print(f"# 批量自测  范围={scope}  取样={order}  待研判 {len(picks)} 条  "
               f"模式={mode}  写回图={'是' if write else '否(自测不落库)'}  (IP 已打码)\n")
         print("待研判清单:")
         for tech, n, u in picks:

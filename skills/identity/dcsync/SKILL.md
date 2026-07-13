@@ -19,7 +19,7 @@ description: 研判 DCSync(伪装域控拉取口令哈希)告警。当告警涉�
 
 ## 误报/良性场景(逐条证伪)
 - **DC-to-DC 正常复制**:每台 DC 持续复制 → actor 是 DC 机器账号 → benign(**头号 FP**,靠「域DC」的 dc_host 对上 actor 排除)。
-- **Entra Connect / Azure AD 同步账号**(`MSOL_*` 等)做密码哈希同步 → 真企业巨量 FP;GOAD 无。⚠️ 同步账号标记是图盲区,靠经验/名字。
+- **Entra Connect / Azure AD 同步账号**(`MSOL_*` 等)做密码哈希同步 → 真企业巨量 FP(仅在部署了目录同步的环境;纯本地林无此项)。⚠️ 同步账号标记是图盲区,靠经验/名字。
 - **备份/AD 审计/安全产品**(Quest/Netwrix/DSInternals)合法复制。
 
 ## 判定逻辑

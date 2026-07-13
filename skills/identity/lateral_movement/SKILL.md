@@ -22,7 +22,7 @@ description: 研判横向移动/凭据复用(PtH/PtT/异常远程登录)告警�
 - **正常远程运维**:IT/助台用 RDP(type10)+ 管理共享(type3)横跨多机 → 像横向。区分:来源是已知管理跳板、账号是管理账号、目标集合稳定。
 - **服务账号广泛认证**(SCCM/补丁/备份)type3 遍布 → 基线广泛(agg count 高)。
 - **NTLM 合法使用**(按 IP 访问、老应用)→ type3 NTLM ≠ PtH。
-- **域信任跨域 NTLM 4776** → GOAD 多域,跨信任 4776 良性遍布(可结合信任拓扑判)。
+- **域信任跨域 NTLM 4776** → 多域林里跨信任 4776 良性遍布(可结合信任拓扑判;如本靶场多域)。
 
 **★资产价值(补图第二弹)**:recipe「登录事件」现带 `target_role`/`target_criticality`。登录目标是 `domain_controller`/`certificate_authority`(criticality=critical/high)→ 异常登录显著升权。
 

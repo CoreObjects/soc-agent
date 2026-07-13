@@ -1,7 +1,7 @@
 """recipe 共用纯函数:PowerShell EncodedCommand 解码 + 已知良性供给/自检噪声识别。
 
 背景:多条 PowerShell 告警的决定性证据(编码命令、脚本块)如果不先解码/识别就交给 LLM,
-模型要么幻觉、要么把 GOAD 自身的 Ansible 供给当攻击误判。这里用确定性代码先解出来、认出来。
+模型要么幻觉、要么把配管工具(Ansible 等)的正常供给活动当攻击误判。这里用确定性代码先解出来、认出来。
 纯逻辑、可单测、不碰图/LLM;多个 recipe 复用。
 """
 import base64
@@ -41,9 +41,10 @@ def decode_chain(command_line, max_depth=4):
     return out
 
 
-# 已知良性:GOAD 用 Ansible 供给部署 + PowerShell 执行策略自检(系统自动写)。命中即"非攻击"强证伪。
+# 已知良性:配管工具(Ansible)供给 + PowerShell 执行策略自检(系统自动写)。命中即"非攻击"强证伪。
+# 通用模式:凡用 Ansible 配管、凡 Windows 跑 PS 都会产生,不绑定任何具体环境(本靶场 GOAD 用 Ansible,是其一例)。
 _NOISE = [
-    ("ansible_exec_wrapper", "良性:Ansible 供给/运维(GOAD 用 Ansible 部署)",
+    ("ansible_exec_wrapper", "良性:Ansible 配管供给/运维(凡用 Ansible 的环境皆有)",
      re.compile(r"ConvertFrom-AnsibleJson|Write-AnsibleLog|ANSIBLE_EXEC_DEBUG|exec_wrapper", re.I)),
     ("ps_execution_policy_probe", "良性:PowerShell 执行策略自检(系统自动写,非攻击)",
      re.compile(r"__PSScriptPolicyTest_", re.I)),

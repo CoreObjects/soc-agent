@@ -49,7 +49,7 @@ description: 研判 Kerberoasting(服务票据离线爆破)告警。当告警涉
    RETURN ip.ip, h.hostname, h.role
    ```
 
-5.5. **★跨域信任检查(证伪跨域 RC4 误报 —— GOAD 头号 FP,必查)**
+5.5. **★跨域信任检查(证伪跨域 RC4 误报 —— 多域林头号 FP,必查)**
    请求者域与目标服务所属域之间**若有信任**,跨域用 RC4 请票就是**正常**的(不是攻击)。
    ```cypher
    MATCH (a:Alert {alert_uid:$aid})<-[:TRIGGERED]-(e:Event {event_code:'4769'})-[:BY]->(req:Account)
@@ -70,14 +70,14 @@ description: 研判 Kerberoasting(服务票据离线爆破)告警。当告警涉
    被 roast 的服务账号在告警后从**新主机**登录 = 爆破成功已用凭据,铁证。
 
 ## 误报/良性场景(逐条证伪)
-- **跨林/跨域信任默认 RC4**(除非启用 AES)→ 跨域 4769 携 RC4。**GOAD 多域带信任,这是头号 FP**:请求者域 TRUSTS 目标域(**用第 5.5 步查实**)→ 判 FP。别只凭"域不同"猜,要查到 TRUSTS 边才定 FP。
+- **跨林/跨域信任默认 RC4**(除非启用 AES)→ 跨域 4769 携 RC4。**多域林带信任时这是头号 FP**(如本靶场):请求者域 TRUSTS 目标域(**用第 5.5 步查实**)→ 判 FP。别只凭"域不同"猜,要查到 TRUSTS 边才定 FP。
 - **只支持 RC4 的老应用/服务账号**(老 MSSQL/Java 等)→ 一贯 RC4 基线(第 3 步 count 高、first_seen 久)→ FP。
 - **漏扫/AD 评估工具**(PingCastle/BloodHound/Nessus 凭据扫描)批量取票 → 像扫描;来源为已知扫描器主机/账号 → FP。
 - **服务账号正常取票 / 用户映射网络驱动器触发单张 4769** → FP。
 
 ## 判定逻辑
 - **true_positive**:普通用户 → 对从未接触过的服务 SPN 请 RC4,且短时扇出 ≥5 去重 SPN、来源非扫描器;或被 roast 账号随后从新主机登录。
-- **false_positive**:**请求者域与目标域之间有 TRUSTS 边**(跨域信任的正常 RC4,第 5.5 步查实,GOAD 头号 FP)/ 一贯 RC4 的老应用单票 / 已知扫描器来源。
+- **false_positive**:**请求者域与目标域之间有 TRUSTS 边**(跨域信任的正常 RC4,第 5.5 步查实,多域林头号 FP)/ 一贯 RC4 的老应用单票 / 已知扫描器来源。
 - **suspicious(升级)**:对高价值 SPN 的 RC4、但低量无扇出、请求者无基线——证据不足,写 missing_evidence(如"无法判定 SPN 是否 high-value/是否蜜罐/是否已授权扫描器")并升级,别硬判。
 
 ## 图盲区(取不到就在 missing_evidence 里说明)

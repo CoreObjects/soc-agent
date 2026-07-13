@@ -37,7 +37,7 @@ def collect(graph, alert, seed=None):
             "MATCH (req:Account {sam:$s})<-[:BY]-(e:Event {event_code:'4769'}) "
             "RETURN e.enc_type AS enc, count(*) AS n ORDER BY n DESC", s=req_sam)
 
-    # 4. ★跨域信任(GOAD 头号 FP 判据):请求者域信任了哪些域
+    # 4. ★跨域信任(多域林头号 FP 判据):请求者域信任了哪些域
     if req_domain:
         rows = graph.run_cypher(
             "MATCH (dreq:Domain {netbios:$nb}) OPTIONAL MATCH (dreq)-[:TRUSTS]-(dt:Domain) "

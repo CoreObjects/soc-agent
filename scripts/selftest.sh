@@ -3,6 +3,7 @@
 # 用法: bash scripts/selftest.sh [每类条数=1] [技术类数上限=10] [--mode recipe|auto] [--write]
 #   只测一类: bash scripts/selftest.sh --tech T1059
 #   只测一条: bash scripts/selftest.sh --uid <alert_uid>
+#   挖真攻击: bash scripts/selftest.sh 8 10 --order recent   (每类取最新 8 条;order=recent|severity|first)
 # 前提: .env 已填(NEO4J_* → server1 图;LLM_API_BASE → 本地 qwen :8000)。
 # 首跑自动建 venv + 装依赖(neo4j/openai)—— 不再需要手动 python3(那样会 ModuleNotFoundError)。
 set -euo pipefail

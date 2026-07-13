@@ -12,7 +12,7 @@ description: 研判可疑进程/命令执行/LOLBin/恶意子进程告警。当�
 
 ## ★先看两样 recipe 已备好的东西(避免看不懂编码就误判/幻觉)
 - **「解码后命令(逐层)」**:recipe 已把 `-EncodedCommand` 连锁解码。**就按解码后的真身判**,不要因为原始是 base64 就一律当恶意。
-- **「供给/自检噪声」**:命中 `ansible_exec_wrapper`(GOAD 用 Ansible 部署)或 `ps_execution_policy_probe`(`__PSScriptPolicyTest_`,系统执行策略自检)= **强证伪 → 直接 false_positive**。这类在本靶场海量出现,是头号 FP。
+- **「供给/自检噪声」**:命中 `ansible_exec_wrapper`(配管工具供给)或 `ps_execution_policy_probe`(`__PSScriptPolicyTest_`,系统执行策略自检)= **强证伪 → 直接 false_positive**。凡用 Ansible 配管的环境海量出现,是头号 FP(如本靶场)。
 
 ## 研判决策树(端点主判法:父子链还原 + 命令行)
 1. **命中已知良性噪声?** → 是则 FP,到此为止;否则继续。
@@ -22,7 +22,7 @@ description: 研判可疑进程/命令执行/LOLBin/恶意子进程告警。当�
 5. **是不是运维/软件的正常派生?** —— 见误报。
 
 ## 误报/良性场景(逐条)
-- **★GOAD/Ansible 供给 与 PowerShell 执行策略自检**(`__PSScriptPolicyTest_*.ps1`、`ConvertFrom-AnsibleJson`/`exec_wrapper`)—— 本靶场头号 FP,凭「供给/自检噪声」标签即可判 FP。
+- **★Ansible 配管供给 与 PowerShell 执行策略自检**(`__PSScriptPolicyTest_*.ps1`、`ConvertFrom-AnsibleJson`/`exec_wrapper`)—— 配管环境头号 FP(如本靶场),凭「供给/自检噪声」标签即可判 FP。
 - **管理运维正常调 shell**(管理员终端派生 powershell/cmd、psexec、schtasks、登录脚本)—— 交互式 + 解码后有业务语义。
 - **合法软件用 LOLBin**(安装器 rundll32 带正常导出参数、regsvr32 注册 DLL、msiexec、GPO)。
 - **RMM/监控/备份**以服务身份派生子进程;**开发/CI**(node/python/msbuild 派生 shell)。

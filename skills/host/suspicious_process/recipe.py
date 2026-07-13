@@ -3,7 +3,7 @@
 要点(上一轮翻车教训):
 - 触发事件不一定是 EID1(SPAWNED)。EID11(建文件)、EID4104(脚本块)没有子进程,
   决定性证据是 command_line / script_block_text —— 直接从 seed 取,别假设有父子链。
-- ★把 -EncodedCommand 连锁解码、把 Ansible/执行策略自检等 GOAD 良性噪声认出来,
+- ★把 -EncodedCommand 连锁解码、把 Ansible 配管/执行策略自检等通用良性噪声认出来,
   再交 LLM(否则模型看不懂编码命令就幻觉/误判)。
 - 不查图里不存在的字段(criticality 等,待补图第二弹)。
 """
