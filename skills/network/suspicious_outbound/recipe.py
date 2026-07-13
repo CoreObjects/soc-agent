@@ -17,8 +17,7 @@ def collect(graph, alert, seed=None):
         "OPTIONAL MATCH (p)-[:RAN_AS]->(acc:Account) "
         "RETURN p.process_guid AS proc_guid, p.image AS image, p.command_line AS command_line, "
         "parent.image AS parent, acc.sam AS account, "
-        "ip.ip AS dst_ip, ip.type AS dst_type, ip.asn AS dst_asn, ip.geo AS dst_geo, "
-        "ip.reputation AS dst_reputation, e.dest_port AS dest_port, h.hostname AS host",
+        "ip.ip AS dst_ip, e.dest_port AS dest_port, h.hostname AS host",
         aid=aid)
     ev["进程与目标+父链"] = base[0] if base else {}
     b = ev["进程与目标+父链"]
@@ -29,9 +28,9 @@ def collect(graph, alert, seed=None):
             "MATCH (p:Process {process_guid:$g})-[c:CONNECTED_TO]->(ip:IPAddress {ip:$ip}) "
             "RETURN c.count AS count, c.first_seen AS first_seen, c.last_seen AS last_seen", g=pg, ip=dst_ip)
     if dst_ip:
-        ev["目标域/信誉"] = graph.run_cypher(
+        ev["目标反解域(信誉是盲区,不查)"] = graph.run_cypher(
             "OPTIONAL MATCH (d:Domain)-[:RESOLVES_TO]->(ip:IPAddress {ip:$ip}) "
-            "RETURN collect(DISTINCT {fqdn: d.fqdn, reputation: d.reputation, first_seen: d.first_seen}) AS domains",
+            "RETURN collect(DISTINCT {fqdn: d.fqdn, first_seen: d.first_seen}) AS domains",
             ip=dst_ip)
 
     ev["_图盲区"] = ("代理之后的真实外部目标(T1090)、协议 vs 端口错配(无 DPI)、字节量/时长、"

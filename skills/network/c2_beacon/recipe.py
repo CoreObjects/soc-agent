@@ -30,13 +30,10 @@ def collect(graph, alert, seed=None):
             "MATCH (p:Process {process_guid:$g})-[q:QUERIED]->(d:Domain {fqdn:$f}) "
             "RETURN q.count AS count, q.first_seen AS first_seen, q.last_seen AS last_seen", g=pg, f=dst_domain)
 
-    if dst_ip or dst_domain:              # 目标信誉/新鲜度/解析扇出
-        ev["目标信誉"] = graph.run_cypher(
-            "OPTIONAL MATCH (ip:IPAddress {ip:$ip}) "
+    if dst_ip or dst_domain:              # 目标新鲜度/解析扇出(reputation/asn 未建模=图盲区,不查)
+        ev["目标新鲜度/解析扇出"] = graph.run_cypher(
             "OPTIONAL MATCH (d:Domain {fqdn:$f}) OPTIONAL MATCH (d)-[:RESOLVES_TO]->(rip:IPAddress) "
-            "RETURN ip.reputation AS ip_reputation, ip.asn AS ip_asn, "
-            "d.reputation AS domain_reputation, d.first_seen AS domain_first_seen, "
-            "count(DISTINCT rip) AS resolve_fanout", ip=dst_ip, f=dst_domain)
+            "RETURN d.first_seen AS domain_first_seen, count(DISTINCT rip) AS resolve_fanout", f=dst_domain)
 
     if pg:                                # 发起进程正常吗
         ev["发起进程"] = graph.run_cypher(

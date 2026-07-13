@@ -17,7 +17,7 @@ def collect(graph, alert, seed=None):
         "RETURN rv.hive AS hive, rv.key_path AS key_path, rv.value_name AS value_name, "
         "e.value_data AS value_data, p.process_guid AS proc_guid, p.image AS writer_image, "
         "p.command_line AS writer_cmdline, parent.image AS parent, "
-        "h.hostname AS host, h.criticality AS host_criticality",
+        "h.hostname AS host",
         aid=aid)
     ev["键与写入值+写入进程"] = base[0] if base else {}
     pg = ev["键与写入值+写入进程"].get("proc_guid")

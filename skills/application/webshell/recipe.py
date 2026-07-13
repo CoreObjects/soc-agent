@@ -30,7 +30,7 @@ def collect(graph, alert, seed=None):
             "MATCH (h:Host {hostname:$h})<-[:ON_HOST]-(:Event)-[:BY]->(w:Process) "
             "WHERE (" + _WEBPROC + ") "
             "MATCH (w)-[:WROTE]->(f:File) WHERE (" + _SCRIPT + ") AND (" + _WEBROOT + ") "
-            "RETURN collect(DISTINCT {path: f.path, sha256: f.sha256}) AS dropped_scripts", h=web_host)
+            "RETURN collect(DISTINCT f.path) AS dropped_scripts", h=web_host)
         # 执行/回连:Web 进程派生 shell / 外连
         ev["主机侧-执行与回连"] = graph.run_cypher(
             "MATCH (h:Host {hostname:$h})<-[:ON_HOST]-(:Event)-[:BY]->(w:Process) "
@@ -38,7 +38,7 @@ def collect(graph, alert, seed=None):
             "OPTIONAL MATCH (w)-[:SPAWNED]->(c:Process) "
             "OPTIONAL MATCH (w)-[:CONNECTED_TO]->(dst:IPAddress) "
             "RETURN collect(DISTINCT c.command_line) AS spawned_cmds, "
-            "collect(DISTINCT {ip: dst.ip, reputation: dst.reputation}) AS outbound", h=web_host)
+            "collect(DISTINCT dst.ip) AS outbound", h=web_host)
 
     ev["_图盲区"] = ("上传请求文件名/落盘路径(WAF 给不出)、请求↔落盘因果强键(现靠同 Host+时间窗)、"
                     "HTTP 响应码、落盘文件哈希、站点物理路径映射 —— 未建模")

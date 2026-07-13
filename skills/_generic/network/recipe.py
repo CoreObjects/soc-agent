@@ -12,7 +12,7 @@ def collect(graph, alert, seed=None):
         "OPTIONAL MATCH (e)-[:ON_HOST]->(h:Host) "
         "RETURN e{.*} AS event, "
         "head(collect(DISTINCT {labels: labels(subj), props: properties(subj)})) AS subject, "
-        "h.hostname AS host, h.criticality AS host_criticality",
+        "h.hostname AS host",
         aid=aid)
     ev["触发事件与主语/主机"] = rows[0] if rows else {}
     ev["宾语与次要参与者"] = graph.run_cypher(
