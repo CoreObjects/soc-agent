@@ -10,7 +10,7 @@ from ..models import DISPOSITION_ACTIONS, RISKS, VERDICTS, Alert, Disposition, I
 from ..skills_runtime import SkillNotFound
 from ..tools import FINALIZE, finalize_spec
 
-__all__ = ["AgentInvestigator", "RecipeInvestigator", "build_result", "infer_layer"]
+__all__ = ["AgentInvestigator", "RecipeInvestigator", "SkillRouter", "build_result", "infer_layer"]
 
 
 def build_result(alert, skill_name, args, agent_name, trace=None, path="B") -> InvestigationResult:
@@ -50,6 +50,52 @@ def infer_layer(alert: Alert):
             if any(t == p or t.startswith(p + ".") or t == p for p in prefixes):
                 return layer
     return None
+
+
+class SkillRouter:
+    """Agent Skills 的 Discovery→Activation,替 qwen 补上(qwen 无原生 skills)。
+
+    把各 skill 的 name+description 给 LLM,LLM **按告警内容推理**选最匹配的 skill。
+    不靠程序 match technique_id(那绑死检测器、换设备就废);读告警内容 → 设备无关、可移植。
+    选出的 skill 交给 recipe/auto 研判。
+    """
+
+    def __init__(self, llm, registry, agent_name="agent"):
+        self.llm = llm
+        self.registry = registry
+        self.agent_name = agent_name
+
+    def route(self, alert):
+        skills = self.registry.specific()
+        if not skills:
+            return self.registry.generic_for_layer(infer_layer(alert))
+        catalog = "\n".join(f"- {s.name}: {s.description or '(无描述)'}" for s in skills)
+        names = [s.name for s in skills]
+        system = ("你是 SOC 告警分派器。下面是可用的研判 skill(名字 + 何时适用)。"
+                  "只根据告警内容,选出**最匹配的一个** skill;若都明显不适用,选 none。\n\n"
+                  "## 可用 skills\n" + catalog)
+        user = "告警:\n" + json.dumps({
+            "rule_id": alert.rule_id, "rule_description": alert.rule_description,
+            "source": alert.source, "sensor": alert.sensor,
+            "severity": alert.severity, "technique_ids": alert.technique_ids,
+        }, ensure_ascii=False, indent=2)
+        spec = [{"type": "function", "function": {
+            "name": "select_skill",
+            "description": "选出最匹配这条告警的研判 skill(都不匹配选 none)",
+            "parameters": {"type": "object", "properties": {
+                "name": {"type": "string", "enum": names + ["none"]},
+                "reason": {"type": "string"}},
+                "required": ["name"]}}}]
+        resp = self.llm.chat(
+            [{"role": "system", "content": system}, {"role": "user", "content": user}],
+            tools=spec, tool_choice="required")
+        name = None
+        for tc in (resp.tool_calls or []):
+            if tc.name == "select_skill":
+                name = (tc.arguments or {}).get("name")
+        if not name or name == "none":
+            return self.registry.generic_for_layer(infer_layer(alert))
+        return self.registry.by_name(name) or self.registry.generic_for_layer(infer_layer(alert))
 
 
 _SCAFFOLD = (
@@ -134,11 +180,8 @@ class AgentInvestigator:
                                    skill=(skill.name if skill else None), trace=trace)
 
     # ---- 主循环 ----
-    def investigate(self, alert: Alert, seed=None) -> InvestigationResult:
-        try:
-            skill = self.registry.select(alert, layer=infer_layer(alert))
-        except SkillNotFound:
-            skill = None
+    def investigate(self, alert: Alert, seed=None, skill=None) -> InvestigationResult:
+        # skill 由 SkillRouter(LLM 按 description)预选后传入,不在此程序 match technique
         messages = [
             {"role": "system", "content": self._system_prompt(skill)},
             {"role": "user", "content": self._user_prompt(alert, seed)},
@@ -198,13 +241,6 @@ class RecipeInvestigator:
         self.registry = registry
         self.agent_name = agent_name
 
-    def has_recipe(self, alert) -> bool:
-        try:
-            s = self.registry.select(alert, layer=infer_layer(alert))
-        except SkillNotFound:
-            return False
-        return s.recipe is not None
-
     def _prompt(self, skill) -> str:
         parts = ["你是资深 SOC 研判分析师,只依据给你的证据判断,不臆造。",
                  "## 图 Schema(理解证据用)\n" + self.schema]
@@ -213,9 +249,8 @@ class RecipeInvestigator:
         parts.append(_RECIPE_SCAFFOLD)
         return "\n\n".join(parts)
 
-    def investigate(self, alert: Alert, seed=None) -> InvestigationResult:
-        skill = self.registry.select(alert, layer=infer_layer(alert))
-        trace = []
+    def investigate(self, alert: Alert, seed=None, skill=None) -> InvestigationResult:
+        trace = []                                                  # skill 由 SkillRouter 预选传入
         evidence = skill.recipe(self.graph, alert, seed) or {}      # ★确定性取证(含跨域信任)
         for name, res in evidence.items():
             trace.append({"tool": "recipe_step", "step": name,

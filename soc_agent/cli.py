@@ -11,7 +11,7 @@ from .config import Config
 from .graph.client import Neo4jGraph
 from .llm.qwen import QwenClient
 from .models import Alert
-from .orchestrator import AgentInvestigator, RecipeInvestigator
+from .orchestrator import AgentInvestigator, RecipeInvestigator, SkillRouter
 from .schema import graph_schema
 from .skills_runtime import SkillRegistry
 from .tools import default_toolbox
@@ -25,14 +25,14 @@ class AlertNotFound(Exception):
     pass
 
 
-def investigate_alert(graph, investigator, alert_uid):
-    """取告警 → seed → 研判 → 写回图。返回 InvestigationResult。"""
+def investigate_alert(graph, investigator, alert_uid, skill=None):
+    """取告警 → seed → 研判(用预选 skill)→ 写回图。返回 InvestigationResult。"""
     node = graph.get_alert(alert_uid)
     if node is None:
         raise AlertNotFound(f"图里没有 alert_uid={alert_uid} 的 :Alert")
     alert = Alert.from_node(node)
     seed = graph.seed(alert)
-    result = investigator.investigate(alert, seed=seed)
+    result = investigator.investigate(alert, seed=seed, skill=skill)
     graph.write_result(alert_uid, result)
     return result
 
@@ -89,26 +89,25 @@ def render_trace(result) -> str:
 
 
 def build(config: Config):
-    """按配置装配真客户端 + 两种研判器(recipe 确定性取证 / auto 自主)。"""
+    """装配真客户端 + LLM skill 路由 + 两种研判器(recipe 确定性 / auto 自主)。"""
     graph = Neo4jGraph(config.neo4j_uri, config.neo4j_user, config.neo4j_password, config.neo4j_database)
     llm = QwenClient(base_url=config.llm_api_base, model=config.llm_model, api_key=config.llm_api_key)
     schema = graph_schema()
     registry = SkillRegistry(config.skills_dir)
+    router = SkillRouter(llm=llm, registry=registry, agent_name=config.llm_model)
     agent_inv = AgentInvestigator(
         llm=llm, toolbox=default_toolbox(graph), schema=schema, registry=registry,
         agent_name=config.llm_model, max_iterations=config.max_iterations)
     recipe_inv = RecipeInvestigator(
         llm=llm, graph=graph, schema=schema, registry=registry, agent_name=config.llm_model)
-    return graph, agent_inv, recipe_inv
+    return graph, router, agent_inv, recipe_inv
 
 
-def choose_investigator(alert, mode, agent_inv, recipe_inv):
-    """mode=auto → 自主;mode=recipe/默认 → 有 recipe 走 recipe,没有退自主。"""
-    if mode == "auto":
-        return agent_inv, "auto"
-    if recipe_inv.has_recipe(alert):
+def choose_investigator(skill, mode, agent_inv, recipe_inv):
+    """选定 skill 后:mode=auto → 自主;否则 skill 有 recipe 走 recipe,没有退自主。"""
+    if mode != "auto" and skill is not None and skill.recipe is not None:
         return recipe_inv, "recipe"
-    return agent_inv, "auto(无 recipe 退)"
+    return agent_inv, ("auto" if mode == "auto" else "auto(无 recipe)")
 
 
 def main(argv=None):
@@ -121,14 +120,15 @@ def main(argv=None):
     args = ap.parse_args(argv)
 
     config = Config.from_env(dotenv_path=args.dotenv)
-    graph, agent_inv, recipe_inv = build(config)
+    graph, router, agent_inv, recipe_inv = build(config)
     try:
         node = graph.get_alert(args.alert_uid)
         if node is None:
             raise AlertNotFound(f"图里没有 alert_uid={args.alert_uid} 的 :Alert")
-        inv, picked = choose_investigator(Alert.from_node(node), args.mode, agent_inv, recipe_inv)
-        print(f"[研判模式] {picked}")
-        result = investigate_alert(graph, inv, args.alert_uid)
+        skill = router.route(Alert.from_node(node))          # ★LLM 按 description 选 skill
+        inv, picked = choose_investigator(skill, args.mode, agent_inv, recipe_inv)
+        print(f"[skill] {skill.name if skill else '(none)'}  [模式] {picked}")
+        result = investigate_alert(graph, inv, args.alert_uid, skill)
     finally:
         graph.close()
     if args.trace:

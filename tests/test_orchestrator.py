@@ -35,10 +35,13 @@ def _alert():
                             "rule_description": "Kerberoasting", "rule_id": "100002"})
 
 
-def _inv(tmp_path, llm, graph, **kw):
+def _run(tmp_path, llm, graph, seed=None, **kw):
+    """建 AgentInvestigator + 用(预选的)kerberoast skill 研判一条告警。"""
     _kerberoast_skill(tmp_path)
-    return AgentInvestigator(llm=llm, toolbox=default_toolbox(graph), schema="SCHEMA-XYZ",
-                             registry=SkillRegistry(tmp_path), agent_name="qwen32b-ft", **kw)
+    reg = SkillRegistry(tmp_path)
+    inv = AgentInvestigator(llm=llm, toolbox=default_toolbox(graph), schema="SCHEMA-XYZ",
+                            registry=reg, agent_name="qwen32b-ft", **kw)
+    return inv.investigate(_alert(), seed=seed or {}, skill=reg.by_name("kerberoast"))
 
 
 def test_slow_path_runs_tools_then_finalizes(tmp_path):
@@ -50,7 +53,7 @@ def test_slow_path_runs_tools_then_finalizes(tmp_path):
             "evidence_refs": ["e1"],
             "dispositions": [{"action": "disable_account", "target": "vagrant", "risk": "high"}]})]),
     ])
-    r = _inv(tmp_path, llm, graph).investigate(_alert(), seed={"triggering_event": {"enc": "0x17"}})
+    r = _run(tmp_path, llm, graph, seed={"triggering_event": {"enc": "0x17"}})
     assert r.path == "B"
     assert r.verdict.verdict == "true_positive"
     assert r.verdict.agent == "qwen32b-ft"
@@ -74,7 +77,7 @@ def test_immediate_finalize_nudged_then_investigates(tmp_path):
         LLMResponse(tool_calls=[ToolCall("c3", "finalize_verdict",
                     {"verdict": "benign", "confidence": 0.4, "rationale": "查完确认良性"})]),
     ])
-    r = _inv(tmp_path, llm, graph).investigate(_alert(), seed={})
+    r = _run(tmp_path, llm, graph)
     assert r.verdict.verdict == "benign"
     assert graph.queries                       # 被逼查了图(不再 0 取证下结论)
 
@@ -83,7 +86,7 @@ def test_stubborn_finalize_accepted_after_nudge_limit(tmp_path):
     fin = LLMResponse(tool_calls=[ToolCall("c", "finalize_verdict",
                       {"verdict": "benign", "confidence": 0.3, "rationale": "就不查"})])
     llm = FakeLLMClient([fin, fin, fin])       # 一直想直接 finalize
-    r = _inv(tmp_path, llm, FakeGraph()).investigate(_alert(), seed={})
+    r = _run(tmp_path, llm, FakeGraph())
     assert r.verdict.verdict == "benign"       # 打回 2 次后第 3 次接受,不无限循环
 
 
@@ -95,7 +98,7 @@ def test_nudges_then_finalizes_when_model_returns_bare_text(tmp_path):
         LLMResponse(tool_calls=[ToolCall("c2", "finalize_verdict",
                     {"verdict": "true_positive", "confidence": 0.8, "rationale": "x"})]),
     ])
-    r = _inv(tmp_path, llm, graph).investigate(_alert(), seed={})
+    r = _run(tmp_path, llm, graph)
     assert r.verdict.verdict == "true_positive"
     # 第二次 chat 的 messages 里应有催它取证/finalize 的提示
     assert any("finalize_verdict" in (m.get("content") or "") for m in llm.calls[1]["messages"])
@@ -103,7 +106,7 @@ def test_nudges_then_finalizes_when_model_returns_bare_text(tmp_path):
 
 def test_exhausts_to_suspicious_when_never_finalizes(tmp_path):
     llm = FakeLLMClient([LLMResponse(content="...")] * 5)
-    r = _inv(tmp_path, llm, FakeGraph(), max_iterations=3).investigate(_alert(), seed={})
+    r = _run(tmp_path, llm, FakeGraph(), max_iterations=3)
     assert r.verdict.verdict == "suspicious"
     assert r.verdict.missing_evidence                   # 说明未结论/证据不足
 
@@ -115,7 +118,7 @@ def test_freeform_disposition_action_normalized_to_escalate(tmp_path):
             "verdict": "suspicious", "confidence": 0.5, "rationale": "x",
             "dispositions": [{"action": "推动淘汰RC4等弱加密", "target": "NORTH", "risk": "high"}]})]),
     ])
-    r = _inv(tmp_path, llm, FakeGraph()).investigate(_alert(), seed={})
+    r = _run(tmp_path, llm, FakeGraph())
     assert r.dispositions[0].action == "escalate"      # 词表外的自由发挥 → 归一为升级人工
 
 
@@ -135,9 +138,9 @@ def test_recipe_investigator_runs_recipe_then_llm_only_judges(tmp_path):
     llm = FakeLLMClient([LLMResponse(tool_calls=[ToolCall("c1", "finalize_verdict",
           {"verdict": "false_positive", "confidence": 0.9, "rationale": "跨域信任正常 RC4"})])])
     inv = RecipeInvestigator(llm=llm, graph=FakeGraph(), schema="SCHEMA", registry=reg, agent_name="qwen32b-ft")
-    a = _alert()
-    assert inv.has_recipe(a) is True
-    r = inv.investigate(a, seed={})
+    skill = reg.by_name("kerberoast")
+    assert skill.recipe is not None
+    r = inv.investigate(_alert(), seed={}, skill=skill)
     assert r.verdict.verdict == "false_positive"
     assert r.skill == "kerberoast"
     assert any(t.get("tool") == "recipe_step" for t in r.trace)       # recipe 步进了 trace
@@ -151,14 +154,36 @@ def test_recipe_investigator_fallback_when_llm_gives_no_finalize(tmp_path):
     reg = SkillRegistry(tmp_path)
     llm = FakeLLMClient([LLMResponse(content="我随便说说")])            # 没调 finalize
     inv = RecipeInvestigator(llm=llm, graph=FakeGraph(), schema="S", registry=reg, agent_name="q")
-    assert inv.investigate(_alert(), seed={}).verdict.verdict == "suspicious"
+    r = inv.investigate(_alert(), seed={}, skill=reg.by_name("kerberoast"))
+    assert r.verdict.verdict == "suspicious"
 
 
-def test_recipe_investigator_has_recipe_false_without_recipe(tmp_path):
-    _kerberoast_skill(tmp_path)                                       # 只有 SKILL.md,无 recipe.py
-    inv = RecipeInvestigator(llm=FakeLLMClient([]), graph=FakeGraph(),
-                             schema="S", registry=SkillRegistry(tmp_path))
-    assert inv.has_recipe(_alert()) is False
+def test_skill_router_picks_skill_by_description(tmp_path):
+    # LLM 按 description 选 skill(Agent Skills 的 Discovery→Activation)
+    _kerberoast_skill(tmp_path)
+    reg = SkillRegistry(tmp_path)
+    llm = FakeLLMClient([LLMResponse(tool_calls=[ToolCall("c1", "select_skill", {"name": "kerberoast"})])])
+    from soc_agent.orchestrator import SkillRouter
+    picked = SkillRouter(llm=llm, registry=reg).route(_alert())
+    assert picked is not None and picked.name == "kerberoast"
+    # 候选目录(name+description)喂进了提示,且只给了 select_skill 工具 + required
+    assert "kerberoast" in llm.calls[0]["messages"][0]["content"]
+    assert llm.calls[0]["tools"][0]["function"]["name"] == "select_skill"
+    assert llm.calls[0]["tool_choice"] == "required"
+
+
+def test_skill_router_none_falls_back_to_generic_layer(tmp_path):
+    _kerberoast_skill(tmp_path)                                       # identity 具体 skill
+    # 一个 identity 层通用兜底
+    g = tmp_path / "_generic" / "identity"
+    g.mkdir(parents=True, exist_ok=True)
+    (g / "SKILL.md").write_text("---\nname: generic_identity\nlayer: identity\ntechnique_ids: []\n---\n通用身份\n",
+                                encoding="utf-8")
+    reg = SkillRegistry(tmp_path)
+    llm = FakeLLMClient([LLMResponse(tool_calls=[ToolCall("c1", "select_skill", {"name": "none"})])])
+    from soc_agent.orchestrator import SkillRouter
+    picked = SkillRouter(llm=llm, registry=reg).route(_alert())      # T1558.003 → identity 层
+    assert picked is not None and picked.name == "generic_identity"
 
 
 def test_invalid_verdict_from_llm_normalized_to_suspicious(tmp_path):
@@ -167,5 +192,5 @@ def test_invalid_verdict_from_llm_normalized_to_suspicious(tmp_path):
         LLMResponse(tool_calls=[ToolCall("c1", "finalize_verdict",
                     {"verdict": "PWNED", "confidence": 1.0, "rationale": "x"})]),
     ])
-    r = _inv(tmp_path, llm, FakeGraph()).investigate(_alert(), seed={})
+    r = _run(tmp_path, llm, FakeGraph())
     assert r.verdict.verdict == "suspicious"            # 非法 verdict 归一,不崩

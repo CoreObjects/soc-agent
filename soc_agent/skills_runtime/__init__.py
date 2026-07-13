@@ -107,6 +107,24 @@ class SkillRegistry:
     def all(self) -> list:
         return list(self._skills)
 
+    def specific(self) -> list:
+        """非兜底 skill(供 LLM 路由做 Discovery 的候选集)。"""
+        return [s for s in self._skills if not s.is_generic]
+
+    def by_name(self, name: str) -> Optional[Skill]:
+        for s in self._skills:
+            if s.name == name:
+                return s
+        return None
+
+    def generic_for_layer(self, layer: Optional[str]) -> Optional[Skill]:
+        if not layer:
+            return None
+        for s in self._skills:
+            if s.is_generic and s.layer == layer:
+                return s
+        return None
+
     def select(self, alert, layer: Optional[str] = None) -> Skill:
         """① technique 命中具体 skill;② 否则该层通用兜底;都没有 → SkillNotFound。"""
         tids = set(alert.technique_ids or [])
