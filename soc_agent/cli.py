@@ -63,13 +63,13 @@ def render_result(result) -> str:
 
 
 def render_trace(result) -> str:
-    """研判留痕:每步工具调用(只打查询 + 行数/错误,不打行数据)。"""
-    lines = [f"# 研判留痕({len(result.trace or [])} 步工具调用)"]
+    """研判留痕:每步实况(run_cypher 查询/行数、未调工具的文本、0取证打回)。不打行数据。"""
+    lines = [f"# 研判留痕({len(result.trace or [])} 步)"]
     for i, step in enumerate(result.trace or [], 1):
         tool = step.get("tool")
-        args = step.get("args") or {}
-        res = step.get("result") or {}
         if tool == "run_cypher":
+            args = step.get("args") or {}
+            res = step.get("result") or {}
             q = " ".join((args.get("query") or "").split())
             if isinstance(res, dict) and "error" in res:
                 lines.append(f"[{i}] run_cypher ✗ {res['error']}")
@@ -77,8 +77,12 @@ def render_trace(result) -> str:
                 rows = res.get("rows") if isinstance(res, dict) else None
                 lines.append(f"[{i}] run_cypher → {len(rows or [])} 行")
             lines.append(f"     q: {q[:240]}")
+        elif tool == "no_tool_call":
+            lines.append(f"[{i}] ⚠ 未调工具,只吐文本: {(step.get('content') or '')[:240]}")
+        elif tool == "finalize_too_early":
+            lines.append(f"[{i}] ⚠ 0取证就想 finalize,打回(第{step.get('nudge')}次)")
         else:
-            lines.append(f"[{i}] {tool}: {args}")
+            lines.append(f"[{i}] {tool}: {step.get('args')}")
     return "\n".join(lines)
 
 

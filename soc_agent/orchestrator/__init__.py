@@ -148,18 +148,20 @@ class AgentInvestigator:
         queries_done = 0
         finalize_nudges = 0
         for _ in range(self.max_iterations):
-            resp = self.llm.chat(messages, tools=specs)
+            resp = self.llm.chat(messages, tools=specs, tool_choice="required")  # 逼它每轮必须调工具,别光说话
             if not resp.tool_calls:
-                # 只给了文本没调工具 → 催它先取证再 finalize_verdict
+                # tool_choice=required 下本不该走到这;真发生 = 模型/vLLM 没吐出可解析的工具调用
+                trace.append({"tool": "no_tool_call", "content": (resp.content or "")[:400]})
                 messages.append({"role": "assistant", "content": resp.content or ""})
                 messages.append({"role": "user",
-                                 "content": "请用 run_cypher 按方法论查图取证后,再用 finalize_verdict 给结论。"})
+                                 "content": "你必须调用工具:先用 run_cypher 按方法论查图取证,再用 finalize_verdict 给结论。"})
                 continue
             messages.append(self._assistant_msg(resp))
             for tc in resp.tool_calls:
                 if self.toolbox.is_terminal(tc.name):        # finalize
                     if queries_done < self.min_queries and finalize_nudges < self._MAX_NUDGES:
                         finalize_nudges += 1                 # ★骨架保底:0 取证不准下结论,打回去查图
+                        trace.append({"tool": "finalize_too_early", "nudge": finalize_nudges})
                         messages.append(self._tool_msg(tc.id, {
                             "error": "还没查图取证就下结论,不允许。请先用 run_cypher 按上面方法论取证"
                                      "(先证伪 → 看权限 privileged/组成员 → 看基线扇出 → 看是否跨域),再 finalize。"}))

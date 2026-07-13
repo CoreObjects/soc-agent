@@ -30,7 +30,8 @@ class LLMResponse:
 
 
 class LLMClient(Protocol):
-    def chat(self, messages: list, tools: Optional[list] = None) -> LLMResponse:
+    def chat(self, messages: list, tools: Optional[list] = None,
+             tool_choice=None) -> LLMResponse:
         ...
 
 
@@ -42,8 +43,9 @@ class FakeLLMClient:
         self._i = 0
         self.calls: list = []
 
-    def chat(self, messages: list, tools: Optional[list] = None) -> LLMResponse:
-        self.calls.append({"messages": messages, "tools": tools})
+    def chat(self, messages: list, tools: Optional[list] = None,
+             tool_choice=None) -> LLMResponse:
+        self.calls.append({"messages": messages, "tools": tools, "tool_choice": tool_choice})
         resp = self._scripted[self._i]      # 脚本耗尽 → IndexError(测试可断言)
         self._i += 1
         return resp

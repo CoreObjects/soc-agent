@@ -43,11 +43,10 @@ class QwenClient:
         self.model = model
         self.temperature = temperature
 
-    def chat(self, messages, tools=None) -> LLMResponse:
-        resp = self._client.chat.completions.create(
-            model=self.model,
-            messages=messages,
-            tools=tools or None,
-            temperature=self.temperature,
-        )
+    def chat(self, messages, tools=None, tool_choice=None) -> LLMResponse:
+        kwargs = dict(model=self.model, messages=messages, tools=tools or None,
+                      temperature=self.temperature)
+        if tool_choice is not None and tools:
+            kwargs["tool_choice"] = tool_choice    # "required"=必须调工具(逼它别光说话)
+        resp = self._client.chat.completions.create(**kwargs)
         return parse_openai_response(resp.choices[0].message)
