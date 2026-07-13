@@ -37,12 +37,25 @@ def collect(graph, alert, seed=None):
             "MATCH (req:Account {sam:$s})<-[:BY]-(e:Event {event_code:'4769'}) "
             "RETURN e.enc_type AS enc, count(*) AS n ORDER BY n DESC", s=req_sam)
 
-    # 4. ★跨域信任(多域林头号 FP 判据):请求者域信任了哪些域
+    # 4. ★"跨域信任 FP"豁免判定(关键:别把真 roast 当跨域正常票)
+    #    跨域信任的正常 RC4 主要豁免【机器账号】跨域引荐票(如 DC$ 请父域票据);
+    #    【普通用户】对服务账号 SPN 请 RC4(尤其多 SPN 扇出)= Kerberoast,跨域信任不豁免。
+    tgt_domain = b.get("tgt_domain")
+    req_is_machine = bool(req_sam and req_sam.endswith("$"))
+    same_domain = bool(req_domain and tgt_domain
+                       and req_domain.strip().upper() == tgt_domain.strip().upper())
+    fp = {"req_is_machine": req_is_machine, "same_domain": same_domain,
+          "req_domain": req_domain, "tgt_domain": tgt_domain,
+          "_note": "NetBIOS 名(如 NORTH)与 FQDN(如 north.sevenkingdoms.local)是同一个域,勿当两个域。"
+                   "跨域信任 FP 豁免机器账号引荐票;不豁免普通用户对服务账号的扇出取票。"}
     if req_domain:
         rows = graph.run_cypher(
             "MATCH (dreq:Domain {netbios:$nb}) OPTIONAL MATCH (dreq)-[:TRUSTS]-(dt:Domain) "
             "RETURN dreq.fqdn AS req_domain_fqdn, collect(DISTINCT dt.fqdn) AS trusts", nb=req_domain)
-        ev["跨域信任"] = rows[0] if rows else {"req_domain_fqdn": None, "trusts": []}
+        r = rows[0] if rows else {}
+        fp["req_domain_fqdn"] = r.get("req_domain_fqdn")
+        fp["req_domain_trusts"] = r.get("trusts") or []
+    ev["跨域信任FP豁免判定"] = fp
 
     # 5. SPN 扇出(短时去重目标数;扫描式取票信号)
     if req_sam:
