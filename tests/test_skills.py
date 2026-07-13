@@ -64,6 +64,37 @@ def test_skill_recipe_none_when_absent(tmp_path):
     assert load_skill(p).recipe is None
 
 
+def test_real_skills_dir_all_valid():
+    # 守卫:仓库 skills/ 里每个 skill 都能加载(frontmatter 正常、有 description/layer、recipe 可调用)
+    from pathlib import Path
+    reg = SkillRegistry(Path(__file__).resolve().parents[1] / "skills")
+    skills = reg.all()
+    assert skills, "skills/ 应有 skill"
+    for s in skills:
+        assert s.name and s.description, f"{s.path} 缺 name/description"
+        assert s.layer, f"{s.name} 缺 layer"
+        if (s.path / "recipe.py").exists():
+            assert callable(s.recipe), f"{s.name} 的 recipe.py 没有 collect"
+    assert {"kerberoast", "adcs", "dcsync", "lateral_movement"} <= {s.name for s in skills}   # 身份层四类齐
+
+
+def test_real_recipes_run_on_empty_graph():
+    # 守卫:每个 recipe 空图跑不崩、返回证据 dict(抓 recipe 语法/逻辑错)
+    from pathlib import Path
+
+    from soc_agent.models import Alert
+
+    class _G:
+        def run_cypher(self, q, **p):
+            return []
+
+    reg = SkillRegistry(Path(__file__).resolve().parents[1] / "skills")
+    a = Alert.from_node({"alert_uid": "x", "technique_ids": ["T1"]})
+    for s in reg.all():
+        if s.recipe:
+            assert isinstance(s.recipe(_G(), a, {}), dict), f"{s.name} recipe 未返回 dict"
+
+
 def test_registry_loads_all_skills(tmp_path):
     _write_skill(tmp_path, "identity/kerberoast", "name: kerberoast\nlayer: identity\ntechnique_ids: [T1558.003]")
     _write_skill(tmp_path, "host/lsass_dump", "name: lsass_dump\nlayer: host\ntechnique_ids: [T1003.001]")
