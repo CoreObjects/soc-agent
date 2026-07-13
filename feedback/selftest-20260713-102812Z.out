@@ -1,0 +1,1246 @@
+=== selftest 2026-07-13 10:28Z ===
+# 批量自测  范围=tech=T1003.001  取样=recent  待研判 12 条  模式=recipe  写回图=否(自测不落库)  (IP 已打码)
+
+待研判清单:
+  T1003.001          该类共   1060  uid=10143d6cb01dfa898d865ce0b5056f2654d6a87758e389a70606b139c279a7ed
+  T1003.001          该类共   1060  uid=bf9c070f26c3f7b84355aae006752e57269986996ac49891b549a9731ebebb18
+  T1003.001          该类共   1060  uid=8e43a1090dc2cde1fbe79b5c91ea2691e2628dde57015dd17314787ccdeb5d01
+  T1003.001          该类共   1060  uid=2733b992bba6db0fd913a27b12c9e6f10c5b31f3c6e0aa9274492f59eae0c9c2
+  T1003.001          该类共   1060  uid=7e880d31c0d76b028eb5de8fa5f0123d15628b7494159fc6fd63162a9a6c8d0a
+  T1003.001          该类共   1060  uid=9eea075812d6ec26d9abaf6efcd9d66a537c5ed831f73a7f39fa7b2d7955d8f9
+  T1003.001          该类共   1060  uid=60d498e89517bb2581f872eaecb38d31d9c19da4cd8773af85c5cbc5ae80f56b
+  T1003.001          该类共   1060  uid=9ff9f6e887463ccec10cd3bb8f796342084979056f95309cd27083cd635507c9
+  T1003.001          该类共   1060  uid=27fba084b019ae3bb620762db35bee201897caa7018d7f5c80214e0d5c7cacf2
+  T1003.001          该类共   1060  uid=86957e10659e1e6d5e78c27f47ed1c7bf215a54b02b9f70c93681430929ed8ff
+  T1003.001          该类共   1060  uid=a7ea2de21a7784bf461727c17cabd7ff5d63cccb0c9b2ea91aab79b5a3719d35
+  T1003.001          该类共   1060  uid=515334ab154ea838ce6eff57b70245d168d51c6f1e0d460557336d6a75556ed5
+
+============================================================================
+## [1/12] technique=T1003.001   该类共 1060 条   uid=10143d6cb01dfa898d865ce0b5056f2654d6a87758e389a70606b139c279a7ed
+============================================================================
+### ① 原始告警节点(:Alert)
+{
+  "severity": 12,
+  "first_seen": "2026-07-13T10:16:01.807412700Z",
+  "last_seen": "2026-07-13T10:16:01.807412700Z",
+  "arrival_ms": 1783937765644,
+  "technique_ids": [
+    "T1003.001"
+  ],
+  "source": "wazuh",
+  "rule_id": "100802",
+  "stream": "soc-hids-alert-*",
+  "alert_uid": "10143d6cb01dfa898d865ce0b5056f2654d6a87758e389a70606b139c279a7ed",
+  "rule_description": "Credential dumping via LSASS access by C:\\\\Program Files (x86)\\\\ossec-agent\\\\wazuh-agent.exe (granted 0x1410)",
+  "sensor": "wazuh-hids",
+  "raw_ref": "soc-hids-alert-2026.07.13:_xX6Wp8B3gPM8FAeFPb2",
+  "time": "2026-07-13T10:16:02.484+0000"
+}
+
+### ② 触发上下文(seed:触发事件 / 主语 / 宾语 / 次要实体)
+{
+  "event": {
+    "ingest_time": 1783938004557,
+    "stream": "winlogbeat-*",
+    "granted_access": "0x1410",
+    "event_code": "10",
+    "arrival_ms": 1783937762975,
+    "raw_ref": "soc-hids-alert-2026.07.13:_xX6Wp8B3gPM8FAeFPb2",
+    "sensor": "Microsoft-Windows-Sysmon/Operational",
+    "source": "winlogbeat",
+    "call_trace": "C:\\\\Windows\\\\SYSTEM32\\\\ntdll.dll+9feb4|C:\\\\Windows\\\\System32\\\\wow64.dll+3cf4|C:\\\\Windows\\\\System32\\\\wow64.dll+7783|C:\\\\Windows\\\\System32\\\\wow64cpu.dll+1783|C:\\\\Windows\\\\System32\\\\wow64cpu.dll+1199|C:\\\\Windows\\\\System32\\\\wow64.dll+cfda|C:\\\\Windows\\\\System32\\\\wow64.dll+cea0|C:\\\\Windows\\\\SYSTEM32\\\\ntdll.dll+7863d|C:\\\\Windows\\\\SYSTEM32\\\\ntdll.dll+78223|C:\\\\Windows\\\\SYSTEM32\\\\ntdll.dll+781ce|C:\\\\Windows\\\\SYSTEM32\\\\ntdll.dll+717ac(wow64)|C:\\\\Windows\\\\System32\\\\KERNELBASE.dll+111778(wow64)|C:\\\\Program Files (x86)\\\\ossec-agent\\\\sysinfo.dll+1b7f6(wow64)|C:\\\\Program Files (x86)\\\\ossec-agent\\\\sysinfo.dll+1c401(wow64)|C:\\\\Program Files (x86)\\\\ossec-agent\\\\sysinfo.dll+159b5(wow64)|C:\\\\Program Files (x86)\\\\ossec-agent\\\\syscollector.dll+150a8(wow64)|C:\\\\Program Files (x86)\\\\ossec-agent\\\\syscollector.dll+1537d(wow64)|C:\\\\Program Files (x86)\\\\ossec-agent\\\\syscollector.dll+154de(wow64)",
+    "event_time": "2026-07-13T10:16:01.807412700Z",
+    "event_uid": "21d7bb41fb8140d5f2207cb08905ac8d196b339b74e189f1e18833ba077677fb"
+  },
+  "subject": {
+    "_labels": [
+      "Process"
+    ],
+    "image": "C:\\\\Program Files (x86)\\\\ossec-agent\\\\wazuh-agent.exe",
+    "first_seen": "2026-07-06T09:46:12.276Z",
+    "process_guid": "{0d573dc4-7964-6a4b-d053-010000000e00}",
+    "last_seen": "2026-07-13T10:16:01.807Z",
+    "hashes": "MD5=A7CEA8DE3FC30334BFD64132B18D21E1,SHA256=A0D539A150087B2406DB7B727DD91E4F647DF6B85A2C9FCC76B0F3645D1DE961,IMPHASH=F2E7F0D79906859422914E1C8EFC36C6",
+    "pid": "3156",
+    "command_line": "\"C:\\Program Files (x86)\\ossec-agent\\wazuh-agent.exe\""
+  },
+  "related": [
+    {
+      "node": {
+        "_labels": [
+          "Process"
+        ],
+        "image": "C:\\\\Windows\\\\system32\\\\lsass.exe",
+        "first_seen": "2026-07-02T02:32:10.328Z",
+        "process_guid": "{0d573dc4-3e79-6a43-0c00-000000000e00}",
+        "last_seen": "2026-07-13T10:24:48.177Z"
+      },
+      "rel": "ACCESSED"
+    },
+    {
+      "node": {
+        "_labels": [
+          "Host"
+        ],
+        "hostname": "winterfell.north.sevenkingdoms.local",
+        "role": "domain_controller",
+        "first_seen": "2026-07-02T02:32:07.265Z",
+        "has_adcs": false,
+        "last_seen": "2026-07-13T10:24:50.783Z",
+        "domain": "north.sevenkingdoms.local",
+        "criticality": "critical",
+        "is_dc": true
+      },
+      "rel": "ON_HOST"
+    }
+  ]
+}
+
+### ③ 研判   [skill] lsass_dump   [模式] recipe
+# 研判留痕(7 步)
+[1] recipe取证「源进程与访问掩码」→ 1 行
+[2] recipe取证「源进程是否已知安全代理」→ 1 行
+[3] recipe取证「call_trace 指纹」→ 1 行
+[4] recipe取证「父进程链」→ 1 行
+[5] recipe取证「运行账号」→ 1 行
+[6] recipe取证「读后行为」→ 1 行
+[7] recipe取证「_图盲区」→ 1 行
+
+# 研判结果  alert=10143d6cb01dfa898d865ce0b5056f2654d6a87758e389a70606b139c279a7ed  path=B  skill=lsass_dump
+verdict   : false_positive  (confidence=0.8)
+summary   : Wazuh代理正常访问LSASS内存进行遥测
+rationale : 1.源进程是已知安全代理Wazuh(OSSEC HIDS)的正常运行实例
+2.call_trace显示访问来自syscollector.dll模块
+3.父进程链显示由services.exe正常启动
+4.访问掩码0x1410(读取/写入权限)与合法内存转储行为一致
+5.未观察到后续恶意行为链(外连/横向移动等)
+6.符合Winterfell主机(域控制器)的安全代理部署特征
+evidence  : ['Event(告警ID:10143d6cb01dfa898d865ce0b5056f2654d6a87758e389a70606b139c279a7ed)']
+agent     : qwen32b-ft
+处置(建议): none -> C:\\Program Files (x86)\\ossec-agent\\wazuh-agent.exe  risk=low  status=proposed
+
+============================================================================
+## [2/12] technique=T1003.001   该类共 1060 条   uid=bf9c070f26c3f7b84355aae006752e57269986996ac49891b549a9731ebebb18
+============================================================================
+### ① 原始告警节点(:Alert)
+{
+  "severity": 12,
+  "first_seen": "2026-07-13T10:15:56.609731100Z",
+  "last_seen": "2026-07-13T10:15:56.609731100Z",
+  "arrival_ms": 1783937765643,
+  "technique_ids": [
+    "T1003.001"
+  ],
+  "source": "wazuh",
+  "rule_id": "100802",
+  "stream": "soc-hids-alert-*",
+  "alert_uid": "bf9c070f26c3f7b84355aae006752e57269986996ac49891b549a9731ebebb18",
+  "rule_description": "Credential dumping via LSASS access by C:\\\\Program Files (x86)\\\\ossec-agent\\\\wazuh-agent.exe (granted 0x1410)",
+  "sensor": "wazuh-hids",
+  "raw_ref": "soc-hids-alert-2026.07.13:_RX6Wp8B3gPM8FAeFPb1",
+  "time": "2026-07-13T10:15:57.473+0000"
+}
+
+### ② 触发上下文(seed:触发事件 / 主语 / 宾语 / 次要实体)
+{
+  "event": {
+    "ingest_time": 1783938004540,
+    "stream": "winlogbeat-*",
+    "granted_access": "0x1410",
+    "event_code": "10",
+    "arrival_ms": 1783937758330,
+    "raw_ref": "soc-hids-alert-2026.07.13:_RX6Wp8B3gPM8FAeFPb1",
+    "sensor": "Microsoft-Windows-Sysmon/Operational",
+    "source": "winlogbeat",
+    "call_trace": "C:\\\\Windows\\\\SYSTEM32\\\\ntdll.dll+9feb4|C:\\\\Windows\\\\System32\\\\wow64.dll+3cf4|C:\\\\Windows\\\\System32\\\\wow64.dll+7783|C:\\\\Windows\\\\System32\\\\wow64cpu.dll+1783|C:\\\\Windows\\\\System32\\\\wow64cpu.dll+1199|C:\\\\Windows\\\\System32\\\\wow64.dll+cfda|C:\\\\Windows\\\\System32\\\\wow64.dll+cea0|C:\\\\Windows\\\\SYSTEM32\\\\ntdll.dll+7863d|C:\\\\Windows\\\\SYSTEM32\\\\ntdll.dll+78223|C:\\\\Windows\\\\SYSTEM32\\\\ntdll.dll+781ce|C:\\\\Windows\\\\SYSTEM32\\\\ntdll.dll+717ac(wow64)|C:\\\\Windows\\\\System32\\\\KERNELBASE.dll+111778(wow64)|C:\\\\Program Files (x86)\\\\ossec-agent\\\\sysinfo.dll+1b7f6(wow64)|C:\\\\Program Files (x86)\\\\ossec-agent\\\\sysinfo.dll+1c401(wow64)|C:\\\\Program Files (x86)\\\\ossec-agent\\\\sysinfo.dll+159b5(wow64)|C:\\\\Program Files (x86)\\\\ossec-agent\\\\syscollector.dll+150a8(wow64)|C:\\\\Program Files (x86)\\\\ossec-agent\\\\syscollector.dll+1537d(wow64)|C:\\\\Program Files (x86)\\\\ossec-agent\\\\syscollector.dll+154de(wow64)",
+    "event_time": "2026-07-13T10:15:56.609731100Z",
+    "event_uid": "2ea0d8762585f6c78182984fa75c0907a4b308e9e6e4d0cae8d75276928cfa92"
+  },
+  "subject": {
+    "_labels": [
+      "Process"
+    ],
+    "image": "C:\\\\Program Files (x86)\\\\ossec-agent\\\\wazuh-agent.exe",
+    "first_seen": "2026-07-06T09:46:14.726Z",
+    "process_guid": "{5d3417cb-7966-6a4b-d907-000000000f00}",
+    "last_seen": "2026-07-13T10:15:56.609Z",
+    "hashes": "MD5=A7CEA8DE3FC30334BFD64132B18D21E1,SHA256=A0D539A150087B2406DB7B727DD91E4F647DF6B85A2C9FCC76B0F3645D1DE961,IMPHASH=F2E7F0D79906859422914E1C8EFC36C6",
+    "pid": "3824",
+    "command_line": "\"C:\\Program Files (x86)\\ossec-agent\\wazuh-agent.exe\""
+  },
+  "related": [
+    {
+      "node": {
+        "_labels": [
+          "Host"
+        ],
+        "hostname": "kingslanding.sevenkingdoms.local",
+        "role": "domain_controller",
+        "first_seen": "2026-07-02T02:32:09.289Z",
+        "has_adcs": true,
+        "last_seen": "2026-07-13T10:24:49.057Z",
+        "domain": "sevenkingdoms.local",
+        "criticality": "critical",
+        "is_dc": true
+      },
+      "rel": "ON_HOST"
+    },
+    {
+      "node": {
+        "_labels": [
+          "Process"
+        ],
+        "image": "C:\\\\Windows\\\\system32\\\\lsass.exe",
+        "first_seen": "2026-07-02T02:32:10.673Z",
+        "process_guid": "{5d3417cb-3e7a-6a43-0c00-000000000f00}",
+        "last_seen": "2026-07-13T10:24:36.956Z"
+      },
+      "rel": "ACCESSED"
+    }
+  ]
+}
+
+### ③ 研判   [skill] lsass_dump   [模式] recipe
+# 研判留痕(8 步)
+[1] recipe取证「源进程与访问掩码」→ 1 行
+[2] recipe取证「源进程是否已知安全代理」→ 1 行
+[3] recipe取证「call_trace 指纹」→ 1 行
+[4] recipe取证「父进程链」→ 1 行
+[5] recipe取证「运行账号」→ 1 行
+[6] recipe取证「读后行为」→ 1 行
+[7] recipe取证「_图盲区」→ 1 行
+[8] 🛡 处置护栏 blocked: monitor -> kingslanding.sevenkingdoms.local  因:目标是受保护主机(kingslanding.sevenkingdoms.local)——DC/网关/mgmt 不动
+
+# 研判结果  alert=bf9c070f26c3f7b84355aae006752e57269986996ac49891b549a9731ebebb18  path=B  skill=lsass_dump
+verdict   : false_positive  (confidence=0.8)
+summary   : Wazuh代理读取LSASS内存做遥测/完整性检查的良性行为
+rationale : 1.源进程是已知安全代理(Wazuh/OSSEC HIDS)且call_trace不含转储库指纹
+2.访问掩码0x1410对应正常内存读取操作
+3.父进程链显示由系统服务进程启动
+4.运行账号为SYSTEM权限
+5.读后无恶意行为链(外连/横向/ dump落地)
+evidence  : ['alert_uid:bf9c070f26c3f7b84355aae006752e57269986996ac49891b549a9731ebebb18']
+agent     : qwen32b-ft
+处置(建议): escalate -> kingslanding.sevenkingdoms.local  risk=low  status=proposed
+
+============================================================================
+## [3/12] technique=T1003.001   该类共 1060 条   uid=8e43a1090dc2cde1fbe79b5c91ea2691e2628dde57015dd17314787ccdeb5d01
+============================================================================
+### ① 原始告警节点(:Alert)
+{
+  "severity": 12,
+  "first_seen": "2026-07-13T10:13:09.050782600Z",
+  "last_seen": "2026-07-13T10:13:09.050782600Z",
+  "arrival_ms": 1783937589558,
+  "technique_ids": [
+    "T1003.001"
+  ],
+  "source": "wazuh",
+  "rule_id": "100802",
+  "stream": "soc-hids-alert-*",
+  "alert_uid": "8e43a1090dc2cde1fbe79b5c91ea2691e2628dde57015dd17314787ccdeb5d01",
+  "rule_description": "Credential dumping via LSASS access by C:\\\\Program Files (x86)\\\\ossec-agent\\\\wazuh-agent.exe (granted 0x1410)",
+  "sensor": "wazuh-hids",
+  "raw_ref": "soc-hids-alert-2026.07.13:UxX3Wp8B3gPM8FAeZfQg",
+  "time": "2026-07-13T10:13:09.282+0000"
+}
+
+### ② 触发上下文(seed:触发事件 / 主语 / 宾语 / 次要实体)
+{
+  "event": {
+    "ingest_time": 1783937706120,
+    "stream": "winlogbeat-*",
+    "granted_access": "0x1410",
+    "event_code": "10",
+    "arrival_ms": 1783937590281,
+    "raw_ref": "soc-hids-alert-2026.07.13:UxX3Wp8B3gPM8FAeZfQg",
+    "sensor": "Microsoft-Windows-Sysmon/Operational",
+    "source": "winlogbeat",
+    "call_trace": "C:\\\\Windows\\\\SYSTEM32\\\\ntdll.dll+a6564|C:\\\\Windows\\\\System32\\\\wow64.dll+12504|C:\\\\Windows\\\\System32\\\\wow64.dll+6ea5|C:\\\\Windows\\\\System32\\\\wow64cpu.dll+1cf7|C:\\\\Windows\\\\System32\\\\wow64.dll+1bfa1|C:\\\\Windows\\\\System32\\\\wow64.dll+cbb0|C:\\\\Windows\\\\SYSTEM32\\\\ntdll.dll+7a0cd|C:\\\\Windows\\\\SYSTEM32\\\\ntdll.dll+79f6e|C:\\\\Windows\\\\SYSTEM32\\\\ntdll.dll+6e7dc(wow64)|C:\\\\Windows\\\\System32\\\\KERNELBASE.dll+c8fc8(wow64)|C:\\\\Program Files (x86)\\\\ossec-agent\\\\sysinfo.dll+1b7f6(wow64)|C:\\\\Program Files (x86)\\\\ossec-agent\\\\sysinfo.dll+1c401(wow64)|C:\\\\Program Files (x86)\\\\ossec-agent\\\\sysinfo.dll+159b5(wow64)|C:\\\\Program Files (x86)\\\\ossec-agent\\\\syscollector.dll+150a8(wow64)|C:\\\\Program Files (x86)\\\\ossec-agent\\\\syscollector.dll+1537d(wow64)|C:\\\\Program Files (x86)\\\\ossec-agent\\\\syscollector.dll+154de(wow64)",
+    "event_time": "2026-07-13T10:13:09.050782600Z",
+    "event_uid": "5f883e391ca989b22cb544772c6689585fda9af1e9eb11d703820326df5a3c30"
+  },
+  "subject": {
+    "_labels": [
+      "Process"
+    ],
+    "image": "C:\\\\Program Files (x86)\\\\ossec-agent\\\\wazuh-agent.exe",
+    "first_seen": "2026-07-06T09:46:09.753Z",
+    "process_guid": "{75647B18-7961-6A4B-6A05-000000000E00}",
+    "last_seen": "2026-07-13T10:13:09.050Z",
+    "hashes": "MD5=A7CEA8DE3FC30334BFD64132B18D21E1,SHA256=A0D539A150087B2406DB7B727DD91E4F647DF6B85A2C9FCC76B0F3645D1DE961,IMPHASH=F2E7F0D79906859422914E1C8EFC36C6",
+    "pid": "3328",
+    "command_line": "\"C:\\Program Files (x86)\\ossec-agent\\wazuh-agent.exe\""
+  },
+  "related": [
+    {
+      "node": {
+        "_labels": [
+          "Process"
+        ],
+        "image": "C:\\\\Windows\\\\system32\\\\lsass.exe",
+        "first_seen": "2026-07-02T02:32:09.972Z",
+        "process_guid": "{75647B18-7DAC-6A43-0B00-000000000E00}",
+        "last_seen": "2026-07-13T10:13:09.050Z"
+      },
+      "rel": "ACCESSED"
+    },
+    {
+      "node": {
+        "_labels": [
+          "Host"
+        ],
+        "hostname": "meereen.essos.local",
+        "role": "domain_controller",
+        "first_seen": "2026-07-02T02:32:06.422Z",
+        "has_adcs": true,
+        "last_seen": "2026-07-13T10:24:04.962Z",
+        "domain": "essos.local",
+        "criticality": "critical",
+        "is_dc": true
+      },
+      "rel": "ON_HOST"
+    }
+  ]
+}
+
+### ③ 研判   [skill] lsass_dump   [模式] recipe
+# 研判留痕(8 步)
+[1] recipe取证「源进程与访问掩码」→ 1 行
+[2] recipe取证「源进程是否已知安全代理」→ 1 行
+[3] recipe取证「call_trace 指纹」→ 1 行
+[4] recipe取证「父进程链」→ 1 行
+[5] recipe取证「运行账号」→ 1 行
+[6] recipe取证「读后行为」→ 1 行
+[7] recipe取证「_图盲区」→ 1 行
+[8] 🛡 处置护栏 blocked: none -> meereen.essos.local  因:目标是受保护主机(meereen.essos.local)——DC/网关/mgmt 不动
+
+# 研判结果  alert=8e43a1090dc2cde1fbe79b5c91ea2691e2628dde57015dd17314787ccdeb5d01  path=B  skill=lsass_dump
+verdict   : false_positive  (confidence=0.8)
+summary   : Wazuh/OSSEC HIDS 代理读取 LSASS 内存做完整性检查(头号 FP)
+rationale : 源进程是已知安全代理(Wazuh/OSSEC HIDS)且 call_trace 无转储库指纹。根据方法论:安全代理为做遥测/完整性检查会读进程内存,包括 LSASS。结合 call_trace 指纹:不含转储库(dbghelp/dbgcore/comsvcs/UNKNOWN)且末端是系统/代理自身模块 → 判 false_positive。
+evidence  : ['源进程是否已知安全代理', 'call_trace 指纹']
+agent     : qwen32b-ft
+处置(建议): escalate -> meereen.essos.local  risk=low  status=proposed
+
+============================================================================
+## [4/12] technique=T1003.001   该类共 1060 条   uid=2733b992bba6db0fd913a27b12c9e6f10c5b31f3c6e0aa9274492f59eae0c9c2
+============================================================================
+### ① 原始告警节点(:Alert)
+{
+  "severity": 12,
+  "first_seen": "2026-07-13T09:50:46.470723800Z",
+  "last_seen": "2026-07-13T09:50:46.470723800Z",
+  "arrival_ms": 1783936248816,
+  "technique_ids": [
+    "T1003.001"
+  ],
+  "source": "wazuh",
+  "rule_id": "100802",
+  "stream": "soc-hids-alert-*",
+  "alert_uid": "2733b992bba6db0fd913a27b12c9e6f10c5b31f3c6e0aa9274492f59eae0c9c2",
+  "rule_description": "Credential dumping via LSASS access by C:\\\\Program Files (x86)\\\\ossec-agent\\\\wazuh-agent.exe (granted 0x1410)",
+  "sensor": "wazuh-hids",
+  "raw_ref": "soc-hids-alert-2026.07.13:CBXiWp8B3gPM8FAe797a",
+  "time": "2026-07-13T09:50:47.325+0000"
+}
+
+### ② 触发上下文(seed:触发事件 / 主语 / 宾语 / 次要实体)
+{
+  "event": {
+    "ingest_time": 1783936505051,
+    "stream": "winlogbeat-*",
+    "granted_access": "0x1410",
+    "event_code": "10",
+    "arrival_ms": 1783936248083,
+    "raw_ref": "soc-hids-alert-2026.07.13:CBXiWp8B3gPM8FAe797a",
+    "sensor": "Microsoft-Windows-Sysmon/Operational",
+    "source": "winlogbeat",
+    "call_trace": "C:\\\\Windows\\\\SYSTEM32\\\\ntdll.dll+9feb4|C:\\\\Windows\\\\System32\\\\wow64.dll+3cf4|C:\\\\Windows\\\\System32\\\\wow64.dll+7783|C:\\\\Windows\\\\System32\\\\wow64cpu.dll+1783|C:\\\\Windows\\\\System32\\\\wow64cpu.dll+1199|C:\\\\Windows\\\\System32\\\\wow64.dll+cfda|C:\\\\Windows\\\\System32\\\\wow64.dll+cea0|C:\\\\Windows\\\\SYSTEM32\\\\ntdll.dll+7863d|C:\\\\Windows\\\\SYSTEM32\\\\ntdll.dll+78223|C:\\\\Windows\\\\SYSTEM32\\\\ntdll.dll+781ce|C:\\\\Windows\\\\SYSTEM32\\\\ntdll.dll+717ac(wow64)|C:\\\\Windows\\\\System32\\\\KERNELBASE.dll+111778(wow64)|C:\\\\Program Files (x86)\\\\ossec-agent\\\\sysinfo.dll+1b7f6(wow64)|C:\\\\Program Files (x86)\\\\ossec-agent\\\\sysinfo.dll+1c401(wow64)|C:\\\\Program Files (x86)\\\\ossec-agent\\\\sysinfo.dll+159b5(wow64)|C:\\\\Program Files (x86)\\\\ossec-agent\\\\syscollector.dll+150a8(wow64)|C:\\\\Program Files (x86)\\\\ossec-agent\\\\syscollector.dll+1537d(wow64)|C:\\\\Program Files (x86)\\\\ossec-agent\\\\syscollector.dll+154de(wow64)",
+    "event_time": "2026-07-13T09:50:46.470723800Z",
+    "event_uid": "e80775cfde9c2fc82a5c635327400b33f2a824c7bd98b94ebdad721e700bd150"
+  },
+  "subject": {
+    "_labels": [
+      "Process"
+    ],
+    "image": "C:\\\\Program Files (x86)\\\\ossec-agent\\\\wazuh-agent.exe",
+    "first_seen": "2026-07-06T09:37:56.507Z",
+    "process_guid": "{85e8c649-7774-6a4b-7d07-000000001400}",
+    "last_seen": "2026-07-13T09:50:46.470Z",
+    "hashes": "MD5=A7CEA8DE3FC30334BFD64132B18D21E1,SHA256=A0D539A150087B2406DB7B727DD91E4F647DF6B85A2C9FCC76B0F3645D1DE961,IMPHASH=F2E7F0D79906859422914E1C8EFC36C6",
+    "pid": "3132",
+    "command_line": "\"C:\\Program Files (x86)\\ossec-agent\\wazuh-agent.exe\""
+  },
+  "related": [
+    {
+      "node": {
+        "_labels": [
+          "Process"
+        ],
+        "image": "C:\\Windows\\system32\\lsass.exe",
+        "first_seen": "2026-07-02T02:32:10.167Z",
+        "process_guid": "{85e8c649-8397-6a43-0c00-000000001400}",
+        "last_seen": "2026-07-13T10:05:03.384Z"
+      },
+      "rel": "ACCESSED"
+    },
+    {
+      "node": {
+        "_labels": [
+          "Host"
+        ],
+        "hostname": "castelblack.north.sevenkingdoms.local",
+        "role": "member_server",
+        "first_seen": "2026-07-02T02:32:06.696Z",
+        "has_adcs": false,
+        "last_seen": "2026-07-13T10:24:48.710Z",
+        "domain": "north.sevenkingdoms.local",
+        "criticality": "medium",
+        "is_dc": false
+      },
+      "rel": "ON_HOST"
+    }
+  ]
+}
+
+### ③ 研判   [skill] lsass_dump   [模式] recipe
+# 研判留痕(7 步)
+[1] recipe取证「源进程与访问掩码」→ 1 行
+[2] recipe取证「源进程是否已知安全代理」→ 1 行
+[3] recipe取证「call_trace 指纹」→ 1 行
+[4] recipe取证「父进程链」→ 1 行
+[5] recipe取证「运行账号」→ 1 行
+[6] recipe取证「读后行为」→ 1 行
+[7] recipe取证「_图盲区」→ 1 行
+
+# 研判结果  alert=2733b992bba6db0fd913a27b12c9e6f10c5b31f3c6e0aa9274492f59eae0c9c2  path=B  skill=lsass_dump
+verdict   : false_positive  (confidence=0.98)
+summary   : Wazuh代理正常访问lsass.exe
+rationale : 1.源进程ossec-agent是已知安全代理(Wazuh/OSSEC HIDS)，属于头号FP场景
+2.call_trace显示访问路径为syscollector.dll模块，不含转储库指纹
+3.访问掩码0x1410(PROCESS_QUERY_LIMITED|PROCESS_VM_READ)符合安全代理内存检查特征
+4.父进程链services.exe→wazuh-agent.exe符合合法进程创建路径
+5.无后续恶意行为(外连/横向/ dump文件)
+evidence  : ['alert_uid:2733b992bba6db0fd913a27b12c9e6f10c5b31f3c6e0aa9274492f59eae0c9c2']
+agent     : qwen32b-ft
+处置(建议): none -> castelblack.north.sevenkingdoms.local  risk=low  status=proposed
+
+============================================================================
+## [5/12] technique=T1003.001   该类共 1060 条   uid=7e880d31c0d76b028eb5de8fa5f0123d15628b7494159fc6fd63162a9a6c8d0a
+============================================================================
+### ① 原始告警节点(:Alert)
+{
+  "severity": 12,
+  "first_seen": "2026-07-13T09:48:13.421714100Z",
+  "last_seen": "2026-07-13T09:48:13.421714100Z",
+  "arrival_ms": 1783936101752,
+  "technique_ids": [
+    "T1003.001"
+  ],
+  "source": "wazuh",
+  "rule_id": "100802",
+  "stream": "soc-hids-alert-*",
+  "alert_uid": "7e880d31c0d76b028eb5de8fa5f0123d15628b7494159fc6fd63162a9a6c8d0a",
+  "rule_description": "Credential dumping via LSASS access by C:\\\\Program Files (x86)\\\\ossec-agent\\\\wazuh-agent.exe (granted 0x1fffff)",
+  "sensor": "wazuh-hids",
+  "raw_ref": "soc-hids-alert-2026.07.13:wxXgWp8B3gPM8FAesdtj",
+  "time": "2026-07-13T09:48:14.296+0000"
+}
+
+### ② 触发上下文(seed:触发事件 / 主语 / 宾语 / 次要实体)
+{
+  "event": {
+    "ingest_time": 1783936206407,
+    "stream": "winlogbeat-*",
+    "granted_access": "0x1fffff",
+    "event_code": "10",
+    "arrival_ms": 1783936095275,
+    "raw_ref": "soc-hids-alert-2026.07.13:wxXgWp8B3gPM8FAesdtj",
+    "sensor": "Microsoft-Windows-Sysmon/Operational",
+    "source": "winlogbeat",
+    "call_trace": "C:\\\\Windows\\\\SYSTEM32\\\\ntdll.dll+9feb4|C:\\\\Windows\\\\System32\\\\wow64.dll+3cf4|C:\\\\Windows\\\\System32\\\\wow64.dll+7783|C:\\\\Windows\\\\System32\\\\wow64cpu.dll+1783|C:\\\\Windows\\\\System32\\\\wow64cpu.dll+1199|C:\\\\Windows\\\\System32\\\\wow64.dll+cfda|C:\\\\Windows\\\\System32\\\\wow64.dll+cea0|C:\\\\Windows\\\\SYSTEM32\\\\ntdll.dll+7863d|C:\\\\Windows\\\\SYSTEM32\\\\ntdll.dll+78223|C:\\\\Windows\\\\SYSTEM32\\\\ntdll.dll+781ce|C:\\\\Windows\\\\SYSTEM32\\\\ntdll.dll+717ac(wow64)|C:\\\\Windows\\\\SYSTEM32\\\\ntdll.dll+b3d7e(wow64)|C:\\\\Windows\\\\System32\\\\KERNEL32.DLL+3125c(wow64)|C:\\\\Windows\\\\System32\\\\KERNEL32.DLL+24fe2(wow64)|C:\\\\Program Files (x86)\\\\ossec-agent\\\\wazuh-agent.exe+f647",
+    "event_time": "2026-07-13T09:48:13.421714100Z",
+    "event_uid": "262648f4b1dd7d8c625259ed21d94a8e42b34dcae2229d5fe773884dc84e0b8c"
+  },
+  "subject": {
+    "_labels": [
+      "Process"
+    ],
+    "image": "C:\\\\Program Files (x86)\\\\ossec-agent\\\\wazuh-agent.exe",
+    "first_seen": "2026-07-06T09:46:14.726Z",
+    "process_guid": "{5d3417cb-7966-6a4b-d907-000000000f00}",
+    "last_seen": "2026-07-13T10:15:56.609Z",
+    "hashes": "MD5=A7CEA8DE3FC30334BFD64132B18D21E1,SHA256=A0D539A150087B2406DB7B727DD91E4F647DF6B85A2C9FCC76B0F3645D1DE961,IMPHASH=F2E7F0D79906859422914E1C8EFC36C6",
+    "pid": "3824",
+    "command_line": "\"C:\\Program Files (x86)\\ossec-agent\\wazuh-agent.exe\""
+  },
+  "related": [
+    {
+      "node": {
+        "_labels": [
+          "Process"
+        ],
+        "image": "C:\\Windows\\system32\\lsass.exe",
+        "first_seen": "2026-07-02T02:32:10.673Z",
+        "process_guid": "{5d3417cb-3e7a-6a43-0c00-000000000f00}",
+        "last_seen": "2026-07-13T10:24:36.956Z"
+      },
+      "rel": "ACCESSED"
+    },
+    {
+      "node": {
+        "_labels": [
+          "Host"
+        ],
+        "hostname": "kingslanding.sevenkingdoms.local",
+        "role": "domain_controller",
+        "first_seen": "2026-07-02T02:32:09.289Z",
+        "has_adcs": true,
+        "last_seen": "2026-07-13T10:29:49.114Z",
+        "domain": "sevenkingdoms.local",
+        "criticality": "critical",
+        "is_dc": true
+      },
+      "rel": "ON_HOST"
+    }
+  ]
+}
+
+### ③ 研判   [skill] lsass_dump   [模式] recipe
+# 研判留痕(7 步)
+[1] recipe取证「源进程与访问掩码」→ 1 行
+[2] recipe取证「源进程是否已知安全代理」→ 1 行
+[3] recipe取证「call_trace 指纹」→ 1 行
+[4] recipe取证「父进程链」→ 1 行
+[5] recipe取证「运行账号」→ 1 行
+[6] recipe取证「读后行为」→ 1 行
+[7] recipe取证「_图盲区」→ 1 行
+
+# 研判结果  alert=7e880d31c0d76b028eb5de8fa5f0123d15628b7494159fc6fd63162a9a6c8d0a  path=B  skill=lsass_dump
+verdict   : false_positive  (confidence=0.8)
+summary   : Wazuh HIDS 代理读取 LSASS 内存做完整性检查(企业头号 FP)
+rationale : 1.源进程是已知安全代理(Wazuh HIDS)且 call_trace 无转储库指纹
+2.访问掩码 0x1fffff 含 PROCESS_VM_READ(0x10) 但属于白名单代理
+3.父进程链 services.exe→Wazuh HIDS 完整
+4.运行账号 System 且无可疑后续行为
+5.属 DC 上的良性 HIDS 活动(资产价值已补全)
+evidence  : ['告警关联事件:event_uid=7e880d31c0d76b028eb5de8fa5f0123d15628b7494159fc6fd63162a9a6c8d0a', '进程树:src_guid={5d3417cb-7966-6a4b-d907-000000000f00}']
+agent     : qwen32b-ft
+处置(建议): none -> Wazuh/OSSEC HIDS 代理  risk=low  status=proposed
+
+============================================================================
+## [6/12] technique=T1003.001   该类共 1060 条   uid=9eea075812d6ec26d9abaf6efcd9d66a537c5ed831f73a7f39fa7b2d7955d8f9
+============================================================================
+### ① 原始告警节点(:Alert)
+{
+  "severity": 12,
+  "first_seen": "2026-07-13T09:48:13.424509400Z",
+  "last_seen": "2026-07-13T09:48:13.424509400Z",
+  "arrival_ms": 1783936101752,
+  "technique_ids": [
+    "T1003.001"
+  ],
+  "source": "wazuh",
+  "rule_id": "92900",
+  "stream": "soc-hids-alert-*",
+  "alert_uid": "9eea075812d6ec26d9abaf6efcd9d66a537c5ed831f73a7f39fa7b2d7955d8f9",
+  "rule_description": "Lsass process was accessed by C:\\\\ProgramData\\\\Microsoft\\\\Windows Defender\\\\Platform\\\\4.18.26050.15-0\\\\MsMpEng.exe with read permissions, possible credential dump",
+  "sensor": "wazuh-hids",
+  "raw_ref": "soc-hids-alert-2026.07.13:xBXgWp8B3gPM8FAesdtj",
+  "time": "2026-07-13T09:48:14.342+0000"
+}
+
+### ② 触发上下文(seed:触发事件 / 主语 / 宾语 / 次要实体)
+{
+  "event": {
+    "ingest_time": 1783936206447,
+    "stream": "winlogbeat-*",
+    "granted_access": "0x101000",
+    "event_code": "10",
+    "arrival_ms": 1783936095276,
+    "raw_ref": "soc-hids-alert-2026.07.13:xBXgWp8B3gPM8FAesdtj",
+    "sensor": "Microsoft-Windows-Sysmon/Operational",
+    "source": "winlogbeat",
+    "call_trace": "C:\\\\Windows\\\\SYSTEM32\\\\ntdll.dll+9feb4|C:\\\\Windows\\\\System32\\\\KERNELBASE.dll+2126e|C:\\\\ProgramData\\\\Microsoft\\\\Windows Defender\\\\Definition Updates\\\\{E5BD9EF7-C50C-46E8-ADDE-8C053ACD3375}\\\\mpengine.dll+1383ce|C:\\\\ProgramData\\\\Microsoft\\\\Windows Defender\\\\Definition Updates\\\\{E5BD9EF7-C50C-46E8-ADDE-8C053ACD3375}\\\\mpengine.dll+1381c7|C:\\\\ProgramData\\\\Microsoft\\\\Windows Defender\\\\Definition Updates\\\\{E5BD9EF7-C50C-46E8-ADDE-8C053ACD3375}\\\\mpengine.dll+409954|C:\\\\ProgramData\\\\Microsoft\\\\Windows Defender\\\\Definition Updates\\\\{E5BD9EF7-C50C-46E8-ADDE-8C053ACD3375}\\\\mpengine.dll+129e43|C:\\\\ProgramData\\\\Microsoft\\\\Windows Defender\\\\Definition Updates\\\\{E5BD9EF7-C50C-46E8-ADDE-8C053ACD3375}\\\\mpengine.dll+129d2d|C:\\\\ProgramData\\\\Microsoft\\\\Windows Defender\\\\Definition Updates\\\\{E5BD9EF7-C50C-46E8-ADDE-8C053ACD3375}\\\\mpengine.dll+581a8|C:\\\\ProgramData\\\\Microsoft\\\\Windows Defender\\\\Definition Updates\\\\{E5BD9EF7-C50C-46E8-ADDE-8C053ACD3375}\\\\mpengine.dll+3ed684|C:\\\\ProgramData\\\\Microsoft\\\\Windows Defender\\\\Definition Updates\\\\{E5BD9EF7-C50C-46E8-ADDE-8C053ACD3375}\\\\mpengine.dll+3ed388|C:\\\\ProgramData\\\\Microsoft\\\\Windows Defender\\\\Definition Updates\\\\{E5BD9EF7-C50C-46E8-ADDE-8C053ACD3375}\\\\mpengine.dll+122f5d|C:\\\\ProgramData\\\\Microsoft\\\\Windows Defender\\\\Definition Updates\\\\{E5BD9EF7-C50C-46E8-ADDE-8C053ACD3375}\\\\mpengine.dll+1241f3|C:\\\\ProgramData\\\\Microsoft\\\\Windows Defender\\\\Definition Updates\\\\{E5BD9EF7-C50C-46E8-ADDE-8C053ACD3375}\\\\mpengine.dll+123a83|C:\\\\ProgramData\\\\Microsoft\\\\Windows Defender\\\\Definition Updates\\\\{E5BD9EF7-C50C-46E8-ADDE-8C053ACD3375}\\\\mpengine.dll+1239f9|C:\\\\ProgramData\\\\Microsoft\\\\Windows Defender\\\\Definition Updates\\\\{E5BD9EF7-C50C-46E8-ADDE-8C053ACD3375}\\\\mpengine.dll+1231d0|C:\\\\ProgramData\\\\Microsoft\\\\Windows Defender\\\\Definition Updates\\\\{E5BD9EF7-C50C-46E8-ADDE-8C053ACD3375}\\\\mpengine.dll+3dc4a|C:\\\\ProgramData\\\\Microsoft\\\\Windows Defender\\\\Definition Updates\\\\{E5BD9EF7-C50C-46E8-ADDE-8C053ACD3375}\\\\mpengine.dll+3d953|C:\\\\ProgramData\\\\Microsoft\\\\Windows Defender\\\\Definition Updates\\\\{E5BD9EF7-C50C-46E8-ADDE-8C053ACD3375}\\\\mpengine.dll+35afb5|C:\\\\ProgramData\\\\Microsoft\\\\Windows Defender\\\\Definition Updates\\\\{E5BD9EF7-C50C-46E8-ADDE-8C053ACD3375}\\\\mpengine.dll+358605|C:\\\\ProgramData\\\\Microsoft\\\\Windows Defender\\\\Platform\\\\4.18.26050.15-0\\\\mpsvc.dll+2f7b1|C:\\\\ProgramData\\\\Microsoft\\\\Windows Defender\\\\Platform\\\\4.18.26050.15-0\\\\mprtp.dll+e88d|C:\\\\ProgramData\\\\Microsoft\\\\Windows Defender\\\\Platform\\\\4.18.26050.15-0\\\\mprtp.dll+e557|C:\\\\ProgramData\\\\Microsoft\\\\Windows Defender\\\\Platform\\\\4.18.26050.15-0\\\\mprtp.dll+31b92|C:\\\\ProgramData\\\\Microsoft\\\\Windows Defender\\\\Platform\\\\4.18.26050.15-0\\\\mprtp.dll+32461",
+    "event_time": "2026-07-13T09:48:13.424509400Z",
+    "event_uid": "12451f55a31ef4bee706785b0ea8e96414990fd0dcc248802f9ae1047cef67f7"
+  },
+  "subject": {
+    "_labels": [
+      "Process"
+    ],
+    "image": "C:\\\\ProgramData\\\\Microsoft\\\\Windows Defender\\\\Platform\\\\4.18.26050.15-0\\\\MsMpEng.exe",
+    "first_seen": "2026-07-02T04:07:05.090Z",
+    "process_guid": "{5d3417cb-3e89-6a43-3a00-000000000f00}",
+    "last_seen": "2026-07-13T09:48:13.424Z",
+    "command_line": "\"C:\\ProgramData\\Microsoft\\Windows Defender\\Platform\\4.18.26050.15-0\\MsMpEng.exe\""
+  },
+  "related": [
+    {
+      "node": {
+        "_labels": [
+          "Process"
+        ],
+        "image": "C:\\Windows\\system32\\lsass.exe",
+        "first_seen": "2026-07-02T02:32:10.673Z",
+        "process_guid": "{5d3417cb-3e7a-6a43-0c00-000000000f00}",
+        "last_seen": "2026-07-13T10:24:36.956Z"
+      },
+      "rel": "ACCESSED"
+    },
+    {
+      "node": {
+        "_labels": [
+          "Host"
+        ],
+        "hostname": "kingslanding.sevenkingdoms.local",
+        "role": "domain_controller",
+        "first_seen": "2026-07-02T02:32:09.289Z",
+        "has_adcs": true,
+        "last_seen": "2026-07-13T10:29:49.114Z",
+        "domain": "sevenkingdoms.local",
+        "criticality": "critical",
+        "is_dc": true
+      },
+      "rel": "ON_HOST"
+    }
+  ]
+}
+
+### ③ 研判   [skill] lsass_dump   [模式] recipe
+# 研判留痕(8 步)
+[1] recipe取证「源进程与访问掩码」→ 1 行
+[2] recipe取证「源进程是否已知安全代理」→ 1 行
+[3] recipe取证「call_trace 指纹」→ 1 行
+[4] recipe取证「父进程链」→ 0 行
+[5] recipe取证「运行账号」→ 0 行
+[6] recipe取证「读后行为」→ 1 行
+[7] recipe取证「_图盲区」→ 1 行
+[8] 🛡 处置护栏 blocked: monitor -> kingslanding.sevenkingdoms.local  因:目标是受保护主机(kingslanding.sevenkingdoms.local)——DC/网关/mgmt 不动
+
+# 研判结果  alert=9eea075812d6ec26d9abaf6efcd9d66a537c5ed831f73a7f39fa7b2d7955d8f9  path=B  skill=lsass_dump
+verdict   : false_positive  (confidence=0.95)
+summary   : 安全代理进程内存读取 - 已知良性行为
+rationale : 1. 源进程MsMpEng.exe是Microsoft Defender的合法核心引擎进程，其对lsass.exe的内存读取属于正常的防护操作
+2. 掩码0x101000显示包含PROCESS_VM_READ权限(0x10)，但这是Defender进行内存完整性检查的正常行为
+3. call_trace显示末端模块为mprtp.dll，属于Defender的合法组件路径
+4. 生成的子进程MpCmdRun.exe是Defender清理组件的合法spawn行为
+5. 生成的临时文件路径和DLL名称符合Defender的标准工作模式
+evidence  : ['源进程与访问掩码', '源进程是否已知安全代理', 'call_trace 指纹']
+pattern   : 安全产品内存检查模式
+agent     : qwen32b-ft
+处置(建议): escalate -> kingslanding.sevenkingdoms.local  risk=low  status=proposed
+
+============================================================================
+## [7/12] technique=T1003.001   该类共 1060 条   uid=60d498e89517bb2581f872eaecb38d31d9c19da4cd8773af85c5cbc5ae80f56b
+============================================================================
+### ① 原始告警节点(:Alert)
+{
+  "severity": 12,
+  "first_seen": "2026-07-13T09:47:46.624382700Z",
+  "last_seen": "2026-07-13T09:47:46.624382700Z",
+  "arrival_ms": 1783936068735,
+  "technique_ids": [
+    "T1003.001"
+  ],
+  "source": "wazuh",
+  "rule_id": "100802",
+  "stream": "soc-hids-alert-*",
+  "alert_uid": "60d498e89517bb2581f872eaecb38d31d9c19da4cd8773af85c5cbc5ae80f56b",
+  "rule_description": "Credential dumping via LSASS access by C:\\\\Program Files (x86)\\\\ossec-agent\\\\wazuh-agent.exe (granted 0x1fffff)",
+  "sensor": "wazuh-hids",
+  "raw_ref": "soc-hids-alert-2026.07.13:KRXgWp8B3gPM8FAeMNtp",
+  "time": "2026-07-13T09:47:47.675+0000"
+}
+
+### ② 触发上下文(seed:触发事件 / 主语 / 宾语 / 次要实体)
+{
+  "event": {
+    "ingest_time": 1783936206072,
+    "stream": "winlogbeat-*",
+    "granted_access": "0x1fffff",
+    "event_code": "10",
+    "arrival_ms": 1783936067840,
+    "raw_ref": "soc-hids-alert-2026.07.13:KRXgWp8B3gPM8FAeMNtp",
+    "sensor": "Microsoft-Windows-Sysmon/Operational",
+    "source": "winlogbeat",
+    "call_trace": "C:\\\\Windows\\\\SYSTEM32\\\\ntdll.dll+a6564|C:\\\\Windows\\\\System32\\\\wow64.dll+12504|C:\\\\Windows\\\\System32\\\\wow64.dll+6ea5|C:\\\\Windows\\\\System32\\\\wow64cpu.dll+1cf7|C:\\\\Windows\\\\System32\\\\wow64.dll+1bfa1|C:\\\\Windows\\\\System32\\\\wow64.dll+cbb0|C:\\\\Windows\\\\SYSTEM32\\\\ntdll.dll+7a0cd|C:\\\\Windows\\\\SYSTEM32\\\\ntdll.dll+79f6e|C:\\\\Windows\\\\SYSTEM32\\\\ntdll.dll+6e7dc(wow64)|C:\\\\Windows\\\\SYSTEM32\\\\ntdll.dll+aaafc(wow64)|C:\\\\Windows\\\\System32\\\\KERNEL32.DLL+33f46(wow64)|C:\\\\Windows\\\\System32\\\\KERNEL32.DLL+2b0a1(wow64)|C:\\\\Program Files (x86)\\\\ossec-agent\\\\wazuh-agent.exe+f647",
+    "event_time": "2026-07-13T09:47:46.624382700Z",
+    "event_uid": "16d112b7ef917e026c519b323316b74061d77fc90dd8545d81f860a31b5a90e4"
+  },
+  "subject": {
+    "_labels": [
+      "Process"
+    ],
+    "image": "C:\\\\Program Files (x86)\\\\ossec-agent\\\\wazuh-agent.exe",
+    "first_seen": "2026-07-06T09:46:09.753Z",
+    "process_guid": "{75647B18-7961-6A4B-6A05-000000000E00}",
+    "last_seen": "2026-07-13T10:13:09.050Z",
+    "hashes": "MD5=A7CEA8DE3FC30334BFD64132B18D21E1,SHA256=A0D539A150087B2406DB7B727DD91E4F647DF6B85A2C9FCC76B0F3645D1DE961,IMPHASH=F2E7F0D79906859422914E1C8EFC36C6",
+    "pid": "3328",
+    "command_line": "\"C:\\Program Files (x86)\\ossec-agent\\wazuh-agent.exe\""
+  },
+  "related": [
+    {
+      "node": {
+        "_labels": [
+          "Process"
+        ],
+        "image": "C:\\Windows\\system32\\lsass.exe",
+        "first_seen": "2026-07-02T02:32:09.972Z",
+        "process_guid": "{75647B18-7DAC-6A43-0B00-000000000E00}",
+        "last_seen": "2026-07-13T10:29:53.413Z"
+      },
+      "rel": "ACCESSED"
+    },
+    {
+      "node": {
+        "_labels": [
+          "Host"
+        ],
+        "hostname": "meereen.essos.local",
+        "role": "domain_controller",
+        "first_seen": "2026-07-02T02:32:06.422Z",
+        "has_adcs": true,
+        "last_seen": "2026-07-13T10:29:54.536Z",
+        "domain": "essos.local",
+        "criticality": "critical",
+        "is_dc": true
+      },
+      "rel": "ON_HOST"
+    }
+  ]
+}
+
+### ③ 研判   [skill] lsass_dump   [模式] recipe
+# 研判留痕(8 步)
+[1] recipe取证「源进程与访问掩码」→ 1 行
+[2] recipe取证「源进程是否已知安全代理」→ 1 行
+[3] recipe取证「call_trace 指纹」→ 1 行
+[4] recipe取证「父进程链」→ 1 行
+[5] recipe取证「运行账号」→ 1 行
+[6] recipe取证「读后行为」→ 1 行
+[7] recipe取证「_图盲区」→ 1 行
+[8] 🛡 处置护栏 blocked: monitor -> meereen.essos.local  因:目标是受保护主机(meereen.essos.local)——DC/网关/mgmt 不动
+
+# 研判结果  alert=60d498e89517bb2581f872eaecb38d31d9c19da4cd8773af85c5cbc5ae80f56b  path=B  skill=lsass_dump
+verdict   : false_positive  (confidence=0.8)
+summary   : HIDS/EDR/传感器自身读进程内存做遥测/完整性检查
+rationale : 源进程是已知安全代理(Wazuh/OSSEC HIDS)且call_trace不含转储库指纹，属于头号误报场景。安全代理为了进行遥测和完整性检查会读取进程内存，包括LSASS。
+evidence  : ['源进程与访问掩码', '源进程是否已知安全代理']
+agent     : qwen32b-ft
+处置(建议): escalate -> meereen.essos.local  risk=low  status=proposed
+
+============================================================================
+## [8/12] technique=T1003.001   该类共 1060 条   uid=9ff9f6e887463ccec10cd3bb8f796342084979056f95309cd27083cd635507c9
+============================================================================
+### ① 原始告警节点(:Alert)
+{
+  "severity": 12,
+  "first_seen": "2026-07-13T09:47:44.471587600Z",
+  "last_seen": "2026-07-13T09:47:44.471587600Z",
+  "arrival_ms": 1783936068734,
+  "technique_ids": [
+    "T1003.001"
+  ],
+  "source": "wazuh",
+  "rule_id": "100802",
+  "stream": "soc-hids-alert-*",
+  "alert_uid": "9ff9f6e887463ccec10cd3bb8f796342084979056f95309cd27083cd635507c9",
+  "rule_description": "Credential dumping via LSASS access by C:\\\\Program Files (x86)\\\\ossec-agent\\\\wazuh-agent.exe (granted 0x1fffff)",
+  "sensor": "wazuh-hids",
+  "raw_ref": "soc-hids-alert-2026.07.13:JxXgWp8B3gPM8FAeMNtp",
+  "time": "2026-07-13T09:47:44.898+0000"
+}
+
+### ② 触发上下文(seed:触发事件 / 主语 / 宾语 / 次要实体)
+{
+  "event": {
+    "ingest_time": 1783936206019,
+    "stream": "winlogbeat-*",
+    "granted_access": "0x1fffff",
+    "event_code": "10",
+    "arrival_ms": 1783936065485,
+    "raw_ref": "soc-hids-alert-2026.07.13:JxXgWp8B3gPM8FAeMNtp",
+    "sensor": "Microsoft-Windows-Sysmon/Operational",
+    "source": "winlogbeat",
+    "call_trace": "C:\\\\Windows\\\\SYSTEM32\\\\ntdll.dll+9feb4|C:\\\\Windows\\\\System32\\\\wow64.dll+3cf4|C:\\\\Windows\\\\System32\\\\wow64.dll+7783|C:\\\\Windows\\\\System32\\\\wow64cpu.dll+1783|C:\\\\Windows\\\\System32\\\\wow64cpu.dll+1199|C:\\\\Windows\\\\System32\\\\wow64.dll+cfda|C:\\\\Windows\\\\System32\\\\wow64.dll+cea0|C:\\\\Windows\\\\SYSTEM32\\\\ntdll.dll+7863d|C:\\\\Windows\\\\SYSTEM32\\\\ntdll.dll+78223|C:\\\\Windows\\\\SYSTEM32\\\\ntdll.dll+781ce|C:\\\\Windows\\\\SYSTEM32\\\\ntdll.dll+717ac(wow64)|C:\\\\Windows\\\\SYSTEM32\\\\ntdll.dll+b3d7e(wow64)|C:\\\\Windows\\\\System32\\\\KERNEL32.DLL+3125c(wow64)|C:\\\\Windows\\\\System32\\\\KERNEL32.DLL+24fe2(wow64)|C:\\\\Program Files (x86)\\\\ossec-agent\\\\wazuh-agent.exe+f647",
+    "event_time": "2026-07-13T09:47:44.471587600Z",
+    "event_uid": "49d04ee2b0e0d4f8fafa897b359e4ae783ee6b255361c6bd5249d08bebb4b870"
+  },
+  "subject": {
+    "_labels": [
+      "Process"
+    ],
+    "image": "C:\\\\Program Files (x86)\\\\ossec-agent\\\\wazuh-agent.exe",
+    "first_seen": "2026-07-06T09:46:12.276Z",
+    "process_guid": "{0d573dc4-7964-6a4b-d053-010000000e00}",
+    "last_seen": "2026-07-13T10:16:01.807Z",
+    "hashes": "MD5=A7CEA8DE3FC30334BFD64132B18D21E1,SHA256=A0D539A150087B2406DB7B727DD91E4F647DF6B85A2C9FCC76B0F3645D1DE961,IMPHASH=F2E7F0D79906859422914E1C8EFC36C6",
+    "pid": "3156",
+    "command_line": "\"C:\\Program Files (x86)\\ossec-agent\\wazuh-agent.exe\""
+  },
+  "related": [
+    {
+      "node": {
+        "_labels": [
+          "Process"
+        ],
+        "image": "C:\\Windows\\system32\\lsass.exe",
+        "first_seen": "2026-07-02T02:32:10.328Z",
+        "process_guid": "{0d573dc4-3e79-6a43-0c00-000000000e00}",
+        "last_seen": "2026-07-13T10:29:48.225Z"
+      },
+      "rel": "ACCESSED"
+    },
+    {
+      "node": {
+        "_labels": [
+          "Host"
+        ],
+        "hostname": "winterfell.north.sevenkingdoms.local",
+        "role": "domain_controller",
+        "first_seen": "2026-07-02T02:32:07.265Z",
+        "has_adcs": false,
+        "last_seen": "2026-07-13T10:29:49.508Z",
+        "domain": "north.sevenkingdoms.local",
+        "criticality": "critical",
+        "is_dc": true
+      },
+      "rel": "ON_HOST"
+    }
+  ]
+}
+
+### ③ 研判   [skill] lsass_dump   [模式] recipe
+# 研判留痕(7 步)
+[1] recipe取证「源进程与访问掩码」→ 1 行
+[2] recipe取证「源进程是否已知安全代理」→ 1 行
+[3] recipe取证「call_trace 指纹」→ 1 行
+[4] recipe取证「父进程链」→ 1 行
+[5] recipe取证「运行账号」→ 1 行
+[6] recipe取证「读后行为」→ 1 行
+[7] recipe取证「_图盲区」→ 1 行
+
+# 研判结果  alert=9ff9f6e887463ccec10cd3bb8f796342084979056f95309cd27083cd635507c9  path=B  skill=lsass_dump
+verdict   : false_positive  (confidence=0.9)
+summary   : Wazuh/OSSEC HIDS 代理(自身遥测/完整性检查,头号 FP;禁止 kill/隔离该代理或其主机)
+rationale : 1.源进程是已知安全代理(Wazuh/OSSEC HIDS)→ 头号 FP
+2.call_trace 无转储库指纹(含 dbghelp/dbgcore/comsvcs/UNKNOWN 为 false)
+3.父进程链正常(services.exe→代理)
+4.运行身份=System(特权进程)
+5.读后无恶意行为(外连/横向/写 dump)
+evidence  : ['告警ID:9ff9f6e887463ccec10cd3bb8f796342084979056f95309cd27083cd635507c9']
+agent     : qwen32b-ft
+处置(建议): none -> C:\Program Files (x86)\ossec-agent\wazuh-agent.exe  risk=low  status=proposed
+
+============================================================================
+## [9/12] technique=T1003.001   该类共 1060 条   uid=27fba084b019ae3bb620762db35bee201897caa7018d7f5c80214e0d5c7cacf2
+============================================================================
+### ① 原始告警节点(:Alert)
+{
+  "severity": 12,
+  "first_seen": "2026-07-13T09:47:44.474517800Z",
+  "last_seen": "2026-07-13T09:47:44.474517800Z",
+  "arrival_ms": 1783936068734,
+  "technique_ids": [
+    "T1003.001"
+  ],
+  "source": "wazuh",
+  "rule_id": "92900",
+  "stream": "soc-hids-alert-*",
+  "alert_uid": "27fba084b019ae3bb620762db35bee201897caa7018d7f5c80214e0d5c7cacf2",
+  "rule_description": "Lsass process was accessed by C:\\\\ProgramData\\\\Microsoft\\\\Windows Defender\\\\Platform\\\\4.18.26050.15-0\\\\MsMpEng.exe with read permissions, possible credential dump",
+  "sensor": "wazuh-hids",
+  "raw_ref": "soc-hids-alert-2026.07.13:KBXgWp8B3gPM8FAeMNtp",
+  "time": "2026-07-13T09:47:44.961+0000"
+}
+
+### ② 触发上下文(seed:触发事件 / 主语 / 宾语 / 次要实体)
+{
+  "event": {
+    "ingest_time": 1783936206062,
+    "stream": "winlogbeat-*",
+    "granted_access": "0x101000",
+    "event_code": "10",
+    "arrival_ms": 1783936065485,
+    "raw_ref": "soc-hids-alert-2026.07.13:KBXgWp8B3gPM8FAeMNtp",
+    "sensor": "Microsoft-Windows-Sysmon/Operational",
+    "source": "winlogbeat",
+    "call_trace": "C:\\\\Windows\\\\SYSTEM32\\\\ntdll.dll+9feb4|C:\\\\Windows\\\\System32\\\\KERNELBASE.dll+2126e|C:\\\\ProgramData\\\\Microsoft\\\\Windows Defender\\\\Definition Updates\\\\{67A1A2A0-69DB-400E-B8C3-DEB51E7752F9}\\\\mpengine.dll+1383ce|C:\\\\ProgramData\\\\Microsoft\\\\Windows Defender\\\\Definition Updates\\\\{67A1A2A0-69DB-400E-B8C3-DEB51E7752F9}\\\\mpengine.dll+1381c7|C:\\\\ProgramData\\\\Microsoft\\\\Windows Defender\\\\Definition Updates\\\\{67A1A2A0-69DB-400E-B8C3-DEB51E7752F9}\\\\mpengine.dll+409954|C:\\\\ProgramData\\\\Microsoft\\\\Windows Defender\\\\Definition Updates\\\\{67A1A2A0-69DB-400E-B8C3-DEB51E7752F9}\\\\mpengine.dll+129e43|C:\\\\ProgramData\\\\Microsoft\\\\Windows Defender\\\\Definition Updates\\\\{67A1A2A0-69DB-400E-B8C3-DEB51E7752F9}\\\\mpengine.dll+129d2d|C:\\\\ProgramData\\\\Microsoft\\\\Windows Defender\\\\Definition Updates\\\\{67A1A2A0-69DB-400E-B8C3-DEB51E7752F9}\\\\mpengine.dll+581a8|C:\\\\ProgramData\\\\Microsoft\\\\Windows Defender\\\\Definition Updates\\\\{67A1A2A0-69DB-400E-B8C3-DEB51E7752F9}\\\\mpengine.dll+3ed684|C:\\\\ProgramData\\\\Microsoft\\\\Windows Defender\\\\Definition Updates\\\\{67A1A2A0-69DB-400E-B8C3-DEB51E7752F9}\\\\mpengine.dll+3ed388|C:\\\\ProgramData\\\\Microsoft\\\\Windows Defender\\\\Definition Updates\\\\{67A1A2A0-69DB-400E-B8C3-DEB51E7752F9}\\\\mpengine.dll+122f5d|C:\\\\ProgramData\\\\Microsoft\\\\Windows Defender\\\\Definition Updates\\\\{67A1A2A0-69DB-400E-B8C3-DEB51E7752F9}\\\\mpengine.dll+1241f3|C:\\\\ProgramData\\\\Microsoft\\\\Windows Defender\\\\Definition Updates\\\\{67A1A2A0-69DB-400E-B8C3-DEB51E7752F9}\\\\mpengine.dll+123a83|C:\\\\ProgramData\\\\Microsoft\\\\Windows Defender\\\\Definition Updates\\\\{67A1A2A0-69DB-400E-B8C3-DEB51E7752F9}\\\\mpengine.dll+1239f9|C:\\\\ProgramData\\\\Microsoft\\\\Windows Defender\\\\Definition Updates\\\\{67A1A2A0-69DB-400E-B8C3-DEB51E7752F9}\\\\mpengine.dll+1231d0|C:\\\\ProgramData\\\\Microsoft\\\\Windows Defender\\\\Definition Updates\\\\{67A1A2A0-69DB-400E-B8C3-DEB51E7752F9}\\\\mpengine.dll+3dc4a|C:\\\\ProgramData\\\\Microsoft\\\\Windows Defender\\\\Definition Updates\\\\{67A1A2A0-69DB-400E-B8C3-DEB51E7752F9}\\\\mpengine.dll+3d953|C:\\\\ProgramData\\\\Microsoft\\\\Windows Defender\\\\Definition Updates\\\\{67A1A2A0-69DB-400E-B8C3-DEB51E7752F9}\\\\mpengine.dll+35afb5|C:\\\\ProgramData\\\\Microsoft\\\\Windows Defender\\\\Definition Updates\\\\{67A1A2A0-69DB-400E-B8C3-DEB51E7752F9}\\\\mpengine.dll+358605|C:\\\\ProgramData\\\\Microsoft\\\\Windows Defender\\\\Platform\\\\4.18.26050.15-0\\\\mpsvc.dll+2f7b1|C:\\\\ProgramData\\\\Microsoft\\\\Windows Defender\\\\Platform\\\\4.18.26050.15-0\\\\mprtp.dll+e88d|C:\\\\ProgramData\\\\Microsoft\\\\Windows Defender\\\\Platform\\\\4.18.26050.15-0\\\\mprtp.dll+e557|C:\\\\ProgramData\\\\Microsoft\\\\Windows Defender\\\\Platform\\\\4.18.26050.15-0\\\\mprtp.dll+31b92|C:\\\\ProgramData\\\\Microsoft\\\\Windows Defender\\\\Platform\\\\4.18.26050.15-0\\\\mprtp.dll+32461",
+    "event_time": "2026-07-13T09:47:44.474517800Z",
+    "event_uid": "ed6722a705ccf7c7761631faa6722b691b8afac0b914a13e288cbe24c44c11f9"
+  },
+  "subject": {
+    "_labels": [
+      "Process"
+    ],
+    "image": "C:\\\\ProgramData\\\\Microsoft\\\\Windows Defender\\\\Platform\\\\4.18.26050.15-0\\\\MsMpEng.exe",
+    "first_seen": "2026-07-02T04:07:19.750Z",
+    "process_guid": "{0d573dc4-3e91-6a43-3300-000000000e00}",
+    "last_seen": "2026-07-13T09:47:44.474Z",
+    "command_line": "\"C:\\ProgramData\\Microsoft\\Windows Defender\\Platform\\4.18.26050.15-0\\MsMpEng.exe\""
+  },
+  "related": [
+    {
+      "node": {
+        "_labels": [
+          "Host"
+        ],
+        "hostname": "winterfell.north.sevenkingdoms.local",
+        "role": "domain_controller",
+        "first_seen": "2026-07-02T02:32:07.265Z",
+        "has_adcs": false,
+        "last_seen": "2026-07-13T10:29:49.508Z",
+        "domain": "north.sevenkingdoms.local",
+        "criticality": "critical",
+        "is_dc": true
+      },
+      "rel": "ON_HOST"
+    },
+    {
+      "node": {
+        "_labels": [
+          "Process"
+        ],
+        "image": "C:\\Windows\\system32\\lsass.exe",
+        "first_seen": "2026-07-02T02:32:10.328Z",
+        "process_guid": "{0d573dc4-3e79-6a43-0c00-000000000e00}",
+        "last_seen": "2026-07-13T10:29:48.225Z"
+      },
+      "rel": "ACCESSED"
+    }
+  ]
+}
+
+### ③ 研判   [skill] lsass_dump   [模式] recipe
+# 研判留痕(8 步)
+[1] recipe取证「源进程与访问掩码」→ 1 行
+[2] recipe取证「源进程是否已知安全代理」→ 1 行
+[3] recipe取证「call_trace 指纹」→ 1 行
+[4] recipe取证「父进程链」→ 0 行
+[5] recipe取证「运行账号」→ 0 行
+[6] recipe取证「读后行为」→ 1 行
+[7] recipe取证「_图盲区」→ 1 行
+[8] 🛡 处置护栏 blocked: monitor -> winterfell.north.sevenkingdoms.local  因:目标是受保护主机(winterfell.north.sevenkingdoms.local)——DC/网关/mgmt 不动
+
+# 研判结果  alert=27fba084b019ae3bb620762db35bee201897caa7018d7f5c80214e0d5c7cacf2  path=B  skill=lsass_dump
+verdict   : false_positive  (confidence=0.8)
+summary   : 已知安全代理Microsoft Defender读取LSASS内存进行遥测和完整性检查
+rationale : 1.源进程ProgramData路径下的Microsoft Defender进程(MsMpEng.exe)属于已知安全代理
+2.访问掩码0x101000包含PROCESS_VM_READ(0x10)权限
+3.call_trace显示模块路径为ProgramData/Microsoft/Windows Defender
+4.父进程链显示来自svchost管理的Defender服务
+5.产生的临时文件路径和模块名称符合Defender正常行为模式
+evidence  : ['源进程与访问掩码', '源进程是否已知安全代理', 'call_trace 指纹', '父进程链']
+pattern   : 安全代理内存检查
+agent     : qwen32b-ft
+处置(建议): escalate -> winterfell.north.sevenkingdoms.local  risk=low  status=proposed
+
+============================================================================
+## [10/12] technique=T1003.001   该类共 1060 条   uid=86957e10659e1e6d5e78c27f47ed1c7bf215a54b02b9f70c93681430929ed8ff
+============================================================================
+### ① 原始告警节点(:Alert)
+{
+  "severity": 12,
+  "first_seen": "2026-07-13T09:39:24.782298600Z",
+  "last_seen": "2026-07-13T09:39:24.782298600Z",
+  "arrival_ms": 1783935566444,
+  "technique_ids": [
+    "T1003.001"
+  ],
+  "source": "wazuh",
+  "rule_id": "100802",
+  "stream": "soc-hids-alert-*",
+  "alert_uid": "86957e10659e1e6d5e78c27f47ed1c7bf215a54b02b9f70c93681430929ed8ff",
+  "rule_description": "Credential dumping via LSASS access by C:\\\\Program Files (x86)\\\\ossec-agent\\\\wazuh-agent.exe (granted 0x1fffff)",
+  "sensor": "wazuh-hids",
+  "raw_ref": "soc-hids-alert-2026.07.13:txXYWp8B3gPM8FAehtJV",
+  "time": "2026-07-13T09:39:25.665+0000"
+}
+
+### ② 触发上下文(seed:触发事件 / 主语 / 宾语 / 次要实体)
+{
+  "event": {
+    "ingest_time": 1783935606171,
+    "stream": "winlogbeat-*",
+    "granted_access": "0x1fffff",
+    "event_code": "10",
+    "arrival_ms": 1783935566591,
+    "raw_ref": "soc-hids-alert-2026.07.13:txXYWp8B3gPM8FAehtJV",
+    "sensor": "Microsoft-Windows-Sysmon/Operational",
+    "source": "winlogbeat",
+    "call_trace": "C:\\\\Windows\\\\SYSTEM32\\\\ntdll.dll+9feb4|C:\\\\Windows\\\\System32\\\\wow64.dll+3cf4|C:\\\\Windows\\\\System32\\\\wow64.dll+7783|C:\\\\Windows\\\\System32\\\\wow64cpu.dll+1783|C:\\\\Windows\\\\System32\\\\wow64cpu.dll+1199|C:\\\\Windows\\\\System32\\\\wow64.dll+cfda|C:\\\\Windows\\\\System32\\\\wow64.dll+cea0|C:\\\\Windows\\\\SYSTEM32\\\\ntdll.dll+7863d|C:\\\\Windows\\\\SYSTEM32\\\\ntdll.dll+78223|C:\\\\Windows\\\\SYSTEM32\\\\ntdll.dll+781ce|C:\\\\Windows\\\\SYSTEM32\\\\ntdll.dll+717ac(wow64)|C:\\\\Windows\\\\SYSTEM32\\\\ntdll.dll+b3d7e(wow64)|C:\\\\Windows\\\\System32\\\\KERNEL32.DLL+3125c(wow64)|C:\\\\Windows\\\\System32\\\\KERNEL32.DLL+24fe2(wow64)|C:\\\\Program Files (x86)\\\\ossec-agent\\\\wazuh-agent.exe+f647",
+    "event_time": "2026-07-13T09:39:24.782298600Z",
+    "event_uid": "210aaca75c29c670a11dffdbb7c01748cc2dfdff4f3ed4ea9663ab2637ce6b43"
+  },
+  "subject": {
+    "_labels": [
+      "Process"
+    ],
+    "image": "C:\\\\Program Files (x86)\\\\ossec-agent\\\\wazuh-agent.exe",
+    "first_seen": "2026-07-06T09:37:56.507Z",
+    "process_guid": "{85e8c649-7774-6a4b-7d07-000000001400}",
+    "last_seen": "2026-07-13T09:50:46.470Z",
+    "hashes": "MD5=A7CEA8DE3FC30334BFD64132B18D21E1,SHA256=A0D539A150087B2406DB7B727DD91E4F647DF6B85A2C9FCC76B0F3645D1DE961,IMPHASH=F2E7F0D79906859422914E1C8EFC36C6",
+    "pid": "3132",
+    "command_line": "\"C:\\Program Files (x86)\\ossec-agent\\wazuh-agent.exe\""
+  },
+  "related": [
+    {
+      "node": {
+        "_labels": [
+          "Process"
+        ],
+        "image": "C:\\Windows\\system32\\lsass.exe",
+        "first_seen": "2026-07-02T02:32:10.167Z",
+        "process_guid": "{85e8c649-8397-6a43-0c00-000000001400}",
+        "last_seen": "2026-07-13T10:25:26.055Z"
+      },
+      "rel": "ACCESSED"
+    },
+    {
+      "node": {
+        "_labels": [
+          "Host"
+        ],
+        "hostname": "castelblack.north.sevenkingdoms.local",
+        "role": "member_server",
+        "first_seen": "2026-07-02T02:32:06.696Z",
+        "has_adcs": false,
+        "last_seen": "2026-07-13T10:34:48.809Z",
+        "domain": "north.sevenkingdoms.local",
+        "criticality": "medium",
+        "is_dc": false
+      },
+      "rel": "ON_HOST"
+    }
+  ]
+}
+
+### ③ 研判   [skill] lsass_dump   [模式] recipe
+# 研判留痕(7 步)
+[1] recipe取证「源进程与访问掩码」→ 1 行
+[2] recipe取证「源进程是否已知安全代理」→ 1 行
+[3] recipe取证「call_trace 指纹」→ 1 行
+[4] recipe取证「父进程链」→ 1 行
+[5] recipe取证「运行账号」→ 1 行
+[6] recipe取证「读后行为」→ 1 行
+[7] recipe取证「_图盲区」→ 1 行
+
+# 研判结果  alert=86957e10659e1e6d5e78c27f47ed1c7bf215a54b02b9f70c93681430929ed8ff  path=B  skill=lsass_dump
+verdict   : false_positive  (confidence=0.98)
+summary   : Wazuh代理进程访问LSASS内存的合法行为
+rationale : 1.源进程为已知安全代理Wazuh/OSSEC HIDS，其触发告警属于头号误报场景。2.call_trace未检测到dbghelp/dbgcore/comsvcs等转储库模块加载。3.访问掩码0x1fffff虽包含PROCESS_VM_READ(0x10)，但父进程链显示其由services.exe正常启动。4.运行账号为SYSTEM权限，符合安全代理正常行为模式。5.未观察到后续恶意行为链（外连/横向/dump文件写盘）
+evidence  : ['事件代码:100802', '攻击模式:T1003.001']
+pattern   : 安全代理内存检查
+agent     : qwen32b-ft
+处置(建议): none -> castelblack.north.sevenkingdoms.local  risk=low  status=proposed
+
+============================================================================
+## [11/12] technique=T1003.001   该类共 1060 条   uid=a7ea2de21a7784bf461727c17cabd7ff5d63cccb0c9b2ea91aab79b5a3719d35
+============================================================================
+### ① 原始告警节点(:Alert)
+{
+  "severity": 12,
+  "first_seen": "2026-07-13T09:30:16.316603000Z",
+  "last_seen": "2026-07-13T09:30:16.316603000Z",
+  "arrival_ms": 1783935019121,
+  "technique_ids": [
+    "T1003.001"
+  ],
+  "source": "wazuh",
+  "rule_id": "92900",
+  "stream": "soc-hids-alert-*",
+  "alert_uid": "a7ea2de21a7784bf461727c17cabd7ff5d63cccb0c9b2ea91aab79b5a3719d35",
+  "rule_description": "Lsass process was accessed by C:\\\\ProgramData\\\\Microsoft\\\\Windows Defender\\\\Platform\\\\4.18.26060.3008-0\\\\MsMpEng.exe with read permissions, possible credential dump",
+  "sensor": "wazuh-hids",
+  "raw_ref": "soc-hids-alert-2026.07.13:8BXQWp8B3gPM8FAeLMlb",
+  "time": "2026-07-13T09:30:17.354+0000"
+}
+
+### ② 触发上下文(seed:触发事件 / 主语 / 宾语 / 次要实体)
+{
+  "event": {
+    "ingest_time": 1783935304417,
+    "stream": "winlogbeat-*",
+    "granted_access": "0x101000",
+    "event_code": "10",
+    "arrival_ms": 1783935017705,
+    "raw_ref": "soc-hids-alert-2026.07.13:8BXQWp8B3gPM8FAeLMlb",
+    "sensor": "Microsoft-Windows-Sysmon/Operational",
+    "source": "winlogbeat",
+    "call_trace": "C:\\\\Windows\\\\SYSTEM32\\\\ntdll.dll+a5fc4|C:\\\\Windows\\\\System32\\\\KERNELBASE.dll+212fd|C:\\\\ProgramData\\\\Microsoft\\\\Windows Defender\\\\Definition Updates\\\\{F1711E9C-34A7-4FFA-A371-A4B56ADC1160}\\\\mpengine.dll+2ead74|C:\\\\ProgramData\\\\Microsoft\\\\Windows Defender\\\\Definition Updates\\\\{F1711E9C-34A7-4FFA-A371-A4B56ADC1160}\\\\mpengine.dll+2eab17|C:\\\\ProgramData\\\\Microsoft\\\\Windows Defender\\\\Definition Updates\\\\{F1711E9C-34A7-4FFA-A371-A4B56ADC1160}\\\\mpengine.dll+2e7aff|C:\\\\ProgramData\\\\Microsoft\\\\Windows Defender\\\\Definition Updates\\\\{F1711E9C-34A7-4FFA-A371-A4B56ADC1160}\\\\mpengine.dll+b56482|C:\\\\ProgramData\\\\Microsoft\\\\Windows Defender\\\\Definition Updates\\\\{F1711E9C-34A7-4FFA-A371-A4B56ADC1160}\\\\mpengine.dll+551bc7|C:\\\\ProgramData\\\\Microsoft\\\\Windows Defender\\\\Definition Updates\\\\{F1711E9C-34A7-4FFA-A371-A4B56ADC1160}\\\\mpengine.dll+550a3c|C:\\\\ProgramData\\\\Microsoft\\\\Windows Defender\\\\Definition Updates\\\\{F1711E9C-34A7-4FFA-A371-A4B56ADC1160}\\\\mpengine.dll+55bdf1|C:\\\\ProgramData\\\\Microsoft\\\\Windows Defender\\\\Definition Updates\\\\{F1711E9C-34A7-4FFA-A371-A4B56ADC1160}\\\\mpengine.dll+55ca6b|C:\\\\ProgramData\\\\Microsoft\\\\Windows Defender\\\\Definition Updates\\\\{F1711E9C-34A7-4FFA-A371-A4B56ADC1160}\\\\mpengine.dll+4d7ac2|C:\\\\ProgramData\\\\Microsoft\\\\Windows Defender\\\\Definition Updates\\\\{F1711E9C-34A7-4FFA-A371-A4B56ADC1160}\\\\mpengine.dll+4d73fc|C:\\\\ProgramData\\\\Microsoft\\\\Windows Defender\\\\Definition Updates\\\\{F1711E9C-34A7-4FFA-A371-A4B56ADC1160}\\\\mpengine.dll+55c387|C:\\\\ProgramData\\\\Microsoft\\\\Windows Defender\\\\Definition Updates\\\\{F1711E9C-34A7-4FFA-A371-A4B56ADC1160}\\\\mpengine.dll+55ca6b|C:\\\\ProgramData\\\\Microsoft\\\\Windows Defender\\\\Definition Updates\\\\{F1711E9C-34A7-4FFA-A371-A4B56ADC1160}\\\\mpengine.dll+551af7|C:\\\\ProgramData\\\\Microsoft\\\\Windows Defender\\\\Definition Updates\\\\{F1711E9C-34A7-4FFA-A371-A4B56ADC1160}\\\\mpengine.dll+550a3c|C:\\\\ProgramData\\\\Microsoft\\\\Windows Defender\\\\Definition Updates\\\\{F1711E9C-34A7-4FFA-A371-A4B56ADC1160}\\\\mpengine.dll+55c387|C:\\\\ProgramData\\\\Microsoft\\\\Windows Defender\\\\Definition Updates\\\\{F1711E9C-34A7-4FFA-A371-A4B56ADC1160}\\\\mpengine.dll+55ca6b|C:\\\\ProgramData\\\\Microsoft\\\\Windows Defender\\\\Definition Updates\\\\{F1711E9C-34A7-4FFA-A371-A4B56ADC1160}\\\\mpengine.dll+23d109|C:\\\\ProgramData\\\\Microsoft\\\\Windows Defender\\\\Definition Updates\\\\{F1711E9C-34A7-4FFA-A371-A4B56ADC1160}\\\\mpengine.dll+228427|C:\\\\ProgramData\\\\Microsoft\\\\Windows Defender\\\\Definition Updates\\\\{F1711E9C-34A7-4FFA-A371-A4B56ADC1160}\\\\mpengine.dll+22be65|C:\\\\ProgramData\\\\Microsoft\\\\Windows Defender\\\\Definition Updates\\\\{F1711E9C-34A7-4FFA-A371-A4B56ADC1160}\\\\mpengine.dll+1c25f2|C:\\\\ProgramData\\\\Microsoft\\\\Windows Defender\\\\Definition Updates\\\\{F1711E9C-34A7-4FFA-A371-A4B56ADC1160}\\\\mpengine.dll+1a6879|C:\\\\ProgramData\\\\Microsoft\\\\Windows Defender\\\\Definition Updates\\\\{F1711E9C-34A7-4FFA-A371-A4B56ADC1160}\\\\mpengine.dll+1a6a8a",
+    "event_time": "2026-07-13T09:30:16.316603000Z",
+    "event_uid": "3851b71985225966c2389b3ea207055f7572af0c89d4f71798af4303d562a24c"
+  },
+  "subject": {
+    "_labels": [
+      "Process"
+    ],
+    "image": "C:\\\\ProgramData\\\\Microsoft\\\\Windows Defender\\\\Platform\\\\4.18.26060.3008-0\\\\MsMpEng.exe",
+    "first_seen": "2026-07-08T09:19:21.462Z",
+    "process_guid": "{F1C4252F-1619-6A4E-6207-000000000E00}",
+    "last_seen": "2026-07-13T09:30:16.600Z",
+    "hashes": "MD5=BFA930EDC3AEA262D3A74E71263F6E41,SHA256=35979BF35EEA166DD17D81B50CEAE41043E4AE1082F4ED25383ADFFD9D88DE4A,IMPHASH=E93FFCBB9514986DCEA4ECB9A6BAF07D",
+    "pid": "3584",
+    "command_line": "\"C:\\ProgramData\\Microsoft\\Windows Defender\\Platform\\4.18.26060.3008-0\\MsMpEng.exe\""
+  },
+  "related": [
+    {
+      "node": {
+        "_labels": [
+          "Host"
+        ],
+        "hostname": "braavos.essos.local",
+        "role": "certificate_authority",
+        "first_seen": "2026-07-02T02:32:07.471Z",
+        "has_adcs": true,
+        "last_seen": "2026-07-13T10:31:30.852Z",
+        "domain": "essos.local",
+        "criticality": "high",
+        "is_dc": false
+      },
+      "rel": "ON_HOST"
+    },
+    {
+      "node": {
+        "_labels": [
+          "Process"
+        ],
+        "image": "C:\\Windows\\system32\\lsass.exe",
+        "first_seen": "2026-07-02T02:32:10.626Z",
+        "process_guid": "{F1C4252F-8397-6A43-0B00-000000000E00}",
+        "last_seen": "2026-07-13T10:25:17.746Z"
+      },
+      "rel": "ACCESSED"
+    }
+  ]
+}
+
+### ③ 研判   [skill] lsass_dump   [模式] recipe
+# 研判留痕(7 步)
+[1] recipe取证「源进程与访问掩码」→ 1 行
+[2] recipe取证「源进程是否已知安全代理」→ 1 行
+[3] recipe取证「call_trace 指纹」→ 1 行
+[4] recipe取证「父进程链」→ 1 行
+[5] recipe取证「运行账号」→ 1 行
+[6] recipe取证「读后行为」→ 1 行
+[7] recipe取证「_图盲区」→ 1 行
+
+# 研判结果  alert=a7ea2de21a7784bf461727c17cabd7ff5d63cccb0c9b2ea91aab79b5a3719d35  path=B  skill=lsass_dump
+verdict   : false_positive  (confidence=0.8)
+summary   : 安全代理读取 LSASS 内存的合法行为
+rationale : 1. 源进程 MsMpEng.exe 是已知的安全代理(Microsoft Defender)且 call_trace 无转储库指纹
+2. 掩码 0x101000 虽含 PROCESS_VM_READ(0x10) 但属于 Defender 的正常遥测行为
+3. 父进程链 services.exe → MsMpEng.exe 符合合法进程创建路径
+4. 运行账号为系统账户(NT AUTHORITY\SYSTEM)且无可疑横向行为
+5. 读后行为均为合法日志操作(wevtutil.exe)和 Defender 组件调用
+evidence  : ['源进程与访问掩码: MsMpEng.exe → lsass.exe (0x101000)', '源进程是否已知安全代理: Microsoft Defender', 'call_trace 指纹: 末端模块 mpengine.dll', '父进程链: services.exe → MsMpEng.exe', '运行账号: NT AUTHORITY\\SYSTEM']
+missing   : ['源进程数字签名验证结果', '内存读取操作的上下文信息', '定义更新操作的具体哈希校验值']
+agent     : qwen32b-ft
+处置(建议): none -> MsMpEng.exe (SHA256: 待计算)  risk=low  status=proposed
+
+============================================================================
+## [12/12] technique=T1003.001   该类共 1060 条   uid=515334ab154ea838ce6eff57b70245d168d51c6f1e0d460557336d6a75556ed5
+============================================================================
+### ① 原始告警节点(:Alert)
+{
+  "severity": 12,
+  "first_seen": "2026-07-13T09:15:51.935242900Z",
+  "last_seen": "2026-07-13T09:15:51.935242900Z",
+  "arrival_ms": 1783934156712,
+  "technique_ids": [
+    "T1003.001"
+  ],
+  "source": "wazuh",
+  "rule_id": "100802",
+  "stream": "soc-hids-alert-*",
+  "alert_uid": "515334ab154ea838ce6eff57b70245d168d51c6f1e0d460557336d6a75556ed5",
+  "rule_description": "Credential dumping via LSASS access by C:\\\\Program Files (x86)\\\\ossec-agent\\\\wazuh-agent.exe (granted 0x1410)",
+  "sensor": "wazuh-hids",
+  "raw_ref": "soc-hids-alert-2026.07.13:LRXDWp8B3gPM8FAeA7yT",
+  "time": "2026-07-13T09:15:52.055+0000"
+}
+
+### ② 触发上下文(seed:触发事件 / 主语 / 宾语 / 次要实体)
+{
+  "event": {
+    "ingest_time": 1783934404410,
+    "stream": "winlogbeat-*",
+    "granted_access": "0x1410",
+    "event_code": "10",
+    "arrival_ms": 1783934153006,
+    "raw_ref": "soc-hids-alert-2026.07.13:LRXDWp8B3gPM8FAeA7yT",
+    "sensor": "Microsoft-Windows-Sysmon/Operational",
+    "source": "winlogbeat",
+    "call_trace": "C:\\\\Windows\\\\SYSTEM32\\\\ntdll.dll+9feb4|C:\\\\Windows\\\\System32\\\\wow64.dll+3cf4|C:\\\\Windows\\\\System32\\\\wow64.dll+7783|C:\\\\Windows\\\\System32\\\\wow64cpu.dll+1783|C:\\\\Windows\\\\System32\\\\wow64cpu.dll+1199|C:\\\\Windows\\\\System32\\\\wow64.dll+cfda|C:\\\\Windows\\\\System32\\\\wow64.dll+cea0|C:\\\\Windows\\\\SYSTEM32\\\\ntdll.dll+7863d|C:\\\\Windows\\\\SYSTEM32\\\\ntdll.dll+78223|C:\\\\Windows\\\\SYSTEM32\\\\ntdll.dll+781ce|C:\\\\Windows\\\\SYSTEM32\\\\ntdll.dll+717ac(wow64)|C:\\\\Windows\\\\System32\\\\KERNELBASE.dll+111778(wow64)|C:\\\\Program Files (x86)\\\\ossec-agent\\\\sysinfo.dll+1b7f6(wow64)|C:\\\\Program Files (x86)\\\\ossec-agent\\\\sysinfo.dll+1c401(wow64)|C:\\\\Program Files (x86)\\\\ossec-agent\\\\sysinfo.dll+159b5(wow64)|C:\\\\Program Files (x86)\\\\ossec-agent\\\\syscollector.dll+150a8(wow64)|C:\\\\Program Files (x86)\\\\ossec-agent\\\\syscollector.dll+1537d(wow64)|C:\\\\Program Files (x86)\\\\ossec-agent\\\\syscollector.dll+154de(wow64)",
+    "event_time": "2026-07-13T09:15:51.935242900Z",
+    "event_uid": "9c69411c976f20ae8a85f0a54473ac5b3358e53fca7160c3076d45b37b83bea4"
+  },
+  "subject": {
+    "_labels": [
+      "Process"
+    ],
+    "image": "C:\\\\Program Files (x86)\\\\ossec-agent\\\\wazuh-agent.exe",
+    "first_seen": "2026-07-06T09:46:12.276Z",
+    "process_guid": "{0d573dc4-7964-6a4b-d053-010000000e00}",
+    "last_seen": "2026-07-13T10:16:01.807Z",
+    "hashes": "MD5=A7CEA8DE3FC30334BFD64132B18D21E1,SHA256=A0D539A150087B2406DB7B727DD91E4F647DF6B85A2C9FCC76B0F3645D1DE961,IMPHASH=F2E7F0D79906859422914E1C8EFC36C6",
+    "pid": "3156",
+    "command_line": "\"C:\\Program Files (x86)\\ossec-agent\\wazuh-agent.exe\""
+  },
+  "related": [
+    {
+      "node": {
+        "_labels": [
+          "Host"
+        ],
+        "hostname": "winterfell.north.sevenkingdoms.local",
+        "role": "domain_controller",
+        "first_seen": "2026-07-02T02:32:07.265Z",
+        "has_adcs": false,
+        "last_seen": "2026-07-13T10:34:49.855Z",
+        "domain": "north.sevenkingdoms.local",
+        "criticality": "critical",
+        "is_dc": true
+      },
+      "rel": "ON_HOST"
+    },
+    {
+      "node": {
+        "_labels": [
+          "Process"
+        ],
+        "image": "C:\\Windows\\system32\\lsass.exe",
+        "first_seen": "2026-07-02T02:32:10.328Z",
+        "process_guid": "{0d573dc4-3e79-6a43-0c00-000000000e00}",
+        "last_seen": "2026-07-13T10:34:48.273Z"
+      },
+      "rel": "ACCESSED"
+    }
+  ]
+}
+
+### ③ 研判   [skill] lsass_dump   [模式] recipe
+# 研判留痕(8 步)
+[1] recipe取证「源进程与访问掩码」→ 1 行
+[2] recipe取证「源进程是否已知安全代理」→ 1 行
+[3] recipe取证「call_trace 指纹」→ 1 行
+[4] recipe取证「父进程链」→ 1 行
+[5] recipe取证「运行账号」→ 1 行
+[6] recipe取证「读后行为」→ 1 行
+[7] recipe取证「_图盲区」→ 1 行
+[8] 🛡 处置护栏 blocked: none -> winterfell.north.sevenkingdoms.local  因:目标是受保护主机(winterfell.north.sevenkingdoms.local)——DC/网关/mgmt 不动
+
+# 研判结果  alert=515334ab154ea838ce6eff57b70245d168d51c6f1e0d460557336d6a75556ed5  path=B  skill=lsass_dump
+verdict   : false_positive  (confidence=0.8)
+summary   : Wazuh/OSSEC HIDS 代理读取 LSASS 内存做完整性检查(头号 FP)
+rationale : 源进程是已知安全代理(Wazuh/OSSEC HIDS), call_trace 无转储库指纹, 且访问掩码 0x1410 对应合法的 ProcDump/任务管理器内存读取模式。安全代理自身模块(syscollector.dll)在父链 services.exe 下调用, 无后续外连/横向行为。
+evidence  : ['源进程与访问掩码', '源进程是否已知安全代理', 'call_trace 指纹', '父进程链', '运行账号', '读后行为']
+agent     : qwen32b-ft
+处置(建议): escalate -> winterfell.north.sevenkingdoms.local  risk=low  status=proposed
+
+# 批量自测完成
+=== done 2026-07-13 10:39Z ===
