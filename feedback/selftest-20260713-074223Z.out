@@ -1,0 +1,105 @@
+=== selftest 2026-07-13 07:42Z ===
+# 批量自测  范围=tech=T1003.001  待研判 1 条  模式=recipe  写回图=否(自测不落库)  (IP 已打码)
+
+待研判清单:
+  T1003.001          该类共   1041  uid=e75f9c60910dd7b6968f390a239c0e794231a442c4f4efa42cd97d6163a295c4
+
+============================================================================
+## [1/1] technique=T1003.001   该类共 1041 条   uid=e75f9c60910dd7b6968f390a239c0e794231a442c4f4efa42cd97d6163a295c4
+============================================================================
+### ① 原始告警节点(:Alert)
+{
+  "severity": 12,
+  "first_seen": "2026-07-06T09:37:57.527331400Z",
+  "last_seen": "2026-07-06T09:37:57.527331400Z",
+  "arrival_ms": 1783330678856,
+  "technique_ids": [
+    "T1003.001"
+  ],
+  "source": "wazuh",
+  "rule_id": "100802",
+  "stream": "soc-hids-alert-*",
+  "alert_uid": "e75f9c60910dd7b6968f390a239c0e794231a442c4f4efa42cd97d6163a295c4",
+  "rule_description": "Credential dumping via LSASS access by C:\\\\Program Files (x86)\\\\ossec-agent\\\\wazuh-agent.exe (granted 0x1fffff)",
+  "sensor": "wazuh-hids",
+  "raw_ref": "soc-hids-alert-2026.07.06:4u_KNp8B3gPM8FAerKcx",
+  "time": "2026-07-06T09:37:58.425+0000"
+}
+
+### ② 触发上下文(seed:触发事件 / 主语 / 宾语 / 次要实体)
+{
+  "event": {
+    "ingest_time": 1783563204524,
+    "stream": "winlogbeat-*",
+    "granted_access": "0x1fffff",
+    "event_code": "10",
+    "arrival_ms": 1783330679341,
+    "raw_ref": "soc-hids-alert-2026.07.06:4u_KNp8B3gPM8FAerKcx",
+    "sensor": "Microsoft-Windows-Sysmon/Operational",
+    "source": "winlogbeat",
+    "call_trace": "C:\\\\Windows\\\\SYSTEM32\\\\ntdll.dll+9feb4|C:\\\\Windows\\\\System32\\\\wow64.dll+3cf4|C:\\\\Windows\\\\System32\\\\wow64.dll+7783|C:\\\\Windows\\\\System32\\\\wow64cpu.dll+1783|C:\\\\Windows\\\\System32\\\\wow64cpu.dll+1199|C:\\\\Windows\\\\System32\\\\wow64.dll+cfda|C:\\\\Windows\\\\System32\\\\wow64.dll+cea0|C:\\\\Windows\\\\SYSTEM32\\\\ntdll.dll+7863d|C:\\\\Windows\\\\SYSTEM32\\\\ntdll.dll+78223|C:\\\\Windows\\\\SYSTEM32\\\\ntdll.dll+781ce|C:\\\\Windows\\\\SYSTEM32\\\\ntdll.dll+717ac(wow64)|C:\\\\Windows\\\\SYSTEM32\\\\ntdll.dll+b3d7e(wow64)|C:\\\\Windows\\\\System32\\\\KERNEL32.DLL+3125c(wow64)|C:\\\\Windows\\\\System32\\\\KERNEL32.DLL+24fe2(wow64)|C:\\\\Program Files (x86)\\\\ossec-agent\\\\wazuh-agent.exe+f647",
+    "event_time": "2026-07-06T09:37:57.527331400Z",
+    "event_uid": "3bec82a19eecb031c820c1db05993d806888c7aa9a5914c27166caffec53530f"
+  },
+  "subject": {
+    "_labels": [
+      "Process"
+    ],
+    "image": "C:\\\\Program Files (x86)\\\\ossec-agent\\\\wazuh-agent.exe",
+    "first_seen": "2026-07-06T09:37:56.507Z",
+    "process_guid": "{85e8c649-7774-6a4b-7d07-000000001400}",
+    "last_seen": "2026-07-13T06:50:34.453Z",
+    "hashes": "MD5=A7CEA8DE3FC30334BFD64132B18D21E1,SHA256=A0D539A150087B2406DB7B727DD91E4F647DF6B85A2C9FCC76B0F3645D1DE961,IMPHASH=F2E7F0D79906859422914E1C8EFC36C6",
+    "pid": "3132",
+    "command_line": "\"C:\\Program Files (x86)\\ossec-agent\\wazuh-agent.exe\""
+  },
+  "related": [
+    {
+      "node": {
+        "_labels": [
+          "Host"
+        ],
+        "hostname": "castelblack.north.sevenkingdoms.local",
+        "first_seen": "2026-07-02T02:32:06.696Z",
+        "last_seen": "2026-07-13T07:39:49.545Z"
+      },
+      "rel": "ON_HOST"
+    },
+    {
+      "node": {
+        "_labels": [
+          "Process"
+        ],
+        "image": "C:\\Windows\\system32\\lsass.exe",
+        "first_seen": "2026-07-02T02:32:10.167Z",
+        "process_guid": "{85e8c649-8397-6a43-0c00-000000001400}",
+        "last_seen": "2026-07-13T07:25:23.846Z"
+      },
+      "rel": "ACCESSED"
+    }
+  ]
+}
+
+### ③ 研判   [skill] lsass_dump   [模式] recipe
+# 研判留痕(7 步)
+[1] recipe取证「源进程与访问掩码」→ 1 行
+[2] recipe取证「源进程是否已知安全代理」→ 1 行
+[3] recipe取证「call_trace 指纹」→ 1 行
+[4] recipe取证「父进程链」→ 1 行
+[5] recipe取证「运行账号」→ 1 行
+[6] recipe取证「读后行为」→ 1 行
+[7] recipe取证「_图盲区」→ 1 行
+
+# 研判结果  alert=e75f9c60910dd7b6968f390a239c0e794231a442c4f4efa42cd97d6163a295c4  path=B  skill=lsass_dump
+verdict   : false_positive  (confidence=0.8)
+summary   : Wazuh HIDS 代理进程主动查询 LSASS 内存做完整性检查(企业内网头号 FP)
+rationale : 1.源进程是已知安全代理(Wazuh HIDS)且 call_trace 无转储库指纹
+2.访问掩码 0x1fffff 虽含 PROCESS_VM_READ(0x10)但父链 services.exe→wazuh-agent 符合合法安装形态
+3.无后续外连/横向/提权行为链
+4.系统账户运行且无异常命令行参数
+evidence  : ['源进程与访问掩码', '源进程是否已知安全代理', 'call_trace 指纹', '父进程链', '运行账号']
+agent     : qwen32b-ft
+处置(建议): escalate -> 告警e75f9c60910dd7b6968f390a239c0e794231a442c4f4efa42cd97d6163a295c4  risk=low  status=proposed
+
+# 批量自测完成
+=== done 2026-07-13 07:43Z ===
