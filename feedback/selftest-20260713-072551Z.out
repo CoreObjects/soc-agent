@@ -1,0 +1,119 @@
+=== selftest 2026-07-13 07:25Z ===
+# 批量自测  范围=tech=T1059  待研判 1 条  模式=recipe  写回图=否(自测不落库)  (IP 已打码)
+
+待研判清单:
+  T1059              该类共     54  uid=31c54e656e4be947e0aef4ba57c492736c4dd938169eced41bbcede729541a98
+
+============================================================================
+## [1/1] technique=T1059   该类共 54 条   uid=31c54e656e4be947e0aef4ba57c492736c4dd938169eced41bbcede729541a98
+============================================================================
+### ① 原始告警节点(:Alert)
+{
+  "severity": 9,
+  "first_seen": "2026-07-07T05:57:07.195694000Z",
+  "last_seen": "2026-07-07T05:57:07.195694000Z",
+  "arrival_ms": 1783403827290,
+  "technique_ids": [
+    "T1105",
+    "T1059"
+  ],
+  "source": "wazuh",
+  "rule_id": "92201",
+  "stream": "soc-hids-alert-*",
+  "alert_uid": "31c54e656e4be947e0aef4ba57c492736c4dd938169eced41bbcede729541a98",
+  "rule_description": "C:\\\\Windows\\\\System32\\\\WindowsPowerShell\\\\v1.0\\\\powershell.exe created a new scripting file under Windows Temp or User data folder",
+  "sensor": "wazuh-hids",
+  "raw_ref": "soc-hids-alert-2026.07.07:tfQmO58B3gPM8FAe1FxD",
+  "time": "2026-07-07T05:57:07.213+0000"
+}
+
+### ② 触发上下文(seed:触发事件 / 主语 / 宾语 / 次要实体)
+{
+  "event": {
+    "creation_time": "2026-07-07 05:57:07.181",
+    "ingest_time": 1783563383651,
+    "stream": "winlogbeat-*",
+    "event_code": "11",
+    "arrival_ms": 1783403827488,
+    "raw_ref": "soc-hids-alert-2026.07.07:tfQmO58B3gPM8FAe1FxD",
+    "sensor": "Microsoft-Windows-Sysmon/Operational",
+    "source": "winlogbeat",
+    "event_time": "2026-07-07T05:57:07.195694000Z",
+    "event_uid": "33fb269673003c90be417ca723d6dcc36bd873f988b9dbb3d8e51f4684accc21"
+  },
+  "subject": {
+    "_labels": [
+      "Process"
+    ],
+    "image": "C:\\\\Windows\\\\System32\\\\WindowsPowerShell\\\\v1.0\\\\powershell.exe",
+    "first_seen": "2026-07-07T05:57:07.100Z",
+    "process_guid": "{0d573dc4-9533-6a4c-6782-010000000e00}",
+    "last_seen": "2026-07-07T05:57:07.195Z",
+    "hashes": "MD5=7353F60B1739074EB17C5F4DDDEFE239,SHA256=DE96A6E69944335375DC1AC238336066889D9FFC7D73628EF4FE1B1B160AB32C,IMPHASH=741776AACCFC5B71FF59832DCDCACE0F",
+    "pid": "2320",
+    "command_line": "powershell.exe -ExecutionPolicy Restricted -Command Write-Host 'Final result: 1';"
+  },
+  "related": [
+    {
+      "node": {
+        "_labels": [
+          "File"
+        ],
+        "path": "C:\\\\Windows\\\\Temp\\\\__PSScriptPolicyTest_sq2kskx3.wlr.ps1",
+        "first_seen": "2026-07-07T05:57:07.195694000Z",
+        "last_seen": "2026-07-07T05:57:07.195694000Z",
+        "host": "winterfell.north.sevenkingdoms.local"
+      },
+      "rel": "WROTE"
+    },
+    {
+      "node": {
+        "_labels": [
+          "Host"
+        ],
+        "hostname": "winterfell.north.sevenkingdoms.local",
+        "first_seen": "2026-07-02T02:32:07.265Z",
+        "last_seen": "2026-07-13T07:24:49.816Z"
+      },
+      "rel": "ON_HOST"
+    },
+    {
+      "node": {
+        "_labels": [
+          "File"
+        ],
+        "path": "C:\\Windows\\Temp\\__PSScriptPolicyTest_sq2kskx3.wlr.ps1",
+        "first_seen": "2026-07-07T05:57:07.195Z",
+        "last_seen": "2026-07-07T05:57:07.195Z",
+        "host": "winterfell.north.sevenkingdoms.local"
+      },
+      "rel": "WROTE"
+    }
+  ]
+}
+
+### ③ 研判   [skill] suspicious_process   [模式] recipe
+# 研判留痕(9 步)
+[1] recipe取证「触发事件」→ 1 行
+[2] recipe取证「主语进程」→ 1 行
+[3] recipe取证「落地文件」→ 2 行
+[4] recipe取证「子进程(含命令行)」→ 0 行
+[5] recipe取证「主机」→ 1 行
+[6] recipe取证「供给/自检噪声」→ 1 行
+[7] recipe取证「父进程」→ 1 行
+[8] recipe取证「子进程后续行为」→ 1 行
+[9] recipe取证「_图盲区」→ 1 行
+
+# 研判结果  alert=31c54e656e4be947e0aef4ba57c492736c4dd938169eced41bbcede729541a98  path=B  skill=suspicious_process
+verdict   : false_positive  (confidence=0.8)
+summary   : PowerShell执行策略自检噪声
+rationale : 1.命令行显示为标准的PowerShell执行策略测试命令Write-Host，无恶意载荷特征
+2.触发文件路径包含系统临时目录中的__PSScriptPolicyTest_标准前缀
+3.执行行为被标记为ps_execution_policy_probe良性噪声类型
+4.子进程后续无外连、无敏感进程访问、无可疑操作
+evidence  : ['事件代码11: 文件创建事件', '进程命令行: powershell.exe -ExecutionPolicy Restricted -Command Write-Host', '临时脚本路径: C:\\\\Windows\\\\Temp\\\\__PSScriptPolicyTest_sq2kskx3.wlr.ps1']
+agent     : qwen32b-ft
+处置(建议): none -> winterfell.north.sevenkingdoms.local  risk=low  status=proposed
+
+# 批量自测完成
+=== done 2026-07-13 07:26Z ===
