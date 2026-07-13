@@ -5,7 +5,12 @@
 """
 import base64
 
-from soc_agent.recipe_lib import decode_chain, decode_powershell_cmd, provisioning_noise
+from soc_agent.recipe_lib import (
+    decode_chain,
+    decode_powershell_cmd,
+    provisioning_noise,
+    security_agent,
+)
 
 
 def _enc(text):
@@ -64,3 +69,18 @@ def test_noise_none_for_benign_normal_text():
     assert provisioning_noise("powershell -Command Get-Date") is None
     assert provisioning_noise("") is None
     assert provisioning_noise(None) is None
+
+
+def test_security_agent_detects_wazuh():
+    assert "Wazuh" in (security_agent(r"C:\Program Files (x86)\ossec-agent\wazuh-agent.exe") or "")
+
+
+def test_security_agent_detects_defender_and_sysmon():
+    assert "Defender" in (security_agent(r"C:\ProgramData\Microsoft\Windows Defender\MsMpEng.exe") or "")
+    assert "Sysmon" in (security_agent(r"C:\Windows\Sysmon64.exe") or "")
+
+
+def test_security_agent_none_for_ordinary_process():
+    assert security_agent(r"C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe") is None
+    assert security_agent("") is None
+    assert security_agent(None) is None

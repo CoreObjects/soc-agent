@@ -7,7 +7,7 @@
 import base64
 import re
 
-__all__ = ["decode_powershell_cmd", "decode_chain", "provisioning_noise"]
+__all__ = ["decode_powershell_cmd", "decode_chain", "provisioning_noise", "security_agent"]
 
 # PowerShell -EncodedCommand(可缩写 -enc / -e)后跟 base64。-e 需紧跟空格,避免误吃 -ExecutionPolicy。
 _ENC = re.compile(r"(?:-enc(?:odedcommand)?|-e)\s+([A-Za-z0-9+/=]{16,})", re.I)
@@ -56,3 +56,27 @@ def provisioning_noise(text):
         return None
     hits = [f"{name}({desc})" for name, desc, rx in _NOISE if rx.search(text)]
     return "; ".join(hits) if hits else None
+
+
+# 已知安全/监控代理:这类进程"访问 LSASS / 读进程 / 大量外连"多为自身遥测/完整性检查,是头号 FP。
+# ★绝不能因它自身触发的告警去 kill/隔离该代理或其主机(=戳瞎监控)。
+_SEC_AGENTS = [
+    (re.compile(r"wazuh-agent|ossec-agent", re.I), "Wazuh/OSSEC HIDS 代理"),
+    (re.compile(r"MsMpEng\.exe|NisSrv\.exe|MpDefenderCoreService", re.I), "Microsoft Defender"),
+    (re.compile(r"Sysmon6?4?\.exe", re.I), "Sysmon 传感器"),
+    (re.compile(r"winlogbeat|filebeat|elastic-agent", re.I), "Elastic/Beats 采集器"),
+    (re.compile(r"MsSense\.exe|SenseIR\.exe", re.I), "Microsoft Defender for Endpoint"),
+    (re.compile(r"CSFalcon", re.I), "CrowdStrike Falcon"),
+    (re.compile(r"xagt\.exe", re.I), "Trellix/FireEye"),
+    (re.compile(r"SentinelAgent|SentinelServiceHost", re.I), "SentinelOne"),
+]
+
+
+def security_agent(image):
+    """image/路径命中已知安全/监控代理 → 返回产品名,否则 None。命中即"自身遥测"强证伪信号。"""
+    if not image:
+        return None
+    for rx, name in _SEC_AGENTS:
+        if rx.search(image):
+            return name
+    return None
