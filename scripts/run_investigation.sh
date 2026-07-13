@@ -33,8 +33,10 @@ FB="feedback/inv-${AUID:0:12}.out"
 } 2>&1 | tee "$FB" || true      # 研判即使崩了也继续:保证 traceback 也被 ferry 回来
 
 # 回推 feedback(ferry:我 pull 就能读)
+git config user.email >/dev/null 2>&1 || git config user.email "soc-agent@server2"   # 无身份则本地兜底,否则 commit 静默失败
+git config user.name  >/dev/null 2>&1 || git config user.name  "soc-agent"
 git add "$FB" >/dev/null 2>&1 || true
-git commit -q -m "feedback: investigate ${AUID:0:12} $(date -u '+%m-%d %H:%MZ' 2>/dev/null || echo)" >/dev/null 2>&1 || true
+git commit -q -m "feedback: investigate ${AUID:0:12} $(date -u '+%m-%d %H:%MZ' 2>/dev/null || echo)" 2>&1 | tail -2 || true
 if git push origin HEAD >/dev/null 2>&1 \
    || { git pull --rebase -q origin main >/dev/null 2>&1 && git push origin HEAD >/dev/null 2>&1; }; then
   echo "✅ 已推 $FB,Claude 可 pull"
