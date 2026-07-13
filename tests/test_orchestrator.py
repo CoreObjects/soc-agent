@@ -64,23 +64,40 @@ def test_slow_path_runs_tools_then_finalizes(tmp_path):
     assert "先证伪" in sys_msg["content"]                # skill 方法论注入了
 
 
-def test_finalize_without_running_tools(tmp_path):
-    llm = FakeLLMClient([LLMResponse(tool_calls=[ToolCall(
-        "c1", "finalize_verdict", {"verdict": "benign", "confidence": 0.4, "rationale": "老应用RC4"})])])
-    r = _inv(tmp_path, llm, FakeGraph()).investigate(_alert(), seed={})
+def test_immediate_finalize_nudged_then_investigates(tmp_path):
+    # 0 取证就想 finalize → 骨架保底打回,逼它先查图,再 finalize
+    graph = FakeGraph(rows=[{"x": 1}])
+    llm = FakeLLMClient([
+        LLMResponse(tool_calls=[ToolCall("c1", "finalize_verdict",
+                    {"verdict": "benign", "confidence": 0.4, "rationale": "seed 够了"})]),   # 被打回
+        LLMResponse(tool_calls=[ToolCall("c2", "run_cypher", {"query": "MATCH (a:Alert) RETURN a"})]),
+        LLMResponse(tool_calls=[ToolCall("c3", "finalize_verdict",
+                    {"verdict": "benign", "confidence": 0.4, "rationale": "查完确认良性"})]),
+    ])
+    r = _inv(tmp_path, llm, graph).investigate(_alert(), seed={})
     assert r.verdict.verdict == "benign"
-    assert r.dispositions == []
+    assert graph.queries                       # 被逼查了图(不再 0 取证下结论)
+
+
+def test_stubborn_finalize_accepted_after_nudge_limit(tmp_path):
+    fin = LLMResponse(tool_calls=[ToolCall("c", "finalize_verdict",
+                      {"verdict": "benign", "confidence": 0.3, "rationale": "就不查"})])
+    llm = FakeLLMClient([fin, fin, fin])       # 一直想直接 finalize
+    r = _inv(tmp_path, llm, FakeGraph()).investigate(_alert(), seed={})
+    assert r.verdict.verdict == "benign"       # 打回 2 次后第 3 次接受,不无限循环
 
 
 def test_nudges_then_finalizes_when_model_returns_bare_text(tmp_path):
+    graph = FakeGraph(rows=[{"x": 1}])
     llm = FakeLLMClient([
-        LLMResponse(content="我觉得像攻击"),            # 无工具调用
-        LLMResponse(tool_calls=[ToolCall("c1", "finalize_verdict",
+        LLMResponse(content="我觉得像攻击"),            # 无工具调用 → 催
+        LLMResponse(tool_calls=[ToolCall("c1", "run_cypher", {"query": "MATCH (n) RETURN n"})]),
+        LLMResponse(tool_calls=[ToolCall("c2", "finalize_verdict",
                     {"verdict": "true_positive", "confidence": 0.8, "rationale": "x"})]),
     ])
-    r = _inv(tmp_path, llm, FakeGraph()).investigate(_alert(), seed={})
+    r = _inv(tmp_path, llm, graph).investigate(_alert(), seed={})
     assert r.verdict.verdict == "true_positive"
-    # 第二次 chat 的 messages 里应有催它 finalize 的提示
+    # 第二次 chat 的 messages 里应有催它取证/finalize 的提示
     assert any("finalize_verdict" in (m.get("content") or "") for m in llm.calls[1]["messages"])
 
 
@@ -92,15 +109,21 @@ def test_exhausts_to_suspicious_when_never_finalizes(tmp_path):
 
 
 def test_freeform_disposition_action_normalized_to_escalate(tmp_path):
-    llm = FakeLLMClient([LLMResponse(tool_calls=[ToolCall("c1", "finalize_verdict", {
-        "verdict": "suspicious", "confidence": 0.5, "rationale": "x",
-        "dispositions": [{"action": "推动淘汰RC4等弱加密", "target": "NORTH", "risk": "high"}]})])])
+    llm = FakeLLMClient([
+        LLMResponse(tool_calls=[ToolCall("c0", "run_cypher", {"query": "MATCH (n) RETURN n"})]),
+        LLMResponse(tool_calls=[ToolCall("c1", "finalize_verdict", {
+            "verdict": "suspicious", "confidence": 0.5, "rationale": "x",
+            "dispositions": [{"action": "推动淘汰RC4等弱加密", "target": "NORTH", "risk": "high"}]})]),
+    ])
     r = _inv(tmp_path, llm, FakeGraph()).investigate(_alert(), seed={})
     assert r.dispositions[0].action == "escalate"      # 词表外的自由发挥 → 归一为升级人工
 
 
 def test_invalid_verdict_from_llm_normalized_to_suspicious(tmp_path):
-    llm = FakeLLMClient([LLMResponse(tool_calls=[ToolCall(
-        "c1", "finalize_verdict", {"verdict": "PWNED", "confidence": 1.0, "rationale": "x"})])])
+    llm = FakeLLMClient([
+        LLMResponse(tool_calls=[ToolCall("c0", "run_cypher", {"query": "MATCH (n) RETURN n"})]),
+        LLMResponse(tool_calls=[ToolCall("c1", "finalize_verdict",
+                    {"verdict": "PWNED", "confidence": 1.0, "rationale": "x"})]),
+    ])
     r = _inv(tmp_path, llm, FakeGraph()).investigate(_alert(), seed={})
     assert r.verdict.verdict == "suspicious"            # 非法 verdict 归一,不崩

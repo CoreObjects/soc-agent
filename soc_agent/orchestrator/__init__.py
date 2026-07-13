@@ -47,13 +47,17 @@ _SCAFFOLD = (
 class AgentInvestigator:
     """可插拔的研判器(Investigator);默认实现 = 自主 tool-calling 循环。"""
 
-    def __init__(self, llm, toolbox, schema, registry, agent_name="agent", max_iterations=12):
+    _MAX_NUDGES = 2      # "先取证再下结论"最多打回几次,防死循环
+
+    def __init__(self, llm, toolbox, schema, registry, agent_name="agent",
+                 max_iterations=12, min_queries=1):
         self.llm = llm
         self.toolbox = toolbox
         self.schema = schema
         self.registry = registry
         self.agent_name = agent_name
         self.max_iterations = max_iterations
+        self.min_queries = min_queries      # 至少取证几次才允许 finalize(骨架保底:不准 0 取证下结论)
 
     # ---- 提示构建 ----
     def _system_prompt(self, skill) -> str:
@@ -141,19 +145,28 @@ class AgentInvestigator:
         ]
         specs = self.toolbox.specs()
         trace = []
+        queries_done = 0
+        finalize_nudges = 0
         for _ in range(self.max_iterations):
             resp = self.llm.chat(messages, tools=specs)
             if not resp.tool_calls:
-                # 只给了文本没结论 → 催它用 finalize_verdict
+                # 只给了文本没调工具 → 催它先取证再 finalize_verdict
                 messages.append({"role": "assistant", "content": resp.content or ""})
                 messages.append({"role": "user",
-                                 "content": "请用 finalize_verdict 工具给出结构化结论(证据不足就 suspicious)。"})
+                                 "content": "请用 run_cypher 按方法论查图取证后,再用 finalize_verdict 给结论。"})
                 continue
             messages.append(self._assistant_msg(resp))
             for tc in resp.tool_calls:
-                if self.toolbox.is_terminal(tc.name):        # finalize → 结束
+                if self.toolbox.is_terminal(tc.name):        # finalize
+                    if queries_done < self.min_queries and finalize_nudges < self._MAX_NUDGES:
+                        finalize_nudges += 1                 # ★骨架保底:0 取证不准下结论,打回去查图
+                        messages.append(self._tool_msg(tc.id, {
+                            "error": "还没查图取证就下结论,不允许。请先用 run_cypher 按上面方法论取证"
+                                     "(先证伪 → 看权限 privileged/组成员 → 看基线扇出 → 看是否跨域),再 finalize。"}))
+                        continue
                     return self._build_result(alert, skill, tc.arguments or {}, trace)
                 result = self.toolbox.dispatch(tc.name, tc.arguments)
+                queries_done += 1
                 trace.append({"tool": tc.name, "args": tc.arguments, "result": result})
                 messages.append(self._tool_msg(tc.id, result))
         return self._fallback(alert, skill, trace, "达到最大研判轮次仍未结论")
