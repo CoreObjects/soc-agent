@@ -75,7 +75,9 @@ def test_real_skills_dir_all_valid():
         assert s.layer, f"{s.name} 缺 layer"
         if (s.path / "recipe.py").exists():
             assert callable(s.recipe), f"{s.name} 的 recipe.py 没有 collect"
-    assert {"kerberoast", "adcs", "dcsync", "lateral_movement"} <= {s.name for s in skills}   # 身份层四类齐
+    names = {s.name for s in skills}
+    assert {"kerberoast", "adcs", "dcsync", "lateral_movement"} <= names           # 身份层四类
+    assert {"lsass_dump", "ingress_tool_transfer", "registry_persistence", "suspicious_process"} <= names  # 主机层四类
 
 
 def test_real_recipes_run_on_empty_graph():
