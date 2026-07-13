@@ -6,6 +6,7 @@
 """
 import json
 
+from ..disposition import apply_guardrail
 from ..models import DISPOSITION_ACTIONS, RISKS, VERDICTS, Alert, Disposition, InvestigationResult, Verdict
 from ..skills_runtime import SkillNotFound
 from ..tools import FINALIZE, finalize_spec
@@ -32,8 +33,15 @@ def build_result(alert, skill_name, args, agent_name, trace=None, path="B") -> I
         if act not in DISPOSITION_ACTIONS:
             act = "escalate"
         dispositions.append(Disposition(action=act, target=d.get("target"), risk=risk))
+    # ★P5a 处置护栏:NEVER-TOUCH 硬拒(传感器/DC/关键账号)+ 目标类型解析 + gated/auto
+    dispositions, audit = apply_guardrail(dispositions)
+    trace = list(trace or [])
+    for a in audit:
+        if a["decision"] in ("blocked", "retargeted"):        # 只把"干预"记进留痕(gated/auto 是常态)
+            trace.append({"tool": "guardrail", "decision": a["decision"], "action": a["action"],
+                          "target": a["target"], "reason": a.get("reason")})
     return InvestigationResult(alert_uid=alert.alert_uid, path=path, verdict=verdict,
-                               dispositions=dispositions, skill=skill_name, trace=trace or [])
+                               dispositions=dispositions, skill=skill_name, trace=trace)
 
 # technique → 层(仅用于"未命中具体 skill 时选该层通用兜底";具体 skill 按 technique 直配)
 _LAYER_BY_PREFIX = {

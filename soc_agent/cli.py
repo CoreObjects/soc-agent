@@ -83,6 +83,9 @@ def render_trace(result) -> str:
             lines.append(f"[{i}] ⚠ 未调工具,只吐文本: {(step.get('content') or '')[:240]}")
         elif tool == "finalize_too_early":
             lines.append(f"[{i}] ⚠ 0取证就想 finalize,打回(第{step.get('nudge')}次)")
+        elif tool == "guardrail":
+            lines.append(f"[{i}] 🛡 处置护栏 {step.get('decision')}: {step.get('action')} -> "
+                         f"{step.get('target')}  因:{step.get('reason')}")
         else:
             lines.append(f"[{i}] {tool}: {step.get('args')}")
     return "\n".join(lines)

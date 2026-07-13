@@ -210,6 +210,20 @@ def test_skill_router_none_falls_back_to_generic_layer(tmp_path):
     assert picked is not None and picked.name == "generic_identity"
 
 
+def test_guardrail_blocks_sensor_kill_through_build_result():
+    # 端到端:LLM 建议杀 wazuh-agent → build_result 里的护栏降级为 escalate + 记留痕
+    from soc_agent.orchestrator import build_result
+    args = {"verdict": "true_positive", "confidence": 0.9, "rationale": "x",
+            "dispositions": [{"action": "kill_process",
+                              "target": r"C:\Program Files (x86)\ossec-agent\wazuh-agent.exe", "risk": "high"},
+                             {"action": "isolate_host", "target": r"C:\Windows\powershell.exe", "risk": "high"}]}
+    r = build_result(_alert(), "lsass_dump", args, "qwen32b-ft", trace=[])
+    assert r.dispositions[0].action == "escalate"                 # 杀传感器 → 硬拒降级
+    assert r.dispositions[1].action == "escalate"                 # isolate_host 目标是文件路径 → 打回
+    guards = [t for t in r.trace if t.get("tool") == "guardrail"]
+    assert {g["decision"] for g in guards} == {"blocked", "retargeted"}
+
+
 def test_invalid_verdict_from_llm_normalized_to_suspicious(tmp_path):
     llm = FakeLLMClient([
         LLMResponse(tool_calls=[ToolCall("c0", "run_cypher", {"query": "MATCH (n) RETURN n"})]),
