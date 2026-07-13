@@ -27,7 +27,17 @@ def main():
     print("NEO4J_URI   :", _mask(cfg.neo4j_uri))
     print("LLM_API_BASE:", _mask(cfg.llm_api_base), "| model:", cfg.llm_model)
 
-    # ---- 图连通 + 列 Kerberoast 告警 ----
+    # ---- 依赖守卫:别用系统 python3 裸跑(会 ModuleNotFoundError: neo4j)----
+    try:
+        import neo4j  # noqa: F401
+    except ModuleNotFoundError:
+        print("\n!! 依赖未装(neo4j)。别用系统 python3 裸跑,用自带 venv 的入口:")
+        print("     bash scripts/selftest.sh          # 批量自测(自动建 venv,推荐)")
+        print("     # 或手动:python3 -m venv .venv && ./.venv/bin/pip install -e .")
+        print("     #         再 .venv/bin/python scripts/preflight.py")
+        raise SystemExit(1)
+
+    # ---- 图连通 + 列告警 ----
     from soc_agent.graph.client import Neo4jGraph
     g = Neo4jGraph(cfg.neo4j_uri, cfg.neo4j_user, cfg.neo4j_password, cfg.neo4j_database)
     try:
