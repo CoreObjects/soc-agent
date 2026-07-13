@@ -8,10 +8,10 @@ description: 研判 ADCS 证书滥用(ESC)告警。当告警涉及"证书申请/
 
 **攻击本质**:滥用错配的证书模板或 Web 注册端点,拿一张能"以他人身份认证"的证书 = 长期域内持久化/提权。ESC1:模板开 `ENROLLEE_SUPPLIES_SUBJECT`+客户端认证 EKU → 请求时自填任意 SAN 冒充管理员。ESC8:向 CA Web 端点 NTLM 中继,替被中继账号(常是机器账号/DC)取证书。
 
-**触发**:证书申请收到/证书签发(Windows 4886/4887)。触发事件在 seed:`(:Event)-[:BY]->请求者Account`、`-[:REQUESTED]->Service(certificate_authority)`,标量 `template/request_type`。
+**触发**:证书申请收到/证书签发(Windows 4886/4887)。触发事件在 seed:`(:Event)-[:BY]->请求者Account`、`-[:REQUESTED]->Service(certificate_authority)`。⚠️4886 携 `attributes`(含请求机器 cdc/rmd)+ `request_id`,**但不携带模板名/EKU/SAN**(那些是图盲区)。
 
 ## 研判决策树
-1. **请求者是谁、对哪个 CA/模板?**(recipe「请求者与CA/模板」)—— 低权用户 + 危险模板 = 升权。
+1. **请求者是谁、对哪个 CA、从哪台机器?**(recipe「请求者与CA」:req.upn/domain/privileged、ca.service_id、attributes 里的 cdc/rmd 请求机器)—— 低权用户从异常主机请求 = 升权;`attributes` 显示请求机器 == CA/DC 自身则偏运维。
 2. **证书主体/SAN 是否 ≠ 请求者?(ESC1/ESC6 头号判据)** —— ⚠️**SAN 未建模(图盲区)**,图内无法直接判 mismatch → 写进 missing_evidence。
 3. **模板本身危险吗?**(EKU / ENROLLEE_SUPPLIES_SUBJECT / 是否需审批)—— ⚠️只有模板名,EKU/标志未建模 → 图盲区。
 4. **低权用户在换取特权认证能力吗?**(recipe「请求者估值」:privileged/组)。
