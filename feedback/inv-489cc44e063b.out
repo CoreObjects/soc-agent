@@ -1,20 +1,18 @@
-=== investigate 489cc44e063bdac63f9dcf39dc87e8f99e1908e30a438afe970ebd2c11796624  2026-07-13 03:04Z ===
-# 研判留痕(4 步)
-[1] run_cypher → 1 行
-     q: MATCH (a:Alert {alert_uid:$alert_uid})<-[:TRIGGERED]-(e:Event {event_code:'4769'})-[:BY]->(req:Account) RETURN req.sam, req.domain, req.type, req.privileged, e.enc_type, e.ticket_options
-[2] run_cypher → 1 行
-     q: MATCH (a:Alert {alert_uid:$alert_uid})<-[:TRIGGERED]-(e:Event {event_code:'4769'})-[:REQUESTED]->(tgt) OPTIONAL MATCH (tgt)-[:MEMBER_OF]->(g:Group) RETURN tgt.sam, tgt.privileged, collect(DISTINCT g.name) AS groups
-[3] run_cypher → 1 行
-     q: MATCH (a:Alert {alert_uid:$alert_uid})<-[:TRIGGERED]-(e:Event {event_code:'4769'})-[:BY]->(req:Account) RETURN req.sam, req.domain, req.type, req.privileged, e.enc_type, e.ticket_options
-[4] run_cypher → 1 行
-     q: MATCH (a:Alert {alert_uid:$alert_uid})<-[:TRIGGERED]-(e:Event {event_code:'4769'})-[:REQUESTED]->(tgt) OPTIONAL MATCH (tgt)-[:MEMBER_OF]->(g:Group) RETURN tgt.sam, tgt.privileged, collect(DISTINCT g.name) AS groups
+=== investigate 489cc44e063bdac63f9dcf39dc87e8f99e1908e30a438afe970ebd2c11796624  2026-07-13 03:30Z ===
+[研判模式] recipe
+# 研判留痕(5 步)
+[1] recipe取证「请求与目标」→ 1 行
+[2] recipe取证「目标估值」→ 1 行
+[3] recipe取证「请求者enc基线」→ 2 行
+[4] recipe取证「跨域信任」→ 1 行
+[5] recipe取证「SPN扇出」→ 1 行
 
 # 研判结果  alert=489cc44e063bdac63f9dcf39dc87e8f99e1908e30a438afe970ebd2c11796624  path=B  skill=kerberoast
-verdict   : suspicious  (confidence=0.6)
-summary   : 检测到一次可能的Kerberoasting攻击，需要进一步调查。
-rationale : 请求者是一个机器账号，且请求了RC4加密类型的服务票据，这可能是Kerberoasting攻击的迹象。然而，由于缺乏进一步的信息，无法确定这是否为恶意活动。
-evidence  : ['5e170299b4e7b2f5fe1e3d09962fca995c06ea55717479f8ed54c373a7d91ad4']
-missing   : ['请求者的活动基线', '目标服务账号的特权和所属组']
+verdict   : false_positive  (confidence=0.8)
+summary   : 跨域信任的正常 RC4 票据请求
+rationale : 请求者域 NORTH.sevenkingdoms.local 与目标域 sevenkingdoms.local 存在信任关系。根据 Kerberoasting 判定规则第 5.5 步,跨域信任的 RC4 票据请求属于正常行为直至被证伪。证据显示请求者是机器账号($ 结尾),且 enc_type=0x17(RC4)的历史基线已达 123 次。
+evidence  : ['4769:event_time=2026-07-06T12:32:03.685Z', 'Domain:netbios=NORTH']
+pattern   : T1558.003
 agent     : qwen32b-ft
-处置(建议): monitor -> winterfell$  risk=low  status=proposed
-=== done 2026-07-13 03:07Z ===
+处置(建议): none -> winterfell$  risk=low  status=proposed
+=== done 2026-07-13 03:31Z ===
