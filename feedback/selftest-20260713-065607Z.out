@@ -1,0 +1,764 @@
+=== selftest 2026-07-13 06:56Z ===
+Received notification from DBMS server: {severity: WARNING} {code: Neo.ClientNotification.Statement.UnknownPropertyKeyWarning} {category: UNRECOGNIZED} {title: The provided property key is not in the database} {description: One of the property names in your query is not available in the database, make sure you didn't misspell it or that the label is available when you run this statement in your application (the missing property name is: reputation)} {position: line: 1, column: 181, offset: 180} for query: 'MATCH (p:Process {process_guid:$g}) OPTIONAL MATCH (p)-[:CONNECTED_TO]->(ip:IPAddress) OPTIONAL MATCH (p)-[:QUERIED]->(d:Domain) RETURN collect(DISTINCT {ip: ip.ip, reputation: ip.reputation, asn: ip.asn}) AS ips, collect(DISTINCT {fqdn: d.fqdn, reputation: d.reputation, first_seen: d.first_seen}) AS domains'
+Received notification from DBMS server: {severity: WARNING} {code: Neo.ClientNotification.Statement.UnknownPropertyKeyWarning} {category: UNRECOGNIZED} {title: The provided property key is not in the database} {description: One of the property names in your query is not available in the database, make sure you didn't misspell it or that the label is available when you run this statement in your application (the missing property name is: asn)} {position: line: 1, column: 201, offset: 200} for query: 'MATCH (p:Process {process_guid:$g}) OPTIONAL MATCH (p)-[:CONNECTED_TO]->(ip:IPAddress) OPTIONAL MATCH (p)-[:QUERIED]->(d:Domain) RETURN collect(DISTINCT {ip: ip.ip, reputation: ip.reputation, asn: ip.asn}) AS ips, collect(DISTINCT {fqdn: d.fqdn, reputation: d.reputation, first_seen: d.first_seen}) AS domains'
+Received notification from DBMS server: {severity: WARNING} {code: Neo.ClientNotification.Statement.UnknownPropertyKeyWarning} {category: UNRECOGNIZED} {title: The provided property key is not in the database} {description: One of the property names in your query is not available in the database, make sure you didn't misspell it or that the label is available when you run this statement in your application (the missing property name is: reputation)} {position: line: 1, column: 261, offset: 260} for query: 'MATCH (p:Process {process_guid:$g}) OPTIONAL MATCH (p)-[:CONNECTED_TO]->(ip:IPAddress) OPTIONAL MATCH (p)-[:QUERIED]->(d:Domain) RETURN collect(DISTINCT {ip: ip.ip, reputation: ip.reputation, asn: ip.asn}) AS ips, collect(DISTINCT {fqdn: d.fqdn, reputation: d.reputation, first_seen: d.first_seen}) AS domains'
+# 批量自测  技战术 8 类 / 待研判 8 条  模式=recipe  写回图=否(自测不落库)  (IP 已打码)
+
+待研判清单:
+  T1105              该类共  16998  uid=7ad45027cd10959a26aa61fe344a8b2f3ed5c87d131380b459580cfe02b6b451
+  T1003.001          该类共   1038  uid=e75f9c60910dd7b6968f390a239c0e794231a442c4f4efa42cd97d6163a295c4
+  T1558.003          该类共     66  uid=489cc44e063bdac63f9dcf39dc87e8f99e1908e30a438afe970ebd2c11796624
+  T1059              该类共     54  uid=31c54e656e4be947e0aef4ba57c492736c4dd938169eced41bbcede729541a98
+  T1140              该类共     33  uid=22e453526d020b52e0425162462e58a4236080809e0e2e03f6ac4b756691133e
+  T1059.001          该类共     29  uid=246bb4e5e3bb37c9c83029cd23f83134c9013b4491c17fd6577368d272c03b47
+  T1649              该类共      6  uid=0a4f05a36e53604d2e430d0a3bd09c0bd4ca4f6bd1ad69c946fe77c2dc526edd
+  (none)             该类共      3  uid=6049acfd7bc465c61fb01ac257cc78725aca001cdb092ad7124344f09cd44805
+
+============================================================================
+## [1/8] technique=T1105   该类共 16998 条   uid=7ad45027cd10959a26aa61fe344a8b2f3ed5c87d131380b459580cfe02b6b451
+============================================================================
+### ① 原始告警节点(:Alert)
+{
+  "severity": 15,
+  "first_seen": "2026-07-06T09:45:27.013423400Z",
+  "last_seen": "2026-07-06T09:45:27.013423400Z",
+  "arrival_ms": 1783331131057,
+  "technique_ids": [
+    "T1105"
+  ],
+  "source": "wazuh",
+  "rule_id": "92213",
+  "stream": "soc-hids-alert-*",
+  "alert_uid": "7ad45027cd10959a26aa61fe344a8b2f3ed5c87d131380b459580cfe02b6b451",
+  "rule_description": "Executable file dropped in folder commonly used by malware",
+  "sensor": "wazuh-hids",
+  "raw_ref": "soc-hids-alert-2026.07.06:7u_RNp8B3gPM8FAekrGi",
+  "time": "2026-07-06T09:45:28.229+0000"
+}
+
+### ② 触发上下文(seed:触发事件 / 主语 / 宾语 / 次要实体)
+{
+  "event": {
+    "creation_time": "2026-07-06 09:45:26.996",
+    "ingest_time": 1783563212608,
+    "stream": "winlogbeat-*",
+    "event_code": "11",
+    "arrival_ms": 1783331127880,
+    "raw_ref": "soc-hids-alert-2026.07.06:7u_RNp8B3gPM8FAekrGi",
+    "sensor": "Microsoft-Windows-Sysmon/Operational",
+    "source": "winlogbeat",
+    "event_time": "2026-07-06T09:45:27.013423400Z",
+    "event_uid": "6e9507105c3884c3f7729a7c63c44b0e8b1f63777cfa54e80c019bce2d20e801"
+  },
+  "subject": {
+    "_labels": [
+      "Process"
+    ],
+    "image": "C:\\\\Windows\\\\System32\\\\WindowsPowerShell\\\\v1.0\\\\powershell.exe",
+    "first_seen": "2026-07-06T09:45:26.901Z",
+    "process_guid": "{85e8c649-7936-6a4b-8507-000000001400}",
+    "last_seen": "2026-07-06T09:45:27.144Z",
+    "hashes": "MD5=7353F60B1739074EB17C5F4DDDEFE239,SHA256=DE96A6E69944335375DC1AC238336066889D9FFC7D73628EF4FE1B1B160AB32C,IMPHASH=741776AACCFC5B71FF59832DCDCACE0F",
+    "pid": "3104",
+    "command_line": "PowerShell  -NoProfile -NonInteractive -ExecutionPolicy Unrestricted -EncodedCommand UABvAHcAZQByAFMAaABlAGwAbAAgAC0ATgBvAFAAcgBvAGYAaQBsAGUAIAAtAE4AbwBuAEkAbgB0AGUAcgBhAGMAdABpAHYAZQAgAC0ARQB4AGUAYwB1AHQAaQBvAG4AUABvAGwAaQBjAHkAIABVAG4AcgBlAHMAdAByAGkAYwB0AGUAZAAgAC0ARQBuAGMAbwBkAGUAZABDAG8AbQBtAGEAbgBkACAASgBnAEIAagBBAEcAZwBBAFkAdwBCAHcAQQBDADQAQQBZAHcAQgB2AEEARwAwAEEASQBBAEEAMgBBAEQAVQBBAE0AQQBBAHcAQQBEAEUAQQBJAEEAQQArAEEAQwBBAEEASgBBAEIAdQBBAEgAVQBBAGIAQQBCAHMAQQBBAG8AQQBhAFEAQgBtAEEAQwBBAEEASwBBAEEAawBBAEYAQQBBAFUAdwBCAFcAQQBHAFUAQQBjAGcAQgB6AEEARwBrAEEAYgB3AEIAdQBBAEYAUQBBAFkAUQBCAGkAQQBHAHcAQQBaAFEAQQB1AEEARgBBAEEAVQB3AEIAVwBBAEcAVQBBAGMAZwBCAHoAQQBHAGsAQQBiAHcAQgB1AEEAQwBBAEEATABRAEIAcwBBAEgAUQBBAEkAQQBCAGIAQQBGAFkAQQBaAFEAQgB5AEEASABNAEEAYQBRAEIAdgBBAEcANABBAFgAUQBBAGkAQQBEAE0AQQBMAGcAQQB3AEEAQwBJAEEASwBRAEEAZwBBAEgAcwBBAEMAZwBBAG4AQQBIAHMAQQBJAGcAQgBtAEEARwBFAEEAYQBRAEIAcwBBAEcAVQBBAFoAQQBBAGkAQQBEAG8AQQBkAEEAQgB5AEEASABVAEEAWgBRAEEAcwBBAEMASQBBAGIAUQBCAHoAQQBHAGMAQQBJAGcAQQA2AEEAQwBJAEEAUQBRAEIAdQBBAEgATQBBAGEAUQBCAGkAQQBHAHcAQQBaAFEAQQBnAEEASABJAEEAWgBRAEIAeABBAEgAVQBBAGEAUQBCAHkAQQBHAFUAQQBjAHcAQQBnAEEARgBBAEEAYgB3AEIAMwBBAEcAVQBBAGMAZwBCAFQAQQBHAGcAQQBaAFEAQgBzAEEARwB3AEEASQBBAEIAMgBBAEQATQBBAEwAZwBBAHcAQQBDAEEAQQBiAHcAQgB5AEEAQwBBAEEAYgBnAEIAbABBAEgAYwBBAFoAUQBCAHkAQQBDAEkAQQBmAFEAQQBuAEEAQQBvAEEAWgBRAEIANABBAEcAawBBAGQAQQBBAGcAQQBEAEUAQQBDAGcAQgA5AEEAQQBvAEEASgBBAEIAbABBAEgAZwBBAFoAUQBCAGoAQQBGADgAQQBkAHcAQgB5AEEARwBFAEEAYwBBAEIAdwBBAEcAVQBBAGMAZwBCAGYAQQBIAE0AQQBkAEEAQgB5AEEAQwBBAEEAUABRAEEAZwBBAEMAUQBBAGEAUQBCAHUAQQBIAEEAQQBkAFEAQgAwAEEAQwBBAEEAZgBBAEEAZwBBAEUAOABBAGQAUQBCADAAQQBDADAAQQBVAHcAQgAwAEEASABJAEEAYQBRAEIAdQBBAEcAYwBBAEMAZwBBAGsAQQBIAE0AQQBjAEEAQgBzAEEARwBrAEEAZABBAEIAZgBBAEgAQQBBAFkAUQBCAHkAQQBIAFEAQQBjAHcAQQBnAEEARAAwAEEASQBBAEEAawBBAEcAVQBBAGUAQQBCAGwAQQBHAE0AQQBYAHcAQgAzAEEASABJAEEAWQBRAEIAdwBBAEgAQQBBAFoAUQBCAHkAQQBGADgAQQBjAHcAQgAwAEEASABJAEEATABnAEIAVABBAEgAQQBBAGIAQQBCAHAAQQBIAFEAQQBLAEEAQgBBAEEAQwBnAEEASQBnAEIAZwBBAEQAQQBBAFkAQQBBAHcAQQBHAEEAQQBNAEEAQgBnAEEARABBAEEASQBnAEEAcABBAEMAdwBBAEkAQQBBAHkAQQBDAHcAQQBJAEEAQgBiAEEARgBNAEEAZABBAEIAeQBBAEcAawBBAGIAZwBCAG4AQQBGAE0AQQBjAEEAQgBzAEEARwBrAEEAZABBAEIAUABBAEgAQQBBAGQAQQBCAHAAQQBHADgAQQBiAGcAQgB6AEEARgAwAEEATwBnAEEANgBBAEYASQBBAFoAUQBCAHQAQQBHADgAQQBkAGcAQgBsAEEARQBVAEEAYgBRAEIAdwBBAEgAUQBBAGUAUQBCAEYAQQBHADQAQQBkAEEAQgB5AEEARwBrAEEAWgBRAEIAegBBAEMAawBBAEMAZwBCAEoAQQBHAFkAQQBJAEEAQQBvAEEAQwAwAEEAYgBnAEIAdgBBAEgAUQBBAEkAQQBBAGsAQQBIAE0AQQBjAEEAQgBzAEEARwBrAEEAZABBAEIAZgBBAEgAQQBBAFkAUQBCAHkAQQBIAFEAQQBjAHcAQQB1AEEARQB3AEEAWgBRAEIAdQBBAEcAYwBBAGQAQQBCAG8AQQBDAEEAQQBMAFEAQgBsAEEASABFAEEASQBBAEEAeQBBAEMAawBBAEkAQQBCADcAQQBDAEEAQQBkAEEAQgBvAEEASABJAEEAYgB3AEIAMwBBAEMAQQBBAEkAZwBCAHAAQQBHADQAQQBkAGcAQgBoAEEARwB3AEEAYQBRAEIAawBBAEMAQQBBAGMAQQBCAGgAQQBIAGsAQQBiAEEAQgB2AEEARwBFAEEAWgBBAEEAaQBBAEMAQQBBAGYAUQBBAEsAQQBGAE0AQQBaAFEAQgAwAEEAQwAwAEEAVgBnAEIAaABBAEgASQBBAGEAUQBCAGgAQQBHAEkAQQBiAEEAQgBsAEEAQwBBAEEATABRAEIATwBBAEcARQBBAGIAUQBCAGwAQQBDAEEAQQBhAGcAQgB6AEEARwA4AEEAYgBnAEIAZgBBAEgASQBBAFkAUQBCADMAQQBDAEEAQQBMAFEAQgBXAEEARwBFAEEAYgBBAEIAMQBBAEcAVQBBAEkAQQBBAGsAQQBIAE0AQQBjAEEAQgBzAEEARwBrAEEAZABBAEIAZgBBAEgAQQBBAFkAUQBCAHkAQQBIAFEAQQBjAHcAQgBiAEEARABFAEEAWABRAEEASwBBAEMAUQBBAFoAUQBCADQAQQBHAFUAQQBZAHcAQgBmAEEASABjAEEAYwBnAEIAaABBAEgAQQBBAGMAQQBCAGwAQQBIAEkAQQBJAEEAQQA5AEEAQwBBAEEAVwB3AEIAVABBAEcATQBBAGMAZwBCAHAAQQBIAEEAQQBkAEEAQgBDAEEARwB3AEEAYgB3AEIAagBBAEcAcwBBAFgAUQBBADYAQQBEAG8AQQBRAHcAQgB5AEEARwBVAEEAWQBRAEIAMABBAEcAVQBBAEsAQQBBAGsAQQBIAE0AQQBjAEEAQgBzAEEARwBrAEEAZABBAEIAZgBBAEgAQQBBAFkAUQBCAHkAQQBIAFEAQQBjAHcAQgBiAEEARABBAEEAWABRAEEAcABBAEEAbwBBAEoAZwBBAGsAQQBHAFUAQQBlAEEAQgBsAEEARwBNAEEAWAB3AEIAMwBBAEgASQBBAFkAUQBCAHcAQQBIAEEAQQBaAFEAQgB5AEEAQQA9AD0A"
+  },
+  "related": [
+    {
+      "node": {
+        "_labels": [
+          "File"
+        ],
+        "path": "C:\\\\Users\\\\vagrant\\\\AppData\\\\Local\\\\Temp\\\\__PSScriptPolicyTest_osqirtuj.he3.ps1",
+        "first_seen": "2026-07-06T09:45:27.013423400Z",
+        "last_seen": "2026-07-06T09:45:27.013423400Z",
+        "host": "castelblack.north.sevenkingdoms.local"
+      },
+      "rel": "WROTE"
+    },
+    {
+      "node": {
+        "_labels": [
+          "File"
+        ],
+        "path": "C:\\Users\\vagrant\\AppData\\Local\\Temp\\__PSScriptPolicyTest_osqirtuj.he3.ps1",
+        "first_seen": "2026-07-06T09:45:27.013Z",
+        "last_seen": "2026-07-06T09:45:27.013Z",
+        "host": "castelblack.north.sevenkingdoms.local"
+      },
+      "rel": "WROTE"
+    },
+    {
+      "node": {
+        "_labels": [
+          "Host"
+        ],
+        "hostname": "castelblack.north.sevenkingdoms.local",
+        "first_seen": "2026-07-02T02:32:06.696Z",
+        "last_seen": "2026-07-13T06:54:48.885Z"
+      },
+      "rel": "ON_HOST"
+    }
+  ]
+}
+
+### ③ 研判   [skill] ingress_tool_transfer   [模式] recipe
+# 研判留痕(4 步)
+[1] recipe取证「下载进程与父链」→ 1 行
+[2] recipe取证「外连目标」→ 1 行
+[3] recipe取证「落地与执行」→ 1 行
+[4] recipe取证「_图盲区」→ 1 行
+
+Received notification from DBMS server: {severity: WARNING} {code: Neo.ClientNotification.Statement.UnknownPropertyKeyWarning} {category: UNRECOGNIZED} {title: The provided property key is not in the database} {description: One of the property names in your query is not available in the database, make sure you didn't misspell it or that the label is available when you run this statement in your application (the missing property name is: criticality)} {position: line: 1, column: 372, offset: 371} for query: 'MATCH (a:Alert {alert_uid:$aid})<-[:TRIGGERED]-(e:Event)-[:BY]->(src:Process) OPTIONAL MATCH (e)-[:ACCESSED]->(tgt:Process) OPTIONAL MATCH (e)-[:ON_HOST]->(h:Host) RETURN src.process_guid AS src_guid, src.image AS src_image, src.command_line AS src_cmdline, tgt.image AS target_image, e.granted_access AS granted_access, e.call_trace AS call_trace, h.hostname AS host, h.criticality AS host_criticality'
+# 研判结果  alert=7ad45027cd10959a26aa61fe344a8b2f3ed5c87d131380b459580cfe02b6b451  path=B  skill=ingress_tool_transfer
+verdict   : suspicious  (confidence=0.85)
+summary   : 检测到 PowerShell 脚本通过编码命令执行，该脚本写入了临时目录并可能被执行。
+rationale : 1. PowerShell 被用作下载和执行载荷的常见工具，尤其是通过编码命令执行时。
+2. 脚本被写入临时目录，这通常是恶意活动的迹象，因为攻击者常使用临时目录来存放恶意载荷。
+3. 无法确认下载的目标和文件的信誉，且没有足够的信息来排除恶意活动的可能性。
+evidence  : ['7ad45027cd10959a26aa61fe344a8b2f3ed5c87d131380b459580cfe02b6b451']
+missing   : ['下载的目标和文件的信誉', 'PowerShell 进程的详细执行日志']
+agent     : qwen32b-ft
+处置(建议): escalate -> C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe  risk=high  status=proposed
+
+============================================================================
+## [2/8] technique=T1003.001   该类共 1038 条   uid=e75f9c60910dd7b6968f390a239c0e794231a442c4f4efa42cd97d6163a295c4
+============================================================================
+### ① 原始告警节点(:Alert)
+{
+  "severity": 12,
+  "first_seen": "2026-07-06T09:37:57.527331400Z",
+  "last_seen": "2026-07-06T09:37:57.527331400Z",
+  "arrival_ms": 1783330678856,
+  "technique_ids": [
+    "T1003.001"
+  ],
+  "source": "wazuh",
+  "rule_id": "100802",
+  "stream": "soc-hids-alert-*",
+  "alert_uid": "e75f9c60910dd7b6968f390a239c0e794231a442c4f4efa42cd97d6163a295c4",
+  "rule_description": "Credential dumping via LSASS access by C:\\\\Program Files (x86)\\\\ossec-agent\\\\wazuh-agent.exe (granted 0x1fffff)",
+  "sensor": "wazuh-hids",
+  "raw_ref": "soc-hids-alert-2026.07.06:4u_KNp8B3gPM8FAerKcx",
+  "time": "2026-07-06T09:37:58.425+0000"
+}
+
+### ② 触发上下文(seed:触发事件 / 主语 / 宾语 / 次要实体)
+{
+  "event": {
+    "ingest_time": 1783563204524,
+    "stream": "winlogbeat-*",
+    "granted_access": "0x1fffff",
+    "event_code": "10",
+    "arrival_ms": 1783330679341,
+    "raw_ref": "soc-hids-alert-2026.07.06:4u_KNp8B3gPM8FAerKcx",
+    "sensor": "Microsoft-Windows-Sysmon/Operational",
+    "source": "winlogbeat",
+    "call_trace": "C:\\\\Windows\\\\SYSTEM32\\\\ntdll.dll+9feb4|C:\\\\Windows\\\\System32\\\\wow64.dll+3cf4|C:\\\\Windows\\\\System32\\\\wow64.dll+7783|C:\\\\Windows\\\\System32\\\\wow64cpu.dll+1783|C:\\\\Windows\\\\System32\\\\wow64cpu.dll+1199|C:\\\\Windows\\\\System32\\\\wow64.dll+cfda|C:\\\\Windows\\\\System32\\\\wow64.dll+cea0|C:\\\\Windows\\\\SYSTEM32\\\\ntdll.dll+7863d|C:\\\\Windows\\\\SYSTEM32\\\\ntdll.dll+78223|C:\\\\Windows\\\\SYSTEM32\\\\ntdll.dll+781ce|C:\\\\Windows\\\\SYSTEM32\\\\ntdll.dll+717ac(wow64)|C:\\\\Windows\\\\SYSTEM32\\\\ntdll.dll+b3d7e(wow64)|C:\\\\Windows\\\\System32\\\\KERNEL32.DLL+3125c(wow64)|C:\\\\Windows\\\\System32\\\\KERNEL32.DLL+24fe2(wow64)|C:\\\\Program Files (x86)\\\\ossec-agent\\\\wazuh-agent.exe+f647",
+    "event_time": "2026-07-06T09:37:57.527331400Z",
+    "event_uid": "3bec82a19eecb031c820c1db05993d806888c7aa9a5914c27166caffec53530f"
+  },
+  "subject": {
+    "_labels": [
+      "Process"
+    ],
+    "image": "C:\\\\Program Files (x86)\\\\ossec-agent\\\\wazuh-agent.exe",
+    "first_seen": "2026-07-06T09:37:56.507Z",
+    "process_guid": "{85e8c649-7774-6a4b-7d07-000000001400}",
+    "last_seen": "2026-07-13T06:50:34.453Z",
+    "hashes": "MD5=A7CEA8DE3FC30334BFD64132B18D21E1,SHA256=A0D539A150087B2406DB7B727DD91E4F647DF6B85A2C9FCC76B0F3645D1DE961,IMPHASH=F2E7F0D79906859422914E1C8EFC36C6",
+    "pid": "3132",
+    "command_line": "\"C:\\Program Files (x86)\\ossec-agent\\wazuh-agent.exe\""
+  },
+  "related": [
+    {
+      "node": {
+        "_labels": [
+          "Host"
+        ],
+        "hostname": "castelblack.north.sevenkingdoms.local",
+        "first_seen": "2026-07-02T02:32:06.696Z",
+        "last_seen": "2026-07-13T06:54:48.885Z"
+      },
+      "rel": "ON_HOST"
+    },
+    {
+      "node": {
+        "_labels": [
+          "Process"
+        ],
+        "image": "C:\\\\Windows\\\\system32\\\\lsass.exe",
+        "first_seen": "2026-07-02T02:32:10.167Z",
+        "process_guid": "{85e8c649-8397-6a43-0c00-000000001400}",
+        "last_seen": "2026-07-13T06:50:34.453Z"
+      },
+      "rel": "ACCESSED"
+    }
+  ]
+}
+
+### ③ 研判   [skill] lsass_dump   [模式] recipe
+# 研判留痕(5 步)
+[1] recipe取证「源进程与访问掩码」→ 1 行
+[2] recipe取证「父进程链」→ 1 行
+[3] recipe取证「运行账号」→ 1 行
+[4] recipe取证「读后行为」→ 1 行
+[5] recipe取证「_图盲区」→ 1 行
+
+# 研判结果  alert=e75f9c60910dd7b6968f390a239c0e794231a442c4f4efa42cd97d6163a295c4  path=B  skill=lsass_dump
+verdict   : true_positive  (confidence=0.95)
+summary   : 检测到可疑进程访问 LSASS，存在恶意行为迹象
+rationale : 1. 源进程为 Wazuh Agent (非系统/AV白名单进程)，目标为 LSASS，访问掩码 0x1fffff 含 PROCESS_VM_READ(0x10) 和所有权限位，符合 Mimikatz/ProcDump 特征
+2. 父进程链 services.exe→wazuh-agent.exe，非正常守护进程链
+3. call_trace 包含 wow64 转换层和疑似 dbghelp 式地址(末尾+3125c/wow64)，符合内存转储工具特征
+4. 运行账号为 SYSTEM(高权限)，但 Wazuh Agent 无需直接访问 LSASS
+5. Wazuh Agent 本身是安全监控组件，其异常行为可能表明被劫持
+evidence  : ['Event(event_uid=e75f9c60910dd7b6968f390a239c0e794231a4442c4f4efa42cd97d6163a295c4)', 'Process(process_guid={85e8c649-7774-6a4b-7d07-000000001400})', 'File(path=C:\\\\Program Files (x86)\\\\ossec-agent\\\\wazuh-agent.exe)']
+missing   : ['源进程数字签名信息', 'call_trace 中的模块哈希', '转储文件哈希(如存在)']
+pattern   : T1003.001
+agent     : qwen32b-ft
+处置(建议): isolate_host -> castelblack.north.sevenkingdoms.local  risk=high  status=proposed
+处置(建议): kill_process -> C:\\Program Files (x86)\\ossec-agent\\wazuh-agent.exe  risk=high  status=proposed
+处置(建议): monitor -> castelblack.north.sevenkingdoms.local  risk=high  status=proposed
+
+============================================================================
+## [3/8] technique=T1558.003   该类共 66 条   uid=489cc44e063bdac63f9dcf39dc87e8f99e1908e30a438afe970ebd2c11796624
+============================================================================
+### ① 原始告警节点(:Alert)
+{
+  "severity": 10,
+  "first_seen": "2026-07-06T12:32:02.772634400Z",
+  "last_seen": "2026-07-06T12:32:02.772634400Z",
+  "arrival_ms": 1783341125036,
+  "technique_ids": [
+    "T1558.003"
+  ],
+  "source": "wazuh",
+  "rule_id": "100801",
+  "stream": "soc-hids-alert-*",
+  "alert_uid": "489cc44e063bdac63f9dcf39dc87e8f99e1908e30a438afe970ebd2c11796624",
+  "rule_description": "Kerberoast: RC4(0x17) TGS request for service SEVENKINGDOMS.LOCAL",
+  "sensor": "wazuh-hids",
+  "raw_ref": "soc-hids-alert-2026.07.06:3_BqN58B3gPM8FAeEWWX",
+  "time": "2026-07-06T12:32:03.685+0000"
+}
+
+### ② 触发上下文(seed:触发事件 / 主语 / 宾语 / 次要实体)
+Received notification from DBMS server: {severity: WARNING} {code: Neo.ClientNotification.Statement.UnknownPropertyKeyWarning} {category: UNRECOGNIZED} {title: The provided property key is not in the database} {description: One of the property names in your query is not available in the database, make sure you didn't misspell it or that the label is available when you run this statement in your application (the missing property name is: criticality)} {position: line: 1, column: 401, offset: 400} for query: 'MATCH (a:Alert {alert_uid:$aid})<-[:TRIGGERED]-(e:Event)-[:BY]->(parent:Process) OPTIONAL MATCH (e)-[:SPAWNED]->(child:Process) OPTIONAL MATCH (e)-[:ON_HOST]->(h:Host) OPTIONAL MATCH (gp:Process)-[:SPAWNED]->(parent) RETURN gp.image AS grandparent, parent.image AS parent_image, child.process_guid AS child_guid, child.image AS child_image, child.command_line AS child_cmdline, h.hostname AS host, h.criticality AS host_criticality'
+{
+  "event": {
+    "ticket_options": "0x40810000",
+    "ingest_time": 1783563246814,
+    "stream": "winlogbeat-*",
+    "event_code": "4769",
+    "arrival_ms": 1783341123894,
+    "sensor": "Security",
+    "enc_type": "0x17",
+    "raw_ref": "soc-hids-alert-2026.07.06:3_BqN58B3gPM8FAeEWWX",
+    "source": "winlogbeat",
+    "event_time": "2026-07-06T12:32:02.772634400Z",
+    "outcome": "success",
+    "event_uid": "5e170299b4e7b2f5fe1e3d09962fca995c06ea55717479f8ed54c373a7d91ad4"
+  },
+  "subject": {
+    "_labels": [
+      "Account"
+    ],
+    "upn": "WINTERFELL$@NORTH.SEVENKINGDOMS.LOCAL",
+    "first_seen": "2026-06-26T10:28:49.227Z",
+    "last_seen": "2026-07-13T06:54:48.353Z",
+    "domain": "NORTH",
+    "sam": "winterfell$",
+    "sid": "S-1-5-21-1229275207-304159137-1120826147-1001"
+  },
+  "related": [
+    {
+      "node": {
+        "_labels": [
+          "Host"
+        ],
+        "hostname": "winterfell.north.sevenkingdoms.local",
+        "first_seen": "2026-07-02T02:32:07.265Z",
+        "last_seen": "2026-07-13T06:54:56.059Z"
+      },
+      "rel": "ON_HOST"
+    },
+    {
+      "node": {
+        "_labels": [
+          "IPAddress"
+        ],
+        "first_seen": "2026-06-30T05:46:53.934Z",
+        "last_seen": "2026-07-13T06:54:48.868Z",
+        "ip": "::1"
+      },
+      "rel": "FROM"
+    },
+    {
+      "node": {
+        "_labels": [
+          "Account"
+        ],
+        "first_seen": "2026-06-26T10:28:51.824Z",
+        "last_seen": "2026-07-13T03:58:14.452Z",
+        "domain": "NORTH",
+        "sam": "sevenkingdoms.local",
+        "sid": "S-1-5-21-1229275207-304159137-1120826147-0"
+      },
+      "rel": "REQUESTED"
+    }
+  ]
+}
+
+### ③ 研判   [skill] kerberoast   [模式] recipe
+# 研判留痕(5 步)
+[1] recipe取证「请求与目标」→ 1 行
+[2] recipe取证「目标估值」→ 1 行
+[3] recipe取证「请求者enc基线」→ 2 行
+[4] recipe取证「跨域信任」→ 1 行
+[5] recipe取证「SPN扇出」→ 1 行
+
+# 研判结果  alert=489cc44e063bdac63f9dcf39dc87e8f99e1908e30a438afe970ebd2c11796624  path=B  skill=kerberoast
+verdict   : false_positive  (confidence=0.6)
+summary   : 跨域信任的正常 RC4 票据请求
+rationale : 请求者域 NORTH 与目标域 sevenkingdoms.local 之间存在信任关系(跨域信任)，且请求者是机器账号(winterfell$)。根据域信任传递规则，这是正常的票据请求行为，不属于攻击行为。
+evidence  : ['4769事件 enc_type=0x17', '请求者sam=winterfell$', '目标域=sevenkingdoms.local', '跨域信任关系']
+pattern   : T1558.003
+agent     : qwen32b-ft
+处置(建议): 无
+
+============================================================================
+## [4/8] technique=T1059   该类共 54 条   uid=31c54e656e4be947e0aef4ba57c492736c4dd938169eced41bbcede729541a98
+============================================================================
+### ① 原始告警节点(:Alert)
+{
+  "severity": 9,
+  "first_seen": "2026-07-07T05:57:07.195694000Z",
+  "last_seen": "2026-07-07T05:57:07.195694000Z",
+  "arrival_ms": 1783403827290,
+  "technique_ids": [
+    "T1105",
+    "T1059"
+  ],
+  "source": "wazuh",
+  "rule_id": "92201",
+  "stream": "soc-hids-alert-*",
+  "alert_uid": "31c54e656e4be947e0aef4ba57c492736c4dd938169eced41bbcede729541a98",
+  "rule_description": "C:\\\\Windows\\\\System32\\\\WindowsPowerShell\\\\v1.0\\\\powershell.exe created a new scripting file under Windows Temp or User data folder",
+  "sensor": "wazuh-hids",
+  "raw_ref": "soc-hids-alert-2026.07.07:tfQmO58B3gPM8FAe1FxD",
+  "time": "2026-07-07T05:57:07.213+0000"
+}
+
+### ② 触发上下文(seed:触发事件 / 主语 / 宾语 / 次要实体)
+{
+  "event": {
+    "creation_time": "2026-07-07 05:57:07.181",
+    "ingest_time": 1783563383651,
+    "stream": "winlogbeat-*",
+    "event_code": "11",
+    "arrival_ms": 1783403827488,
+    "raw_ref": "soc-hids-alert-2026.07.07:tfQmO58B3gPM8FAe1FxD",
+    "sensor": "Microsoft-Windows-Sysmon/Operational",
+    "source": "winlogbeat",
+    "event_time": "2026-07-07T05:57:07.195694000Z",
+    "event_uid": "33fb269673003c90be417ca723d6dcc36bd873f988b9dbb3d8e51f4684accc21"
+  },
+  "subject": {
+    "_labels": [
+      "Process"
+    ],
+    "image": "C:\\\\Windows\\\\System32\\\\WindowsPowerShell\\\\v1.0\\\\powershell.exe",
+    "first_seen": "2026-07-07T05:57:07.100Z",
+    "process_guid": "{0d573dc4-9533-6a4c-6782-010000000e00}",
+    "last_seen": "2026-07-07T05:57:07.195Z",
+    "hashes": "MD5=7353F60B1739074EB17C5F4DDDEFE239,SHA256=DE96A6E69944335375DC1AC238336066889D9FFC7D73628EF4FE1B1B160AB32C,IMPHASH=741776AACCFC5B71FF59832DCDCACE0F",
+    "pid": "2320",
+    "command_line": "powershell.exe -ExecutionPolicy Restricted -Command Write-Host 'Final result: 1';"
+  },
+  "related": [
+    {
+      "node": {
+        "_labels": [
+          "File"
+        ],
+        "path": "C:\\\\Windows\\\\Temp\\\\__PSScriptPolicyTest_sq2kskx3.wlr.ps1",
+        "first_seen": "2026-07-07T05:57:07.195694000Z",
+        "last_seen": "2026-07-07T05:57:07.195694000Z",
+        "host": "winterfell.north.sevenkingdoms.local"
+      },
+      "rel": "WROTE"
+    },
+    {
+      "node": {
+        "_labels": [
+          "Host"
+        ],
+        "hostname": "winterfell.north.sevenkingdoms.local",
+        "first_seen": "2026-07-02T02:32:07.265Z",
+        "last_seen": "2026-07-13T06:54:56.059Z"
+      },
+      "rel": "ON_HOST"
+    },
+    {
+      "node": {
+        "_labels": [
+          "File"
+        ],
+        "path": "C:\\Windows\\Temp\\__PSScriptPolicyTest_sq2kskx3.wlr.ps1",
+        "first_seen": "2026-07-07T05:57:07.195Z",
+        "last_seen": "2026-07-07T05:57:07.195Z",
+        "host": "winterfell.north.sevenkingdoms.local"
+      },
+      "rel": "WROTE"
+    }
+  ]
+}
+
+### ③ 研判   [skill] suspicious_process   [模式] recipe
+# 研判留痕(2 步)
+[1] recipe取证「父子进程」→ 1 行
+[2] recipe取证「_图盲区」→ 1 行
+
+# 研判结果  alert=31c54e656e4be947e0aef4ba57c492736c4dd938169eced41bbcede729541a98  path=B  skill=suspicious_process
+verdict   : suspicious  (confidence=0.78)
+summary   : 检测到可能的恶意进程活动，但证据不足以明确判定。需要进一步分析。
+rationale : 1. 父进程为powershell.exe，存在兼容运行时组件CompatTelRunner.exe的合理业务场景
+2. 缺少子进程创建事件和命令行参数，无法验证是否包含编码命令或下载执行等恶意特征
+3. 未观察到跨域认证、敏感账户使用或后续恶意行为（如外连/C2通信）
+4. 运维工具调用系统组件存在业务合理性可能
+evidence  : ['事件代码:92201;告警UID:31c54e656e4be947e0aef4ba57c492736c4dd938169eced41bbcede729541a98;主机名:winterfell.north.sevenkingdoms.local;进程链:C:\\\\Windows\\\\System32\\\\CompatTelRunner.exe->powershell.exe']
+missing   : ['子进程创建事件(Sysmon EID1)未捕获', 'PowerShell命令行参数未记录', '进程树完整性验证缺失', '运行时环境上下文信息不足']
+agent     : qwen32b-ft
+处置(建议): monitor -> winterfell.north.sevenkingdoms.local  risk=high  status=proposed
+处置(建议): escalate -> SEC-8192  risk=high  status=proposed
+
+============================================================================
+## [5/8] technique=T1140   该类共 33 条   uid=22e453526d020b52e0425162462e58a4236080809e0e2e03f6ac4b756691133e
+============================================================================
+### ① 原始告警节点(:Alert)
+{
+  "severity": 10,
+  "first_seen": "2026-07-06T09:45:27.521431100Z",
+  "last_seen": "2026-07-06T09:45:27.521431100Z",
+  "arrival_ms": 1783331131055,
+  "technique_ids": [
+    "T1140"
+  ],
+  "source": "wazuh",
+  "rule_id": "91809",
+  "stream": "soc-hids-alert-*",
+  "alert_uid": "22e453526d020b52e0425162462e58a4236080809e0e2e03f6ac4b756691133e",
+  "rule_description": "Powershell script may be using Base64 decoding method",
+  "sensor": "wazuh-hids",
+  "raw_ref": "soc-hids-alert-2026.07.06:6-_RNp8B3gPM8FAekrGi",
+  "time": "2026-07-06T09:45:27.962+0000"
+}
+
+### ② 触发上下文(seed:触发事件 / 主语 / 宾语 / 次要实体)
+{
+  "event": {
+    "message_no": "1",
+    "script_block_text": "begin {      $DebugPreference = \\\"Continue\\\"      $ProgressPreference = \\\"SilentlyContinue\\\"      $ErrorActionPreference = \\\"Stop\\\"      Set-StrictMode -Version 2      $script:common_functions = {          Function ConvertFrom-AnsibleJson {              param(                  [Parameter(Mandatory=$true, Position=0)][String]$InputObject              )              $cmdlet = Get-Command -Name ConvertFrom-Json -CommandType Cmdlet              if (\\\"AsHashtable\\\" -in $cmdlet.Parameters.Keys) {                  return ,(ConvertFrom-Json -InputObject $InputObject -AsHashtable)              } else {                  $raw_obj = ConvertFrom-Json -InputObject $InputObject                  Function ConvertTo-Hashtable {                      param($InputObject)                      if ($null -eq $InputObject) {                          return $null                      }                      if ($InputObject -is [PSCustomObject]) {                          $new_value = @{}                          foreach ($prop in $InputObject.PSObject.Properties.GetEnumerator()) {                              $new_value.($prop.Name) = (ConvertTo-Hashtable -InputObject $prop.Value)                          }                          return ,$new_value                      } elseif ($InputObject -is [Array]) {                          $new_value = [System.Collections.ArrayList]@()                          foreach ($val in $InputObject) {                              $new_value.Add((ConvertTo-Hashtable -InputObject $val)) &gt; $null                          }                          return ,$new_value.ToArray()                      } else {                          return ,$InputObject                      }                  }                  return ,(ConvertTo-Hashtable -InputObject $raw_obj)              }          }          Function Format-AnsibleException {              param([System.Management.Automation.ErrorRecord]$ErrorRecord)              $exception = @\\\"  $($ErrorRecord.ToString())  $($ErrorRecord.InvocationInfo.PositionMessage)      + CategoryInfo          : $($ErrorRecord.CategoryInfo.ToString())      + FullyQualifiedErrorId : $($ErrorRecord.FullyQualifiedErrorId.ToString())  \\\"@              $exception += \\\"`r`n`r`nScriptStackTrace:`r`n$($ErrorRecord.ScriptStackTrace)`r`n\\\"              if ($null -ne $ErrorRecord.Exception.StackTrace) {                  $exception += \\\"`r`n$($ErrorRecord.Exception.ToString())\\\"              }              return $exception          }      }      .$common_functions      $script:wrapper_functions = {          Function Write-AnsibleError {              param(                  [Parameter(Mandatory=$true)][String]$Message,                  [System.Management.Automation.ErrorRecord]$ErrorRecord = $null              )              $result = @{                  msg = $Message                  failed = $true              }              if ($null -ne $ErrorRecord) {                  $result.msg += \\\": $($ErrorRecord.Exception.Message)\\\"                  $result.exception = (Format-AnsibleException -ErrorRecord $ErrorRecord)              }              Write-Output -InputObject (ConvertTo-Json -InputObject $result -Depth 99 -Compress)          }          Function Write-AnsibleLog {              param(                  [Parameter(Mandatory=$true, Position=0)][String]$Message,                  [Parameter(Position=1)][String]$Wrapper              )              $log_path = $env:ANSIBLE_EXEC_DEBUG              if ($log_path) {                  $log_path = [System.Environment]::ExpandEnvironmentVariables($log_path)                  $parent_path = [System.IO.Path]::GetDirectoryName($log_path)                  if (Test-Path -LiteralPath $parent_path -PathType Container) {                      $msg = \\\"{0:u} - {1} - {2} - \\\" -f (Get-Date), $pid, ([System.Security.Principal.WindowsIdentity]::GetCurrent().Name)                      if ($null -ne $Wrapper) {                          $msg += \\\"$Wrapper - \\\"                      }                      $msg += $Message + \\\"`r`n\\\"                      $msg_bytes = [System.Text.Encoding]::UTF8.GetBytes($msg)                      $fs = [System.IO.File]::Open($log_path, [System.IO.FileMode]::Append,                          [System.IO.FileAccess]::Write, [System.IO.FileShare]::ReadWrite)                      try {                          $fs.Write($msg_bytes, 0, $msg_bytes.Length)                      } finally {                          $fs.Close()                      }                  }              }          }      }      .$wrapper_functions      if (-not $(Get-Variable \\\"json_raw\\\" -ErrorAction SilentlyContinue)) {          $json_raw = ''      }  } process {      $json_raw += [String]$input  } end {      Write-AnsibleLog \\\"INFO - starting exec_wrapper\\\" \\\"exec_wrapper\\\"      if (-not $json_raw) {          Write-AnsibleError -Message \\\"internal error: no input given to PowerShell exec wrapper\\\"          exit 1      }      Write-AnsibleLog \\\"INFO - converting json raw to a payload\\\" \\\"exec_wrapper\\\"      $payload = ConvertFrom-AnsibleJson -InputObject $json_raw      if ($payload.min_os_version) {          $min_os_version = [Version]$payload.min_os_version          $actual_os_version = [Version](Get-Item -Path $env:SystemRoot\\\\System32\\\\kernel32.dll).VersionInfo.ProductVersion          Write-AnsibleLog \\\"INFO - checking if actual os version '$actual_os_version' is less than the min os version '$min_os_version'\\\" \\\"exec_wrapper\\\"          if ($actual_os_version -lt $min_os_version) {              Write-AnsibleError -Message \\\"internal error: This module cannot run on this OS as it requires a minimum version of $min_os_version, actual was $actual_os_version\\\"              exit 1          }      }      if ($payload.min_ps_version) {          $min_ps_version = [Version]$payload.min_ps_version          $actual_ps_version = $PSVersionTable.PSVersion          Write-AnsibleLog \\\"INFO - checking if actual PS version '$actual_ps_version' is less than the min PS version '$min_ps_version'\\\" \\\"exec_wrapper\\\"          if ($actual_ps_version -lt $min_ps_version) {              Write-AnsibleError -Message \\\"internal error: This module cannot run as it requires a minimum PowerShell version of $min_ps_version, actual was $actual_ps_version\\\"              exit 1          }      }      $action = $payload.actions[0]      Write-AnsibleLog \\\"INFO - running action $action\\\" \\\"exec_wrapper\\\"      $entrypoint = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($payload.($action)))      $entrypoint = [ScriptBlock]::Create($entrypoint)      $encoded_output = $payload.encoded_output      try {          $output = &amp;$entrypoint -Payload $payload          if ($encoded_output -and $null -ne $output) {              $b64_output = [System.Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes($output))              Write-Output -InputObject $b64_output          } else {              $output          }      } catch {          Write-AnsibleError -Message \\\"internal error: failed to run exec_wrapper action $action\\\" -ErrorRecord $_          exit 1      }      Write-AnsibleLog \\\"INFO - ending exec_wrapper\\\" \\\"exec_wrapper\\\"  }",
+    "ingest_time": 1783563212608,
+    "stream": "winlogbeat-*",
+    "message_total": "1",
+    "event_code": "4104",
+    "arrival_ms": 1783331128079,
+    "sensor": "Microsoft-Windows-PowerShell/Operational",
+    "raw_ref": "soc-hids-alert-2026.07.06:6-_RNp8B3gPM8FAekrGi",
+    "source": "winlogbeat",
+    "event_time": "2026-07-06T09:45:27.521431100Z",
+    "event_uid": "509e14c6887fc975048fc578a174d20bb60fb00897aec0f691811364ddfbe775"
+  },
+  "subject": null,
+  "related": [
+    {
+      "node": {
+        "_labels": [
+          "Host"
+        ],
+        "hostname": "castelblack.north.sevenkingdoms.local",
+        "first_seen": "2026-07-02T02:32:06.696Z",
+        "last_seen": "2026-07-13T06:54:48.885Z"
+      },
+      "rel": "ON_HOST"
+    }
+  ]
+}
+Received notification from DBMS server: {severity: WARNING} {code: Neo.ClientNotification.Statement.UnknownPropertyKeyWarning} {category: UNRECOGNIZED} {title: The provided property key is not in the database} {description: One of the property names in your query is not available in the database, make sure you didn't misspell it or that the label is available when you run this statement in your application (the missing property name is: criticality)} {position: line: 1, column: 401, offset: 400} for query: 'MATCH (a:Alert {alert_uid:$aid})<-[:TRIGGERED]-(e:Event)-[:BY]->(parent:Process) OPTIONAL MATCH (e)-[:SPAWNED]->(child:Process) OPTIONAL MATCH (e)-[:ON_HOST]->(h:Host) OPTIONAL MATCH (gp:Process)-[:SPAWNED]->(parent) RETURN gp.image AS grandparent, parent.image AS parent_image, child.process_guid AS child_guid, child.image AS child_image, child.command_line AS child_cmdline, h.hostname AS host, h.criticality AS host_criticality'
+Received notification from DBMS server: {severity: WARNING} {code: Neo.ClientNotification.Statement.UnknownPropertyKeyWarning} {category: UNRECOGNIZED} {title: The provided property key is not in the database} {description: One of the property names in your query is not available in the database, make sure you didn't misspell it or that the label is available when you run this statement in your application (the missing property name is: criticality)} {position: line: 1, column: 401, offset: 400} for query: 'MATCH (a:Alert {alert_uid:$aid})<-[:TRIGGERED]-(e:Event)-[:BY]->(parent:Process) OPTIONAL MATCH (e)-[:SPAWNED]->(child:Process) OPTIONAL MATCH (e)-[:ON_HOST]->(h:Host) OPTIONAL MATCH (gp:Process)-[:SPAWNED]->(parent) RETURN gp.image AS grandparent, parent.image AS parent_image, child.process_guid AS child_guid, child.image AS child_image, child.command_line AS child_cmdline, h.hostname AS host, h.criticality AS host_criticality'
+Received notification from DBMS server: {severity: WARNING} {code: Neo.ClientNotification.Statement.UnknownPropertyKeyWarning} {category: UNRECOGNIZED} {title: The provided property key is not in the database} {description: One of the property names in your query is not available in the database, make sure you didn't misspell it or that the label is available when you run this statement in your application (the missing property name is: reputation)} {position: line: 1, column: 334, offset: 333} for query: 'MATCH (child:Process {process_guid:$g}) OPTIONAL MATCH (child)-[:SPAWNED]->(d:Process) OPTIONAL MATCH (child)-[:CONNECTED_TO]->(ip:IPAddress) OPTIONAL MATCH (child)-[:ACCESSED]->(l:Process) OPTIONAL MATCH (child)-[:SET]->(rv:RegistryValue) RETURN collect(DISTINCT d.image) AS descendants, collect(DISTINCT {ip: ip.ip, reputation: ip.reputation}) AS out_ips, collect(DISTINCT l.image) AS accessed_procs, collect(DISTINCT rv.key_path) AS reg_keys'
+
+### ③ 研判   [skill] suspicious_process   [模式] recipe
+# 研判留痕(2 步)
+[1] recipe取证「父子进程」→ 1 行
+[2] recipe取证「_图盲区」→ 1 行
+
+# 研判结果  alert=22e453526d020b52e0425162462e58a4236080809e0e2e03f6ac4b756691133e  path=B  skill=suspicious_process
+verdict   : suspicious  (confidence=0.65)
+summary   : 检测到可能的恶意活动，但证据不足以明确判定
+rationale : 由于父子进程关系未提供，无法判断父进程是否属于异常进程或是否为合法软件。命令行内容缺失，无法分析是否包含恶意特征（如编码命令、下载执行等）。子进程运行账户信息不足，难以确认是否为异常身份。后续行为（如外连、持久化）也未见关联证据，无法形成攻击链完整画像。
+missing   : ['进程命令行内容', '子进程运行账户信息', '后续网络外连行为', '进程签名信息']
+agent     : qwen32b-ft
+处置(建议): 无
+
+============================================================================
+## [6/8] technique=T1059.001   该类共 29 条   uid=246bb4e5e3bb37c9c83029cd23f83134c9013b4491c17fd6577368d272c03b47
+============================================================================
+### ① 原始告警节点(:Alert)
+{
+  "severity": 12,
+  "first_seen": "2026-07-06T09:45:27.144364900Z",
+  "last_seen": "2026-07-06T09:45:27.144364900Z",
+  "arrival_ms": 1783331131057,
+  "technique_ids": [
+    "T1059.001"
+  ],
+  "source": "wazuh",
+  "rule_id": "92057",
+  "stream": "soc-hids-alert-*",
+  "alert_uid": "246bb4e5e3bb37c9c83029cd23f83134c9013b4491c17fd6577368d272c03b47",
+  "rule_description": "Powershell.exe spawned a powershell process which executed a base64 encoded command",
+  "sensor": "wazuh-hids",
+  "raw_ref": "soc-hids-alert-2026.07.06:7-_RNp8B3gPM8FAekrGi",
+  "time": "2026-07-06T09:45:28.245+0000"
+}
+
+### ② 触发上下文(seed:触发事件 / 主语 / 宾语 / 次要实体)
+{
+  "event": {
+    "integrity_level": "High",
+    "ingest_time": 1783563212608,
+    "stream": "winlogbeat-*",
+    "event_code": "1",
+    "arrival_ms": 1783331127880,
+    "raw_ref": "soc-hids-alert-2026.07.06:7-_RNp8B3gPM8FAekrGi",
+    "sensor": "Microsoft-Windows-Sysmon/Operational",
+    "source": "winlogbeat",
+    "event_time": "2026-07-06T09:45:27.144364900Z",
+    "event_uid": "947402f02031b6718177037258155c1b9676dfb925a3c92e551a1b1beda69ea3"
+  },
+  "subject": {
+    "_labels": [
+      "Process"
+    ],
+    "image": "C:\\\\Windows\\\\System32\\\\WindowsPowerShell\\\\v1.0\\\\powershell.exe",
+    "first_seen": "2026-07-06T09:45:26.901Z",
+    "process_guid": "{85e8c649-7936-6a4b-8507-000000001400}",
+    "last_seen": "2026-07-06T09:45:27.144Z",
+    "hashes": "MD5=7353F60B1739074EB17C5F4DDDEFE239,SHA256=DE96A6E69944335375DC1AC238336066889D9FFC7D73628EF4FE1B1B160AB32C,IMPHASH=741776AACCFC5B71FF59832DCDCACE0F",
+    "pid": "3104",
+    "command_line": "PowerShell  -NoProfile -NonInteractive -ExecutionPolicy Unrestricted -EncodedCommand UABvAHcAZQByAFMAaABlAGwAbAAgAC0ATgBvAFAAcgBvAGYAaQBsAGUAIAAtAE4AbwBuAEkAbgB0AGUAcgBhAGMAdABpAHYAZQAgAC0ARQB4AGUAYwB1AHQAaQBvAG4AUABvAGwAaQBjAHkAIABVAG4AcgBlAHMAdAByAGkAYwB0AGUAZAAgAC0ARQBuAGMAbwBkAGUAZABDAG8AbQBtAGEAbgBkACAASgBnAEIAagBBAEcAZwBBAFkAdwBCAHcAQQBDADQAQQBZAHcAQgB2AEEARwAwAEEASQBBAEEAMgBBAEQAVQBBAE0AQQBBAHcAQQBEAEUAQQBJAEEAQQArAEEAQwBBAEEASgBBAEIAdQBBAEgAVQBBAGIAQQBCAHMAQQBBAG8AQQBhAFEAQgBtAEEAQwBBAEEASwBBAEEAawBBAEYAQQBBAFUAdwBCAFcAQQBHAFUAQQBjAGcAQgB6AEEARwBrAEEAYgB3AEIAdQBBAEYAUQBBAFkAUQBCAGkAQQBHAHcAQQBaAFEAQQB1AEEARgBBAEEAVQB3AEIAVwBBAEcAVQBBAGMAZwBCAHoAQQBHAGsAQQBiAHcAQgB1AEEAQwBBAEEATABRAEIAcwBBAEgAUQBBAEkAQQBCAGIAQQBGAFkAQQBaAFEAQgB5AEEASABNAEEAYQBRAEIAdgBBAEcANABBAFgAUQBBAGkAQQBEAE0AQQBMAGcAQQB3AEEAQwBJAEEASwBRAEEAZwBBAEgAcwBBAEMAZwBBAG4AQQBIAHMAQQBJAGcAQgBtAEEARwBFAEEAYQBRAEIAcwBBAEcAVQBBAFoAQQBBAGkAQQBEAG8AQQBkAEEAQgB5AEEASABVAEEAWgBRAEEAcwBBAEMASQBBAGIAUQBCAHoAQQBHAGMAQQBJAGcAQQA2AEEAQwBJAEEAUQBRAEIAdQBBAEgATQBBAGEAUQBCAGkAQQBHAHcAQQBaAFEAQQBnAEEASABJAEEAWgBRAEIAeABBAEgAVQBBAGEAUQBCAHkAQQBHAFUAQQBjAHcAQQBnAEEARgBBAEEAYgB3AEIAMwBBAEcAVQBBAGMAZwBCAFQAQQBHAGcAQQBaAFEAQgBzAEEARwB3AEEASQBBAEIAMgBBAEQATQBBAEwAZwBBAHcAQQBDAEEAQQBiAHcAQgB5AEEAQwBBAEEAYgBnAEIAbABBAEgAYwBBAFoAUQBCAHkAQQBDAEkAQQBmAFEAQQBuAEEAQQBvAEEAWgBRAEIANABBAEcAawBBAGQAQQBBAGcAQQBEAEUAQQBDAGcAQgA5AEEAQQBvAEEASgBBAEIAbABBAEgAZwBBAFoAUQBCAGoAQQBGADgAQQBkAHcAQgB5AEEARwBFAEEAYwBBAEIAdwBBAEcAVQBBAGMAZwBCAGYAQQBIAE0AQQBkAEEAQgB5AEEAQwBBAEEAUABRAEEAZwBBAEMAUQBBAGEAUQBCAHUAQQBIAEEAQQBkAFEAQgAwAEEAQwBBAEEAZgBBAEEAZwBBAEUAOABBAGQAUQBCADAAQQBDADAAQQBVAHcAQgAwAEEASABJAEEAYQBRAEIAdQBBAEcAYwBBAEMAZwBBAGsAQQBIAE0AQQBjAEEAQgBzAEEARwBrAEEAZABBAEIAZgBBAEgAQQBBAFkAUQBCAHkAQQBIAFEAQQBjAHcAQQBnAEEARAAwAEEASQBBAEEAawBBAEcAVQBBAGUAQQBCAGwAQQBHAE0AQQBYAHcAQgAzAEEASABJAEEAWQBRAEIAdwBBAEgAQQBBAFoAUQBCAHkAQQBGADgAQQBjAHcAQgAwAEEASABJAEEATABnAEIAVABBAEgAQQBBAGIAQQBCAHAAQQBIAFEAQQBLAEEAQgBBAEEAQwBnAEEASQBnAEIAZwBBAEQAQQBBAFkAQQBBAHcAQQBHAEEAQQBNAEEAQgBnAEEARABBAEEASQBnAEEAcABBAEMAdwBBAEkAQQBBAHkAQQBDAHcAQQBJAEEAQgBiAEEARgBNAEEAZABBAEIAeQBBAEcAawBBAGIAZwBCAG4AQQBGAE0AQQBjAEEAQgBzAEEARwBrAEEAZABBAEIAUABBAEgAQQBBAGQAQQBCAHAAQQBHADgAQQBiAGcAQgB6AEEARgAwAEEATwBnAEEANgBBAEYASQBBAFoAUQBCAHQAQQBHADgAQQBkAGcAQgBsAEEARQBVAEEAYgBRAEIAdwBBAEgAUQBBAGUAUQBCAEYAQQBHADQAQQBkAEEAQgB5AEEARwBrAEEAWgBRAEIAegBBAEMAawBBAEMAZwBCAEoAQQBHAFkAQQBJAEEAQQBvAEEAQwAwAEEAYgBnAEIAdgBBAEgAUQBBAEkAQQBBAGsAQQBIAE0AQQBjAEEAQgBzAEEARwBrAEEAZABBAEIAZgBBAEgAQQBBAFkAUQBCAHkAQQBIAFEAQQBjAHcAQQB1AEEARQB3AEEAWgBRAEIAdQBBAEcAYwBBAGQAQQBCAG8AQQBDAEEAQQBMAFEAQgBsAEEASABFAEEASQBBAEEAeQBBAEMAawBBAEkAQQBCADcAQQBDAEEAQQBkAEEAQgBvAEEASABJAEEAYgB3AEIAMwBBAEMAQQBBAEkAZwBCAHAAQQBHADQAQQBkAGcAQgBoAEEARwB3AEEAYQBRAEIAawBBAEMAQQBBAGMAQQBCAGgAQQBIAGsAQQBiAEEAQgB2AEEARwBFAEEAWgBBAEEAaQBBAEMAQQBBAGYAUQBBAEsAQQBGAE0AQQBaAFEAQgAwAEEAQwAwAEEAVgBnAEIAaABBAEgASQBBAGEAUQBCAGgAQQBHAEkAQQBiAEEAQgBsAEEAQwBBAEEATABRAEIATwBBAEcARQBBAGIAUQBCAGwAQQBDAEEAQQBhAGcAQgB6AEEARwA4AEEAYgBnAEIAZgBBAEgASQBBAFkAUQBCADMAQQBDAEEAQQBMAFEAQgBXAEEARwBFAEEAYgBBAEIAMQBBAEcAVQBBAEkAQQBBAGsAQQBIAE0AQQBjAEEAQgBzAEEARwBrAEEAZABBAEIAZgBBAEgAQQBBAFkAUQBCAHkAQQBIAFEAQQBjAHcAQgBiAEEARABFAEEAWABRAEEASwBBAEMAUQBBAFoAUQBCADQAQQBHAFUAQQBZAHcAQgBmAEEASABjAEEAYwBnAEIAaABBAEgAQQBBAGMAQQBCAGwAQQBIAEkAQQBJAEEAQQA5AEEAQwBBAEEAVwB3AEIAVABBAEcATQBBAGMAZwBCAHAAQQBIAEEAQQBkAEEAQgBDAEEARwB3AEEAYgB3AEIAagBBAEcAcwBBAFgAUQBBADYAQQBEAG8AQQBRAHcAQgB5AEEARwBVAEEAWQBRAEIAMABBAEcAVQBBAEsAQQBBAGsAQQBIAE0AQQBjAEEAQgBzAEEARwBrAEEAZABBAEIAZgBBAEgAQQBBAFkAUQBCAHkAQQBIAFEAQQBjAHcAQgBiAEEARABBAEEAWABRAEEAcABBAEEAbwBBAEoAZwBBAGsAQQBHAFUAQQBlAEEAQgBsAEEARwBNAEEAWAB3AEIAMwBBAEgASQBBAFkAUQBCAHcAQQBIAEEAQQBaAFEAQgB5AEEAQQA9AD0A"
+  },
+  "related": [
+    {
+      "node": {
+        "_labels": [
+          "Process"
+        ],
+        "image": "C:\\\\Windows\\\\System32\\\\WindowsPowerShell\\\\v1.0\\\\powershell.exe",
+        "first_seen": "2026-07-06T09:45:27.244Z",
+        "process_guid": "{85e8c649-7937-6a4b-8607-000000001400}",
+        "last_seen": "2026-07-06T09:45:27.375Z",
+        "hashes": "MD5=7353F60B1739074EB17C5F4DDDEFE239,SHA256=DE96A6E69944335375DC1AC238336066889D9FFC7D73628EF4FE1B1B160AB32C,IMPHASH=741776AACCFC5B71FF59832DCDCACE0F",
+        "pid": "1948",
+        "command_line": "\\\"C:\\\\Windows\\\\System32\\\\WindowsPowerShell\\\\v1.0\\\\powershell.exe\\\" -NoProfile -NonInteractive -ExecutionPolicy Unrestricted -EncodedCommand JgBjAGgAYwBwAC4AYwBvAG0AIAA2ADUAMAAwADEAIAA+ACAAJABuAHUAbABsAAoAaQBmACAAKAAkAFAAUwBWAGUAcgBzAGkAbwBuAFQAYQBiAGwAZQAuAFAAUwBWAGUAcgBzAGkAbwBuACAALQBsAHQAIABbAFYAZQByAHMAaQBvAG4AXQAiADMALgAwACIAKQAgAHsACgAnAHsAIgBmAGEAaQBsAGUAZAAiADoAdAByAHUAZQAsACIAbQBzAGcAIgA6ACIAQQBuAHMAaQBiAGwAZQAgAHIAZQBxAHUAaQByAGUAcwAgAFAAbwB3AGUAcgBTAGgAZQBsAGwAIAB2ADMALgAwACAAbwByACAAbgBlAHcAZQByACIAfQAnAAoAZQB4AGkAdAAgADEACgB9AAoAJABlAHgAZQBjAF8AdwByAGEAcABwAGUAcgBfAHMAdAByACAAPQAgACQAaQBuAHAAdQB0ACAAfAAgAE8AdQB0AC0AUwB0AHIAaQBuAGcACgAkAHMAcABsAGkAdABfAHAAYQByAHQAcwAgAD0AIAAkAGUAeABlAGMAXwB3AHIAYQBwAHAAZQByAF8AcwB0AHIALgBTAHAAbABpAHQAKABAACgAIgBgADAAYAAwAGAAMABgADAAIgApACwAIAAyACwAIABbAFMAdAByAGkAbgBnAFMAcABsAGkAdABPAHAAdABpAG8AbgBzAF0AOgA6AFIAZQBtAG8AdgBlAEUAbQBwAHQAeQBFAG4AdAByAGkAZQBzACkACgBJAGYAIAAoAC0AbgBvAHQAIAAkAHMAcABsAGkAdABfAHAAYQByAHQAcwAuAEwAZQBuAGcAdABoACAALQBlAHEAIAAyACkAIAB7ACAAdABoAHIAbwB3ACAAIgBpAG4AdgBhAGwAaQBkACAAcABhAHkAbABvAGEAZAAiACAAfQAKAFMAZQB0AC0AVgBhAHIAaQBhAGIAbABlACAALQBOAGEAbQBlACAAagBzAG8AbgBfAHIAYQB3ACAALQBWAGEAbAB1AGUAIAAkAHMAcABsAGkAdABfAHAAYQByAHQAcwBbADEAXQAKACQAZQB4AGUAYwBfAHcAcgBhAHAAcABlAHIAIAA9ACAAWwBTAGMAcgBpAHAAdABCAGwAbwBjAGsAXQA6ADoAQwByAGUAYQB0AGUAKAAkAHMAcABsAGkAdABfAHAAYQByAHQAcwBbADAAXQApAAoAJgAkAGUAeABlAGMAXwB3AHIAYQBwAHAAZQByAA=="
+      },
+      "rel": "SPAWNED"
+    },
+    {
+      "node": {
+        "_labels": [
+          "Host"
+        ],
+        "hostname": "castelblack.north.sevenkingdoms.local",
+        "first_seen": "2026-07-02T02:32:06.696Z",
+        "last_seen": "2026-07-13T07:00:00.412Z"
+      },
+      "rel": "ON_HOST"
+    }
+  ]
+}
+
+### ③ 研判   [skill] suspicious_process   [模式] recipe
+# 研判留痕(4 步)
+[1] recipe取证「父子进程」→ 1 行
+[2] recipe取证「子进程账号」→ 1 行
+[3] recipe取证「后续行为」→ 1 行
+[4] recipe取证「_图盲区」→ 1 行
+
+Received notification from DBMS server: {severity: WARNING} {code: Neo.ClientNotification.Statement.UnknownPropertyKeyWarning} {category: UNRECOGNIZED} {title: The provided property key is not in the database} {description: One of the property names in your query is not available in the database, make sure you didn't misspell it or that the label is available when you run this statement in your application (the missing property name is: template)} {position: line: 1, column: 251, offset: 250} for query: 'MATCH (a:Alert {alert_uid:$aid})<-[:TRIGGERED]-(e:Event)-[:BY]->(req:Account) OPTIONAL MATCH (e)-[:REQUESTED]->(svc) RETURN e.event_code AS event_code, req.sam AS req_sam, req.domain AS req_domain, coalesce(req.privileged,false) AS req_privileged, e.template AS template, e.request_type AS request_type, svc.name AS ca'
+Received notification from DBMS server: {severity: WARNING} {code: Neo.ClientNotification.Statement.UnknownPropertyKeyWarning} {category: UNRECOGNIZED} {title: The provided property key is not in the database} {description: One of the property names in your query is not available in the database, make sure you didn't misspell it or that the label is available when you run this statement in your application (the missing property name is: request_type)} {position: line: 1, column: 275, offset: 274} for query: 'MATCH (a:Alert {alert_uid:$aid})<-[:TRIGGERED]-(e:Event)-[:BY]->(req:Account) OPTIONAL MATCH (e)-[:REQUESTED]->(svc) RETURN e.event_code AS event_code, req.sam AS req_sam, req.domain AS req_domain, coalesce(req.privileged,false) AS req_privileged, e.template AS template, e.request_type AS request_type, svc.name AS ca'
+# 研判结果  alert=246bb4e5e3bb37c9c83029cd23f83134c9013b4491c17fd6577368d272c03b47  path=B  skill=suspicious_process
+verdict   : true_positive  (confidence=0.95)
+summary   : 检测到恶意进程创建：powershell.exe 被 cmd.exe 作为父进程调用，并使用了编码命令。
+rationale : 1. 父进程 cmd.exe 和子进程 powershell.exe 的组合符合异常进程创建模式。 2. 命令行中包含 -EncodedCommand 参数，这通常用于隐藏实际执行的 PowerShell 脚本内容，增加了恶意利用的可能性。 3. 该进程尝试执行编码的 Base64 字符串，这通常是恶意代码的常见特征。
+evidence  : ['event_uid: 246bb4e5e3bb37c9c83029cd23f8313029cd23f8313029cd23f8313029cd23f83134c9013b4491c17fd6577368d272c03b47']
+missing   : ['解码后的 PowerShell 命令内容', '该进程是否访问了敏感系统资源或进行了网络通信']
+pattern   : 恶意 PowerShell 执行 (T1059.004)
+agent     : qwen32b-ft
+处置(建议): isolate_host -> C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe  risk=high  status=proposed
+处置(建议): quarantine_file -> C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe  risk=high  status=proposed
+处置(建议): monitor -> castelblack.north.sevenkingdoms.local  risk=high  status=proposed
+
+============================================================================
+## [7/8] technique=T1649   该类共 6 条   uid=0a4f05a36e53604d2e430d0a3bd09c0bd4ca4f6bd1ad69c946fe77c2dc526edd
+============================================================================
+### ① 原始告警节点(:Alert)
+{
+  "severity": 8,
+  "first_seen": "2026-07-07T01:25:46.091015400Z",
+  "last_seen": "2026-07-07T01:25:46.091015400Z",
+  "arrival_ms": 1783387547572,
+  "technique_ids": [
+    "T1649"
+  ],
+  "source": "wazuh",
+  "rule_id": "100803",
+  "stream": "soc-hids-alert-*",
+  "alert_uid": "0a4f05a36e53604d2e430d0a3bd09c0bd4ca4f6bd1ad69c946fe77c2dc526edd",
+  "rule_description": "ADCS certificate request/issue on CA (possible ESC abuse)",
+  "sensor": "wazuh-hids",
+  "raw_ref": "soc-hids-alert-2026.07.07:ivMuOp8B3gPM8FAea1Ok",
+  "time": "2026-07-07T01:25:46.818+0000"
+}
+
+### ② 触发上下文(seed:触发事件 / 主语 / 宾语 / 次要实体)
+{
+  "event": {
+    "ingest_time": 1783563347229,
+    "stream": "winlogbeat-*",
+    "event_code": "4886",
+    "arrival_ms": 1783387547922,
+    "attributes": " cdc:meereen.essos.local rmd:meereen.essos.local  ccm:meereen.essos.local",
+    "sensor": "Security",
+    "raw_ref": "soc-hids-alert-2026.07.07:ivMuOp8B3gPM8FAea1Ok",
+    "source": "winlogbeat",
+    "request_id": "6",
+    "event_time": "2026-07-07T01:25:46.091015400Z",
+    "event_uid": "3f0813e0aa6250ac197b938d97870a9fe9782559684c6eef9d40a4d72e8fd4f6"
+  },
+  "subject": {
+    "_labels": [
+      "Account"
+    ],
+    "upn": "vagrant@ESSOS.LOCAL",
+    "first_seen": "2026-07-02T02:32:09.011Z",
+    "last_seen": "2026-07-07T01:25:48.015Z",
+    "domain": "ESSOS",
+    "sam": "vagrant",
+    "sid": "S-1-5-21-4206617935-2580949811-1114734249-1000"
+  },
+  "related": [
+    {
+      "node": {
+        "_labels": [
+          "Host"
+        ],
+        "hostname": "braavos.essos.local",
+        "first_seen": "2026-07-02T02:32:07.471Z",
+        "last_seen": "2026-07-13T06:55:42.038Z"
+      },
+      "rel": "ON_HOST"
+    },
+    {
+      "node": {
+        "_labels": [
+          "Service"
+        ],
+        "first_seen": "2026-07-02T07:49:39.404Z",
+        "last_seen": "2026-07-07T01:25:47.534Z",
+        "kind": "certificate_authority",
+        "service_id": "certsvc@braavos.essos.local",
+        "host": "braavos.essos.local"
+      },
+      "rel": "REQUESTED"
+    }
+  ]
+}
+
+### ③ 研判   [skill] adcs   [模式] recipe
+# 研判留痕(3 步)
+[1] recipe取证「请求者与CA/模板」→ 1 行
+[2] recipe取证「请求者估值」→ 1 行
+[3] recipe取证「_图盲区」→ 1 行
+
+# 研判结果  alert=0a4f05a36e53604d2e430d0a3bd09c0bd4ca4f6bd1ad69c946fe77c2dc526edd  path=B  skill=adcs
+verdict   : suspicious  (confidence=0.6)
+summary   : 检测到可能的ADCS证书滥用行为，请求者与CA/模板信息缺失，请求者为非特权用户
+rationale : 1. 请求者属于普通用户账户（非特权账户）
+2. 证书申请类型和模板信息缺失，无法验证是否使用危险模板
+3. 未观察到证书使用行为（PKINIT/TGS请求）
+4. 缺少ESC1/ESC6的关键特征（SAN mismatch/ENROLLEE_SUPPLIES_SUBJECT）
+5. 无关联的NTLM中继特征（ESC8）
+6. 未发现跨域信任链上的异常认证
+evidence  : ['请求者与CA/模板', '请求者估值']
+missing   : ['证书SAN与请求者是否mismatch', '模板EKU/ENROLLEE_SUPPLIES_SUBJECT/是否需审批', 'ESC8中继链']
+agent     : qwen32b-ft
+处置(建议): escalate -> 证书申请审计日志  risk=high  status=proposed
+处置(建议): monitor -> 请求者关联的主机  risk=high  status=proposed
+
+============================================================================
+## [8/8] technique=(none)   该类共 3 条   uid=6049acfd7bc465c61fb01ac257cc78725aca001cdb092ad7124344f09cd44805
+============================================================================
+### ① 原始告警节点(:Alert)
+{
+  "rule_id": "60602",
+  "severity": 9,
+  "first_seen": "2026-07-06T09:46:20.010082700Z",
+  "last_seen": "2026-07-06T09:46:20.010082700Z",
+  "stream": "soc-hids-alert-*",
+  "alert_uid": "6049acfd7bc465c61fb01ac257cc78725aca001cdb092ad7124344f09cd44805",
+  "rule_description": "Windows application error event.",
+  "arrival_ms": 1783331185204,
+  "sensor": "wazuh-hids",
+  "raw_ref": "soc-hids-alert-2026.07.06:p-_SNp8B3gPM8FAeZsAh",
+  "time": "2026-07-06T09:46:24.970+0000",
+  "source": "wazuh"
+}
+
+### ② 触发上下文(seed:触发事件 / 主语 / 宾语 / 次要实体)
+{
+  "event": {
+    "ingest_time": 1783563719476,
+    "event_code": "1000",
+    "sensor": "Application",
+    "raw_ref": "soc-hids-alert-2026.07.06:p-_SNp8B3gPM8FAeZsAh",
+    "source": "winlogbeat",
+    "event_time": "2026-07-06T09:46:20.010082700Z",
+    "event_uid": "b84c517930c9b5b5fbd942b0b867eda1392fe67a101070a66fe90df2de4430d7"
+  },
+  "subject": null,
+  "related": [
+    {
+      "node": {
+        "_labels": [
+          "Host"
+        ],
+        "hostname": "meereen.essos.local",
+        "first_seen": "2026-07-02T02:32:06.422Z",
+        "last_seen": "2026-07-13T07:00:00.740Z"
+      },
+      "rel": "ON_HOST"
+    }
+  ]
+}
+
+### ③ 研判   [skill] (none)   [模式] auto(无 recipe)
+# 研判留痕(2 步)
+[1] run_cypher ✗ 查询失败: {code: Neo.ClientError.Statement.ParameterMissing} {message: Expected parameter(s): event_uid}
+     q: MATCH (e: Event)-[:ON_HOST]->(h: Host) WHERE e.event_uid = $event_uid RETURN e, h
+[2] run_cypher → 1 行
+     q: MATCH (e: Event)-[:ON_HOST]->(h: Host) WHERE e.event_uid = $event_uid RETURN e, h
+
+# 研判结果  alert=6049acfd7bc465c61fb01ac257cc78725aca001cdb092ad7124344f09cd44805  path=B  skill=None
+verdict   : suspicious  (confidence=0.6)
+summary   : Application error event occurred on host meereen.essos.local with event UID b84c517930c9b5b5fbd942b0b867eda1392fe67a101070a66fe90df2de4430d7. Missing details to determine legitimacy.
+rationale : The event has no associated process, account, or network activity details. Cannot verify if it matches normal baseline behavior for this host.
+evidence  : ['b84c517930c9b5b5fbd942b0b867eda1392fe67a101070a66fe90df2de4430d7']
+missing   : ['Process creation context', 'Associated account', 'Network connection details', 'Error code specifics']
+agent     : qwen32b-ft
+处置(建议): monitor -> meereen.essos.local  risk=low  status=proposed
+
+# 批量自测完成
+=== done 2026-07-13 07:07Z ===
