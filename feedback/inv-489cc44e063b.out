@@ -1,5 +1,5 @@
-=== investigate 489cc44e063bdac63f9dcf39dc87e8f99e1908e30a438afe970ebd2c11796624  2026-07-13 03:30Z ===
-[研判模式] recipe
+=== investigate 489cc44e063bdac63f9dcf39dc87e8f99e1908e30a438afe970ebd2c11796624  2026-07-13 06:01Z ===
+[skill] kerberoast  [模式] recipe
 # 研判留痕(5 步)
 [1] recipe取证「请求与目标」→ 1 行
 [2] recipe取证「目标估值」→ 1 行
@@ -10,9 +10,9 @@
 # 研判结果  alert=489cc44e063bdac63f9dcf39dc87e8f99e1908e30a438afe970ebd2c11796624  path=B  skill=kerberoast
 verdict   : false_positive  (confidence=0.8)
 summary   : 跨域信任的正常 RC4 票据请求
-rationale : 请求者域 NORTH.sevenkingdoms.local 与目标域 sevenkingdoms.local 存在信任关系。根据 Kerberoasting 判定规则第 5.5 步,跨域信任的 RC4 票据请求属于正常行为直至被证伪。证据显示请求者是机器账号($ 结尾),且 enc_type=0x17(RC4)的历史基线已达 123 次。
-evidence  : ['4769:event_time=2026-07-06T12:32:03.685Z', 'Domain:netbios=NORTH']
-pattern   : T1558.003
+rationale : 请求者域 NORTH.sevenkingdoms.local 与目标域 sevenkingdoms.local 之间存在信任关系。在跨域信任场景下，RC4（enc_type=0x17）票据请求是正常的，尤其是在未强制使用 AES 加密的老环境中。此外，请求者为计算机账号 (winterfell$)，在跨域访问时使用 RC4 是典型行为。
+evidence  : ['请求与目标', '跨域信任']
+pattern   : T1558.003_Kerberoast
 agent     : qwen32b-ft
-处置(建议): none -> winterfell$  risk=low  status=proposed
-=== done 2026-07-13 03:31Z ===
+处置(建议): 无
+=== done 2026-07-13 06:02Z ===
