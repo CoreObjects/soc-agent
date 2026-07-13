@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 # 在 server2 上一键批量自测:每类告警各抽 1 条 → 打印原始告警 + 研判全过程 → ferry 回来给 Claude 判。
 # 用法: bash scripts/selftest.sh [每类条数=1] [技术类数上限=10] [--mode recipe|auto] [--write]
+#   只测一类: bash scripts/selftest.sh --tech T1059
+#   只测一条: bash scripts/selftest.sh --uid <alert_uid>
 # 前提: .env 已填(NEO4J_* → server1 图;LLM_API_BASE → 本地 qwen :8000)。
 # 首跑自动建 venv + 装依赖(neo4j/openai)—— 不再需要手动 python3(那样会 ModuleNotFoundError)。
 set -euo pipefail

@@ -4,7 +4,9 @@
 默认**不写回图**(自测可反复跑,不往经验层堆重复 Verdict);要落库用 run_investigation.sh。
 
 用法(经 wrapper 自动建 venv):bash scripts/selftest.sh [每类条数=1] [技术类数上限=10]
-直接:  .venv/bin/python scripts/batch_investigate.py [per_tech] [max_tech] [--mode recipe|auto] [--write]
+  只测一类(一条一条改就一条一条测):bash scripts/selftest.sh --tech T1059
+  只测一条:                          bash scripts/selftest.sh --uid <alert_uid>
+直接:  .venv/bin/python scripts/batch_investigate.py [per_tech] [max_tech] [--tech T] [--uid U] [--mode recipe|auto] [--write]
 输出:IP 一律打码(只留末段供关联);GOAD 靶场实体名(主机/账号/域)为公开信息予以保留。
 """
 import json
@@ -41,6 +43,16 @@ def main():
         i = argv.index("--mode")
         mode = argv[i + 1]
         del argv[i:i + 2]
+    tech = None                    # --tech T1059:只测这一类(一条一条改就一条一条测)
+    if "--tech" in argv:
+        i = argv.index("--tech")
+        tech = argv[i + 1]
+        del argv[i:i + 2]
+    only_uid = None                # --uid <uid>:只测指定这一条
+    if "--uid" in argv:
+        i = argv.index("--uid")
+        only_uid = argv[i + 1]
+        del argv[i:i + 2]
     per_tech = int(argv[0]) if len(argv) > 0 else 1
     max_tech = int(argv[1]) if len(argv) > 1 else 10
 
@@ -50,15 +62,27 @@ def main():
     from soc_agent.cli import build, choose_investigator, render_result, render_trace
     graph, router, agent_inv, recipe_inv = build(cfg)
     try:
-        # 每类技战术抽 per_tech 个样例 uid,按该类告警量降序取前 max_tech 类
-        rows = graph.run_cypher(
-            "MATCH (a:Alert) UNWIND coalesce(a.technique_ids,['(none)']) AS t "
-            "WITH t, count(*) AS n, collect(a.alert_uid)[0..$k] AS uids "
-            "RETURN t AS tech, n, uids ORDER BY n DESC LIMIT $m",
-            k=per_tech, m=max_tech)
-        picks = [(r["tech"], r["n"], u) for r in rows for u in r["uids"]]
+        if only_uid:                                        # 指定单条
+            node0 = graph.get_alert(only_uid)
+            t0 = (node0.get("technique_ids") or ["(none)"])[0] if node0 else "(指定)"
+            picks = [(t0, "?", only_uid)]
+        elif tech:                                          # 只测某一类技战术
+            r = graph.run_cypher(
+                "MATCH (a:Alert) WHERE $tech IN coalesce(a.technique_ids,['(none)']) "
+                "RETURN count(*) AS n, collect(a.alert_uid)[0..$k] AS uids",
+                tech=tech, k=per_tech)
+            r = r[0] if r else {"n": 0, "uids": []}
+            picks = [(tech, r["n"], u) for u in r["uids"]]
+        else:                                               # 每类各抽 per_tech,取前 max_tech 类
+            rows = graph.run_cypher(
+                "MATCH (a:Alert) UNWIND coalesce(a.technique_ids,['(none)']) AS t "
+                "WITH t, count(*) AS n, collect(a.alert_uid)[0..$k] AS uids "
+                "RETURN t AS tech, n, uids ORDER BY n DESC LIMIT $m",
+                k=per_tech, m=max_tech)
+            picks = [(r["tech"], r["n"], u) for r in rows for u in r["uids"]]
 
-        print(f"# 批量自测  技战术 {len(rows)} 类 / 待研判 {len(picks)} 条  "
+        scope = f"tech={tech}" if tech else (f"uid={only_uid[:12]}…" if only_uid else "全类")
+        print(f"# 批量自测  范围={scope}  待研判 {len(picks)} 条  "
               f"模式={mode}  写回图={'是' if write else '否(自测不落库)'}  (IP 已打码)\n")
         print("待研判清单:")
         for tech, n, u in picks:
