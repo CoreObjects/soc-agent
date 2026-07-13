@@ -14,7 +14,7 @@ import re
 from ..models import Disposition
 from ..recipe_lib import security_agent
 
-__all__ = ["apply_guardrail", "default_policy", "GATED_ACTIONS"]
+__all__ = ["apply_guardrail", "default_policy", "policy_from_graph", "GATED_ACTIONS"]
 
 # 高危(需人工确认才可执行)vs 低危/无操作(可自动)
 GATED_ACTIONS = {"disable_account", "isolate_host", "kill_process", "block_ip",
@@ -44,6 +44,26 @@ def default_policy():
                                or ["krbtgt", "administrator", "domain admins",
                                    "enterprise admins", "domain controllers"]),
     }
+
+
+# 角色→NEVER-TOUCH 的高价值主机(补图第二弹给 Host 补的 role/is_dc)
+_PROTECTED_ROLES = ["certificate_authority"]
+
+
+def policy_from_graph(graph):
+    """在 default_policy 上叠加图里 DC/CA 主机 → NEVER-TOUCH 按角色自动(免手维护 env 名单)。
+    图不可用则退回默认策略(不崩)。"""
+    pol = default_policy()
+    try:
+        rows = graph.run_cypher(
+            "MATCH (h:Host) WHERE h.is_dc = true OR h.role IN $roles "
+            "RETURN collect(DISTINCT h.hostname) AS hosts", roles=_PROTECTED_ROLES)
+        extra = (rows[0].get("hosts") if rows else None) or []
+    except Exception:
+        extra = []
+    pol["protected_hosts"] = list(dict.fromkeys(
+        [*pol.get("protected_hosts", []), *[h for h in extra if h]]))
+    return pol
 
 
 def _looks_like(target, kind):

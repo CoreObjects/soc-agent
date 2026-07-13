@@ -14,7 +14,7 @@ from ..tools import FINALIZE, finalize_spec
 __all__ = ["AgentInvestigator", "RecipeInvestigator", "SkillRouter", "build_result", "infer_layer"]
 
 
-def build_result(alert, skill_name, args, agent_name, trace=None, path="B") -> InvestigationResult:
+def build_result(alert, skill_name, args, agent_name, trace=None, path="B", policy=None) -> InvestigationResult:
     """finalize 参数 → InvestigationResult(verdict 归一、处置动作限定词表)。两种研判器共用。"""
     v = args.get("verdict")
     if v not in VERDICTS:
@@ -34,7 +34,7 @@ def build_result(alert, skill_name, args, agent_name, trace=None, path="B") -> I
             act = "escalate"
         dispositions.append(Disposition(action=act, target=d.get("target"), risk=risk))
     # ★P5a 处置护栏:NEVER-TOUCH 硬拒(传感器/DC/关键账号)+ 目标类型解析 + gated/auto
-    dispositions, audit = apply_guardrail(dispositions)
+    dispositions, audit = apply_guardrail(dispositions, policy)
     trace = list(trace or [])
     for a in audit:
         if a["decision"] in ("blocked", "retargeted"):        # 只把"干预"记进留痕(gated/auto 是常态)
@@ -128,7 +128,7 @@ class AgentInvestigator:
     _MAX_NUDGES = 2      # "先取证再下结论"最多打回几次,防死循环
 
     def __init__(self, llm, toolbox, schema, registry, agent_name="agent",
-                 max_iterations=12, min_queries=1):
+                 max_iterations=12, min_queries=1, policy=None):
         self.llm = llm
         self.toolbox = toolbox
         self.schema = schema
@@ -136,6 +136,7 @@ class AgentInvestigator:
         self.agent_name = agent_name
         self.max_iterations = max_iterations
         self.min_queries = min_queries      # 至少取证几次才允许 finalize(骨架保底:不准 0 取证下结论)
+        self.policy = policy                # 处置护栏策略(含图派生的 DC/CA NEVER-TOUCH)
 
     # ---- 提示构建 ----
     def _system_prompt(self, skill) -> str:
@@ -179,7 +180,8 @@ class AgentInvestigator:
 
     # ---- 结果构建 ----
     def _build_result(self, alert, skill, args, trace) -> InvestigationResult:
-        return build_result(alert, skill.name if skill else None, args, self.agent_name, trace)
+        return build_result(alert, skill.name if skill else None, args, self.agent_name, trace,
+                            policy=self.policy)
 
     def _fallback(self, alert, skill, trace, reason) -> InvestigationResult:
         verdict = Verdict(verdict="suspicious", confidence=0.0,
@@ -243,12 +245,13 @@ class RecipeInvestigator:
     LLM **只判断、不规划查询**(扬长避短:模型推理强、规划弱)。covered 告警类型走这条,稳。
     """
 
-    def __init__(self, llm, graph, schema, registry, agent_name="agent"):
+    def __init__(self, llm, graph, schema, registry, agent_name="agent", policy=None):
         self.llm = llm
         self.graph = graph
         self.schema = schema
         self.registry = registry
         self.agent_name = agent_name
+        self.policy = policy                # 处置护栏策略(含图派生的 DC/CA NEVER-TOUCH)
 
     def _prompt(self, skill) -> str:
         parts = ["你是资深 SOC 研判分析师,只依据给你的证据判断,不臆造。",
@@ -294,8 +297,9 @@ class RecipeInvestigator:
             tools=finalize_spec(), tool_choice="required")   # 只给 finalize,逼它直接定性
         for tc in (resp.tool_calls or []):
             if tc.name == FINALIZE:
-                return build_result(alert, skill.name, tc.arguments or {}, self.agent_name, trace)
+                return build_result(alert, skill.name, tc.arguments or {}, self.agent_name, trace,
+                                    policy=self.policy)
         return build_result(alert, skill.name, {
             "verdict": "suspicious", "confidence": 0.0,
             "rationale": "recipe 已取证但模型未给结论", "missing_evidence": ["模型未 finalize"],
-        }, self.agent_name, trace)
+        }, self.agent_name, trace, policy=self.policy)

@@ -29,6 +29,8 @@ description: 研判 LSASS 凭据转储告警。当告警涉及"进程访问/读�
 - **系统进程**(csrss/wininit/lsm/wmiprvse/svchost)常态查询 LSASS(多为无 0x10 的查询掩码)。
 - **备份/凭据管理/APM**读进程内存;**管理员任务管理器/ProcDump 手动抓 dump**(0x1410/0x1fffff,父进程交互式)。
 
+**★资产价值(补图第二弹)**:recipe「源进程与访问掩码」现带 `host_role`/`host_criticality`。在 `domain_controller`(读 DC 的 LSASS = 域凭据全暴露)/`certificate_authority` 上的真实转储 → 最高优先级。但资产价值**不改**"源进程是安全代理→FP"的判断,只影响真 TP 的紧急度。
+
 ## 判定逻辑
 - **true_positive**:`granted_access` 含 0x10(尤其 0x1438/0x143a/0x1fffff)**且**源进程**非**安全代理、非白名单(cmd/powershell/rundll32/temp 路径)**且**(父链可疑 **或** call_trace 含转储库指纹 **或** 读后外连/横向)。
 - **false_positive/benign**:源进程 ∈ 已知安全代理(且 call_trace 无转储库)**或** 系统进程且掩码无 0x10。

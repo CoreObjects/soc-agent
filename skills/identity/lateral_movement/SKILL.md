@@ -24,6 +24,8 @@ description: 研判横向移动/凭据复用(PtH/PtT/异常远程登录)告警�
 - **NTLM 合法使用**(按 IP 访问、老应用)→ type3 NTLM ≠ PtH。
 - **域信任跨域 NTLM 4776** → GOAD 多域,跨信任 4776 良性遍布(可结合信任拓扑判)。
 
+**★资产价值(补图第二弹)**:recipe「登录事件」现带 `target_role`/`target_criticality`。登录目标是 `domain_controller`/`certificate_authority`(criticality=critical/high)→ 异常登录显著升权。
+
 ## 判定逻辑
 - **true_positive**:账号↔主机**首见**(无基线)+ 特权账号 + PtH/PtT 特征,尤其伴随扇出多台 + 落地远程执行/LSASS 访问,来源 IP 新/差信誉。银票(成员机 Kerberos 登录 DC 无对应票)= 高置信。
 - **false_positive**:来源已知管理跳板/扫描器;基线广泛的服务账号;到已知老应用的 NTLM;匹配信任拓扑的跨域 4776。

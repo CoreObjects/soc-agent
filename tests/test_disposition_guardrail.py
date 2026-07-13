@@ -74,3 +74,32 @@ def test_empty_and_default_policy_do_not_crash():
     # 默认策略(不给 policy)对普通处置不误伤
     safe, _ = apply_guardrail([Disposition(action="monitor", target="h1", risk="low")])
     assert safe[0].action == "monitor"
+
+
+class _FakeGraph:
+    def __init__(self, hosts):
+        self._hosts = hosts
+
+    def run_cypher(self, q, **p):
+        return [{"hosts": self._hosts}]
+
+
+def test_policy_from_graph_auto_protects_dc_and_ca():
+    # 补图第二弹的收现:护栏从图里读 DC/CA 主机名,自动进 NEVER-TOUCH(免手维护 env 名单)
+    from soc_agent.disposition import policy_from_graph
+    g = _FakeGraph(["kingslanding.sevenkingdoms.local", "braavos.essos.local"])
+    pol = policy_from_graph(g)
+    assert "kingslanding.sevenkingdoms.local" in pol["protected_hosts"]
+    safe, audit = apply_guardrail(
+        [Disposition(action="isolate_host", target="kingslanding.sevenkingdoms.local", risk="high")], pol)
+    assert safe[0].action == "escalate" and audit[0]["decision"] == "blocked"
+    assert "受保护主机" in audit[0]["reason"]
+
+
+def test_policy_from_graph_survives_graph_error():
+    class Boom:
+        def run_cypher(self, q, **p):
+            raise RuntimeError("no graph")
+    from soc_agent.disposition import policy_from_graph
+    pol = policy_from_graph(Boom())               # 图挂了也别崩,退回默认策略
+    assert "protected_accounts" in pol

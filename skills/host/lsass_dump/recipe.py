@@ -22,7 +22,7 @@ def collect(graph, alert, seed=None):
         "OPTIONAL MATCH (e)-[:ON_HOST]->(h:Host) "
         "RETURN src.process_guid AS src_guid, src.image AS src_image, src.command_line AS src_cmdline, "
         "tgt.image AS target_image, e.granted_access AS granted_access, e.call_trace AS call_trace, "
-        "h.hostname AS host",
+        "h.hostname AS host, h.role AS host_role, h.criticality AS host_criticality",
         aid=aid)
     row = base[0] if base else {}
     ev["源进程与访问掩码"] = {k: v for k, v in row.items() if k != "call_trace"}

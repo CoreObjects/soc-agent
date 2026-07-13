@@ -15,7 +15,7 @@ def collect(graph, alert, seed=None):
         "OPTIONAL MATCH (e)-[:FROM]->(ip:IPAddress) "
         "RETURN e.event_code AS event_code, e.logon_type AS logon_type, e.result AS result, "
         "acc.sam AS acc_sam, acc.domain AS acc_domain, coalesce(acc.privileged,false) AS acc_privileged, "
-        "h.hostname AS target_host, "
+        "h.hostname AS target_host, h.role AS target_role, h.criticality AS target_criticality, "
         "ip.ip AS src_ip",
         aid=aid)
     ev["登录事件"] = base[0] if base else {}

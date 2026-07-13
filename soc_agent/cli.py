@@ -8,6 +8,7 @@ import sys
 from pathlib import Path
 
 from .config import Config
+from .disposition import policy_from_graph
 from .graph.client import Neo4jGraph
 from .llm.qwen import QwenClient
 from .models import Alert
@@ -97,12 +98,13 @@ def build(config: Config):
     llm = QwenClient(base_url=config.llm_api_base, model=config.llm_model, api_key=config.llm_api_key)
     schema = graph_schema()
     registry = SkillRegistry(config.skills_dir)
+    policy = policy_from_graph(graph)      # 处置护栏:图里 DC/CA 主机自动进 NEVER-TOUCH(补图第二弹的收现)
     router = SkillRouter(llm=llm, registry=registry, agent_name=config.llm_model)
     agent_inv = AgentInvestigator(
         llm=llm, toolbox=default_toolbox(graph), schema=schema, registry=registry,
-        agent_name=config.llm_model, max_iterations=config.max_iterations)
+        agent_name=config.llm_model, max_iterations=config.max_iterations, policy=policy)
     recipe_inv = RecipeInvestigator(
-        llm=llm, graph=graph, schema=schema, registry=registry, agent_name=config.llm_model)
+        llm=llm, graph=graph, schema=schema, registry=registry, agent_name=config.llm_model, policy=policy)
     return graph, router, agent_inv, recipe_inv
 
 
