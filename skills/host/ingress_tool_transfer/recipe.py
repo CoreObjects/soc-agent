@@ -1,40 +1,56 @@
-"""Ingress Tool Transfer(T1105)确定性取证。
+"""Ingress Tool Transfer(T1105)确定性取证 —— 从 seed 起,适配事件类型 + 解码 + 认噪声。
 
-从触发事件取下载进程 + 父链 + 外连目标(IP/域/信誉)+ 落地文件 + 是否随即执行。
-重点给 LLM 降噪判据(白名单下载器 vs LOLBin、目的信誉、落地即执行)。
+要点(与 suspicious_process 同源):此类告警极吵、绝大多数是正常下载/系统自检。触发常是
+EID11(掉文件),决定性证据是"谁写的、写了啥、命令行(解码后)是不是良性运维/策略探针"。
+不查图里没有的字段(ip.reputation / asn / file.sha256,全空 → 图盲区)。
 """
+from soc_agent.recipe_lib import decode_chain, provisioning_noise
 
 
 def collect(graph, alert, seed=None):
-    aid = alert.alert_uid
+    seed = seed or {}
+    event = seed.get("event") or {}
+    subject = seed.get("subject") or {}
+    related = seed.get("related") or []
     ev = {}
 
-    base = graph.run_cypher(
-        "MATCH (a:Alert {alert_uid:$aid})<-[:TRIGGERED]-(e:Event)-[:BY]->(p:Process) "
-        "OPTIONAL MATCH (e)-[:ON_HOST]->(h:Host) "
-        "OPTIONAL MATCH (parent:Process)-[:SPAWNED]->(p) "
-        "RETURN p.process_guid AS proc_guid, p.image AS image, p.command_line AS command_line, "
-        "parent.image AS parent, h.hostname AS host",
-        aid=aid)
-    ev["下载进程与父链"] = base[0] if base else {}
-    pg = ev["下载进程与父链"].get("proc_guid")
+    # 1. 触发/下载进程 + 命令行 + 事件类型
+    ev["事件类型"] = event.get("event_code")
+    ev["触发进程"] = {k: subject.get(k) for k in ("image", "command_line", "pid", "process_guid")
+                    if subject.get(k) is not None}
 
+    # 2. 落地文件 / 主机(来自 seed)
+    files = sorted({r["node"].get("path") for r in related
+                    if r.get("rel") == "WROTE" and r.get("node") and r["node"].get("path")})
+    host = next((r["node"].get("hostname") for r in related
+                 if r.get("rel") == "ON_HOST" and r.get("node")), None)
+    ev["落地文件"] = files
+    ev["主机"] = host
+
+    # 3. ★解码命令行 + 认良性噪声(把"掉可执行文件"其实是策略探针/Ansible 的 FP 认出来)
+    layers = decode_chain(subject.get("command_line"))
+    if layers:
+        ev["解码后命令(逐层)"] = layers
+    blob = "\n".join(filter(None, [subject.get("command_line")] + layers + files))
+    ev["供给/自检噪声"] = provisioning_noise(blob) or "未识别到已知良性噪声"
+
+    # 4. 下载语义:父进程 + 外连目的 + 落地即执行(有进程 GUID 才查;reputation/asn 图无 → 不查)
+    pg = subject.get("process_guid")
     if pg:
-        ev["外连目标"] = graph.run_cypher(
+        rows = graph.run_cypher(
+            "MATCH (p:Process {process_guid:$g}) OPTIONAL MATCH (gp:Process)-[:SPAWNED]->(p) "
+            "RETURN gp.image AS parent_image", g=pg)
+        ev["父进程"] = rows[0].get("parent_image") if rows else None
+        ev["外连目的(仅存在性,信誉是盲区)"] = graph.run_cypher(
             "MATCH (p:Process {process_guid:$g}) "
             "OPTIONAL MATCH (p)-[:CONNECTED_TO]->(ip:IPAddress) "
             "OPTIONAL MATCH (p)-[:QUERIED]->(d:Domain) "
-            "RETURN collect(DISTINCT {ip: ip.ip, reputation: ip.reputation, asn: ip.asn}) AS ips, "
-            "collect(DISTINCT {fqdn: d.fqdn, reputation: d.reputation, first_seen: d.first_seen}) AS domains",
-            g=pg)
-        ev["落地与执行"] = graph.run_cypher(
-            "MATCH (p:Process {process_guid:$g}) "
-            "OPTIONAL MATCH (p)-[:WROTE]->(f:File) "
-            "OPTIONAL MATCH (p)-[:SPAWNED]->(c:Process) "
-            "RETURN collect(DISTINCT {path: f.path, sha256: f.sha256}) AS wrote_files, "
-            "collect(DISTINCT c.image) AS spawned",
-            g=pg)
+            "RETURN collect(DISTINCT ip.ip)[0..20] AS ips, "
+            "collect(DISTINCT d.fqdn)[0..20] AS domains", g=pg)
+        ev["落地即执行(SPAWNED 子进程)"] = graph.run_cypher(
+            "MATCH (p:Process {process_guid:$g}) OPTIONAL MATCH (p)-[:SPAWNED]->(c:Process) "
+            "RETURN collect(DISTINCT c.image)[0..10] AS spawned", g=pg)
 
-    ev["_图盲区"] = ("完整下载 URL/文件名、落地文件哈希/信誉(FileCreate 常无哈希)、下载进程签名、"
-                    "IP/域信誉是否实时且覆盖大厂 CDN —— 未建模/可能为空")
+    ev["_图盲区"] = ("完整下载 URL/文件名、落地文件哈希、IP/域信誉(reputation/asn 未建模、全空)、"
+                    "下载进程签名 —— 未建模;编码命令已解码见上,据此与噪声标签判良性/恶意")
     return ev
