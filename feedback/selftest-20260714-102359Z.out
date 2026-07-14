@@ -1,0 +1,661 @@
+=== selftest 2026-07-14 10:23Z ===
+Received notification from DBMS server: {severity: WARNING} {code: Neo.ClientNotification.Statement.UnknownPropertyKeyWarning} {category: UNRECOGNIZED} {title: The provided property key is not in the database} {description: One of the property names in your query is not available in the database, make sure you didn't misspell it or that the label is available when you run this statement in your application (the missing property name is: result)} {position: line: 1, column: 236, offset: 235} for query: 'MATCH (a:Alert {alert_uid:$aid})<-[:TRIGGERED]-(e:Event)-[:BY]->(acc:Account) OPTIONAL MATCH (e)-[:AUTHENTICATED_TO]->(h:Host) OPTIONAL MATCH (e)-[:FROM]->(ip:IPAddress) RETURN e.event_code AS event_code, e.logon_type AS logon_type, e.result AS result, acc.sam AS acc_sam, acc.domain AS acc_domain, coalesce(acc.privileged,false) AS acc_privileged, h.hostname AS target_host, h.role AS target_role, h.criticality AS target_criticality, ip.ip AS src_ip'
+Received notification from DBMS server: {severity: WARNING} {code: Neo.ClientNotification.Statement.UnknownPropertyKeyWarning} {category: UNRECOGNIZED} {title: The provided property key is not in the database} {description: One of the property names in your query is not available in the database, make sure you didn't misspell it or that the label is available when you run this statement in your application (the missing property name is: count)} {position: line: 1, column: 84, offset: 83} for query: 'MATCH (acc:Account {sam:$s})-[r:AUTHENTICATED_TO]->(h:Host {hostname:$h}) RETURN r.count AS count, r.first_seen AS first_seen, r.last_seen AS last_seen'
+# 批量自测  范围=tech=T1021.001  取样=recent  待研判 5 条  模式=recipe  写回图=否(自测不落库)  (IP 已打码)
+
+待研判清单:
+  T1021.001          该类共     20  uid=f70378c64a63940724ddd5451c8d1c0430bc04fd3f8e9d5471589b3b8d5c44df
+  T1021.001          该类共     20  uid=c545cf41847bc0e79216674cdc881236d38e7a0208a1b1db9a385c467be8d33d
+  T1021.001          该类共     20  uid=06499c20e4954bbbe14f0493b96e1f900a9360782d08fb146593b53c30dd3cfc
+  T1021.001          该类共     20  uid=510107b413edbca264ece7928c1dc93aaa0c0eef07e2ef6bdd6b1233039355b7
+  T1021.001          该类共     20  uid=6406886befddee92ba43ff59a5ef2653f0e75c22f04e73eb43f8894db622c371
+
+============================================================================
+## [1/5] technique=T1021.001   该类共 20 条   uid=f70378c64a63940724ddd5451c8d1c0430bc04fd3f8e9d5471589b3b8d5c44df
+============================================================================
+### ① 原始告警节点(:Alert)
+{
+  "severity": 8,
+  "first_seen": "2026-07-14T10:19:48.732829300Z",
+  "last_seen": "2026-07-14T10:19:48.732829300Z",
+  "arrival_ms": 1784024390344,
+  "technique_ids": [
+    "T1021.001"
+  ],
+  "source": "wazuh",
+  "rule_id": "100805",
+  "stream": "soc-hids-alert-*",
+  "alert_uid": "f70378c64a63940724ddd5451c8d1c0430bc04fd3f8e9d5471589b3b8d5c44df",
+  "rule_description": "Remote/network logon type 3 by robb.stark on castelblack.north.sevenkingdoms.local",
+  "sensor": "wazuh-hids",
+  "raw_ref": "soc-hids-alert-2026.07.14:wxsjYJ8B3gPM8FAe3nWx",
+  "time": "2026-07-14T10:19:49.599+0000"
+}
+
+### ② 触发上下文(seed:触发事件 / 主语 / 宾语 / 次要实体)
+{
+  "event": {
+    "ingest_time": 1784024409224,
+    "arrival_ms": 1784024390186,
+    "source": "winlogbeat",
+    "logon_type": "3",
+    "event_uid": "bdf6d810f89904aaadb3bd2aa392a10158bb582578782104ca417a69c7c7a745",
+    "auth_package": "Kerberos",
+    "elevated_token": "%%1843",
+    "stream": "winlogbeat-*",
+    "event_code": "4624",
+    "sensor": "Security",
+    "raw_ref": "soc-hids-alert-2026.07.14:wxsjYJ8B3gPM8FAe3nWx",
+    "event_time": "2026-07-14T10:19:48.732829300Z",
+    "outcome": "success"
+  },
+  "subject": {
+    "_labels": [
+      "Account"
+    ],
+    "privileged": false,
+    "upn": "robb.stark@NORTH.SEVENKINGDOMS.LOCAL",
+    "first_seen": "2026-07-02T02:32:40.375Z",
+    "last_seen": "2026-07-14T10:19:49.281Z",
+    "domain": "NORTH",
+    "type": "user",
+    "sam": "robb.stark",
+    "sid": "S-1-5-21-1229275207-304159137-1120826147-1113"
+  },
+  "related": [
+    {
+      "node": {
+        "_labels": [
+          "LogonSession"
+        ],
+        "logon_guid": "{ed69defc-1f16-1c40-5efa-95742806d72a}",
+        "logon_id": "0x205c9696",
+        "first_seen": "2026-07-14T10:19:48.722Z",
+        "last_seen": "2026-07-14T10:19:48.743Z",
+        "logon_type": "3"
+      },
+      "rel": "PRODUCED"
+    },
+    {
+      "node": {
+        "_labels": [
+          "Host"
+        ],
+        "hostname": "castelblack.north.sevenkingdoms.local",
+        "role": "member_server",
+        "first_seen": "2026-07-02T02:32:06.696Z",
+        "has_adcs": false,
+        "last_seen": "2026-07-14T10:19:48.743Z",
+        "domain": "north.sevenkingdoms.local",
+        "criticality": "medium",
+        "is_dc": false
+      },
+      "rel": "AUTHENTICATED_TO"
+    },
+    {
+      "node": {
+        "_labels": [
+          "IPAddress"
+        ],
+        "first_seen": "2026-06-26T10:41:28.051Z",
+        "last_seen": "2026-07-14T10:19:48.732Z",
+        "ip": "x.x.x.1"
+      },
+      "rel": "FROM"
+    },
+    {
+      "node": {
+        "_labels": [
+          "Host"
+        ],
+        "hostname": "castelblack.north.sevenkingdoms.local",
+        "role": "member_server",
+        "first_seen": "2026-07-02T02:32:06.696Z",
+        "has_adcs": false,
+        "last_seen": "2026-07-14T10:19:48.743Z",
+        "domain": "north.sevenkingdoms.local",
+        "criticality": "medium",
+        "is_dc": false
+      },
+      "rel": "ON_HOST"
+    }
+  ]
+}
+
+### ③ 研判   [skill] lateral_movement   [模式] recipe
+# 研判留痕(4 步)
+[1] recipe取证「登录事件」→ 1 行
+[2] recipe取证「该账号↔该主机基线」→ 1 行
+[3] recipe取证「账号扇出(共登过几台主机)」→ 1 行
+[4] recipe取证「_图盲区」→ 1 行
+
+# 研判结果  alert=f70378c64a63940724ddd5451c8d1c0430bc04fd3f8e9d5471589b3b8d5c44df  path=B  skill=lateral_movement
+verdict   : suspicious  [倾向 malicious]  (confidence=0.78)
+summary   : 特权账号首次登中危主机且扇出2台，符合横向移动早期特征
+rationale : 1. 基线建立期首见(6/30-7/14仅2次登录)不符合常态运维特征
+2. 目标为中危成员服务器(castelblack)符合横向移动跳板选择
+3. NTLM认证(type3)搭配无交互登录为PtH常见特征
+4. 短时间内出现2个不同目标主机显示横向扩散行为
+evidence  : ['Event-4624_2026-07-14T10:19:49.599Z', 'Account-NORTH\\robb.stark', 'Host-castelblack.north.sevenkingdoms.local']
+missing   : ['KeyLength/冒充级别(图盲区)', '前置交互式登录事件', 'DC侧TGT请求日志(4768)']
+pattern   : PtH横向移动早期阶段
+agent     : qwen32b-ft
+处置(建议): monitor -> Account-NORTH\robb.stark  risk=high  status=proposed
+处置(建议): isolate_host -> castelblack.north.sevenkingdoms.local  risk=high  status=proposed
+
+============================================================================
+## [2/5] technique=T1021.001   该类共 20 条   uid=c545cf41847bc0e79216674cdc881236d38e7a0208a1b1db9a385c467be8d33d
+============================================================================
+### ① 原始告警节点(:Alert)
+{
+  "severity": 8,
+  "first_seen": "2026-07-14T10:19:48.743059200Z",
+  "last_seen": "2026-07-14T10:19:48.743059200Z",
+  "arrival_ms": 1784024390344,
+  "technique_ids": [
+    "T1021.001"
+  ],
+  "source": "wazuh",
+  "rule_id": "100805",
+  "stream": "soc-hids-alert-*",
+  "alert_uid": "c545cf41847bc0e79216674cdc881236d38e7a0208a1b1db9a385c467be8d33d",
+  "rule_description": "Remote/network logon type 3 by robb.stark on castelblack.north.sevenkingdoms.local",
+  "sensor": "wazuh-hids",
+  "raw_ref": "soc-hids-alert-2026.07.14:xRsjYJ8B3gPM8FAe3nWx",
+  "time": "2026-07-14T10:19:49.630+0000"
+}
+
+### ② 触发上下文(seed:触发事件 / 主语 / 宾语 / 次要实体)
+Received notification from DBMS server: {severity: WARNING} {code: Neo.ClientNotification.Statement.UnknownPropertyKeyWarning} {category: UNRECOGNIZED} {title: The provided property key is not in the database} {description: One of the property names in your query is not available in the database, make sure you didn't misspell it or that the label is available when you run this statement in your application (the missing property name is: result)} {position: line: 1, column: 236, offset: 235} for query: 'MATCH (a:Alert {alert_uid:$aid})<-[:TRIGGERED]-(e:Event)-[:BY]->(acc:Account) OPTIONAL MATCH (e)-[:AUTHENTICATED_TO]->(h:Host) OPTIONAL MATCH (e)-[:FROM]->(ip:IPAddress) RETURN e.event_code AS event_code, e.logon_type AS logon_type, e.result AS result, acc.sam AS acc_sam, acc.domain AS acc_domain, coalesce(acc.privileged,false) AS acc_privileged, h.hostname AS target_host, h.role AS target_role, h.criticality AS target_criticality, ip.ip AS src_ip'
+Received notification from DBMS server: {severity: WARNING} {code: Neo.ClientNotification.Statement.UnknownPropertyKeyWarning} {category: UNRECOGNIZED} {title: The provided property key is not in the database} {description: One of the property names in your query is not available in the database, make sure you didn't misspell it or that the label is available when you run this statement in your application (the missing property name is: count)} {position: line: 1, column: 84, offset: 83} for query: 'MATCH (acc:Account {sam:$s})-[r:AUTHENTICATED_TO]->(h:Host {hostname:$h}) RETURN r.count AS count, r.first_seen AS first_seen, r.last_seen AS last_seen'
+Received notification from DBMS server: {severity: WARNING} {code: Neo.ClientNotification.Statement.UnknownPropertyKeyWarning} {category: UNRECOGNIZED} {title: The provided property key is not in the database} {description: One of the property names in your query is not available in the database, make sure you didn't misspell it or that the label is available when you run this statement in your application (the missing property name is: result)} {position: line: 1, column: 236, offset: 235} for query: 'MATCH (a:Alert {alert_uid:$aid})<-[:TRIGGERED]-(e:Event)-[:BY]->(acc:Account) OPTIONAL MATCH (e)-[:AUTHENTICATED_TO]->(h:Host) OPTIONAL MATCH (e)-[:FROM]->(ip:IPAddress) RETURN e.event_code AS event_code, e.logon_type AS logon_type, e.result AS result, acc.sam AS acc_sam, acc.domain AS acc_domain, coalesce(acc.privileged,false) AS acc_privileged, h.hostname AS target_host, h.role AS target_role, h.criticality AS target_criticality, ip.ip AS src_ip'
+Received notification from DBMS server: {severity: WARNING} {code: Neo.ClientNotification.Statement.UnknownPropertyKeyWarning} {category: UNRECOGNIZED} {title: The provided property key is not in the database} {description: One of the property names in your query is not available in the database, make sure you didn't misspell it or that the label is available when you run this statement in your application (the missing property name is: count)} {position: line: 1, column: 84, offset: 83} for query: 'MATCH (acc:Account {sam:$s})-[r:AUTHENTICATED_TO]->(h:Host {hostname:$h}) RETURN r.count AS count, r.first_seen AS first_seen, r.last_seen AS last_seen'
+{
+  "event": {
+    "ingest_time": 1784024409240,
+    "arrival_ms": 1784024390186,
+    "source": "winlogbeat",
+    "logon_type": "3",
+    "event_uid": "d0683adcaa18e5fe329e2a4204f16490c9014240160ecbf317237068d7271cbc",
+    "auth_package": "Kerberos",
+    "elevated_token": "%%1843",
+    "stream": "winlogbeat-*",
+    "event_code": "4624",
+    "sensor": "Security",
+    "raw_ref": "soc-hids-alert-2026.07.14:xRsjYJ8B3gPM8FAe3nWx",
+    "event_time": "2026-07-14T10:19:48.743059200Z",
+    "outcome": "success"
+  },
+  "subject": {
+    "_labels": [
+      "Account"
+    ],
+    "privileged": false,
+    "upn": "robb.stark@NORTH.SEVENKINGDOMS.LOCAL",
+    "first_seen": "2026-07-02T02:32:40.375Z",
+    "last_seen": "2026-07-14T10:19:49.281Z",
+    "domain": "NORTH",
+    "type": "user",
+    "sam": "robb.stark",
+    "sid": "S-1-5-21-1229275207-304159137-1120826147-1113"
+  },
+  "related": [
+    {
+      "node": {
+        "_labels": [
+          "LogonSession"
+        ],
+        "logon_guid": "{ed69defc-1f16-1c40-5efa-95742806d72a}",
+        "logon_id": "0x205c9696",
+        "first_seen": "2026-07-14T10:19:48.722Z",
+        "last_seen": "2026-07-14T10:19:48.743Z",
+        "logon_type": "3"
+      },
+      "rel": "PRODUCED"
+    },
+    {
+      "node": {
+        "_labels": [
+          "Host"
+        ],
+        "hostname": "castelblack.north.sevenkingdoms.local",
+        "role": "member_server",
+        "first_seen": "2026-07-02T02:32:06.696Z",
+        "has_adcs": false,
+        "last_seen": "2026-07-14T10:19:48.743Z",
+        "domain": "north.sevenkingdoms.local",
+        "criticality": "medium",
+        "is_dc": false
+      },
+      "rel": "AUTHENTICATED_TO"
+    },
+    {
+      "node": {
+        "_labels": [
+          "Host"
+        ],
+        "hostname": "castelblack.north.sevenkingdoms.local",
+        "role": "member_server",
+        "first_seen": "2026-07-02T02:32:06.696Z",
+        "has_adcs": false,
+        "last_seen": "2026-07-14T10:19:48.743Z",
+        "domain": "north.sevenkingdoms.local",
+        "criticality": "medium",
+        "is_dc": false
+      },
+      "rel": "ON_HOST"
+    }
+  ]
+}
+
+### ③ 研判   [skill] lateral_movement   [模式] recipe
+# 研判留痕(4 步)
+[1] recipe取证「登录事件」→ 1 行
+[2] recipe取证「该账号↔该主机基线」→ 1 行
+[3] recipe取证「账号扇出(共登过几台主机)」→ 1 行
+[4] recipe取证「_图盲区」→ 1 行
+
+# 研判结果  alert=c545cf41847bc0e79216674cdc881236d38e7a0208a1b1db9a385c467be8d33d  path=B  skill=lateral_movement
+verdict   : suspicious  [倾向 malicious]  (confidence=0.78)
+summary   : 特权账号首次登中危主机且扇出2台，符合横向移动早期特征
+rationale : 1. 账号robb.stark虽非特权账户，但作为异常登录事件在铸币期(近14天)首次出现且立即展开横向动作
+2. 目标主机castelblack.north.sevenkingdoms.local为中危成员服务器，可能存储敏感军事机密
+3. 登录类型3(NTLM认证)配合空源IP特征，符合PtH工具如Pass-the-Hash或Pass-the-Ticket的典型行为模式
+4. 短时间内扇出2台主机，符合横向移动的扩散特征（指数级增长攻击面）
+5. 基线首次见但无历史信任关系，破坏正常访问模式
+evidence  : ['事件4624:账号NORTH\\robb.stark通过NTLM类型3登录castelblack.north.sevenkingdoms.local', '聚合边ACCOUNT-LOGON-HOST首次见于2026-06-30', '观察窗口内该账号关联2个不同目标主机']
+missing   : ['缺少前置交互式登录事件证明合法获取凭证', '无法验证NTLM会话密钥是否异常(需抓包分析)', '缺乏进程树信息确认是否通过中间代理跳板']
+pattern   : 横向移动早期阶段（T1021.001）
+agent     : qwen32b-ft
+处置(建议): escalate -> incident_team  risk=high  status=proposed
+处置(建议): monitor -> robb.stark  risk=high  status=proposed
+处置(建议): monitor -> castelblack.north.sevenkingdoms.local  risk=high  status=proposed
+
+============================================================================
+## [3/5] technique=T1021.001   该类共 20 条   uid=06499c20e4954bbbe14f0493b96e1f900a9360782d08fb146593b53c30dd3cfc
+============================================================================
+### ① 原始告警节点(:Alert)
+{
+  "severity": 8,
+  "first_seen": "2026-07-14T10:19:48.722429700Z",
+  "last_seen": "2026-07-14T10:19:48.722429700Z",
+  "arrival_ms": 1784024390343,
+  "technique_ids": [
+    "T1021.001"
+  ],
+  "source": "wazuh",
+  "rule_id": "100805",
+  "stream": "soc-hids-alert-*",
+  "alert_uid": "06499c20e4954bbbe14f0493b96e1f900a9360782d08fb146593b53c30dd3cfc",
+  "rule_description": "Remote/network logon type 3 by robb.stark on castelblack.north.sevenkingdoms.local",
+  "sensor": "wazuh-hids",
+  "raw_ref": "soc-hids-alert-2026.07.14:wRsjYJ8B3gPM8FAe3nWx",
+  "time": "2026-07-14T10:19:49.588+0000"
+}
+
+### ② 触发上下文(seed:触发事件 / 主语 / 宾语 / 次要实体)
+{
+  "event": {
+    "ingest_time": 1784024409195,
+    "arrival_ms": 1784024390185,
+    "source": "winlogbeat",
+    "logon_type": "3",
+    "event_uid": "f6208f03d1bebc8402cf8df169e2565156306c745de537bd563820e02af484f5",
+    "auth_package": "Kerberos",
+    "elevated_token": "%%1843",
+    "stream": "winlogbeat-*",
+    "event_code": "4624",
+    "sensor": "Security",
+    "raw_ref": "soc-hids-alert-2026.07.14:wRsjYJ8B3gPM8FAe3nWx",
+    "event_time": "2026-07-14T10:19:48.722429700Z",
+    "outcome": "success"
+  },
+  "subject": {
+    "_labels": [
+      "Account"
+    ],
+    "privileged": false,
+    "upn": "robb.stark@NORTH.SEVENKINGDOMS.LOCAL",
+    "first_seen": "2026-07-02T02:32:40.375Z",
+    "last_seen": "2026-07-14T10:24:49.189Z",
+    "domain": "NORTH",
+    "type": "user",
+    "sam": "robb.stark",
+    "sid": "S-1-5-21-1229275207-304159137-1120826147-1113"
+  },
+  "related": [
+    {
+      "node": {
+        "_labels": [
+          "IPAddress"
+        ],
+        "first_seen": "2026-06-30T08:31:45.420Z",
+        "last_seen": "2026-07-14T10:24:48.670Z",
+        "ip": "x.x.x.11"
+      },
+      "rel": "FROM"
+    },
+    {
+      "node": {
+        "_labels": [
+          "Host"
+        ],
+        "hostname": "castelblack.north.sevenkingdoms.local",
+        "role": "member_server",
+        "first_seen": "2026-07-02T02:32:06.696Z",
+        "has_adcs": false,
+        "last_seen": "2026-07-14T10:24:48.691Z",
+        "domain": "north.sevenkingdoms.local",
+        "criticality": "medium",
+        "is_dc": false
+      },
+      "rel": "AUTHENTICATED_TO"
+    },
+    {
+      "node": {
+        "_labels": [
+          "LogonSession"
+        ],
+        "logon_guid": "{ed69defc-1f16-1c40-5efa-95742806d72a}",
+        "logon_id": "0x205c9696",
+        "first_seen": "2026-07-14T10:19:48.722Z",
+        "last_seen": "2026-07-14T10:19:48.743Z",
+        "logon_type": "3"
+      },
+      "rel": "PRODUCED"
+    },
+    {
+      "node": {
+        "_labels": [
+          "Host"
+        ],
+        "hostname": "castelblack.north.sevenkingdoms.local",
+        "role": "member_server",
+        "first_seen": "2026-07-02T02:32:06.696Z",
+        "has_adcs": false,
+        "last_seen": "2026-07-14T10:24:48.691Z",
+        "domain": "north.sevenkingdoms.local",
+        "criticality": "medium",
+        "is_dc": false
+      },
+      "rel": "ON_HOST"
+    }
+  ]
+}
+
+### ③ 研判   [skill] lateral_movement   [模式] recipe
+# 研判留痕(4 步)
+[1] recipe取证「登录事件」→ 1 行
+[2] recipe取证「该账号↔该主机基线」→ 1 行
+[3] recipe取证「账号扇出(共登过几台主机)」→ 1 行
+[4] recipe取证「_图盲区」→ 1 行
+
+Received notification from DBMS server: {severity: WARNING} {code: Neo.ClientNotification.Statement.UnknownPropertyKeyWarning} {category: UNRECOGNIZED} {title: The provided property key is not in the database} {description: One of the property names in your query is not available in the database, make sure you didn't misspell it or that the label is available when you run this statement in your application (the missing property name is: result)} {position: line: 1, column: 236, offset: 235} for query: 'MATCH (a:Alert {alert_uid:$aid})<-[:TRIGGERED]-(e:Event)-[:BY]->(acc:Account) OPTIONAL MATCH (e)-[:AUTHENTICATED_TO]->(h:Host) OPTIONAL MATCH (e)-[:FROM]->(ip:IPAddress) RETURN e.event_code AS event_code, e.logon_type AS logon_type, e.result AS result, acc.sam AS acc_sam, acc.domain AS acc_domain, coalesce(acc.privileged,false) AS acc_privileged, h.hostname AS target_host, h.role AS target_role, h.criticality AS target_criticality, ip.ip AS src_ip'
+Received notification from DBMS server: {severity: WARNING} {code: Neo.ClientNotification.Statement.UnknownPropertyKeyWarning} {category: UNRECOGNIZED} {title: The provided property key is not in the database} {description: One of the property names in your query is not available in the database, make sure you didn't misspell it or that the label is available when you run this statement in your application (the missing property name is: count)} {position: line: 1, column: 84, offset: 83} for query: 'MATCH (acc:Account {sam:$s})-[r:AUTHENTICATED_TO]->(h:Host {hostname:$h}) RETURN r.count AS count, r.first_seen AS first_seen, r.last_seen AS last_seen'
+# 研判结果  alert=06499c20e4954bbbe14f0493b96e1f900a9360782d08fb146593b53c30dd3cfc  path=B  skill=lateral_movement
+verdict   : suspicious  [倾向 malicious]  (confidence=0.75)
+summary   : robb.stark账号在castelblack.north.sevenkingdoms.local主机上的登录事件存在异常横向移动特征
+rationale : 1. 该账号与目标主机的历史登录基线显示首次登录发生在2026-06-30，距离当前告警时间2026-07-14不足2周
+2. 登录类型3(网络匿名)与robb.stark账号的常规访问模式不匹配
+3. 目标主机为中等关键性资产（criticality=medium），但角色为成员服务器而非标准业务系统
+4. 源IP 192.168.56.11未在该账号的历史登录源中发现
+5. 账号扇出行为显示已访问过2台不同主机，符合横向移动的扩散特征
+evidence  : ['Event-4624_2026-06-30T08:31:45.420Z', 'Host-castelblack.north.sevenkingdoms.local', 'Account-NORTH\\robb.stark']
+missing   : ['NTLM认证会话的KeyLength验证', '登录进程的父进程链信息', 'castelblack.north.sevenkingdoms.local的文件哈希校验记录']
+pattern   : PtH横向移动初期阶段
+agent     : qwen32b-ft
+处置(建议): monitor -> Account-NORTH\robb.stark  risk=high  status=proposed
+处置(建议): isolate_host -> castelblack.north.sevenkingdoms.local  risk=high  status=proposed
+
+============================================================================
+## [4/5] technique=T1021.001   该类共 20 条   uid=510107b413edbca264ece7928c1dc93aaa0c0eef07e2ef6bdd6b1233039355b7
+============================================================================
+### ① 原始告警节点(:Alert)
+{
+  "severity": 8,
+  "first_seen": "2026-07-14T10:19:48.729645200Z",
+  "last_seen": "2026-07-14T10:19:48.729645200Z",
+  "arrival_ms": 1784024390343,
+  "technique_ids": [
+    "T1021.001"
+  ],
+  "source": "wazuh",
+  "rule_id": "100805",
+  "stream": "soc-hids-alert-*",
+  "alert_uid": "510107b413edbca264ece7928c1dc93aaa0c0eef07e2ef6bdd6b1233039355b7",
+  "rule_description": "Remote/network logon type 3 by robb.stark on castelblack.north.sevenkingdoms.local",
+  "sensor": "wazuh-hids",
+  "raw_ref": "soc-hids-alert-2026.07.14:whsjYJ8B3gPM8FAe3nWx",
+  "time": "2026-07-14T10:19:49.592+0000"
+}
+
+### ② 触发上下文(seed:触发事件 / 主语 / 宾语 / 次要实体)
+{
+  "event": {
+    "ingest_time": 1784024409210,
+    "arrival_ms": 1784024390186,
+    "source": "winlogbeat",
+    "logon_type": "3",
+    "event_uid": "99114b85448f51ff14078a9267708e9e6f0b8dffa8415b2548804ad5ee5f8b41",
+    "auth_package": "Kerberos",
+    "elevated_token": "%%1843",
+    "stream": "winlogbeat-*",
+    "event_code": "4624",
+    "sensor": "Security",
+    "raw_ref": "soc-hids-alert-2026.07.14:whsjYJ8B3gPM8FAe3nWx",
+    "event_time": "2026-07-14T10:19:48.729645200Z",
+    "outcome": "success"
+  },
+  "subject": {
+    "_labels": [
+      "Account"
+    ],
+    "privileged": false,
+    "upn": "robb.stark@NORTH.SEVENKINGDOMS.LOCAL",
+    "first_seen": "2026-07-02T02:32:40.375Z",
+    "last_seen": "2026-07-14T10:24:49.189Z",
+    "domain": "NORTH",
+    "type": "user",
+    "sam": "robb.stark",
+    "sid": "S-1-5-21-1229275207-304159137-1120826147-1113"
+  },
+  "related": [
+    {
+      "node": {
+        "_labels": [
+          "LogonSession"
+        ],
+        "logon_guid": "{ed69defc-1f16-1c40-5efa-95742806d72a}",
+        "logon_id": "0x205c9696",
+        "first_seen": "2026-07-14T10:19:48.722Z",
+        "last_seen": "2026-07-14T10:19:48.743Z",
+        "logon_type": "3"
+      },
+      "rel": "PRODUCED"
+    },
+    {
+      "node": {
+        "_labels": [
+          "Host"
+        ],
+        "hostname": "castelblack.north.sevenkingdoms.local",
+        "role": "member_server",
+        "first_seen": "2026-07-02T02:32:06.696Z",
+        "has_adcs": false,
+        "last_seen": "2026-07-14T10:24:48.691Z",
+        "domain": "north.sevenkingdoms.local",
+        "criticality": "medium",
+        "is_dc": false
+      },
+      "rel": "ON_HOST"
+    },
+    {
+      "node": {
+        "_labels": [
+          "Host"
+        ],
+        "hostname": "castelblack.north.sevenkingdoms.local",
+        "role": "member_server",
+        "first_seen": "2026-07-02T02:32:06.696Z",
+        "has_adcs": false,
+        "last_seen": "2026-07-14T10:24:48.691Z",
+        "domain": "north.sevenkingdoms.local",
+        "criticality": "medium",
+        "is_dc": false
+      },
+      "rel": "AUTHENTICATED_TO"
+    }
+  ]
+}
+
+### ③ 研判   [skill] lateral_movement   [模式] recipe
+# 研判留痕(4 步)
+[1] recipe取证「登录事件」→ 1 行
+[2] recipe取证「该账号↔该主机基线」→ 1 行
+[3] recipe取证「账号扇出(共登过几台主机)」→ 1 行
+[4] recipe取证「_图盲区」→ 1 行
+
+# 研判结果  alert=510107b413edbca264ece7928c1dc93aaa0c0eef07e2ef6bdd6b1233039355b7  path=B  skill=lateral_movement
+verdict   : suspicious  [倾向 malicious]  (confidence=0.78)
+summary   : 检测到账号 'robb.stark' 在非交互式会话(type3)中登录到 'castelblack.north.sevenkingdoms.local', 该主机此前未见该账号登录(基线首见)。伴随扇出到2台主机, 且登录类型符合横向移动特征(PtH候选)
+rationale : 1. 该账号↔该主机基线: 账号 'robb.stark' 与目标主机 'castelblack.north.sevenkingdoms.local' 的首次关联(2026-06-30)恰逢攻击时间窗口(2026-07-14)。该账号非特权账户(acc_privileged=false)却登录到中危资产(城塞黑北, criticality=medium)
+2. 账号扇出: 该账号在时间窗口内已登过2台主机, 符合横向移动的扩散特征
+3. 登录类型: 非交互式NTLM会话(type3)无前置交互登录, 符合PtH攻击特征
+4. 图盲区: 缺少认证包加密强度检测, 无法排除高危冒充级别(如CredSSP/SSP注入)
+evidence  : ['Event-4624(logon_type=3, acc_sam=robb.stark, target_host=castelblack.north.sevenkingdoms.local)', 'Account-基线首见(NORTH\\robb.stark → castelblack.north.sevenkingdoms.local)']
+missing   : ['NTLM会话的认证包抓包分析', 'LSASS中的凭证转储检测', '前置交互式登录记录(type2/10)']
+pattern   : PtH横向移动
+agent     : qwen32b-ft
+处置(建议): escalate -> robb.stark@NORTH.sevenkingdoms.local  risk=high  status=proposed
+处置(建议): monitor -> castelblack.north.sevenkingdoms.local  risk=high  status=proposed
+
+============================================================================
+## [5/5] technique=T1021.001   该类共 20 条   uid=6406886befddee92ba43ff59a5ef2653f0e75c22f04e73eb43f8894db622c371
+============================================================================
+### ① 原始告警节点(:Alert)
+{
+  "severity": 8,
+  "first_seen": "2026-07-14T10:18:48.705741900Z",
+  "last_seen": "2026-07-14T10:18:48.705741900Z",
+  "arrival_ms": 1784024330312,
+  "technique_ids": [
+    "T1021.001"
+  ],
+  "source": "wazuh",
+  "rule_id": "100805",
+  "stream": "soc-hids-alert-*",
+  "alert_uid": "6406886befddee92ba43ff59a5ef2653f0e75c22f04e73eb43f8894db622c371",
+  "rule_description": "Remote/network logon type 3 by robb.stark on castelblack.north.sevenkingdoms.local",
+  "sensor": "wazuh-hids",
+  "raw_ref": "soc-hids-alert-2026.07.14:1xsiYJ8B3gPM8FAe9HQ0",
+  "time": "2026-07-14T10:18:49.626+0000"
+}
+
+### ② 触发上下文(seed:触发事件 / 主语 / 宾语 / 次要实体)
+Received notification from DBMS server: {severity: WARNING} {code: Neo.ClientNotification.Statement.UnknownPropertyKeyWarning} {category: UNRECOGNIZED} {title: The provided property key is not in the database} {description: One of the property names in your query is not available in the database, make sure you didn't misspell it or that the label is available when you run this statement in your application (the missing property name is: result)} {position: line: 1, column: 236, offset: 235} for query: 'MATCH (a:Alert {alert_uid:$aid})<-[:TRIGGERED]-(e:Event)-[:BY]->(acc:Account) OPTIONAL MATCH (e)-[:AUTHENTICATED_TO]->(h:Host) OPTIONAL MATCH (e)-[:FROM]->(ip:IPAddress) RETURN e.event_code AS event_code, e.logon_type AS logon_type, e.result AS result, acc.sam AS acc_sam, acc.domain AS acc_domain, coalesce(acc.privileged,false) AS acc_privileged, h.hostname AS target_host, h.role AS target_role, h.criticality AS target_criticality, ip.ip AS src_ip'
+Received notification from DBMS server: {severity: WARNING} {code: Neo.ClientNotification.Statement.UnknownPropertyKeyWarning} {category: UNRECOGNIZED} {title: The provided property key is not in the database} {description: One of the property names in your query is not available in the database, make sure you didn't misspell it or that the label is available when you run this statement in your application (the missing property name is: count)} {position: line: 1, column: 84, offset: 83} for query: 'MATCH (acc:Account {sam:$s})-[r:AUTHENTICATED_TO]->(h:Host {hostname:$h}) RETURN r.count AS count, r.first_seen AS first_seen, r.last_seen AS last_seen'
+{
+  "event": {
+    "ingest_time": 1784024408717,
+    "arrival_ms": 1784024330707,
+    "source": "winlogbeat",
+    "logon_type": "3",
+    "event_uid": "7d9ade7aa4c60c5a82925c6122b3aa04068446a5c343f5a38075c88eb2573d3a",
+    "auth_package": "Kerberos",
+    "elevated_token": "%%1843",
+    "stream": "winlogbeat-*",
+    "event_code": "4624",
+    "sensor": "Security",
+    "raw_ref": "soc-hids-alert-2026.07.14:1xsiYJ8B3gPM8FAe9HQ0",
+    "event_time": "2026-07-14T10:18:48.705741900Z",
+    "outcome": "success"
+  },
+  "subject": {
+    "_labels": [
+      "Account"
+    ],
+    "privileged": false,
+    "upn": "robb.stark@NORTH.SEVENKINGDOMS.LOCAL",
+    "first_seen": "2026-07-02T02:32:40.375Z",
+    "last_seen": "2026-07-14T10:24:49.189Z",
+    "domain": "NORTH",
+    "type": "user",
+    "sam": "robb.stark",
+    "sid": "S-1-5-21-1229275207-304159137-1120826147-1113"
+  },
+  "related": [
+    {
+      "node": {
+        "_labels": [
+          "Host"
+        ],
+        "hostname": "castelblack.north.sevenkingdoms.local",
+        "role": "member_server",
+        "first_seen": "2026-07-02T02:32:06.696Z",
+        "has_adcs": false,
+        "last_seen": "2026-07-14T10:24:48.691Z",
+        "domain": "north.sevenkingdoms.local",
+        "criticality": "medium",
+        "is_dc": false
+      },
+      "rel": "AUTHENTICATED_TO"
+    },
+    {
+      "node": {
+        "_labels": [
+          "LogonSession"
+        ],
+        "logon_guid": "{20f07977-1ac5-2785-9562-50d0b3db3370}",
+        "logon_id": "0x205c249a",
+        "first_seen": "2026-07-14T10:18:48.698Z",
+        "last_seen": "2026-07-14T10:18:48.718Z",
+        "logon_type": "3"
+      },
+      "rel": "PRODUCED"
+    },
+    {
+      "node": {
+        "_labels": [
+          "Host"
+        ],
+        "hostname": "castelblack.north.sevenkingdoms.local",
+        "role": "member_server",
+        "first_seen": "2026-07-02T02:32:06.696Z",
+        "has_adcs": false,
+        "last_seen": "2026-07-14T10:24:48.691Z",
+        "domain": "north.sevenkingdoms.local",
+        "criticality": "medium",
+        "is_dc": false
+      },
+      "rel": "ON_HOST"
+    }
+  ]
+}
+
+### ③ 研判   [skill] lateral_movement   [模式] recipe
+# 研判留痕(5 步)
+[1] recipe取证「登录事件」→ 1 行
+[2] recipe取证「该账号↔该主机基线」→ 1 行
+[3] recipe取证「账号扇出(共登过几台主机)」→ 1 行
+[4] recipe取证「_图盲区」→ 1 行
+[5] 🛡 处置护栏 retargeted: quarantine_file -> 所有关联会话中的可疑进程  因:目标 '所有关联会话中的可疑进程' 不像file(action=quarantine_file)
+
+# 研判结果  alert=6406886befddee92ba43ff59a5ef2653f0e75c22f04e73eb43f8894db622c371  path=B  skill=lateral_movement
+verdict   : suspicious  [倾向 malicious]  (confidence=0.78)
+summary   : 非交互式服务账号robb.stark在无业务关联上下文时使用NTLM认证访问城堡黑城堡，且该账号首次在近2周内出现登录行为
+rationale : 1. 登录类型3表明使用NTLM协议进行非交互式认证
+2. 该账号robb.stark被标记为非特权账户但进行了服务器访问
+3. 基线数据显示该账号与目标主机castelblack.north.sevenkingdoms.local无历史关联
+4. 访问目标为关键城堡系统（medium criticality）
+5. 缺乏可信的业务访问模式基线数据
+6. 短时间内扇出访问2台主机符合横向移动特征
+evidence  : ['Event-6406886befddee92ba43ff59a5ef2653f0e75c22f04e73eb43f8894db622c371', 'Account-NORTH\\robb.stark', 'Host-castelblack.north.sevenkingdoms.local']
+missing   : ['NTLM认证请求的KeyLength和冒充级别数据', '访问目标的敏感系统标识信息', '前置的交互式登录事件记录']
+pattern   : PtH
+agent     : qwen32b-ft
+处置(建议): monitor -> Account-NORTH\robb.stark  risk=high  status=proposed
+处置(建议): monitor -> Host-castelblack.north.sevenkingdoms.local  risk=high  status=proposed
+处置(建议): escalate -> 所有关联会话中的可疑进程  risk=high  status=proposed
+
+# 批量自测完成
+=== done 2026-07-14 10:31Z ===
