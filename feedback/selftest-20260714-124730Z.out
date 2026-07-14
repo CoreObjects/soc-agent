@@ -1,0 +1,111 @@
+=== selftest 2026-07-14 12:47Z ===
+Received notification from DBMS server: {severity: WARNING} {code: Neo.ClientNotification.Statement.UnknownPropertyKeyWarning} {category: UNRECOGNIZED} {title: The provided property key is not in the database} {description: One of the property names in your query is not available in the database, make sure you didn't misspell it or that the label is available when you run this statement in your application (the missing property name is: dn)} {position: line: 1, column: 312, offset: 311} for query: "MATCH (a:Alert {alert_uid:$aid})<-[:TRIGGERED]-(e:Event {event_code:'4662'})-[:BY]->(actor:Account) OPTIONAL MATCH (e)-[:ACCESSED]->(obj) RETURN actor.sam AS actor_sam, actor.domain AS actor_domain, actor.type AS actor_type, coalesce(actor.privileged,false) AS actor_privileged, e.properties AS properties, obj.dn AS obj_dn, obj.object_class AS obj_class"
+Received notification from DBMS server: {severity: WARNING} {code: Neo.ClientNotification.Statement.UnknownPropertyKeyWarning} {category: UNRECOGNIZED} {title: The provided property key is not in the database} {description: One of the property names in your query is not available in the database, make sure you didn't misspell it or that the label is available when you run this statement in your application (the missing property name is: object_class)} {position: line: 1, column: 330, offset: 329} for query: "MATCH (a:Alert {alert_uid:$aid})<-[:TRIGGERED]-(e:Event {event_code:'4662'})-[:BY]->(actor:Account) OPTIONAL MATCH (e)-[:ACCESSED]->(obj) RETURN actor.sam AS actor_sam, actor.domain AS actor_domain, actor.type AS actor_type, coalesce(actor.privileged,false) AS actor_privileged, e.properties AS properties, obj.dn AS obj_dn, obj.object_class AS obj_class"
+# 批量自测  范围=tech=T1003.006  取样=recent  待研判 1 条  模式=recipe  写回图=否(自测不落库)  (IP 已打码)
+
+待研判清单:
+  T1003.006          该类共      1  uid=6c7fa255a575d90f7c9937e48db9fc4feeac6709e974c424b32320965fc03ca9
+
+============================================================================
+## [1/1] technique=T1003.006   该类共 1 条   uid=6c7fa255a575d90f7c9937e48db9fc4feeac6709e974c424b32320965fc03ca9
+============================================================================
+### ① 原始告警节点(:Alert)
+{
+  "severity": 8,
+  "first_seen": "2026-07-14T12:41:32.888827100Z",
+  "last_seen": "2026-07-14T12:41:32.888827100Z",
+  "arrival_ms": 1784032895132,
+  "technique_ids": [
+    "T1003.006"
+  ],
+  "source": "wazuh",
+  "rule_id": "100807",
+  "stream": "soc-hids-alert-*",
+  "alert_uid": "6c7fa255a575d90f7c9937e48db9fc4feeac6709e974c424b32320965fc03ca9",
+  "rule_description": "Possible DCSync: directory replication rights access by MEEREEN$",
+  "sensor": "wazuh-hids",
+  "raw_ref": "soc-hids-alert-2026.07.14:xhylYJ8B3gPM8FAepASH",
+  "time": "2026-07-14T12:41:34.067+0000"
+}
+
+### ② 触发上下文(seed:触发事件 / 主语 / 宾语 / 次要实体)
+{
+  "event": {
+    "ingest_time": 1784033104578,
+    "access_mask": "0x100",
+    "stream": "winlogbeat-*",
+    "event_code": "4662",
+    "arrival_ms": 1784032894306,
+    "sensor": "Security",
+    "raw_ref": "soc-hids-alert-2026.07.14:xhylYJ8B3gPM8FAepASH",
+    "source": "winlogbeat",
+    "operation": "Object Access",
+    "properties": "%%7688    {1131f6aa-9c07-11d1-f79f-00c04fc2dcd2}   {19195a5b-6da0-11d0-afd3-00c04fd930c9}",
+    "event_time": "2026-07-14T12:41:32.888827100Z",
+    "event_uid": "718238bbe43d68aba6eaee2c9ebd88074d6be6ef609e3f543ad80ae730b1f64b"
+  },
+  "subject": {
+    "_labels": [
+      "Account"
+    ],
+    "upn": "MEEREEN$@ESSOS.LOCAL",
+    "first_seen": "2026-06-26T10:05:30.778Z",
+    "last_seen": "2026-07-14T12:44:34.086Z",
+    "domain": "ESSOS",
+    "sam": "meereen$",
+    "sid": "S-1-5-18"
+  },
+  "related": [
+    {
+      "node": {
+        "_labels": [
+          "DirectoryObject"
+        ],
+        "first_seen": "2026-06-26T10:20:00.734Z",
+        "last_seen": "2026-07-14T12:41:32.888Z",
+        "guid": "%{d60b647d-2d22-47ea-9d2a-d79bafc3c3cf}"
+      },
+      "rel": "ACCESSED"
+    },
+    {
+      "node": {
+        "_labels": [
+          "Host"
+        ],
+        "hostname": "meereen.essos.local",
+        "role": "domain_controller",
+        "first_seen": "2026-07-02T02:32:06.422Z",
+        "has_adcs": true,
+        "last_seen": "2026-07-14T12:44:34.086Z",
+        "domain": "essos.local",
+        "criticality": "critical",
+        "is_dc": true
+      },
+      "rel": "ON_HOST"
+    }
+  ]
+}
+
+### ③ 研判   [skill] dcsync   [模式] recipe
+# 研判留痕(4 步)
+[1] recipe取证「发起者与对象」→ 1 行
+[2] recipe取证「发起者估值」→ 1 行
+[3] recipe取证「域DC」→ 1 行
+[4] recipe取证「_图盲区」→ 1 行
+
+# 研判结果  alert=6c7fa255a575d90f7c9937e48db9fc4feeac6709e974c424b32320965fc03ca9  path=B  skill=dcsync
+verdict   : false_positive  (confidence=0.98)
+summary   : DC 正常复制
+rationale : 1. 发起者与对象中 actor_sam 为 meereen$，符合 DC 机器账号格式（以 $ 结尾）。
+2. 域DC 中 dc_host 为 dc03，与 actor_sam 的 meereen$ 对应，表明该操作由 DC 机器账号发起。
+3. 根据方法论，DC 之间正常的复制操作是良性的，不构成攻击。
+4. properties 包含的 GUID {1131f6aa-9c07-11d1-f79f-00c04fc2dcd2} 是 DS-Replication-Get-Changes，属于正常复制权限。
+因此，判定为 false_positive。
+evidence  : ['发起者与对象', '域DC']
+missing   : ['复制范围(是否含 krbtgt/全域)', '授予复制权的前置 ACL 修改(5136)', 'DC/同步账号权威标记']
+pattern   : DC 正常复制
+agent     : qwen32b-ft
+处置(建议): 无
+
+# 批量自测完成
+=== done 2026-07-14 12:48Z ===
