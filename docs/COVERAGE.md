@@ -15,7 +15,7 @@
 | host | **lsass_dump** | T1003.001 | ✅ 自研规则 100802(EID10) | ✅ **真机验通**:FP(安全代理自检)+ **TP**(comsvcs 转储) |
 | host | **ingress_tool_transfer** | T1105 | ⚠️ 默认 Sysmon EID11 | ✅ **真机验**:FP 通路(配管供给噪声);TP 通路未见真样本 |
 | host | **suspicious_process** | T1059/.001 · T1055 · T1218 | ⚠️ 默认 Sysmon EID1/11 · PS4104 | ✅ **真机验**:FP 通路(配管供给噪声);TP 通路未见真样本 |
-| host | registry_persistence | T1547.001 · T1112 | ❌ 无检测规则(EID13 已采) | ⚠️ **未校准假设** |
+| host | **registry_persistence** | T1547.001 · T1112 | ✅ 自研规则 100804(EID13 Run/自启位) | ✅ **真机验通**:取证正确(写入进程/键路径/值/账号/主机);顺带修了 ingest key_path 反斜杠归一 |
 | network | c2_beacon | T1071/.* · T1568/.* | ⚠️ **日志够、缺告警**:EID3/22 已采+已映射(CONNECTED_TO/QUERIED);缺检测规则;信誉是盲区 | ⚠️ **未校准假设**(可靶场验:加规则+周期外连) |
 | network | suspicious_outbound | T1571 · T1090 · T1041 · T1048 | ⚠️ 同上(日志够、缺告警+信誉盲区) | ⚠️ **未校准假设**(可靶场验) |
 | application | web_exploit | T1190 · T1059.007 | ❌ **遥测缺**:WAF(ModSecurity)未接进 ingest | ⚠️ **未校准假设**(需先建 WAF 接入) |
@@ -24,8 +24,8 @@
 
 ## 验证进度小结
 
-- **已真机验+校准(5):** kerberoast · lsass_dump · adcs · ingress_tool_transfer · suspicious_process。其中 **kerberoast / lsass_dump 的 TP 通路已用真攻击(GOAD 隔离靶场,授权安全测试)走通**;adcs 用 subject_dn 做了 suspicious 分诊;ingress/suspicious_process 的 FP 通路稳(配管噪声),真 TP 样本未见。
-- **未校准假设(11):** 7 个具体 skill(dcsync/lateral/persistence/c2/outbound/web/webshell)+ 4 个 generic。取证逻辑只过了"空图不崩"冒烟,**未经真实数据验证**。
+- **已真机验+校准(6):** kerberoast · lsass_dump · adcs · ingress_tool_transfer · suspicious_process · **registry_persistence**(靶场完善 B1:良性发生器造 T1547.001 告警→取证验通,不造攻击)。其中 kerberoast/lsass_dump 的 TP 通路已用真攻击走通;adcs 用 subject_dn 分诊;registry_persistence 用良性 Run 键写入验取证。
+- **未校准假设(10):** 6 个具体 skill(dcsync/lateral/c2/outbound/web/webshell)+ 4 个 generic。取证逻辑只过了"空图不崩"冒烟,**未经真实数据验证**。
 - **验证方式:** 只在隔离靶场造出该类真告警去验(不裸上生产——生产研判错致命)。**不做合成 fixture**(假信心)。
 
 ## 各层"要造告警来验"的成本差
