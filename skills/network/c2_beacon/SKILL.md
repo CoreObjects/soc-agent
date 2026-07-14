@@ -8,13 +8,13 @@ description: 研判 C2 信标 / DNS beacon / 周期性外连告警。当告警�
 
 **攻击本质**:植入体按固定节律(可带 jitter)周期性回连 C2 取指令/回传。载体 = HTTP(S) 外连(Sysmon EID3)或 DNS 查询(EID22 把域名当信道),常配可疑/低信誉/DGA/动态解析域名。
 
-**现实约束**:host-only + Sysmon,无包级/流级数据。信标靠**聚合边 count/first_seen/last_seen 定粗信号 + 事件按 time 算节律**;`reputation` 字段可能为空(依赖它的判据要能降级)。
+**现实约束**:host-only + Sysmon,无包级/流级数据。信标靠**数连接/查询事件 count + first_seen/last_seen 定粗信号(聚合边不存 count,现算)+ 事件按 time 算节律**;`reputation`/解析扇出未建模(依赖它的判据要能降级)。
 
 ## 研判决策树(先证伪"是不是正常轮询",再逐层坐实)
-1. **哪个"进程→目标"对?粗信号?**(recipe「进程与目标+聚合」:count 高 + first↔last 跨度长 = 强嫌疑)。
+1. **哪个"进程→目标"对?粗信号?**(recipe「外连聚合(周期性)」/「DNS查询聚合(周期性)」:count 高 + first↔last 跨度长 = 强嫌疑)。
 2. **节律真规整吗?**(相邻事件间隔的中位数/变异系数)—— 低方差=机器节律。⚠️ 精确 jitter/主频需事件序列图外算(图盲区)。
-3. **目标信誉/新鲜度?**(recipe「目标信誉」:reputation/first_seen/DGA 形态/RESOLVES_TO 扇出)—— 新域/坏信誉/fast-flux = 升权。⚠️ reputation 可能为空。
-4. **发起进程正常吗?**(recipe「发起进程」:image/父链/账号)—— `chrome/edge` 良性;`rundll32/powershell/regsvr32/无名进程`直接外连 = 高危;Office→powershell→外连 = 攻击链。
+3. **命令行编码启动?解开是什么?目标域新不新?**(recipe「发起命令解码(逐层)」+「供给/自检噪声」+「目标域新鲜度」:d.first_seen)—— 解码见真身、命中良性供给=证伪、新域=升权。⚠️ reputation/DGA 情报/解析扇出未建模=盲区。
+4. **发起进程正常吗?**(recipe「发起进程」:parent/account/image)—— `chrome/edge` 良性;`rundll32/powershell/regsvr32/无名进程`直接外连 = 高危;Office→powershell→外连 = 攻击链。
 
 ## 误报/良性场景(先逐条排除)
 - **软件更新/补丁轮询**(Windows Update、Chrome/Edge updater、winget、厂商 agent)—— 极规整;进程已知 + 目标厂商域/CDN。

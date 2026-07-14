@@ -9,10 +9,10 @@ description: 研判可疑外连 / 罕见进程 C2 通道 / 非标准端口 / 数
 **攻击本质**:C2 走**非常用端口**(绕基于端口的策略)或经**代理/中继**跳板;或由**本不该联网的进程**(LOLBin:rundll32/regsvr32/mshta/powershell)直接对外发起连接。
 
 ## 研判决策树
-1. **目标是外部还是内部?端口是不是非常用?**(recipe「进程与目标」:ip.type/dest_port/asn/geo)。
-2. **发起进程是不是"不该联网"的进程?父链可疑吗?**(recipe「发起进程与父链」)—— `image` ∈ LOLBin/无签名;`winword→powershell→外连` 典型攻击链。
-3. **这个"进程→外部 IP:端口"是一次性还是反复?**(recipe「外连聚合」:count/first/last)—— 反复 = 通道而非误触。
-4. **外部 IP 背后是不是某域名?**(recipe「目标信誉」:reputation/first_seen)。
+1. **目标是外部还是内部?端口是不是非常用?**(recipe「进程与目标+父链」:dst_ip/dst_port/proto)—— ip.type/asn/geo/reputation 未建模=盲区。
+2. **发起进程是不是"不该联网"的进程?父链可疑吗?**(同上:parent/account/image)—— `image` ∈ LOLBin/无签名;`winword→powershell→外连` 典型攻击链。
+3. **命令行是编码启动吗?解开是什么?**(recipe「发起命令解码(逐层)」+「供给/自检噪声」)—— EncodedCommand 解开=看真身;命中 Ansible 供给/执行策略自检=强证伪。
+4. **这个"进程→外部 IP"是一次性还是反复?**(recipe「外连聚合(反复性)」:count/first_seen/last_seen,数连接事件现算)—— 反复 = 通道而非误触。
 
 ## 误报/良性场景
 - **PowerShell/脚本正当外连**(DevOps 调 REST API/拉包/包管理经代理)—— 目标=内部制品库/已知供应商、账号=CI/服务账号、命令行运维意图。
