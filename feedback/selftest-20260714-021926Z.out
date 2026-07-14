@@ -1,0 +1,856 @@
+=== selftest 2026-07-14 02:19Z ===
+# 批量自测  范围=tech=T1649  取样=recent  待研判 8 条  模式=recipe  写回图=否(自测不落库)  (IP 已打码)
+
+待研判清单:
+  T1649              该类共     12  uid=dd7d94516e41107bdfe9dc8ace775febd60837de5829417d83339727f60830a6
+  T1649              该类共     12  uid=7ce40881a0fc14e62b69883037ba2ec891e0f3dedb933c7e42fb818fbc8110b5
+  T1649              该类共     12  uid=68a0490507f41d8fddacf002cc929588da8129659ec3bcc6390df129d27bb86a
+  T1649              该类共     12  uid=29e814c43ae6c492e158ee905fbeb3f9c566ee732c825c4ec3201e42b69a3a19
+  T1649              该类共     12  uid=4b993fffbdc7dd2e47afecf89f14a0cbd8cf186b9f983c1e86bd6a0a764a2610
+  T1649              该类共     12  uid=8cb63a520032ad3423eee78d7af251ba54dd355e6780c22a3345362541dbf616
+  T1649              该类共     12  uid=ce4e1e9fc0fb75b933da04b9e91c09d28b177f293a30ef8c336c4a8cb641e2b7
+  T1649              该类共     12  uid=bb335696aea2a6abb93eacdc97dbb964a2cbde46289b94904edc13529e0ee5b1
+
+============================================================================
+## [1/8] technique=T1649   该类共 12 条   uid=dd7d94516e41107bdfe9dc8ace775febd60837de5829417d83339727f60830a6
+============================================================================
+### ① 原始告警节点(:Alert)
+{
+  "severity": 8,
+  "first_seen": "2026-07-14T01:24:08.758192800Z",
+  "last_seen": "2026-07-14T01:24:08.758192800Z",
+  "arrival_ms": 1783992251219,
+  "technique_ids": [
+    "T1649"
+  ],
+  "source": "wazuh",
+  "rule_id": "100803",
+  "stream": "soc-hids-alert-*",
+  "alert_uid": "dd7d94516e41107bdfe9dc8ace775febd60837de5829417d83339727f60830a6",
+  "rule_description": "ADCS certificate request/issue on CA (possible ESC abuse)",
+  "sensor": "wazuh-hids",
+  "raw_ref": "soc-hids-alert-2026.07.14:qBk5Xp8B3gPM8FAed2tA",
+  "time": "2026-07-14T01:24:10.852+0000"
+}
+
+### ② 触发上下文(seed:触发事件 / 主语 / 宾语 / 次要实体)
+{
+  "event": {
+    "ingest_time": 1783992313028,
+    "arrival_ms": 1783992250592,
+    "source": "winlogbeat",
+    "event_uid": "47f7ce96e6562c66fbf854342375eb446bd97bc455cbf43c397cacd7a96ae222",
+    "disposition": "3",
+    "subject_dn": "CN=vagrant, CN=Users, DC=sevenkingdoms, DC=local",
+    "stream": "winlogbeat-*",
+    "event_code": "4887",
+    "sensor": "Security",
+    "raw_ref": "soc-hids-alert-2026.07.14:qBk5Xp8B3gPM8FAed2tA",
+    "request_id": "6",
+    "event_time": "2026-07-14T01:24:08.758192800Z",
+    "outcome": "success"
+  },
+  "subject": {
+    "_labels": [
+      "Account"
+    ],
+    "upn": "vagrant@SEVENKINGDOMS.LOCAL",
+    "first_seen": "2026-07-02T02:32:09.289Z",
+    "last_seen": "2026-07-14T01:24:09.138Z",
+    "domain": "SEVENKINGDOMS",
+    "sam": "vagrant",
+    "sid": "S-1-5-21-3669086071-63869131-912362612-1000"
+  },
+  "related": [
+    {
+      "node": {
+        "_labels": [
+          "Service"
+        ],
+        "first_seen": "2026-07-02T07:49:40.946Z",
+        "last_seen": "2026-07-14T01:24:08.758Z",
+        "kind": "certificate_authority",
+        "service_id": "certsvc@kingslanding.sevenkingdoms.local",
+        "host": "kingslanding.sevenkingdoms.local"
+      },
+      "rel": "REQUESTED"
+    },
+    {
+      "node": {
+        "_labels": [
+          "Host"
+        ],
+        "hostname": "kingslanding.sevenkingdoms.local",
+        "role": "domain_controller",
+        "first_seen": "2026-07-02T02:32:09.289Z",
+        "has_adcs": true,
+        "last_seen": "2026-07-14T02:14:59.426Z",
+        "domain": "sevenkingdoms.local",
+        "criticality": "critical",
+        "is_dc": true
+      },
+      "rel": "ON_HOST"
+    }
+  ]
+}
+
+### ③ 研判   [skill] adcs   [模式] recipe
+# 研判留痕(5 步)
+[1] recipe取证「请求者与CA」→ 1 行
+[2] recipe取证「请求者估值」→ 1 行
+[3] recipe取证「主体与请求者比对」→ 1 行
+[4] recipe取证「_图盲区」→ 1 行
+[5] 🛡 处置护栏 blocked: monitor -> CA服务kingslanding.sevenkingdoms.local  因:目标是受保护主机(kingslanding.sevenkingdoms.local)——DC/网关/mgmt 不动
+
+# 研判结果  alert=dd7d94516e41107bdfe9dc8ace775febd60837de5829417d83339727f60830a6  path=B  skill=adcs
+verdict   : suspicious  [倾向 benign]  (confidence=0.65)
+summary   : 证书请求者与主体匹配，但需要进一步检查模板配置和请求上下文
+rationale : 1. 请求者与主体比对显示 subject_matches_requester=true，表明证书主体与请求者一致
+2. 请求者为普通用户vagrant（非特权账户）
+3. CA服务运行在合法主机kingslanding.sevenkingdoms.local
+4. 没有检测到明显的跨域信任关系
+5. 证书请求类型未显示异常特征
+6. 属于基本的用户证书申请场景，常见于域环境正常操作
+evidence  : ['事件代码4887: certsvc@kingslanding.sevenkingdoms.local的签发记录', '账户vagrant@SEVENKINGDOMS.LOCAL的证书请求日志']
+missing   : ['证书模板配置详情（EKU/ENROLLEE_SUPPLIES_SUBJECT标志）', '请求时的完整认证上下文', '该模板的历史申请模式数据']
+pattern   : 常规用户证书申请
+agent     : qwen32b-ft
+处置(建议): monitor -> 账户vagrant@SEVENKINGDOMS.LOCAL  risk=low  status=proposed
+处置(建议): escalate -> CA服务kingslanding.sevenkingdoms.local  risk=low  status=proposed
+
+============================================================================
+## [2/8] technique=T1649   该类共 12 条   uid=7ce40881a0fc14e62b69883037ba2ec891e0f3dedb933c7e42fb818fbc8110b5
+============================================================================
+### ① 原始告警节点(:Alert)
+{
+  "severity": 8,
+  "first_seen": "2026-07-14T01:24:08.523183500Z",
+  "last_seen": "2026-07-14T01:24:08.523183500Z",
+  "arrival_ms": 1783992250211,
+  "technique_ids": [
+    "T1649"
+  ],
+  "source": "wazuh",
+  "rule_id": "100803",
+  "stream": "soc-hids-alert-*",
+  "alert_uid": "7ce40881a0fc14e62b69883037ba2ec891e0f3dedb933c7e42fb818fbc8110b5",
+  "rule_description": "ADCS certificate request/issue on CA (possible ESC abuse)",
+  "sensor": "wazuh-hids",
+  "raw_ref": "soc-hids-alert-2026.07.14:gxk5Xp8B3gPM8FAec2tR",
+  "time": "2026-07-14T01:24:09.604+0000"
+}
+
+### ② 触发上下文(seed:触发事件 / 主语 / 宾语 / 次要实体)
+{
+  "event": {
+    "ingest_time": 1783992312397,
+    "stream": "winlogbeat-*",
+    "event_code": "4886",
+    "arrival_ms": 1783992250589,
+    "attributes": " cdc:kingslanding.sevenkingdoms.local rmd:kingslanding.sevenkingdoms.local  ccm:kingslanding.sevenkingdoms.local",
+    "sensor": "Security",
+    "raw_ref": "soc-hids-alert-2026.07.14:gxk5Xp8B3gPM8FAec2tR",
+    "source": "winlogbeat",
+    "request_id": "6",
+    "event_time": "2026-07-14T01:24:08.523183500Z",
+    "event_uid": "6c081c4c7308a948872fc4924af820616b1fc291edc43528b06a42481d1e299e"
+  },
+  "subject": {
+    "_labels": [
+      "Account"
+    ],
+    "upn": "vagrant@SEVENKINGDOMS.LOCAL",
+    "first_seen": "2026-07-02T02:32:09.289Z",
+    "last_seen": "2026-07-14T01:24:09.138Z",
+    "domain": "SEVENKINGDOMS",
+    "sam": "vagrant",
+    "sid": "S-1-5-21-3669086071-63869131-912362612-1000"
+  },
+  "related": [
+    {
+      "node": {
+        "_labels": [
+          "Host"
+        ],
+        "hostname": "kingslanding.sevenkingdoms.local",
+        "role": "domain_controller",
+        "first_seen": "2026-07-02T02:32:09.289Z",
+        "has_adcs": true,
+        "last_seen": "2026-07-14T02:14:59.426Z",
+        "domain": "sevenkingdoms.local",
+        "criticality": "critical",
+        "is_dc": true
+      },
+      "rel": "ON_HOST"
+    },
+    {
+      "node": {
+        "_labels": [
+          "Service"
+        ],
+        "first_seen": "2026-07-02T07:49:40.946Z",
+        "last_seen": "2026-07-14T01:24:08.758Z",
+        "kind": "certificate_authority",
+        "service_id": "certsvc@kingslanding.sevenkingdoms.local",
+        "host": "kingslanding.sevenkingdoms.local"
+      },
+      "rel": "REQUESTED"
+    }
+  ]
+}
+
+### ③ 研判   [skill] adcs   [模式] recipe
+# 研判留痕(5 步)
+[1] recipe取证「请求者与CA」→ 1 行
+[2] recipe取证「请求者估值」→ 1 行
+[3] recipe取证「主体与请求者比对」→ 1 行
+[4] recipe取证「_图盲区」→ 1 行
+[5] 🛡 处置护栏 blocked: monitor -> kingslanding.sevenkingdoms.local  因:目标是受保护主机(kingslanding.sevenkingdoms.local)——DC/网关/mgmt 不动
+
+# 研判结果  alert=7ce40881a0fc14e62b69883037ba2ec891e0f3dedb933c7e42fb818fbc8110b5  path=B  skill=adcs
+verdict   : suspicious  [倾向 unknown]  (confidence=0.55)
+summary   : 低权用户请求证书,但缺乏足够的信息来确定证书请求是否符合正常行为模式。
+rationale : 事件显示请求者为'vagrant'账户,该账户属于'SEVENKINGDOMS'域且无特权。请求来自本地CA 'kingslanding.sevenkingdoms.local'。当前证据不足以判断证书请求是否异常,因为缺乏证书主体信息和模板配置详情。需要进一步检查证书请求的详细属性,如扩展密钥用途(EKU)、模板设置以及请求的SAN信息,以确定是否存在潜在的滥用行为。
+evidence  : ['请求者与CA', '请求者估值', '主体与请求者比对']
+missing   : ['证书请求的扩展密钥用途(EKU)', '证书模板配置详情', '主体与请求者比对', '证书主体信息']
+agent     : qwen32b-ft
+处置(建议): monitor -> vagrant  risk=low  status=proposed
+处置(建议): escalate -> kingslanding.sevenkingdoms.local  risk=low  status=proposed
+
+============================================================================
+## [3/8] technique=T1649   该类共 12 条   uid=68a0490507f41d8fddacf002cc929588da8129659ec3bcc6390df129d27bb86a
+============================================================================
+### ① 原始告警节点(:Alert)
+{
+  "severity": 8,
+  "first_seen": "2026-07-14T01:24:06.283900500Z",
+  "last_seen": "2026-07-14T01:24:06.283900500Z",
+  "arrival_ms": 1783992248200,
+  "technique_ids": [
+    "T1649"
+  ],
+  "source": "wazuh",
+  "rule_id": "100803",
+  "stream": "soc-hids-alert-*",
+  "alert_uid": "68a0490507f41d8fddacf002cc929588da8129659ec3bcc6390df129d27bb86a",
+  "rule_description": "ADCS certificate request/issue on CA (possible ESC abuse)",
+  "sensor": "wazuh-hids",
+  "raw_ref": "soc-hids-alert-2026.07.14:yRk5Xp8B3gPM8FAebGrE",
+  "time": "2026-07-14T01:24:07.289+0000"
+}
+
+### ② 触发上下文(seed:触发事件 / 主语 / 宾语 / 次要实体)
+{
+  "event": {
+    "ingest_time": 1783992311692,
+    "stream": "winlogbeat-*",
+    "event_code": "4886",
+    "arrival_ms": 1783992248109,
+    "attributes": " cdc:meereen.essos.local rmd:meereen.essos.local  ccm:meereen.essos.local",
+    "sensor": "Security",
+    "raw_ref": "soc-hids-alert-2026.07.14:yRk5Xp8B3gPM8FAebGrE",
+    "source": "winlogbeat",
+    "request_id": "10",
+    "event_time": "2026-07-14T01:24:06.283900500Z",
+    "event_uid": "8e661aa6e9ae522cdc1a0ab0060cebfea4efe31e55134e0d0769ea28a4273aa0"
+  },
+  "subject": {
+    "_labels": [
+      "Account"
+    ],
+    "upn": "vagrant@ESSOS.LOCAL",
+    "first_seen": "2026-07-02T02:32:09.011Z",
+    "last_seen": "2026-07-14T01:24:07.112Z",
+    "domain": "ESSOS",
+    "sam": "vagrant",
+    "sid": "S-1-5-21-4206617935-2580949811-1114734249-1000"
+  },
+  "related": [
+    {
+      "node": {
+        "_labels": [
+          "Service"
+        ],
+        "first_seen": "2026-07-02T07:49:39.404Z",
+        "last_seen": "2026-07-14T01:24:06.720Z",
+        "kind": "certificate_authority",
+        "service_id": "certsvc@braavos.essos.local",
+        "host": "braavos.essos.local"
+      },
+      "rel": "REQUESTED"
+    },
+    {
+      "node": {
+        "_labels": [
+          "Host"
+        ],
+        "hostname": "braavos.essos.local",
+        "role": "certificate_authority",
+        "first_seen": "2026-07-02T02:32:07.471Z",
+        "has_adcs": true,
+        "last_seen": "2026-07-14T02:14:54.505Z",
+        "domain": "essos.local",
+        "criticality": "high",
+        "is_dc": false
+      },
+      "rel": "ON_HOST"
+    }
+  ]
+}
+
+### ③ 研判   [skill] adcs   [模式] recipe
+# 研判留痕(5 步)
+[1] recipe取证「请求者与CA」→ 1 行
+[2] recipe取证「请求者估值」→ 1 行
+[3] recipe取证「主体与请求者比对」→ 1 行
+[4] recipe取证「_图盲区」→ 1 行
+[5] 🛡 处置护栏 blocked: monitor -> certsvc@braavos.essos.local  因:目标是受保护主机(braavos.essos.local)——DC/网关/mgmt 不动
+
+# 研判结果  alert=68a0490507f41d8fddacf002cc929588da8129659ec3bcc6390df129d27bb86a  path=B  skill=adcs
+verdict   : suspicious  [倾向 unknown]  (confidence=0.5)
+summary   : 检测到可能的ADCS证书滥用行为，请求者与证书主体信息不明确
+rationale : 根据事件4886，我们观察到以下可疑行为模式：
+1. 请求者为非特权账户(vagrant@ESSOS.LOCAL)向证书颁发机构(braavos.essos.local)发起证书请求
+2. 请求属性包含多个域名(cdc/rmd/ccm)且缺失关键主体信息
+3. 请求类型未明确标识为常规自动注册/续期
+4. 请求者属于基础用户类别，但请求了可能用于认证的证书服务
+
+当前证据不足原因：
+1. 缺少证书模板信息，无法确认是否使用高风险模板
+2. 未观察到完整的证书签发事件(4887)，无法验证主体身份
+3. 没有关联到已知的合法证书申请流程记录
+4. 无法确认是否涉及ENROLLEE_SUPPLIES_SUBJECT等危险标志
+evidence  : ['event_code:4886,request_id:10']
+missing   : ['证书模板配置', '完整证书签发事件', '申请时的认证方式', 'CA策略审计日志']
+pattern   : T1649
+agent     : qwen32b-ft
+处置(建议): escalate -> vagrant@ESSOS.LOCAL  risk=high  status=proposed
+处置(建议): escalate -> certsvc@braavos.essos.local  risk=high  status=proposed
+
+============================================================================
+## [4/8] technique=T1649   该类共 12 条   uid=29e814c43ae6c492e158ee905fbeb3f9c566ee732c825c4ec3201e42b69a3a19
+============================================================================
+### ① 原始告警节点(:Alert)
+{
+  "severity": 8,
+  "first_seen": "2026-07-14T01:24:06.675807000Z",
+  "last_seen": "2026-07-14T01:24:06.675807000Z",
+  "arrival_ms": 1783992248200,
+  "technique_ids": [
+    "T1649"
+  ],
+  "source": "wazuh",
+  "rule_id": "100803",
+  "stream": "soc-hids-alert-*",
+  "alert_uid": "29e814c43ae6c492e158ee905fbeb3f9c566ee732c825c4ec3201e42b69a3a19",
+  "rule_description": "ADCS certificate request/issue on CA (possible ESC abuse)",
+  "sensor": "wazuh-hids",
+  "raw_ref": "soc-hids-alert-2026.07.14:yxk5Xp8B3gPM8FAebGrE",
+  "time": "2026-07-14T01:24:07.333+0000"
+}
+
+### ② 触发上下文(seed:触发事件 / 主语 / 宾语 / 次要实体)
+{
+  "event": {
+    "ingest_time": 1783992311714,
+    "stream": "winlogbeat-*",
+    "event_code": "4886",
+    "arrival_ms": 1783992248109,
+    "attributes": " cdc:meereen.essos.local rmd:meereen.essos.local  ccm:meereen.essos.local",
+    "sensor": "Security",
+    "raw_ref": "soc-hids-alert-2026.07.14:yxk5Xp8B3gPM8FAebGrE",
+    "source": "winlogbeat",
+    "request_id": "11",
+    "event_time": "2026-07-14T01:24:06.675807000Z",
+    "event_uid": "1d7ef6e936f431ca0294f946fd3d9378577b1dfa1dd6c8b2ad3bdfdb204bc5df"
+  },
+  "subject": {
+    "_labels": [
+      "Account"
+    ],
+    "upn": "vagrant@ESSOS.LOCAL",
+    "first_seen": "2026-07-02T02:32:09.011Z",
+    "last_seen": "2026-07-14T01:24:07.112Z",
+    "domain": "ESSOS",
+    "sam": "vagrant",
+    "sid": "S-1-5-21-4206617935-2580949811-1114734249-1000"
+  },
+  "related": [
+    {
+      "node": {
+        "_labels": [
+          "Host"
+        ],
+        "hostname": "braavos.essos.local",
+        "role": "certificate_authority",
+        "first_seen": "2026-07-02T02:32:07.471Z",
+        "has_adcs": true,
+        "last_seen": "2026-07-14T02:14:54.505Z",
+        "domain": "essos.local",
+        "criticality": "high",
+        "is_dc": false
+      },
+      "rel": "ON_HOST"
+    },
+    {
+      "node": {
+        "_labels": [
+          "Service"
+        ],
+        "first_seen": "2026-07-02T07:49:39.404Z",
+        "last_seen": "2026-07-14T01:24:06.720Z",
+        "kind": "certificate_authority",
+        "service_id": "certsvc@braavos.essos.local",
+        "host": "braavos.essos.local"
+      },
+      "rel": "REQUESTED"
+    }
+  ]
+}
+
+### ③ 研判   [skill] adcs   [模式] recipe
+# 研判留痕(5 步)
+[1] recipe取证「请求者与CA」→ 1 行
+[2] recipe取证「请求者估值」→ 1 行
+[3] recipe取证「主体与请求者比对」→ 1 行
+[4] recipe取证「_图盲区」→ 1 行
+[5] 🛡 处置护栏 blocked: monitor -> certsvc@braavos.essos.local  因:目标是受保护主机(braavos.essos.local)——DC/网关/mgmt 不动
+
+# 研判结果  alert=29e814c43ae6c492e158ee905fbeb3f9c566ee732c825c4ec3201e42b69a3a19  path=B  skill=adcs
+verdict   : suspicious  [倾向 unknown]  (confidence=0.5)
+summary   : 检测到可能的ADCS证书滥用行为，请求者与证书主体信息不明确
+rationale : 根据事件4886，我们观察到以下可疑行为模式：
+1. 请求者账户vagrant@ESSOS.LOCAL属于普通用户权限（privileged=false）
+2. 证书申请目标指向certsvc@braavos.essos.local证书颁发机构
+3. 请求属性包含多个域组件( cdc:meereen.essos.local rmd:meereen.essos.local  ccm:meereen.essos.local )
+4. 事件发生在跨域环境(ESSOS域与braavos主机)
+5. 请求类型未明确标注模板信息和扩展密钥使用(EKU)属性
+
+该行为符合MITRE ATT&CK T1649(证书注册)技术特征，但缺乏以下关键证据进行最终判定：
+1. 证书模板配置信息
+2. 主题替代(subject替代)行为记录
+3. 异常SAN(主题备选名称)使用情况
+4. 中继攻击链关联证据
+5. 完整的证书请求参数细节
+evidence  : ['4886: certsvc@braavos.essos.local的证书请求事件', 'vagrant@ESSOS.LOCAL的跨域操作记录']
+missing   : ['证书模板配置信息', '完整的证书请求参数日志', '中继攻击检测记录']
+pattern   : ADCS证书滥用(T1649)
+agent     : qwen32b-ft
+处置(建议): escalate -> vagrant@ESSOS.LOCAL  risk=high  status=proposed
+处置(建议): escalate -> certsvc@braavos.essos.local  risk=high  status=proposed
+
+============================================================================
+## [5/8] technique=T1649   该类共 12 条   uid=4b993fffbdc7dd2e47afecf89f14a0cbd8cf186b9f983c1e86bd6a0a764a2610
+============================================================================
+### ① 原始告警节点(:Alert)
+{
+  "severity": 8,
+  "first_seen": "2026-07-14T01:24:06.720578700Z",
+  "last_seen": "2026-07-14T01:24:06.720578700Z",
+  "arrival_ms": 1783992248200,
+  "technique_ids": [
+    "T1649"
+  ],
+  "source": "wazuh",
+  "rule_id": "100803",
+  "stream": "soc-hids-alert-*",
+  "alert_uid": "4b993fffbdc7dd2e47afecf89f14a0cbd8cf186b9f983c1e86bd6a0a764a2610",
+  "rule_description": "ADCS certificate request/issue on CA (possible ESC abuse)",
+  "sensor": "wazuh-hids",
+  "raw_ref": "soc-hids-alert-2026.07.14:zBk5Xp8B3gPM8FAebGrE",
+  "time": "2026-07-14T01:24:07.364+0000"
+}
+
+### ② 触发上下文(seed:触发事件 / 主语 / 宾语 / 次要实体)
+{
+  "event": {
+    "disposition": "3",
+    "ingest_time": 1783992311724,
+    "stream": "winlogbeat-*",
+    "event_code": "4887",
+    "arrival_ms": 1783992248109,
+    "sensor": "Security",
+    "raw_ref": "soc-hids-alert-2026.07.14:zBk5Xp8B3gPM8FAebGrE",
+    "source": "winlogbeat",
+    "request_id": "11",
+    "event_time": "2026-07-14T01:24:06.720578700Z",
+    "outcome": "success",
+    "event_uid": "5ae74f34f47e970979848caafb947eb52c87e08c0560815d40292c28e5f5df4c"
+  },
+  "subject": {
+    "_labels": [
+      "Account"
+    ],
+    "upn": "vagrant@ESSOS.LOCAL",
+    "first_seen": "2026-07-02T02:32:09.011Z",
+    "last_seen": "2026-07-14T01:24:07.112Z",
+    "domain": "ESSOS",
+    "sam": "vagrant",
+    "sid": "S-1-5-21-4206617935-2580949811-1114734249-1000"
+  },
+  "related": [
+    {
+      "node": {
+        "_labels": [
+          "Service"
+        ],
+        "first_seen": "2026-07-02T07:49:39.404Z",
+        "last_seen": "2026-07-14T01:24:06.720Z",
+        "kind": "certificate_authority",
+        "service_id": "certsvc@braavos.essos.local",
+        "host": "braavos.essos.local"
+      },
+      "rel": "REQUESTED"
+    },
+    {
+      "node": {
+        "_labels": [
+          "Host"
+        ],
+        "hostname": "braavos.essos.local",
+        "role": "certificate_authority",
+        "first_seen": "2026-07-02T02:32:07.471Z",
+        "has_adcs": true,
+        "last_seen": "2026-07-14T02:14:54.505Z",
+        "domain": "essos.local",
+        "criticality": "high",
+        "is_dc": false
+      },
+      "rel": "ON_HOST"
+    }
+  ]
+}
+
+### ③ 研判   [skill] adcs   [模式] recipe
+# 研判留痕(4 步)
+[1] recipe取证「请求者与CA」→ 1 行
+[2] recipe取证「请求者估值」→ 1 行
+[3] recipe取证「主体与请求者比对」→ 1 行
+[4] recipe取证「_图盲区」→ 1 行
+
+# 研判结果  alert=4b993fffbdc7dd2e47afecf89f14a0cbd8cf186b9f983c1e86bd6a0a764a2610  path=B  skill=adcs
+verdict   : suspicious  [倾向 unknown]  (confidence=0.65)
+summary   : 低权用户向 Braavos CA 申请证书,但缺乏足够信息确认其合法性。需要进一步分析证书申请的具体内容。
+rationale : 1. 请求者是一个普通用户(vagrant@ESSOS.LOCAL),属于非特权账户
+2. 目标CA是Braavos证书服务,存在潜在的滥用风险
+3. 证书申请类型未明确显示为正常类型(如机器认证/用户认证)
+4. 缺少证书模板信息,无法判断是否使用了危险模板
+5. 未显示扩展密钥用途(EKU)信息,无法验证是否包含高风险用途
+6. 申请属性中未包含审批流程记录
+evidence  : ['事件代码4887证书申请事件', '请求者账户vagrant@ESSOS.LOCAL', '目标CA certsvc@braavos.essos.local']
+missing   : ['证书申请中的主题替代名称(SAN)', '证书模板配置详情', '扩展密钥用途(EKU)设置', '申请审批流程记录', '请求机器(cdc/rmd)信息']
+pattern   : 异常证书申请行为
+agent     : qwen32b-ft
+处置(建议): escalate -> 证书申请事件4887-11  risk=high  status=proposed
+处置(建议): monitor -> 账户vagrant@ESSOS.LOCAL  risk=high  status=proposed
+
+============================================================================
+## [6/8] technique=T1649   该类共 12 条   uid=8cb63a520032ad3423eee78d7af251ba54dd355e6780c22a3345362541dbf616
+============================================================================
+### ① 原始告警节点(:Alert)
+{
+  "severity": 8,
+  "first_seen": "2026-07-14T01:24:05.256435400Z",
+  "last_seen": "2026-07-14T01:24:05.256435400Z",
+  "arrival_ms": 1783992246185,
+  "technique_ids": [
+    "T1649"
+  ],
+  "source": "wazuh",
+  "rule_id": "100803",
+  "stream": "soc-hids-alert-*",
+  "alert_uid": "8cb63a520032ad3423eee78d7af251ba54dd355e6780c22a3345362541dbf616",
+  "rule_description": "ADCS certificate request/issue on CA (possible ESC abuse)",
+  "sensor": "wazuh-hids",
+  "raw_ref": "soc-hids-alert-2026.07.14:Bxk5Xp8B3gPM8FAeY2qW",
+  "time": "2026-07-14T01:24:06.013+0000"
+}
+
+### ② 触发上下文(seed:触发事件 / 主语 / 宾语 / 次要实体)
+{
+  "event": {
+    "ingest_time": 1783992311260,
+    "stream": "winlogbeat-*",
+    "event_code": "4886",
+    "arrival_ms": 1783992247082,
+    "attributes": " cdc:meereen.essos.local rmd:meereen.essos.local  ccm:meereen.essos.local",
+    "sensor": "Security",
+    "raw_ref": "soc-hids-alert-2026.07.14:Bxk5Xp8B3gPM8FAeY2qW",
+    "source": "winlogbeat",
+    "request_id": "9",
+    "event_time": "2026-07-14T01:24:05.256435400Z",
+    "event_uid": "97ba9c08c4ab7d5ffee7c9642f02e41a96843c462d8371809638e2676b7d7902"
+  },
+  "subject": {
+    "_labels": [
+      "Account"
+    ],
+    "upn": "vagrant@ESSOS.LOCAL",
+    "first_seen": "2026-07-02T02:32:09.011Z",
+    "last_seen": "2026-07-14T01:24:07.112Z",
+    "domain": "ESSOS",
+    "sam": "vagrant",
+    "sid": "S-1-5-21-4206617935-2580949811-1114734249-1000"
+  },
+  "related": [
+    {
+      "node": {
+        "_labels": [
+          "Service"
+        ],
+        "first_seen": "2026-07-02T07:49:39.404Z",
+        "last_seen": "2026-07-14T01:24:06.720Z",
+        "kind": "certificate_authority",
+        "service_id": "certsvc@braavos.essos.local",
+        "host": "braavos.essos.local"
+      },
+      "rel": "REQUESTED"
+    },
+    {
+      "node": {
+        "_labels": [
+          "Host"
+        ],
+        "hostname": "braavos.essos.local",
+        "role": "certificate_authority",
+        "first_seen": "2026-07-02T02:32:07.471Z",
+        "has_adcs": true,
+        "last_seen": "2026-07-14T02:14:54.505Z",
+        "domain": "essos.local",
+        "criticality": "high",
+        "is_dc": false
+      },
+      "rel": "ON_HOST"
+    }
+  ]
+}
+
+### ③ 研判   [skill] adcs   [模式] recipe
+# 研判留痕(5 步)
+[1] recipe取证「请求者与CA」→ 1 行
+[2] recipe取证「请求者估值」→ 1 行
+[3] recipe取证「主体与请求者比对」→ 1 行
+[4] recipe取证「_图盲区」→ 1 行
+[5] 🛡 处置护栏 blocked: monitor -> certsvc@braavos.essos.local  因:目标是受保护主机(braavos.essos.local)——DC/网关/mgmt 不动
+
+# 研判结果  alert=8cb63a520032ad3423eee78d7af251ba54dd355e6780c22a3345362541dbf616  path=B  skill=adcs
+verdict   : suspicious  [倾向 unknown]  (confidence=0.6)
+summary   : 检测到可能的ADCS证书滥用行为，请求者为非特权账户且证书主体信息缺失，无法确认请求合法性。
+rationale : 1. 请求者为非特权账户(vagrant)，且来自ESSOS域。
+2. 证书主体信息缺失(subject_dn为空)，无法确认是否与请求者匹配。
+3. 请求类型为4886(证书请求)，但未携带关键模板信息。
+4. 请求目标为Braavos CA服务，涉及跨主机证书申请行为。
+5. 属于证书申请阶段事件，缺乏最终签发记录验证。
+evidence  : ['event_code:4886,req_upn:vagrant@ESSOS.LOCAL,ca:certsvc@braavos.essos.local']
+missing   : ['证书请求的SAN(主体备选名称)信息', '证书模板的EKU(增强密钥用法)配置', 'ENROLLEE_SUPPLIES_SUBJECT模板标志', '关联的4887证书签发事件']
+pattern   : ADCS证书滥用(T1649)
+agent     : qwen32b-ft
+处置(建议): escalate -> req_upn:vagrant@ESSOS.LOCAL  risk=high  status=proposed
+处置(建议): escalate -> certsvc@braavos.essos.local  risk=high  status=proposed
+
+============================================================================
+## [7/8] technique=T1649   该类共 12 条   uid=ce4e1e9fc0fb75b933da04b9e91c09d28b177f293a30ef8c336c4a8cb641e2b7
+============================================================================
+### ① 原始告警节点(:Alert)
+{
+  "severity": 8,
+  "first_seen": "2026-07-07T01:25:47.813078600Z",
+  "last_seen": "2026-07-07T01:25:47.813078600Z",
+  "arrival_ms": 1783387550609,
+  "technique_ids": [
+    "T1649"
+  ],
+  "source": "wazuh",
+  "rule_id": "100803",
+  "stream": "soc-hids-alert-*",
+  "alert_uid": "ce4e1e9fc0fb75b933da04b9e91c09d28b177f293a30ef8c336c4a8cb641e2b7",
+  "rule_description": "ADCS certificate request/issue on CA (possible ESC abuse)",
+  "sensor": "wazuh-hids",
+  "raw_ref": "soc-hids-alert-2026.07.07:U_MuOp8B3gPM8FAedFUi",
+  "time": "2026-07-07T01:25:50.032+0000"
+}
+
+### ② 触发上下文(seed:触发事件 / 主语 / 宾语 / 次要实体)
+{
+  "event": {
+    "ingest_time": 1783563347229,
+    "arrival_ms": 1783387549154,
+    "source": "winlogbeat",
+    "event_uid": "e28ba4df9e4f7abea972ecae6e98298ae4bf85450c36c082962b373ff7ddbe5d",
+    "disposition": "3",
+    "subject_dn": "CN=vagrant, CN=Users, DC=sevenkingdoms, DC=local",
+    "stream": "winlogbeat-*",
+    "event_code": "4887",
+    "sensor": "Security",
+    "raw_ref": "soc-hids-alert-2026.07.07:U_MuOp8B3gPM8FAedFUi",
+    "request_id": "5",
+    "event_time": "2026-07-07T01:25:47.813078600Z",
+    "outcome": "success"
+  },
+  "subject": {
+    "_labels": [
+      "Account"
+    ],
+    "upn": "vagrant@SEVENKINGDOMS.LOCAL",
+    "first_seen": "2026-07-02T02:32:09.289Z",
+    "last_seen": "2026-07-14T01:24:09.138Z",
+    "domain": "SEVENKINGDOMS",
+    "sam": "vagrant",
+    "sid": "S-1-5-21-3669086071-63869131-912362612-1000"
+  },
+  "related": [
+    {
+      "node": {
+        "_labels": [
+          "Service"
+        ],
+        "first_seen": "2026-07-02T07:49:40.946Z",
+        "last_seen": "2026-07-14T01:24:08.758Z",
+        "kind": "certificate_authority",
+        "service_id": "certsvc@kingslanding.sevenkingdoms.local",
+        "host": "kingslanding.sevenkingdoms.local"
+      },
+      "rel": "REQUESTED"
+    },
+    {
+      "node": {
+        "_labels": [
+          "Host"
+        ],
+        "hostname": "kingslanding.sevenkingdoms.local",
+        "role": "domain_controller",
+        "first_seen": "2026-07-02T02:32:09.289Z",
+        "has_adcs": true,
+        "last_seen": "2026-07-14T02:24:59.574Z",
+        "domain": "sevenkingdoms.local",
+        "criticality": "critical",
+        "is_dc": true
+      },
+      "rel": "ON_HOST"
+    }
+  ]
+}
+
+### ③ 研判   [skill] adcs   [模式] recipe
+# 研判留痕(4 步)
+[1] recipe取证「请求者与CA」→ 1 行
+[2] recipe取证「请求者估值」→ 1 行
+[3] recipe取证「主体与请求者比对」→ 1 行
+[4] recipe取证「_图盲区」→ 1 行
+
+# 研判结果  alert=ce4e1e9fc0fb75b933da04b9e91c09d28b177f293a30ef8c336c4a8cb641e2b7  path=B  skill=adcs
+verdict   : suspicious  [倾向 benign]  (confidence=0.65)
+summary   : 证书请求者与主体匹配，但需要进一步检查模板配置和SAN信息
+rationale : 1. 请求者与主体比对显示subject_dn与请求者匹配(CN=vagrant)，符合正常自签证书特征
+2. 请求者是普通用户vagrant（特权账号标志为false）
+3. CA服务位于合法域内主机(kingslanding.sevenkingdoms.local)
+4. 未发现明显的主体冒充行为（subject_matches_requester=true）
+需注意：模板配置细节（EKU/ENROLLEE_SUPPLIES_SUBJECT）和SAN信息未建模，仍需检查模板权限
+evidence  : ['事件代码4887: certsvc@kingslanding.sevenkingdoms.local的证书签发记录', '主体DN: CN=vagrant, CN=Users, DC=sevenkingdoms, DC=local']
+missing   : ['证书模板配置（EKU/ENROLLEE_SUPPLIES_SUBJECT/审批要求）', 'subjectAltName(SAN)扩展信息', '请求机器(cdc/rmd)来源验证', 'ESC8 Web端点请求时序关联的NTLM中继检测']
+pattern   : 正常用户证书注册
+agent     : qwen32b-ft
+处置(建议): monitor -> 用户vagrant的证书申请行为  risk=low  status=proposed
+
+============================================================================
+## [8/8] technique=T1649   该类共 12 条   uid=bb335696aea2a6abb93eacdc97dbb964a2cbde46289b94904edc13529e0ee5b1
+============================================================================
+### ① 原始告警节点(:Alert)
+{
+  "severity": 8,
+  "first_seen": "2026-07-07T01:25:47.481998900Z",
+  "last_seen": "2026-07-07T01:25:47.481998900Z",
+  "arrival_ms": 1783387548586,
+  "technique_ids": [
+    "T1649"
+  ],
+  "source": "wazuh",
+  "rule_id": "100803",
+  "stream": "soc-hids-alert-*",
+  "alert_uid": "bb335696aea2a6abb93eacdc97dbb964a2cbde46289b94904edc13529e0ee5b1",
+  "rule_description": "ADCS certificate request/issue on CA (possible ESC abuse)",
+  "sensor": "wazuh-hids",
+  "raw_ref": "soc-hids-alert-2026.07.07:_PMuOp8B3gPM8FAeclS6",
+  "time": "2026-07-07T01:25:48.371+0000"
+}
+
+### ② 触发上下文(seed:触发事件 / 主语 / 宾语 / 次要实体)
+{
+  "event": {
+    "ingest_time": 1783563347229,
+    "stream": "winlogbeat-*",
+    "event_code": "4886",
+    "arrival_ms": 1783387549147,
+    "attributes": " cdc:kingslanding.sevenkingdoms.local rmd:kingslanding.sevenkingdoms.local  ccm:kingslanding.sevenkingdoms.local",
+    "sensor": "Security",
+    "raw_ref": "soc-hids-alert-2026.07.07:_PMuOp8B3gPM8FAeclS6",
+    "source": "winlogbeat",
+    "request_id": "5",
+    "event_time": "2026-07-07T01:25:47.481998900Z",
+    "event_uid": "e50a2960463370fa80acc0b332258b05233d2503c6267bbc6f31a8f23816c83d"
+  },
+  "subject": {
+    "_labels": [
+      "Account"
+    ],
+    "upn": "vagrant@SEVENKINGDOMS.LOCAL",
+    "first_seen": "2026-07-02T02:32:09.289Z",
+    "last_seen": "2026-07-14T01:24:09.138Z",
+    "domain": "SEVENKINGDOMS",
+    "sam": "vagrant",
+    "sid": "S-1-5-21-3669086071-63869131-912362612-1000"
+  },
+  "related": [
+    {
+      "node": {
+        "_labels": [
+          "Service"
+        ],
+        "first_seen": "2026-07-02T07:49:40.946Z",
+        "last_seen": "2026-07-14T01:24:08.758Z",
+        "kind": "certificate_authority",
+        "service_id": "certsvc@kingslanding.sevenkingdoms.local",
+        "host": "kingslanding.sevenkingdoms.local"
+      },
+      "rel": "REQUESTED"
+    },
+    {
+      "node": {
+        "_labels": [
+          "Host"
+        ],
+        "hostname": "kingslanding.sevenkingdoms.local",
+        "role": "domain_controller",
+        "first_seen": "2026-07-02T02:32:09.289Z",
+        "has_adcs": true,
+        "last_seen": "2026-07-14T02:24:59.574Z",
+        "domain": "sevenkingdoms.local",
+        "criticality": "critical",
+        "is_dc": true
+      },
+      "rel": "ON_HOST"
+    }
+  ]
+}
+
+### ③ 研判   [skill] adcs   [模式] recipe
+# 研判留痕(5 步)
+[1] recipe取证「请求者与CA」→ 1 行
+[2] recipe取证「请求者估值」→ 1 行
+[3] recipe取证「主体与请求者比对」→ 1 行
+[4] recipe取证「_图盲区」→ 1 行
+[5] 🛡 处置护栏 blocked: monitor -> ca_host:kingslanding.sevenkingdoms.local  因:目标是受保护主机(kingslanding.sevenkingdoms.local)——DC/网关/mgmt 不动
+
+# 研判结果  alert=bb335696aea2a6abb93eacdc97dbb964a2cbde46289b94904edc13529e0ee5b1  path=B  skill=adcs
+verdict   : suspicious  [倾向 unknown]  (confidence=0.55)
+summary   : 低权用户发起证书请求,但无法确定证书主体是否与请求者匹配
+rationale : 证据显示请求者账户vagrant@SEVENKINGDOMS.LOCAL向kingslanding.sevenkingdoms.local CA发起了证书请求(事件4886)。请求者是普通用户(vagrant)而非特权账户,且属性中缺失关键的subject_dn字段,无法确定证书主体是否与请求者匹配。根据ADCS审计规范,普通用户的证书请求若未配置审批流程应视为可疑。特别需要注意的是,请求属性中包含ccm子域,这可能暗示客户端认证模板的使用,需结合模板配置进一步分析。
+evidence  : ['event_code:4886,req_upn:vagrant@SEVENKINGDOMS.LOCAL,ca_host:kingslanding.sevenkingdoms.local,request_id:5']
+missing   : ['证书主体DN（subject_dn）', '请求使用的证书模板名称', '是否启用了ENROLLEE_SUPPLIES_SUBJECT标志', '是否配置了审批工作流', '客户端认证请求的详细属性（EKU/密钥用法等）']
+pattern   : T1649 - Abuse EKU Certificate Functionality
+agent     : qwen32b-ft
+处置(建议): escalate -> req_upn:vagrant@SEVENKINGDOMS.LOCAL  risk=low  status=proposed
+处置(建议): escalate -> ca_host:kingslanding.sevenkingdoms.local  risk=low  status=proposed
+
+# 批量自测完成
+=== done 2026-07-14 02:28Z ===
