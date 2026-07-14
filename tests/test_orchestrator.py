@@ -224,6 +224,21 @@ def test_guardrail_blocks_sensor_kill_through_build_result():
     assert {g["decision"] for g in guards} == {"blocked", "retargeted"}
 
 
+def test_suspicious_lean_normalized_in_build_result():
+    from soc_agent.orchestrator import build_result
+    # suspicious 缺 lean → 归一 unknown(不留"纯黑洞")
+    r = build_result(_alert(), "adcs", {"verdict": "suspicious", "confidence": 0.5, "rationale": "x"}, "q", trace=[])
+    assert r.verdict.lean == "unknown"
+    # suspicious 带合法 lean → 保留
+    r2 = build_result(_alert(), "adcs",
+                      {"verdict": "suspicious", "lean": "malicious", "confidence": 0.5, "rationale": "x"}, "q", trace=[])
+    assert r2.verdict.lean == "malicious"
+    # 非 suspicious → 清掉 lean(TP/FP 不带倾向)
+    r3 = build_result(_alert(), "kerberoast",
+                      {"verdict": "true_positive", "lean": "malicious", "confidence": 0.9, "rationale": "x"}, "q", trace=[])
+    assert r3.verdict.lean is None
+
+
 def test_invalid_verdict_from_llm_normalized_to_suspicious(tmp_path):
     llm = FakeLLMClient([
         LLMResponse(tool_calls=[ToolCall("c0", "run_cypher", {"query": "MATCH (n) RETURN n"})]),

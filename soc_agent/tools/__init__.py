@@ -87,12 +87,16 @@ def _finalize_verdict_tool() -> Tool:
     return Tool(
         name=FINALIZE,
         description=("取证充分后调用它给出**结构化研判结论 + 建议处置**,结束本次研判。"
-                     "证据不足时用 verdict=suspicious 并在 missing_evidence 说明缺什么。"),
+                     "证据不足时用 verdict=suspicious 并在 missing_evidence 说明缺什么;"
+                     "★verdict=suspicious 时**必须**给 lean(存疑的倾向,便于分诊):"
+                     "malicious=大概率攻击待确证 / benign=大概率正常但没法完全排除 / unknown=真两可。"),
         parameters={
             "type": "object",
             "properties": {
                 "verdict": {"type": "string",
                             "enum": ["true_positive", "false_positive", "benign", "suspicious"]},
+                "lean": {"type": "string", "enum": ["malicious", "benign", "unknown"],
+                         "description": "仅 verdict=suspicious 时填:该存疑倾向哪边(定优先级用)"},
                 "confidence": {"type": "number", "description": "0~1"},
                 "summary": {"type": "string"},
                 "rationale": {"type": "string", "description": "研判依据"},

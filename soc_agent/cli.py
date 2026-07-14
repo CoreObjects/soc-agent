@@ -44,8 +44,11 @@ def render_result(result) -> str:
         f"# 研判结果  alert={result.alert_uid}  path={result.path}  skill={result.skill}",
     ]
     if v is not None:
+        vline = f"verdict   : {v.verdict}"
+        if v.lean:
+            vline += f"  [倾向 {v.lean}]"
         lines += [
-            f"verdict   : {v.verdict}  (confidence={v.confidence})",
+            f"{vline}  (confidence={v.confidence})",
             f"summary   : {v.summary}",
             f"rationale : {v.rationale}",
         ]

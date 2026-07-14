@@ -9,6 +9,8 @@ from typing import Any, Optional
 from uuid import uuid4
 
 VERDICTS = {"true_positive", "false_positive", "benign", "suspicious"}
+# suspicious 的倾向(把"存疑"分诊成带方向+优先级,而非一坨"我不知道")
+LEANS = {"malicious", "benign", "unknown"}
 # 处置动作受控词表(避免 LLM 自由发挥出不可执行的"废话动作");未知动作归一为 escalate
 DISPOSITION_ACTIONS = {
     "disable_account", "block_ip", "isolate_host", "kill_process", "reset_password",
@@ -59,6 +61,7 @@ class Alert:
 class Verdict:
     """研判结论。写回 (:Alert)-[:CONCLUDED]->(:Verdict)。"""
     verdict: str                       # true_positive | false_positive | benign | suspicious
+    lean: Optional[str] = None         # 仅 suspicious 用:malicious|benign|unknown(存疑的倾向/优先级)
     confidence: float = 0.0
     summary: str = ""
     rationale: str = ""
@@ -72,11 +75,14 @@ class Verdict:
     def __post_init__(self):
         if self.verdict not in VERDICTS:
             raise ValueError(f"未知 verdict: {self.verdict!r}(允许 {sorted(VERDICTS)})")
+        if self.lean is not None and self.lean not in LEANS:
+            raise ValueError(f"未知 lean: {self.lean!r}(允许 {sorted(LEANS)})")
 
     def to_props(self) -> dict:
         return {
             "verdict_id": self.verdict_id,
             "verdict": self.verdict,
+            "lean": self.lean,
             "confidence": self.confidence,
             "summary": self.summary,
             "rationale": self.rationale,

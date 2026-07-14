@@ -7,7 +7,7 @@
 import json
 
 from ..disposition import apply_guardrail
-from ..models import DISPOSITION_ACTIONS, RISKS, VERDICTS, Alert, Disposition, InvestigationResult, Verdict
+from ..models import DISPOSITION_ACTIONS, LEANS, RISKS, VERDICTS, Alert, Disposition, InvestigationResult, Verdict
 from ..skills_runtime import SkillNotFound
 from ..tools import FINALIZE, finalize_spec
 
@@ -19,8 +19,13 @@ def build_result(alert, skill_name, args, agent_name, trace=None, path="B", poli
     v = args.get("verdict")
     if v not in VERDICTS:
         v = "suspicious"
+    lean = args.get("lean") if args.get("lean") in LEANS else None
+    if v == "suspicious" and lean is None:
+        lean = "unknown"                 # suspicious 必带倾向,缺则归一为 unknown(不留"纯黑洞")
+    elif v != "suspicious":
+        lean = None                      # 非 suspicious 不带 lean
     verdict = Verdict(
-        verdict=v, confidence=float(args.get("confidence") or 0.0),
+        verdict=v, lean=lean, confidence=float(args.get("confidence") or 0.0),
         summary=args.get("summary") or "", rationale=args.get("rationale") or "",
         evidence_refs=list(args.get("evidence_refs") or []),
         missing_evidence=list(args.get("missing_evidence") or []),
@@ -113,7 +118,8 @@ _SCAFFOLD = (
     "2) 用 run_cypher 按上面方法论**只读取证**(可多次;查到 A 再顺着查 B)。\n"
     "3) 判序:先证伪(最可能的良性解释)→看基线新颖度→看权限/资产价值→看时序与扇出→看横向落地。\n"
     "4) 证据充分、或确认图里已无更多可查 → 调用 finalize_verdict 给出结论并结束。\n"
-    "取证只从图取,不臆造。**证据不足就 verdict=suspicious 并在 missing_evidence 写清缺什么,别硬判 TP/FP。**\n"
+    "取证只从图取,不臆造。**证据不足就 verdict=suspicious 并在 missing_evidence 写清缺什么,别硬判 TP/FP;"
+    "且 suspicious 必须带 lean(malicious/benign/unknown)标明倾向哪边、定优先级。**\n"
     "\n## 工具用法\n"
     "- run_cypher 可传 params 对象绑定 $ 参数(如 {query:'...WHERE a.sam=$sam', params:{sam:'jon.snow'}}),"
     "或直接把具体值内联进查询;seed 里给了触发事件的账号/时间/主机等具体值,别用没有值的 $ 参数。\n"
@@ -184,7 +190,7 @@ class AgentInvestigator:
                             policy=self.policy)
 
     def _fallback(self, alert, skill, trace, reason) -> InvestigationResult:
-        verdict = Verdict(verdict="suspicious", confidence=0.0,
+        verdict = Verdict(verdict="suspicious", lean="unknown", confidence=0.0,
                           summary="未在预算内完成研判", rationale=reason,
                           missing_evidence=[reason], agent=self.agent_name)
         return InvestigationResult(alert_uid=alert.alert_uid, path="B", verdict=verdict,
@@ -234,7 +240,9 @@ _RECIPE_SCAFFOLD = (
     "- **先证伪**:请求者域与目标域之间若有 **TRUSTS**(见证据「跨域信任」)= 跨域信任的正常 RC4 = "
     "**false_positive**;尤其请求者是机器账号/域控($ 结尾)+ 目标是被信任域时,基本可定 FP。\n"
     "- 再看:目标是否特权/属特权组、请求者 enc 基线、SPN 扇出。\n"
-    "- 证据足 → 给明确 verdict;确实不足 → suspicious 并在 missing_evidence 写清缺什么。处置动作用限定词表。"
+    "- 证据足 → 给明确 verdict;确实不足 → suspicious 并在 missing_evidence 写清缺什么。\n"
+    "- ★出 suspicious **必须**带 lean(malicious=大概率攻击待确证 / benign=大概率正常但没法完全排除 / "
+    "unknown=真两可)—— 别只甩「存疑」,要说往哪边倾、好定优先级。处置动作用限定词表。"
 )
 
 

@@ -43,6 +43,13 @@ def test_verdict_rejects_unknown_verdict():
         Verdict(verdict="totally_pwned", confidence=1.0)
 
 
+def test_verdict_lean_validation_and_props():
+    v = Verdict(verdict="suspicious", lean="benign", confidence=0.5)
+    assert v.to_props()["lean"] == "benign"        # lean 进 to_props(写回图)
+    with pytest.raises(ValueError):
+        Verdict(verdict="suspicious", lean="totally_bad")
+
+
 def test_verdict_ids_unique():
     a = Verdict(verdict="benign", confidence=0.1)
     b = Verdict(verdict="benign", confidence=0.1)
