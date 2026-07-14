@@ -16,17 +16,17 @@
 | host | **ingress_tool_transfer** | T1105 | ⚠️ 默认 Sysmon EID11 | ✅ **真机验**:FP 通路(配管供给噪声);TP 通路未见真样本 |
 | host | **suspicious_process** | T1059/.001 · T1055 · T1218 | ⚠️ 默认 Sysmon EID1/11 · PS4104 | ✅ **真机验**:FP 通路(配管供给噪声);TP 通路未见真样本 |
 | host | **registry_persistence** | T1547.001 · T1112 | ✅ 自研规则 100804(EID13 Run/自启位) | ✅ **真机验通**:取证正确(写入进程/键路径/值/账号/主机);顺带修了 ingest key_path 反斜杠归一 |
-| network | c2_beacon | T1071/.* · T1568/.* | ⚠️ **日志够、缺告警**:EID3/22 已采+已映射(CONNECTED_TO/QUERIED);缺检测规则;信誉是盲区 | ⚠️ **未校准假设**(可靶场验:加规则+周期外连) |
-| network | suspicious_outbound | T1571 · T1090 · T1041 · T1048 | ⚠️ 同上(日志够、缺告警+信誉盲区) | ⚠️ **未校准假设**(可靶场验) |
+| network | **c2_beacon** | T1071/.* · T1568/.* | ✅ 自研规则 100806(EID3 LOLBin 外连) | ✅ **真机验通**:取证正确(进程/目标 dst_ip:dst_port/**命令解码**/**反复性 count 现算**/父链账号);信誉/解析扇出仍盲 |
+| network | **suspicious_outbound** | T1571 · T1090 · T1041 · T1048 | ✅ 同规则 100806 | ✅ **真机验通**:同上;修了 dest_port→dst_port、聚合边 count 改数 Event、删未建模 RESOLVES_TO、补 EncodedCommand 解码 |
 | application | web_exploit | T1190 · T1059.007 | ❌ **遥测缺**:WAF(ModSecurity)未接进 ingest | ⚠️ **未校准假设**(需先建 WAF 接入) |
 | application | webshell | T1505.003 | ❌ WAF 未接;主机侧落盘(EID11)部分可用 | ⚠️ **未校准假设**(需先建 WAF 接入) |
 | ×4 | **generic_\<layer\>** | 该层兜底 | 该层任意告警 | ⚠️ 路由从未选中、未行使 |
 
 ## 验证进度小结
 
-- **已真机验+校准(7):** kerberoast · lsass_dump · adcs · ingress_tool_transfer · suspicious_process · **registry_persistence** · **lateral_movement**(靶场完善 B1/B2:良性发生器造真告警→取证验通,不造攻击)。其中 kerberoast/lsass_dump 的 TP 通路已用真攻击走通;adcs 用 subject_dn 分诊;registry_persistence/lateral_movement 用良性活动(写 Run 键 / 远程 SYSVOL 访问)验取证。
-- **未校准假设(9):** 5 个具体 skill(dcsync/c2/outbound/web/webshell)+ 4 个 generic。取证逻辑只过了"空图不崩"冒烟,**未经真实数据验证**。
-- **踩坑固化:** ① Wazuh 规则**别加 `win.system.channel` 字段**(会让 EID 规则不匹配)② 采集 `alert_min_level=7`,规则 **level≥7** 才进图 ③ 注册表 TargetObject 反斜杠单/双不一(alert 路径双转义)—— ingest `_parse_registry` 已丢空段归一。
+- **已真机验+校准(9):** kerberoast · lsass_dump · adcs · ingress_tool_transfer · suspicious_process · **registry_persistence** · **lateral_movement** · **c2_beacon** · **suspicious_outbound**(靶场完善 B1/B2/B3:良性发生器造真告警→取证验通,不造攻击)。其中 kerberoast/lsass_dump 的 TP 通路已用真攻击走通;adcs 用 subject_dn 分诊;registry/lateral/network 用良性活动(写 Run 键 / 远程 SYSVOL / 周期外连)验取证。network 顺带把 verdict 从"看不透编码→存疑"改到解码后可决。
+- **未校准假设(7):** 3 个具体 skill(dcsync/web/webshell)+ 4 个 generic。取证逻辑只过了"空图不崩"冒烟,**未经真实数据验证**。
+- **踩坑固化:** ① Wazuh 规则**别加 `win.system.channel` 字段**(会让 EID 规则不匹配)② 采集 `alert_min_level=7`,规则 **level≥7** 才进图 ③ 注册表 TargetObject 反斜杠单/双不一(alert 路径双转义)—— ingest `_parse_registry` 已丢空段归一 ④ **聚合边不存 `count`**(mapper 注释:现算)—— 周期性要 `count(e)` 数 Event,别读 `c.count` ⑤ EID3 端口 leaf 名是 **`dst_port`** 非 `dest_port` ⑥ `RESOLVES_TO` 在 cypher 声明了但**无 mapper 造边**(DNS 应答未映射)—— 查它每告警刷 warning,域反解/信誉是盲区。
 - **验证方式:** 只在隔离靶场造出该类真告警去验(不裸上生产——生产研判错致命)。**不做合成 fixture**(假信心)。
 
 ## 各层"要造告警来验"的成本差
