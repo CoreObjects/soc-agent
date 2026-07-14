@@ -1,0 +1,587 @@
+=== selftest 2026-07-14 10:46Z ===
+Received notification from DBMS server: {severity: WARNING} {code: Neo.ClientNotification.Statement.UnknownPropertyKeyWarning} {category: UNRECOGNIZED} {title: The provided property key is not in the database} {description: One of the property names in your query is not available in the database, make sure you didn't misspell it or that the label is available when you run this statement in your application (the missing property name is: dest_port)} {position: line: 1, column: 409, offset: 408} for query: 'MATCH (a:Alert {alert_uid:$aid})<-[:TRIGGERED]-(e:Event)-[:BY]->(p:Process) OPTIONAL MATCH (e)-[:CONNECTED_TO]->(ip:IPAddress) OPTIONAL MATCH (e)-[:ON_HOST]->(h:Host) OPTIONAL MATCH (parent:Process)-[:SPAWNED]->(p) OPTIONAL MATCH (p)-[:RAN_AS]->(acc:Account) RETURN p.process_guid AS proc_guid, p.image AS image, p.command_line AS command_line, parent.image AS parent, acc.sam AS account, ip.ip AS dst_ip, e.dest_port AS dest_port, h.hostname AS host'
+Received notification from DBMS server: {severity: WARNING} {code: Neo.ClientNotification.Statement.UnknownPropertyKeyWarning} {category: UNRECOGNIZED} {title: The provided property key is not in the database} {description: One of the property names in your query is not available in the database, make sure you didn't misspell it or that the label is available when you run this statement in your application (the missing property name is: count)} {position: line: 1, column: 88, offset: 87} for query: 'MATCH (p:Process {process_guid:$g})-[c:CONNECTED_TO]->(ip:IPAddress {ip:$ip}) RETURN c.count AS count, c.first_seen AS first_seen, c.last_seen AS last_seen'
+Received notification from DBMS server: {severity: WARNING} {code: Neo.ClientNotification.Statement.UnknownRelationshipTypeWarning} {category: UNRECOGNIZED} {title: The provided relationship type is not in the database.} {description: One of the relationship types in your query is not available in the database, make sure you didn't misspell it or that the label is available when you run this statement in your application (the missing relationship type is: RESOLVES_TO)} {position: line: 1, column: 29, offset: 28} for query: 'OPTIONAL MATCH (d:Domain)-[:RESOLVES_TO]->(ip:IPAddress {ip:$ip}) RETURN collect(DISTINCT {fqdn: d.fqdn, first_seen: d.first_seen}) AS domains'
+# 批量自测  范围=tech=T1071.001  取样=recent  待研判 5 条  模式=recipe  写回图=否(自测不落库)  (IP 已打码)
+
+待研判清单:
+  T1071.001          该类共      6  uid=2364db352a00b36916dc674df95d0b4e43c98b47a654e2ea9090549e7e820306
+  T1071.001          该类共      6  uid=b43495063a860f1565bbd9c7205bebde98cdbc652e0674da17dc6696523212bc
+  T1071.001          该类共      6  uid=2ccee5cd92fdc08479a2ad8870fc1e6cb6e92e09f98d23d725697f215bc791f1
+  T1071.001          该类共      6  uid=486a6345861a93e94f5a54ed054633949b47afb69690b7fdef6b38e09dad5c3e
+  T1071.001          该类共      6  uid=f3ade00128de2f28ce12dac39d6515e3753ef395534808a4c7d64ef4ae6e9926
+
+============================================================================
+## [1/5] technique=T1071.001   该类共 6 条   uid=2364db352a00b36916dc674df95d0b4e43c98b47a654e2ea9090549e7e820306
+============================================================================
+### ① 原始告警节点(:Alert)
+{
+  "severity": 8,
+  "first_seen": "2026-07-14T10:41:32.073408200Z",
+  "last_seen": "2026-07-14T10:41:32.073408200Z",
+  "arrival_ms": 1784025697072,
+  "technique_ids": [
+    "T1071.001"
+  ],
+  "source": "wazuh",
+  "rule_id": "100806",
+  "stream": "soc-hids-alert-*",
+  "alert_uid": "2364db352a00b36916dc674df95d0b4e43c98b47a654e2ea9090549e7e820306",
+  "rule_description": "Suspicious outbound from C:\\\\Windows\\\\System32\\\\WindowsPowerShell\\\\v1.0\\\\powershell.exe to x.x.x.1:9200",
+  "sensor": "wazuh-hids",
+  "raw_ref": "soc-hids-alert-2026.07.14:dxs3YJ8B3gPM8FAez4sd",
+  "time": "2026-07-14T10:41:32.931+0000"
+}
+
+### ② 触发上下文(seed:触发事件 / 主语 / 宾语 / 次要实体)
+{
+  "event": {
+    "ingest_time": 1784025905621,
+    "initiated": "true",
+    "stream": "winlogbeat-*",
+    "event_code": "3",
+    "proto": "tcp",
+    "dst_port": "9200",
+    "arrival_ms": 1784025693139,
+    "raw_ref": "soc-hids-alert-2026.07.14:dxs3YJ8B3gPM8FAez4sd",
+    "sensor": "Microsoft-Windows-Sysmon/Operational",
+    "source": "winlogbeat",
+    "event_time": "2026-07-14T10:41:32.073408200Z",
+    "event_uid": "e062824c90313bce7578fde32e4ae4cf0abdc654e564d5a4dc542fc25556e43f"
+  },
+  "subject": {
+    "_labels": [
+      "Process"
+    ],
+    "image": "C:\\\\Windows\\\\System32\\\\WindowsPowerShell\\\\v1.0\\\\powershell.exe",
+    "first_seen": "2026-07-14T10:41:15.076Z",
+    "process_guid": "{85e8c649-124b-6a56-600e-000000001400}",
+    "last_seen": "2026-07-14T10:41:32.073Z",
+    "hashes": "MD5=7353F60B1739074EB17C5F4DDDEFE239,SHA256=DE96A6E69944335375DC1AC238336066889D9FFC7D73628EF4FE1B1B160AB32C,IMPHASH=741776AACCFC5B71FF59832DCDCACE0F",
+    "pid": "1540",
+    "command_line": "\\\"powershell.exe\\\" -noninteractive -encodedcommand WwBDAG8AbgBzAG8AbABlAF0AOgA6AEkAbgBwAHUAdABFAG4AYwBvAGQAaQBuAGcAIAA9ACAATgBlAHcALQBPAGIAagBlAGMAdAAgAFQAZQB4AHQALgBVAFQARgA4AEUAbgBjAG8AZABpAG4AZwAgACQAZgBhAGwAcwBlADsAIAAkAEUAcgByAG8AcgBBAGMAdABpAG8AbgBQAHIAZQBmAGUAcgBlAG4AYwBlACAAPQAgACcAQwBvAG4AdABpAG4AdQBlACcACgAkAGQAcwB0ACAAPQAgACcAMQA5ADIALgAxADYAOAAuADUANgAuADEAJwA7ACAAJABwAG8AcgB0ACAAPQAgADkAMgAwADAACgBmAG8AcgAgACgAJABpACAAPQAgADAAOwAgACQAaQAgAC0AbAB0ACAANgA7ACAAJABpACsAKwApACAAewAKACAAIAB0AHIAeQAgAHsAIAAkAGMAIAA9ACAATgBlAHcALQBPAGIAagBlAGMAdAAgAFMAeQBzAHQAZQBtAC4ATgBlAHQALgBTAG8AYwBrAGUAdABzAC4AVABjAHAAQwBsAGkAZQBuAHQAOwAgACQAYwAuAEMAbwBuAG4AZQBjAHQAKAAkAGQAcwB0ACwAIAAkAHAAbwByAHQAKQA7ACAAJABjAC4AQwBsAG8AcwBlACgAKQA7ACAAIgBCAEUAQQBDAE8ATgAgACQAaQAgAC0APgAgACQAewBkAHMAdAB9ADoAJAB7AHAAbwByAHQAfQAgAE8ASwAiACAAfQAKACAAIABjAGEAdABjAGgAIAB7ACAAIgBCAEUAQQBDAE8ATgAgACQAaQAgAC0APgAgACQAewBkAHMAdAB9ADoAJAB7AHAAbwByAHQAfQAgAEUAUgBSACAAJAAoACQAXwAuAEUAeABjAGUAcAB0AGkAbwBuAC4ATQBlAHMAcwBhAGcAZQApACIAIAB9AAoAIAAgAFMAdABhAHIAdAAtAFMAbABlAGUAcAAgAC0AUwBlAGMAbwBuAGQAcwAgADMACgB9AA=="
+  },
+  "related": [
+    {
+      "node": {
+        "_labels": [
+          "IPAddress"
+        ],
+        "first_seen": "2026-06-26T10:41:28.051Z",
+        "last_seen": "2026-07-14T10:44:48.899Z",
+        "ip": "x.x.x.1"
+      },
+      "rel": "CONNECTED_TO"
+    },
+    {
+      "node": {
+        "_labels": [
+          "IPAddress"
+        ],
+        "first_seen": "2026-06-26T10:41:28.296Z",
+        "last_seen": "2026-07-14T10:41:32.073Z",
+        "ip": "x.x.x.22"
+      },
+      "rel": "FROM"
+    },
+    {
+      "node": {
+        "_labels": [
+          "Host"
+        ],
+        "hostname": "castelblack.north.sevenkingdoms.local",
+        "role": "member_server",
+        "first_seen": "2026-07-02T02:32:06.696Z",
+        "has_adcs": false,
+        "last_seen": "2026-07-14T10:44:48.908Z",
+        "domain": "north.sevenkingdoms.local",
+        "criticality": "medium",
+        "is_dc": false
+      },
+      "rel": "ON_HOST"
+    }
+  ]
+}
+
+### ③ 研判   [skill] suspicious_outbound   [模式] recipe
+# 研判留痕(4 步)
+[1] recipe取证「进程与目标+父链」→ 1 行
+[2] recipe取证「外连聚合(反复性)」→ 1 行
+[3] recipe取证「目标反解域(信誉是盲区,不查)」→ 1 行
+[4] recipe取证「_图盲区」→ 1 行
+
+# 研判结果  alert=2364db352a00b36916dc674df95d0b4e43c98b47a654e2ea9090549e7e820306  path=B  skill=suspicious_outbound
+verdict   : suspicious  [倾向 malicious]  (confidence=0.85)
+summary   : 检测到PowerShell进程发起网络连接，目标IP为内网地址，且命令行参数使用了编码方式，可能用于隐藏恶意指令。
+rationale : 1. 进程路径: C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe 是一个常见的 LOLBin。
+2. 命令行参数使用了 -encodedcommand，这通常用于隐藏脚本内容，增加隐蔽性。
+3. 目标IP: x.x.x.1 是一个内网地址，可能是一个攻击者控制的C2服务器。
+4. 连接行为在短时间内多次尝试，显示了潜在的恶意意图。
+5. 无法确定该连接是否经过合法授权，且行为模式与已知的恶意活动相似。
+evidence  : ['alert_uid: 2364db352a00b36916dc674df95d0b4e43c98b47a654e2ea9090549e7e820306', '进程与目标+父链: {85e8c649-124b-6a56-600e-000000001400}']
+agent     : qwen32b-ft
+处置(建议): isolate_host -> castelblack.north.sevenkingdoms.local  risk=high  status=proposed
+处置(建议): monitor -> C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe  risk=high  status=proposed
+处置(建议): escalate -> Security Team  risk=high  status=proposed
+
+============================================================================
+## [2/5] technique=T1071.001   该类共 6 条   uid=b43495063a860f1565bbd9c7205bebde98cdbc652e0674da17dc6696523212bc
+============================================================================
+### ① 原始告警节点(:Alert)
+{
+  "severity": 8,
+  "first_seen": "2026-07-14T10:41:28.796408500Z",
+  "last_seen": "2026-07-14T10:41:28.796408500Z",
+  "arrival_ms": 1784025690068,
+  "technique_ids": [
+    "T1071.001"
+  ],
+  "source": "wazuh",
+  "rule_id": "100806",
+  "stream": "soc-hids-alert-*",
+  "alert_uid": "b43495063a860f1565bbd9c7205bebde98cdbc652e0674da17dc6696523212bc",
+  "rule_description": "Suspicious outbound from C:\\\\Windows\\\\System32\\\\WindowsPowerShell\\\\v1.0\\\\powershell.exe to x.x.x.1:9200",
+  "sensor": "wazuh-hids",
+  "raw_ref": "soc-hids-alert-2026.07.14:Txs3YJ8B3gPM8FAes4u-",
+  "time": "2026-07-14T10:41:29.629+0000"
+}
+
+### ② 触发上下文(seed:触发事件 / 主语 / 宾语 / 次要实体)
+Received notification from DBMS server: {severity: WARNING} {code: Neo.ClientNotification.Statement.UnknownPropertyKeyWarning} {category: UNRECOGNIZED} {title: The provided property key is not in the database} {description: One of the property names in your query is not available in the database, make sure you didn't misspell it or that the label is available when you run this statement in your application (the missing property name is: dest_port)} {position: line: 1, column: 409, offset: 408} for query: 'MATCH (a:Alert {alert_uid:$aid})<-[:TRIGGERED]-(e:Event)-[:BY]->(p:Process) OPTIONAL MATCH (e)-[:CONNECTED_TO]->(ip:IPAddress) OPTIONAL MATCH (e)-[:ON_HOST]->(h:Host) OPTIONAL MATCH (parent:Process)-[:SPAWNED]->(p) OPTIONAL MATCH (p)-[:RAN_AS]->(acc:Account) RETURN p.process_guid AS proc_guid, p.image AS image, p.command_line AS command_line, parent.image AS parent, acc.sam AS account, ip.ip AS dst_ip, e.dest_port AS dest_port, h.hostname AS host'
+Received notification from DBMS server: {severity: WARNING} {code: Neo.ClientNotification.Statement.UnknownPropertyKeyWarning} {category: UNRECOGNIZED} {title: The provided property key is not in the database} {description: One of the property names in your query is not available in the database, make sure you didn't misspell it or that the label is available when you run this statement in your application (the missing property name is: count)} {position: line: 1, column: 88, offset: 87} for query: 'MATCH (p:Process {process_guid:$g})-[c:CONNECTED_TO]->(ip:IPAddress {ip:$ip}) RETURN c.count AS count, c.first_seen AS first_seen, c.last_seen AS last_seen'
+Received notification from DBMS server: {severity: WARNING} {code: Neo.ClientNotification.Statement.UnknownRelationshipTypeWarning} {category: UNRECOGNIZED} {title: The provided relationship type is not in the database.} {description: One of the relationship types in your query is not available in the database, make sure you didn't misspell it or that the label is available when you run this statement in your application (the missing relationship type is: RESOLVES_TO)} {position: line: 1, column: 29, offset: 28} for query: 'OPTIONAL MATCH (d:Domain)-[:RESOLVES_TO]->(ip:IPAddress {ip:$ip}) RETURN collect(DISTINCT {fqdn: d.fqdn, first_seen: d.first_seen}) AS domains'
+{
+  "event": {
+    "ingest_time": 1784025905612,
+    "initiated": "true",
+    "stream": "winlogbeat-*",
+    "event_code": "3",
+    "proto": "tcp",
+    "dst_port": "9200",
+    "arrival_ms": 1784025690095,
+    "raw_ref": "soc-hids-alert-2026.07.14:Txs3YJ8B3gPM8FAes4u-",
+    "sensor": "Microsoft-Windows-Sysmon/Operational",
+    "source": "winlogbeat",
+    "event_time": "2026-07-14T10:41:28.796408500Z",
+    "event_uid": "4acf9839a2ad0d3dc51825d7a921ffce9df541c6ab8e6eb24e56e020e17a71e7"
+  },
+  "subject": {
+    "_labels": [
+      "Process"
+    ],
+    "image": "C:\\\\Windows\\\\System32\\\\WindowsPowerShell\\\\v1.0\\\\powershell.exe",
+    "first_seen": "2026-07-14T10:41:15.076Z",
+    "process_guid": "{85e8c649-124b-6a56-600e-000000001400}",
+    "last_seen": "2026-07-14T10:41:32.073Z",
+    "hashes": "MD5=7353F60B1739074EB17C5F4DDDEFE239,SHA256=DE96A6E69944335375DC1AC238336066889D9FFC7D73628EF4FE1B1B160AB32C,IMPHASH=741776AACCFC5B71FF59832DCDCACE0F",
+    "pid": "1540",
+    "command_line": "\\\"powershell.exe\\\" -noninteractive -encodedcommand WwBDAG8AbgBzAG8AbABlAF0AOgA6AEkAbgBwAHUAdABFAG4AYwBvAGQAaQBuAGcAIAA9ACAATgBlAHcALQBPAGIAagBlAGMAdAAgAFQAZQB4AHQALgBVAFQARgA4AEUAbgBjAG8AZABpAG4AZwAgACQAZgBhAGwAcwBlADsAIAAkAEUAcgByAG8AcgBBAGMAdABpAG8AbgBQAHIAZQBmAGUAcgBlAG4AYwBlACAAPQAgACcAQwBvAG4AdABpAG4AdQBlACcACgAkAGQAcwB0ACAAPQAgACcAMQA5ADIALgAxADYAOAAuADUANgAuADEAJwA7ACAAJABwAG8AcgB0ACAAPQAgADkAMgAwADAACgBmAG8AcgAgACgAJABpACAAPQAgADAAOwAgACQAaQAgAC0AbAB0ACAANgA7ACAAJABpACsAKwApACAAewAKACAAIAB0AHIAeQAgAHsAIAAkAGMAIAA9ACAATgBlAHcALQBPAGIAagBlAGMAdAAgAFMAeQBzAHQAZQBtAC4ATgBlAHQALgBTAG8AYwBrAGUAdABzAC4AVABjAHAAQwBsAGkAZQBuAHQAOwAgACQAYwAuAEMAbwBuAG4AZQBjAHQAKAAkAGQAcwB0ACwAIAAkAHAAbwByAHQAKQA7ACAAJABjAC4AQwBsAG8AcwBlACgAKQA7ACAAIgBCAEUAQQBDAE8ATgAgACQAaQAgAC0APgAgACQAewBkAHMAdAB9ADoAJAB7AHAAbwByAHQAfQAgAE8ASwAiACAAfQAKACAAIABjAGEAdABjAGgAIAB7ACAAIgBCAEUAQQBDAE8ATgAgACQAaQAgAC0APgAgACQAewBkAHMAdAB9ADoAJAB7AHAAbwByAHQAfQAgAEUAUgBSACAAJAAoACQAXwAuAEUAeABjAGUAcAB0AGkAbwBuAC4ATQBlAHMAcwBhAGcAZQApACIAIAB9AAoAIAAgAFMAdABhAHIAdAAtAFMAbABlAGUAcAAgAC0AUwBlAGMAbwBuAGQAcwAgADMACgB9AA=="
+  },
+  "related": [
+    {
+      "node": {
+        "_labels": [
+          "Host"
+        ],
+        "hostname": "castelblack.north.sevenkingdoms.local",
+        "role": "member_server",
+        "first_seen": "2026-07-02T02:32:06.696Z",
+        "has_adcs": false,
+        "last_seen": "2026-07-14T10:44:48.908Z",
+        "domain": "north.sevenkingdoms.local",
+        "criticality": "medium",
+        "is_dc": false
+      },
+      "rel": "ON_HOST"
+    },
+    {
+      "node": {
+        "_labels": [
+          "IPAddress"
+        ],
+        "first_seen": "2026-06-26T10:41:28.296Z",
+        "last_seen": "2026-07-14T10:41:32.073Z",
+        "ip": "x.x.x.22"
+      },
+      "rel": "FROM"
+    },
+    {
+      "node": {
+        "_labels": [
+          "IPAddress"
+        ],
+        "first_seen": "2026-06-26T10:41:28.051Z",
+        "last_seen": "2026-07-14T10:44:48.899Z",
+        "ip": "x.x.x.1"
+      },
+      "rel": "CONNECTED_TO"
+    }
+  ]
+}
+
+### ③ 研判   [skill] suspicious_outbound   [模式] recipe
+# 研判留痕(4 步)
+[1] recipe取证「进程与目标+父链」→ 1 行
+[2] recipe取证「外连聚合(反复性)」→ 1 行
+[3] recipe取证「目标反解域(信誉是盲区,不查)」→ 1 行
+[4] recipe取证「_图盲区」→ 1 行
+
+# 研判结果  alert=b43495063a860f1565bbd9c7205bebde98cdbc652e0674da17dc6696523212bc  path=B  skill=suspicious_outbound
+verdict   : suspicious  [倾向 malicious]  (confidence=0.8)
+summary   : 检测到PowerShell进程发起网络连接，目标IP为192.168.56.1，该IP地址可能为内部测试地址，但结合PowerShell的使用场景，存在潜在的恶意活动风险。
+rationale : 1. PowerShell被广泛用于自动化管理和脚本执行，但同时也被攻击者利用进行恶意操作。
+2. 连接目标IP为192.168.56.1，此IP不在常见可信范围内，且无法解析对应的域名信息。
+3. 编码命令行参数显示为非交互式执行，且内容经过Base64编码，难以直接判断其意图。
+4. 该行为模式与已知的通过PowerShell进行的恶意活动特征相似。
+evidence  : ['alert_uid:b43495063a860f1565bbd9c7205bebde98cdbc652e0674da17dc6696523212bc']
+missing   : ['目标IP的域名解析信息', 'PowerShell脚本的具体内容及行为分析']
+pattern   : 通过PowerShell发起的可疑网络连接
+agent     : qwen32b-ft
+处置(建议): escalate -> vagrant  risk=high  status=proposed
+
+============================================================================
+## [3/5] technique=T1071.001   该类共 6 条   uid=2ccee5cd92fdc08479a2ad8870fc1e6cb6e92e09f98d23d725697f215bc791f1
+============================================================================
+### ① 原始告警节点(:Alert)
+{
+  "severity": 8,
+  "first_seen": "2026-07-14T10:41:25.725209800Z",
+  "last_seen": "2026-07-14T10:41:25.725209800Z",
+  "arrival_ms": 1784025687066,
+  "technique_ids": [
+    "T1071.001"
+  ],
+  "source": "wazuh",
+  "rule_id": "100806",
+  "stream": "soc-hids-alert-*",
+  "alert_uid": "2ccee5cd92fdc08479a2ad8870fc1e6cb6e92e09f98d23d725697f215bc791f1",
+  "rule_description": "Suspicious outbound from C:\\\\Windows\\\\System32\\\\WindowsPowerShell\\\\v1.0\\\\powershell.exe to x.x.x.1:9200",
+  "sensor": "wazuh-hids",
+  "raw_ref": "soc-hids-alert-2026.07.14:RRs3YJ8B3gPM8FAeqIsE",
+  "time": "2026-07-14T10:41:26.067+0000"
+}
+
+### ② 触发上下文(seed:触发事件 / 主语 / 宾语 / 次要实体)
+Received notification from DBMS server: {severity: WARNING} {code: Neo.ClientNotification.Statement.UnknownPropertyKeyWarning} {category: UNRECOGNIZED} {title: The provided property key is not in the database} {description: One of the property names in your query is not available in the database, make sure you didn't misspell it or that the label is available when you run this statement in your application (the missing property name is: dest_port)} {position: line: 1, column: 409, offset: 408} for query: 'MATCH (a:Alert {alert_uid:$aid})<-[:TRIGGERED]-(e:Event)-[:BY]->(p:Process) OPTIONAL MATCH (e)-[:CONNECTED_TO]->(ip:IPAddress) OPTIONAL MATCH (e)-[:ON_HOST]->(h:Host) OPTIONAL MATCH (parent:Process)-[:SPAWNED]->(p) OPTIONAL MATCH (p)-[:RAN_AS]->(acc:Account) RETURN p.process_guid AS proc_guid, p.image AS image, p.command_line AS command_line, parent.image AS parent, acc.sam AS account, ip.ip AS dst_ip, e.dest_port AS dest_port, h.hostname AS host'
+Received notification from DBMS server: {severity: WARNING} {code: Neo.ClientNotification.Statement.UnknownPropertyKeyWarning} {category: UNRECOGNIZED} {title: The provided property key is not in the database} {description: One of the property names in your query is not available in the database, make sure you didn't misspell it or that the label is available when you run this statement in your application (the missing property name is: count)} {position: line: 1, column: 88, offset: 87} for query: 'MATCH (p:Process {process_guid:$g})-[c:CONNECTED_TO]->(ip:IPAddress {ip:$ip}) RETURN c.count AS count, c.first_seen AS first_seen, c.last_seen AS last_seen'
+Received notification from DBMS server: {severity: WARNING} {code: Neo.ClientNotification.Statement.UnknownRelationshipTypeWarning} {category: UNRECOGNIZED} {title: The provided relationship type is not in the database.} {description: One of the relationship types in your query is not available in the database, make sure you didn't misspell it or that the label is available when you run this statement in your application (the missing relationship type is: RESOLVES_TO)} {position: line: 1, column: 29, offset: 28} for query: 'OPTIONAL MATCH (d:Domain)-[:RESOLVES_TO]->(ip:IPAddress {ip:$ip}) RETURN collect(DISTINCT {fqdn: d.fqdn, first_seen: d.first_seen}) AS domains'
+{
+  "event": {
+    "ingest_time": 1784025905601,
+    "initiated": "true",
+    "stream": "winlogbeat-*",
+    "event_code": "3",
+    "proto": "tcp",
+    "dst_port": "9200",
+    "arrival_ms": 1784025687057,
+    "raw_ref": "soc-hids-alert-2026.07.14:RRs3YJ8B3gPM8FAeqIsE",
+    "sensor": "Microsoft-Windows-Sysmon/Operational",
+    "source": "winlogbeat",
+    "event_time": "2026-07-14T10:41:25.725209800Z",
+    "event_uid": "306144a916b10e4b101cd0e764d302983480482bad77d88e29d08d52200fb80b"
+  },
+  "subject": {
+    "_labels": [
+      "Process"
+    ],
+    "image": "C:\\\\Windows\\\\System32\\\\WindowsPowerShell\\\\v1.0\\\\powershell.exe",
+    "first_seen": "2026-07-14T10:41:15.076Z",
+    "process_guid": "{85e8c649-124b-6a56-600e-000000001400}",
+    "last_seen": "2026-07-14T10:41:32.073Z",
+    "hashes": "MD5=7353F60B1739074EB17C5F4DDDEFE239,SHA256=DE96A6E69944335375DC1AC238336066889D9FFC7D73628EF4FE1B1B160AB32C,IMPHASH=741776AACCFC5B71FF59832DCDCACE0F",
+    "pid": "1540",
+    "command_line": "\\\"powershell.exe\\\" -noninteractive -encodedcommand WwBDAG8AbgBzAG8AbABlAF0AOgA6AEkAbgBwAHUAdABFAG4AYwBvAGQAaQBuAGcAIAA9ACAATgBlAHcALQBPAGIAagBlAGMAdAAgAFQAZQB4AHQALgBVAFQARgA4AEUAbgBjAG8AZABpAG4AZwAgACQAZgBhAGwAcwBlADsAIAAkAEUAcgByAG8AcgBBAGMAdABpAG8AbgBQAHIAZQBmAGUAcgBlAG4AYwBlACAAPQAgACcAQwBvAG4AdABpAG4AdQBlACcACgAkAGQAcwB0ACAAPQAgACcAMQA5ADIALgAxADYAOAAuADUANgAuADEAJwA7ACAAJABwAG8AcgB0ACAAPQAgADkAMgAwADAACgBmAG8AcgAgACgAJABpACAAPQAgADAAOwAgACQAaQAgAC0AbAB0ACAANgA7ACAAJABpACsAKwApACAAewAKACAAIAB0AHIAeQAgAHsAIAAkAGMAIAA9ACAATgBlAHcALQBPAGIAagBlAGMAdAAgAFMAeQBzAHQAZQBtAC4ATgBlAHQALgBTAG8AYwBrAGUAdABzAC4AVABjAHAAQwBsAGkAZQBuAHQAOwAgACQAYwAuAEMAbwBuAG4AZQBjAHQAKAAkAGQAcwB0ACwAIAAkAHAAbwByAHQAKQA7ACAAJABjAC4AQwBsAG8AcwBlACgAKQA7ACAAIgBCAEUAQQBDAE8ATgAgACQAaQAgAC0APgAgACQAewBkAHMAdAB9ADoAJAB7AHAAbwByAHQAfQAgAE8ASwAiACAAfQAKACAAIABjAGEAdABjAGgAIAB7ACAAIgBCAEUAQQBDAE8ATgAgACQAaQAgAC0APgAgACQAewBkAHMAdAB9ADoAJAB7AHAAbwByAHQAfQAgAEUAUgBSACAAJAAoACQAXwAuAEUAeABjAGUAcAB0AGkAbwBuAC4ATQBlAHMAcwBhAGcAZQApACIAIAB9AAoAIAAgAFMAdABhAHIAdAAtAFMAbABlAGUAcAAgAC0AUwBlAGMAbwBuAGQAcwAgADMACgB9AA=="
+  },
+  "related": [
+    {
+      "node": {
+        "_labels": [
+          "IPAddress"
+        ],
+        "first_seen": "2026-06-26T10:41:28.051Z",
+        "last_seen": "2026-07-14T10:44:48.899Z",
+        "ip": "x.x.x.1"
+      },
+      "rel": "CONNECTED_TO"
+    },
+    {
+      "node": {
+        "_labels": [
+          "Host"
+        ],
+        "hostname": "castelblack.north.sevenkingdoms.local",
+        "role": "member_server",
+        "first_seen": "2026-07-02T02:32:06.696Z",
+        "has_adcs": false,
+        "last_seen": "2026-07-14T10:44:48.908Z",
+        "domain": "north.sevenkingdoms.local",
+        "criticality": "medium",
+        "is_dc": false
+      },
+      "rel": "ON_HOST"
+    },
+    {
+      "node": {
+        "_labels": [
+          "IPAddress"
+        ],
+        "first_seen": "2026-06-26T10:41:28.296Z",
+        "last_seen": "2026-07-14T10:41:32.073Z",
+        "ip": "x.x.x.22"
+      },
+      "rel": "FROM"
+    }
+  ]
+}
+
+### ③ 研判   [skill] suspicious_outbound   [模式] recipe
+# 研判留痕(4 步)
+[1] recipe取证「进程与目标+父链」→ 1 行
+[2] recipe取证「外连聚合(反复性)」→ 1 行
+[3] recipe取证「目标反解域(信誉是盲区,不查)」→ 1 行
+[4] recipe取证「_图盲区」→ 1 行
+
+# 研判结果  alert=2ccee5cd92fdc08479a2ad8870fc1e6cb6e92e09f98d23d725697f215bc791f1  path=B  skill=suspicious_outbound
+verdict   : suspicious  [倾向 malicious]  (confidence=0.85)
+summary   : 检测到PowerShell进程发起网络连接，目标IP为内网地址，且命令行参数使用了编码方式，可能用于隐藏恶意指令。
+rationale : 1. PowerShell进程通常用于系统管理和自动化任务，但也可以被攻击者利用来执行恶意代码。
+2. 目标IP地址为内网地址，可能表明该流量是针对内部网络的攻击尝试。
+3. 使用了-encodedcommand参数，这通常用于隐藏命令行中的敏感信息，但也常被恶意软件使用来规避检测。
+4. 连接的目标IP和当前主机同属内网，且该IP可能未被授权进行此类连接。
+5. 无法确定该连接是否为正常业务操作，需进一步调查以确认其合法性。
+evidence  : ['alert_uid:2ccee5cd92fdc08479a2ad8870fc1e6cb6e92e09f98d23d725697f215bc791f1']
+missing   : ['进程详情中缺少父进程信息，影响对进程链的完整性分析', '未能获取到目标IP的域名信息，影响对目标信誉的判断']
+agent     : qwen32b-ft
+处置(建议): isolate_host -> castelblack.north.sevenkingdoms.local  risk=high  status=proposed
+处置(建议): monitor -> vagrant  risk=high  status=proposed
+
+============================================================================
+## [4/5] technique=T1071.001   该类共 6 条   uid=486a6345861a93e94f5a54ed054633949b47afb69690b7fdef6b38e09dad5c3e
+============================================================================
+### ① 原始告警节点(:Alert)
+{
+  "severity": 8,
+  "first_seen": "2026-07-14T10:41:22.654601900Z",
+  "last_seen": "2026-07-14T10:41:22.654601900Z",
+  "arrival_ms": 1784025684063,
+  "technique_ids": [
+    "T1071.001"
+  ],
+  "source": "wazuh",
+  "rule_id": "100806",
+  "stream": "soc-hids-alert-*",
+  "alert_uid": "486a6345861a93e94f5a54ed054633949b47afb69690b7fdef6b38e09dad5c3e",
+  "rule_description": "Suspicious outbound from C:\\\\Windows\\\\System32\\\\WindowsPowerShell\\\\v1.0\\\\powershell.exe to x.x.x.1:9200",
+  "sensor": "wazuh-hids",
+  "raw_ref": "soc-hids-alert-2026.07.14:Nxs3YJ8B3gPM8FAenItK",
+  "time": "2026-07-14T10:41:23.503+0000"
+}
+
+### ② 触发上下文(seed:触发事件 / 主语 / 宾语 / 次要实体)
+Received notification from DBMS server: {severity: WARNING} {code: Neo.ClientNotification.Statement.UnknownPropertyKeyWarning} {category: UNRECOGNIZED} {title: The provided property key is not in the database} {description: One of the property names in your query is not available in the database, make sure you didn't misspell it or that the label is available when you run this statement in your application (the missing property name is: dest_port)} {position: line: 1, column: 409, offset: 408} for query: 'MATCH (a:Alert {alert_uid:$aid})<-[:TRIGGERED]-(e:Event)-[:BY]->(p:Process) OPTIONAL MATCH (e)-[:CONNECTED_TO]->(ip:IPAddress) OPTIONAL MATCH (e)-[:ON_HOST]->(h:Host) OPTIONAL MATCH (parent:Process)-[:SPAWNED]->(p) OPTIONAL MATCH (p)-[:RAN_AS]->(acc:Account) RETURN p.process_guid AS proc_guid, p.image AS image, p.command_line AS command_line, parent.image AS parent, acc.sam AS account, ip.ip AS dst_ip, e.dest_port AS dest_port, h.hostname AS host'
+Received notification from DBMS server: {severity: WARNING} {code: Neo.ClientNotification.Statement.UnknownPropertyKeyWarning} {category: UNRECOGNIZED} {title: The provided property key is not in the database} {description: One of the property names in your query is not available in the database, make sure you didn't misspell it or that the label is available when you run this statement in your application (the missing property name is: count)} {position: line: 1, column: 88, offset: 87} for query: 'MATCH (p:Process {process_guid:$g})-[c:CONNECTED_TO]->(ip:IPAddress {ip:$ip}) RETURN c.count AS count, c.first_seen AS first_seen, c.last_seen AS last_seen'
+Received notification from DBMS server: {severity: WARNING} {code: Neo.ClientNotification.Statement.UnknownRelationshipTypeWarning} {category: UNRECOGNIZED} {title: The provided relationship type is not in the database.} {description: One of the relationship types in your query is not available in the database, make sure you didn't misspell it or that the label is available when you run this statement in your application (the missing relationship type is: RESOLVES_TO)} {position: line: 1, column: 29, offset: 28} for query: 'OPTIONAL MATCH (d:Domain)-[:RESOLVES_TO]->(ip:IPAddress {ip:$ip}) RETURN collect(DISTINCT {fqdn: d.fqdn, first_seen: d.first_seen}) AS domains'
+{
+  "event": {
+    "ingest_time": 1784025905579,
+    "initiated": "true",
+    "stream": "winlogbeat-*",
+    "event_code": "3",
+    "proto": "tcp",
+    "dst_port": "9200",
+    "arrival_ms": 1784025684032,
+    "raw_ref": "soc-hids-alert-2026.07.14:Nxs3YJ8B3gPM8FAenItK",
+    "sensor": "Microsoft-Windows-Sysmon/Operational",
+    "source": "winlogbeat",
+    "event_time": "2026-07-14T10:41:22.654601900Z",
+    "event_uid": "46fc7642dc2114573c5dc30683e0ed4d9c82566058241fbea024136a695ca428"
+  },
+  "subject": {
+    "_labels": [
+      "Process"
+    ],
+    "image": "C:\\\\Windows\\\\System32\\\\WindowsPowerShell\\\\v1.0\\\\powershell.exe",
+    "first_seen": "2026-07-14T10:41:15.076Z",
+    "process_guid": "{85e8c649-124b-6a56-600e-000000001400}",
+    "last_seen": "2026-07-14T10:41:32.073Z",
+    "hashes": "MD5=7353F60B1739074EB17C5F4DDDEFE239,SHA256=DE96A6E69944335375DC1AC238336066889D9FFC7D73628EF4FE1B1B160AB32C,IMPHASH=741776AACCFC5B71FF59832DCDCACE0F",
+    "pid": "1540",
+    "command_line": "\\\"powershell.exe\\\" -noninteractive -encodedcommand WwBDAG8AbgBzAG8AbABlAF0AOgA6AEkAbgBwAHUAdABFAG4AYwBvAGQAaQBuAGcAIAA9ACAATgBlAHcALQBPAGIAagBlAGMAdAAgAFQAZQB4AHQALgBVAFQARgA4AEUAbgBjAG8AZABpAG4AZwAgACQAZgBhAGwAcwBlADsAIAAkAEUAcgByAG8AcgBBAGMAdABpAG8AbgBQAHIAZQBmAGUAcgBlAG4AYwBlACAAPQAgACcAQwBvAG4AdABpAG4AdQBlACcACgAkAGQAcwB0ACAAPQAgACcAMQA5ADIALgAxADYAOAAuADUANgAuADEAJwA7ACAAJABwAG8AcgB0ACAAPQAgADkAMgAwADAACgBmAG8AcgAgACgAJABpACAAPQAgADAAOwAgACQAaQAgAC0AbAB0ACAANgA7ACAAJABpACsAKwApACAAewAKACAAIAB0AHIAeQAgAHsAIAAkAGMAIAA9ACAATgBlAHcALQBPAGIAagBlAGMAdAAgAFMAeQBzAHQAZQBtAC4ATgBlAHQALgBTAG8AYwBrAGUAdABzAC4AVABjAHAAQwBsAGkAZQBuAHQAOwAgACQAYwAuAEMAbwBuAG4AZQBjAHQAKAAkAGQAcwB0ACwAIAAkAHAAbwByAHQAKQA7ACAAJABjAC4AQwBsAG8AcwBlACgAKQA7ACAAIgBCAEUAQQBDAE8ATgAgACQAaQAgAC0APgAgACQAewBkAHMAdAB9ADoAJAB7AHAAbwByAHQAfQAgAE8ASwAiACAAfQAKACAAIABjAGEAdABjAGgAIAB7ACAAIgBCAEUAQQBDAE8ATgAgACQAaQAgAC0APgAgACQAewBkAHMAdAB9ADoAJAB7AHAAbwByAHQAfQAgAEUAUgBSACAAJAAoACQAXwAuAEUAeABjAGUAcAB0AGkAbwBuAC4ATQBlAHMAcwBhAGcAZQApACIAIAB9AAoAIAAgAFMAdABhAHIAdAAtAFMAbABlAGUAcAAgAC0AUwBlAGMAbwBuAGQAcwAgADMACgB9AA=="
+  },
+  "related": [
+    {
+      "node": {
+        "_labels": [
+          "IPAddress"
+        ],
+        "first_seen": "2026-06-26T10:41:28.051Z",
+        "last_seen": "2026-07-14T10:44:48.899Z",
+        "ip": "x.x.x.1"
+      },
+      "rel": "CONNECTED_TO"
+    },
+    {
+      "node": {
+        "_labels": [
+          "Host"
+        ],
+        "hostname": "castelblack.north.sevenkingdoms.local",
+        "role": "member_server",
+        "first_seen": "2026-07-02T02:32:06.696Z",
+        "has_adcs": false,
+        "last_seen": "2026-07-14T10:44:48.908Z",
+        "domain": "north.sevenkingdoms.local",
+        "criticality": "medium",
+        "is_dc": false
+      },
+      "rel": "ON_HOST"
+    },
+    {
+      "node": {
+        "_labels": [
+          "IPAddress"
+        ],
+        "first_seen": "2026-06-26T10:41:28.296Z",
+        "last_seen": "2026-07-14T10:41:32.073Z",
+        "ip": "x.x.x.22"
+      },
+      "rel": "FROM"
+    }
+  ]
+}
+
+### ③ 研判   [skill] suspicious_outbound   [模式] recipe
+# 研判留痕(4 步)
+[1] recipe取证「进程与目标+父链」→ 1 行
+[2] recipe取证「外连聚合(反复性)」→ 1 行
+[3] recipe取证「目标反解域(信誉是盲区,不查)」→ 1 行
+[4] recipe取证「_图盲区」→ 1 行
+
+# 研判结果  alert=486a6345861a93e94f5a54ed054633949b47afb69690b7fdef6b38e09dad5c3e  path=B  skill=suspicious_outbound
+verdict   : suspicious  [倾向 malicious]  (confidence=0.8)
+summary   : 检测到PowerShell进程发起网络连接，目标IP为192.168.56.1，该IP为内部地址。
+rationale : 1. PowerShell通常不直接用于发起网络连接，而是作为脚本执行环境。此行为与常见恶意活动模式相符。
+2. 目标IP地址192.168.56.1为内部地址，通常不应直接对外发起连接，这可能表明存在内部威胁或被攻击者利用。
+3. 编码的命令行参数表明可能试图执行隐蔽操作，且未提供明确的业务目的。
+4. 连接行为在时间上具有突发性（首次和最后看到时间点接近），可能表明尝试建立通信或测试连接。
+evidence  : ['事件ID: 486a6345861a93e94f5a54ed054633949b47afb69690b7fdef6b38e09dad5c3e', '进程路径: C:\\\\Windows\\\\System32\\\\WindowsPowerShell\\\\v1.0\\\\powershell.exe', '目标IP: x.x.x.1']
+agent     : qwen32b-ft
+处置(建议): escalate -> vagrant  risk=high  status=proposed
+处置(建议): monitor -> castelblack.north.sevenkingdoms.local  risk=high  status=proposed
+
+============================================================================
+## [5/5] technique=T1071.001   该类共 6 条   uid=f3ade00128de2f28ce12dac39d6515e3753ef395534808a4c7d64ef4ae6e9926
+============================================================================
+### ① 原始告警节点(:Alert)
+{
+  "severity": 8,
+  "first_seen": "2026-07-14T10:41:19.609103000Z",
+  "last_seen": "2026-07-14T10:41:19.609103000Z",
+  "arrival_ms": 1784025681063,
+  "technique_ids": [
+    "T1071.001"
+  ],
+  "source": "wazuh",
+  "rule_id": "100806",
+  "stream": "soc-hids-alert-*",
+  "alert_uid": "f3ade00128de2f28ce12dac39d6515e3753ef395534808a4c7d64ef4ae6e9926",
+  "rule_description": "Suspicious outbound from C:\\\\Windows\\\\System32\\\\WindowsPowerShell\\\\v1.0\\\\powershell.exe to x.x.x.1:9200",
+  "sensor": "wazuh-hids",
+  "raw_ref": "soc-hids-alert-2026.07.14:MRs3YJ8B3gPM8FAekIuR",
+  "time": "2026-07-14T10:41:20.443+0000"
+}
+
+### ② 触发上下文(seed:触发事件 / 主语 / 宾语 / 次要实体)
+Received notification from DBMS server: {severity: WARNING} {code: Neo.ClientNotification.Statement.UnknownPropertyKeyWarning} {category: UNRECOGNIZED} {title: The provided property key is not in the database} {description: One of the property names in your query is not available in the database, make sure you didn't misspell it or that the label is available when you run this statement in your application (the missing property name is: dest_port)} {position: line: 1, column: 409, offset: 408} for query: 'MATCH (a:Alert {alert_uid:$aid})<-[:TRIGGERED]-(e:Event)-[:BY]->(p:Process) OPTIONAL MATCH (e)-[:CONNECTED_TO]->(ip:IPAddress) OPTIONAL MATCH (e)-[:ON_HOST]->(h:Host) OPTIONAL MATCH (parent:Process)-[:SPAWNED]->(p) OPTIONAL MATCH (p)-[:RAN_AS]->(acc:Account) RETURN p.process_guid AS proc_guid, p.image AS image, p.command_line AS command_line, parent.image AS parent, acc.sam AS account, ip.ip AS dst_ip, e.dest_port AS dest_port, h.hostname AS host'
+Received notification from DBMS server: {severity: WARNING} {code: Neo.ClientNotification.Statement.UnknownPropertyKeyWarning} {category: UNRECOGNIZED} {title: The provided property key is not in the database} {description: One of the property names in your query is not available in the database, make sure you didn't misspell it or that the label is available when you run this statement in your application (the missing property name is: count)} {position: line: 1, column: 88, offset: 87} for query: 'MATCH (p:Process {process_guid:$g})-[c:CONNECTED_TO]->(ip:IPAddress {ip:$ip}) RETURN c.count AS count, c.first_seen AS first_seen, c.last_seen AS last_seen'
+Received notification from DBMS server: {severity: WARNING} {code: Neo.ClientNotification.Statement.UnknownRelationshipTypeWarning} {category: UNRECOGNIZED} {title: The provided relationship type is not in the database.} {description: One of the relationship types in your query is not available in the database, make sure you didn't misspell it or that the label is available when you run this statement in your application (the missing relationship type is: RESOLVES_TO)} {position: line: 1, column: 29, offset: 28} for query: 'OPTIONAL MATCH (d:Domain)-[:RESOLVES_TO]->(ip:IPAddress {ip:$ip}) RETURN collect(DISTINCT {fqdn: d.fqdn, first_seen: d.first_seen}) AS domains'
+{
+  "event": {
+    "ingest_time": 1784025905557,
+    "initiated": "true",
+    "stream": "winlogbeat-*",
+    "event_code": "3",
+    "proto": "tcp",
+    "dst_port": "9200",
+    "arrival_ms": 1784025680993,
+    "raw_ref": "soc-hids-alert-2026.07.14:MRs3YJ8B3gPM8FAekIuR",
+    "sensor": "Microsoft-Windows-Sysmon/Operational",
+    "source": "winlogbeat",
+    "event_time": "2026-07-14T10:41:19.609103000Z",
+    "event_uid": "549e7f9e4439e62c08a3e57c1a802810d5c73652d3f8dec5a07f66e3e4cbe8ad"
+  },
+  "subject": {
+    "_labels": [
+      "Process"
+    ],
+    "image": "C:\\\\Windows\\\\System32\\\\WindowsPowerShell\\\\v1.0\\\\powershell.exe",
+    "first_seen": "2026-07-14T10:41:15.076Z",
+    "process_guid": "{85e8c649-124b-6a56-600e-000000001400}",
+    "last_seen": "2026-07-14T10:41:32.073Z",
+    "hashes": "MD5=7353F60B1739074EB17C5F4DDDEFE239,SHA256=DE96A6E69944335375DC1AC238336066889D9FFC7D73628EF4FE1B1B160AB32C,IMPHASH=741776AACCFC5B71FF59832DCDCACE0F",
+    "pid": "1540",
+    "command_line": "\\\"powershell.exe\\\" -noninteractive -encodedcommand WwBDAG8AbgBzAG8AbABlAF0AOgA6AEkAbgBwAHUAdABFAG4AYwBvAGQAaQBuAGcAIAA9ACAATgBlAHcALQBPAGIAagBlAGMAdAAgAFQAZQB4AHQALgBVAFQARgA4AEUAbgBjAG8AZABpAG4AZwAgACQAZgBhAGwAcwBlADsAIAAkAEUAcgByAG8AcgBBAGMAdABpAG8AbgBQAHIAZQBmAGUAcgBlAG4AYwBlACAAPQAgACcAQwBvAG4AdABpAG4AdQBlACcACgAkAGQAcwB0ACAAPQAgACcAMQA5ADIALgAxADYAOAAuADUANgAuADEAJwA7ACAAJABwAG8AcgB0ACAAPQAgADkAMgAwADAACgBmAG8AcgAgACgAJABpACAAPQAgADAAOwAgACQAaQAgAC0AbAB0ACAANgA7ACAAJABpACsAKwApACAAewAKACAAIAB0AHIAeQAgAHsAIAAkAGMAIAA9ACAATgBlAHcALQBPAGIAagBlAGMAdAAgAFMAeQBzAHQAZQBtAC4ATgBlAHQALgBTAG8AYwBrAGUAdABzAC4AVABjAHAAQwBsAGkAZQBuAHQAOwAgACQAYwAuAEMAbwBuAG4AZQBjAHQAKAAkAGQAcwB0ACwAIAAkAHAAbwByAHQAKQA7ACAAJABjAC4AQwBsAG8AcwBlACgAKQA7ACAAIgBCAEUAQQBDAE8ATgAgACQAaQAgAC0APgAgACQAewBkAHMAdAB9ADoAJAB7AHAAbwByAHQAfQAgAE8ASwAiACAAfQAKACAAIABjAGEAdABjAGgAIAB7ACAAIgBCAEUAQQBDAE8ATgAgACQAaQAgAC0APgAgACQAewBkAHMAdAB9ADoAJAB7AHAAbwByAHQAfQAgAEUAUgBSACAAJAAoACQAXwAuAEUAeABjAGUAcAB0AGkAbwBuAC4ATQBlAHMAcwBhAGcAZQApACIAIAB9AAoAIAAgAFMAdABhAHIAdAAtAFMAbABlAGUAcAAgAC0AUwBlAGMAbwBuAGQAcwAgADMACgB9AA=="
+  },
+  "related": [
+    {
+      "node": {
+        "_labels": [
+          "Host"
+        ],
+        "hostname": "castelblack.north.sevenkingdoms.local",
+        "role": "member_server",
+        "first_seen": "2026-07-02T02:32:06.696Z",
+        "has_adcs": false,
+        "last_seen": "2026-07-14T10:49:49.057Z",
+        "domain": "north.sevenkingdoms.local",
+        "criticality": "medium",
+        "is_dc": false
+      },
+      "rel": "ON_HOST"
+    },
+    {
+      "node": {
+        "_labels": [
+          "IPAddress"
+        ],
+        "first_seen": "2026-06-26T10:41:28.296Z",
+        "last_seen": "2026-07-14T10:41:32.073Z",
+        "ip": "x.x.x.22"
+      },
+      "rel": "FROM"
+    },
+    {
+      "node": {
+        "_labels": [
+          "IPAddress"
+        ],
+        "first_seen": "2026-06-26T10:41:28.051Z",
+        "last_seen": "2026-07-14T10:49:49.046Z",
+        "ip": "x.x.x.1"
+      },
+      "rel": "CONNECTED_TO"
+    }
+  ]
+}
+
+### ③ 研判   [skill] suspicious_outbound   [模式] recipe
+# 研判留痕(4 步)
+[1] recipe取证「进程与目标+父链」→ 1 行
+[2] recipe取证「外连聚合(反复性)」→ 1 行
+[3] recipe取证「目标反解域(信誉是盲区,不查)」→ 1 行
+[4] recipe取证「_图盲区」→ 1 行
+
+# 研判结果  alert=f3ade00128de2f28ce12dac39d6515e3753ef395534808a4c7d64ef4ae6e9926  path=B  skill=suspicious_outbound
+verdict   : suspicious  [倾向 malicious]  (confidence=0.85)
+summary   : 检测到PowerShell进程发起网络连接，目标IP为内网地址且可能为恶意活动的目标。
+rationale : 1. PowerShell被广泛用于恶意脚本执行，尤其是通过编码命令的方式。
+2. 目标IP为内网地址，可能是攻击者控制的服务器。
+3. 编码的命令行参数可能隐藏恶意活动，难以被常规监控检测。
+4. 该行为符合已知的恶意活动模式，尤其是在未授权的网络连接中。
+evidence  : ['f3ade00128de2f28ce12dac39d6515e3753ef395534808a4c7d64ef4ae6e9926']
+agent     : qwen32b-ft
+处置(建议): isolate_host -> castelblack.north.sevenkingdoms.local  risk=high  status=proposed
+处置(建议): monitor -> vagrant  risk=high  status=proposed
+
+# 批量自测完成
+=== done 2026-07-14 10:52Z ===
