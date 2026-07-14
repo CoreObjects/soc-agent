@@ -11,7 +11,7 @@
 | identity | **kerberoast** | T1558.003 | ✅ 自研规则 100801(RC4 4769) | ✅ **真机验通**:FP(跨域机器账号引荐票)+ **TP**(vagrant 同域 roast;修过一个漏报) |
 | identity | **adcs** | T1649 | ✅ 自研规则 100803(4886/4887) | ✅ **真机验通**:suspicious **带 lean 分诊**(subject_dn 比对;SAN 仍盲) |
 | identity | dcsync | T1003.006 | ❌ 无检测规则 | ⚠️ **未校准假设**(取证未经真数据) |
-| identity | lateral_movement | T1550.002/003 · T1021.* | ❌ 无检测规则 | ⚠️ **未校准假设** |
+| identity | **lateral_movement** | T1550.002/003 · T1021.* | ✅ 自研规则 100805(4624 型3/10) | ✅ **真机验通**:取证正确(账号/登录型/目标主机+role/源IP/基线/扇出);修了 e.result→e.outcome |
 | host | **lsass_dump** | T1003.001 | ✅ 自研规则 100802(EID10) | ✅ **真机验通**:FP(安全代理自检)+ **TP**(comsvcs 转储) |
 | host | **ingress_tool_transfer** | T1105 | ⚠️ 默认 Sysmon EID11 | ✅ **真机验**:FP 通路(配管供给噪声);TP 通路未见真样本 |
 | host | **suspicious_process** | T1059/.001 · T1055 · T1218 | ⚠️ 默认 Sysmon EID1/11 · PS4104 | ✅ **真机验**:FP 通路(配管供给噪声);TP 通路未见真样本 |
@@ -24,8 +24,9 @@
 
 ## 验证进度小结
 
-- **已真机验+校准(6):** kerberoast · lsass_dump · adcs · ingress_tool_transfer · suspicious_process · **registry_persistence**(靶场完善 B1:良性发生器造 T1547.001 告警→取证验通,不造攻击)。其中 kerberoast/lsass_dump 的 TP 通路已用真攻击走通;adcs 用 subject_dn 分诊;registry_persistence 用良性 Run 键写入验取证。
-- **未校准假设(10):** 6 个具体 skill(dcsync/lateral/c2/outbound/web/webshell)+ 4 个 generic。取证逻辑只过了"空图不崩"冒烟,**未经真实数据验证**。
+- **已真机验+校准(7):** kerberoast · lsass_dump · adcs · ingress_tool_transfer · suspicious_process · **registry_persistence** · **lateral_movement**(靶场完善 B1/B2:良性发生器造真告警→取证验通,不造攻击)。其中 kerberoast/lsass_dump 的 TP 通路已用真攻击走通;adcs 用 subject_dn 分诊;registry_persistence/lateral_movement 用良性活动(写 Run 键 / 远程 SYSVOL 访问)验取证。
+- **未校准假设(9):** 5 个具体 skill(dcsync/c2/outbound/web/webshell)+ 4 个 generic。取证逻辑只过了"空图不崩"冒烟,**未经真实数据验证**。
+- **踩坑固化:** ① Wazuh 规则**别加 `win.system.channel` 字段**(会让 EID 规则不匹配)② 采集 `alert_min_level=7`,规则 **level≥7** 才进图 ③ 注册表 TargetObject 反斜杠单/双不一(alert 路径双转义)—— ingest `_parse_registry` 已丢空段归一。
 - **验证方式:** 只在隔离靶场造出该类真告警去验(不裸上生产——生产研判错致命)。**不做合成 fixture**(假信心)。
 
 ## 各层"要造告警来验"的成本差

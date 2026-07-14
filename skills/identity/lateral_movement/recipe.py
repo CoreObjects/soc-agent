@@ -13,7 +13,7 @@ def collect(graph, alert, seed=None):
         "MATCH (a:Alert {alert_uid:$aid})<-[:TRIGGERED]-(e:Event)-[:BY]->(acc:Account) "
         "OPTIONAL MATCH (e)-[:AUTHENTICATED_TO]->(h:Host) "
         "OPTIONAL MATCH (e)-[:FROM]->(ip:IPAddress) "
-        "RETURN e.event_code AS event_code, e.logon_type AS logon_type, e.result AS result, "
+        "RETURN e.event_code AS event_code, e.logon_type AS logon_type, e.outcome AS result, "
         "acc.sam AS acc_sam, acc.domain AS acc_domain, coalesce(acc.privileged,false) AS acc_privileged, "
         "h.hostname AS target_host, h.role AS target_role, h.criticality AS target_criticality, "
         "ip.ip AS src_ip",
