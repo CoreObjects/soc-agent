@@ -1,0 +1,123 @@
+=== selftest 2026-07-14 08:56Z ===
+# 批量自测  范围=tech=T1547.001  取样=recent  待研判 1 条  模式=recipe  写回图=否(自测不落库)  (IP 已打码)
+
+待研判清单:
+  T1547.001          该类共      1  uid=542d9e1692b5f57bffd35d49aac212f51d58f330679e2509eedc3cf36a7fd940
+
+============================================================================
+## [1/1] technique=T1547.001   该类共 1 条   uid=542d9e1692b5f57bffd35d49aac212f51d58f330679e2509eedc3cf36a7fd940
+============================================================================
+### ① 原始告警节点(:Alert)
+{
+  "severity": 8,
+  "first_seen": "2026-07-14T08:51:11.250609300Z",
+  "last_seen": "2026-07-14T08:51:11.250609300Z",
+  "arrival_ms": 1784019072225,
+  "technique_ids": [
+    "T1547.001"
+  ],
+  "source": "wazuh",
+  "rule_id": "100804",
+  "stream": "soc-hids-alert-*",
+  "alert_uid": "542d9e1692b5f57bffd35d49aac212f51d58f330679e2509eedc3cf36a7fd940",
+  "rule_description": "Registry autostart persistence: C:\\\\Windows\\\\System32\\\\WindowsPowerShell\\\\v1.0\\\\powershell.exe set HKLM\\\\SOFTWARE\\\\Microsoft\\\\Windows\\\\CurrentVersion\\\\Run\\\\SOC_Benign_Telemetry_Test",
+  "sensor": "wazuh-hids",
+  "raw_ref": "soc-hids-alert-2026.07.14:MRvSX58B3gPM8FAeuB3M",
+  "time": "2026-07-14T08:51:11.329+0000"
+}
+
+### ② 触发上下文(seed:触发事件 / 主语 / 宾语 / 次要实体)
+{
+  "event": {
+    "ingest_time": 1784019305926,
+    "stream": "winlogbeat-*",
+    "event_code": "13",
+    "arrival_ms": 1784019072344,
+    "raw_ref": "soc-hids-alert-2026.07.14:MRvSX58B3gPM8FAeuB3M",
+    "sensor": "Microsoft-Windows-Sysmon/Operational",
+    "source": "winlogbeat",
+    "value_data": "C:\\\\Windows\\\\System32\\\\notepad.exe",
+    "operation": "SetValue",
+    "event_time": "2026-07-14T08:51:11.250609300Z",
+    "event_uid": "d71e3883b4f5caa8bd3b06de79a44db47fbbbfe2a2f1347285b7a09f69e889a8"
+  },
+  "subject": {
+    "_labels": [
+      "Process"
+    ],
+    "image": "C:\\\\Windows\\\\System32\\\\WindowsPowerShell\\\\v1.0\\\\powershell.exe",
+    "first_seen": "2026-07-14T08:51:10.908Z",
+    "process_guid": "{85e8c649-f87e-6a55-fd0d-000000001400}",
+    "last_seen": "2026-07-14T08:51:13.270Z",
+    "hashes": "MD5=7353F60B1739074EB17C5F4DDDEFE239,SHA256=DE96A6E69944335375DC1AC238336066889D9FFC7D73628EF4FE1B1B160AB32C,IMPHASH=741776AACCFC5B71FF59832DCDCACE0F",
+    "pid": "3900",
+    "command_line": "\\\"powershell.exe\\\" -noninteractive -encodedcommand WwBDAG8AbgBzAG8AbABlAF0AOgA6AEkAbgBwAHUAdABFAG4AYwBvAGQAaQBuAGcAIAA9ACAATgBlAHcALQBPAGIAagBlAGMAdAAgAFQAZQB4AHQALgBVAFQARgA4AEUAbgBjAG8AZABpAG4AZwAgACQAZgBhAGwAcwBlADsAIAAkAEUAcgByAG8AcgBBAGMAdABpAG8AbgBQAHIAZQBmAGUAcgBlAG4AYwBlACAAPQAgACcAQwBvAG4AdABpAG4AdQBlACcACgAkAGsAZQB5ACAAIAA9ACAAJwBIAEsATABNADoAXABTAE8ARgBUAFcAQQBSAEUAXABNAGkAYwByAG8AcwBvAGYAdABcAFcAaQBuAGQAbwB3AHMAXABDAHUAcgByAGUAbgB0AFYAZQByAHMAaQBvAG4AXABSAHUAbgAnAAoAJABuAGEAbQBlACAAPQAgACcAUwBPAEMAXwBCAGUAbgBpAGcAbgBfAFQAZQBsAGUAbQBlAHQAcgB5AF8AVABlAHMAdAAnAAoAJAB2AGEAbAAgACAAPQAgACcAQwA6AFwAVwBpAG4AZABvAHcAcwBcAFMAeQBzAHQAZQBtADMAMgBcAG4AbwB0AGUAcABhAGQALgBlAHgAZQAnAAoAIwAgAG+CJ2A6AJlRAE4qTj5mNnEvZktt1YsHaLCLhHbqgS9UPFAgAC0APgAgAOaJ0VMgAFMAeQBzAG0AbwBuACAARQBJAEQAMQAzACAAKABTAGUAdABWAGEAbAB1AGUAIABvAG4AIABSAHUAbgAgAGsAZQB5ACkACgBOAGUAdwAtAEkAdABlAG0AUAByAG8AcABlAHIAdAB5ACAALQBQAGEAdABoACAAJABrAGUAeQAgAC0ATgBhAG0AZQAgACQAbgBhAG0AZQAgAC0AVgBhAGwAdQBlACAAJAB2AGEAbAAgAC0AUAByAG8AcABlAHIAdAB5AFQAeQBwAGUAIABTAHQAcgBpAG4AZwAgAC0ARgBvAHIAYwBlACAAfAAgAE8AdQB0AC0ATgB1AGwAbAAKACIAVwBSAE8AVABFACAAIAAkAGsAZQB5AFwAJABuAGEAbQBlACAAPQAgACQAdgBhAGwAIgAKAFMAdABhAHIAdAAtAFMAbABlAGUAcAAgAC0AUwBlAGMAbwBuAGQAcwAgADIACgAjACAAy3pzUwVuBnQsAA1OH3dZdeqBL1QKAFIAZQBtAG8AdgBlAC0ASQB0AGUAbQBQAHIAbwBwAGUAcgB0AHkAIAAtAFAAYQB0AGgAIAAkAGsAZQB5ACAALQBOAGEAbQBlACAAJABuAGEAbQBlACAALQBFAHIAcgBvAHIAQQBjAHQAaQBvAG4AIABTAGkAbABlAG4AdABsAHkAQwBvAG4AdABpAG4AdQBlAAoAJABnAG8AbgBlACAAPQAgAC0AbgBvAHQAIAAoAEcAZQB0AC0ASQB0AGUAbQBQAHIAbwBwAGUAcgB0AHkAIAAtAFAAYQB0AGgAIAAkAGsAZQB5ACAALQBOAGEAbQBlACAAJABuAGEAbQBlACAALQBFAHIAcgBvAHIAQQBjAHQAaQBvAG4AIABTAGkAbABlAG4AdABsAHkAQwBvAG4AdABpAG4AdQBlACkACgAiAEMATABFAEEATgBFAEQAPQAkAGcAbwBuAGUAIgA="
+  },
+  "related": [
+    {
+      "node": {
+        "_labels": [
+          "RegistryValue"
+        ],
+        "hive": "HKLM",
+        "first_seen": "2026-07-14T08:51:11.250609300Z",
+        "last_seen": "2026-07-14T08:51:11.250609300Z",
+        "key_path": "\\SOFTWARE\\\\Microsoft\\\\Windows\\\\CurrentVersion\\\\Run\\",
+        "value_name": "SOC_Benign_Telemetry_Test"
+      },
+      "rel": "SET"
+    },
+    {
+      "node": {
+        "_labels": [
+          "Host"
+        ],
+        "hostname": "castelblack.north.sevenkingdoms.local",
+        "role": "member_server",
+        "first_seen": "2026-07-02T02:32:06.696Z",
+        "has_adcs": false,
+        "last_seen": "2026-07-14T08:54:48.970Z",
+        "domain": "north.sevenkingdoms.local",
+        "criticality": "medium",
+        "is_dc": false
+      },
+      "rel": "ON_HOST"
+    },
+    {
+      "node": {
+        "_labels": [
+          "RegistryValue"
+        ],
+        "hive": "HKLM",
+        "first_seen": "2026-07-14T07:21:02.719Z",
+        "last_seen": "2026-07-14T08:51:13.270Z",
+        "key_path": "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run",
+        "value_name": "SOC_Benign_Telemetry_Test"
+      },
+      "rel": "SET"
+    }
+  ]
+}
+
+### ③ 研判   [skill] registry_persistence   [模式] recipe
+# 研判留痕(3 步)
+[1] recipe取证「键与写入值+写入进程」→ 1 行
+[2] recipe取证「写入账号」→ 1 行
+[3] recipe取证「_图盲区」→ 1 行
+
+# 研判结果  alert=542d9e1692b5f57bffd35d49aac212f51d58f330679e2509eedc3cf36a7fd940  path=B  skill=registry_persistence
+verdict   : suspicious  [倾向 malicious]  (confidence=0.78)
+summary   : 检测到使用PowerShell在HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Run下创建了疑似恶意自启动项SOC_Benign_Telemetry_Test，指向notepad.exe，由非交互式PowerShell进程通过编码命令执行
+rationale : 1. 写入进程为非交互式PowerShell(powershell.exe -noninteractive)，使用编码命令执行(base64 encodedcommand)，这是攻击者常用规避检测的技术
+2. 注册表操作涉及自启动项(HKLM\Run)修改，这是持久化常用手法(T1547.001)
+3. 命令解码后显示创建注册表自启动项的操作，但值数据指向系统程序notepad.exe存在可疑性
+4. 写入账号为普通用户(vagrant)且不属于特权组
+5. 缺少安装程序常见的明确可执行路径和数字签名验证
+evidence  : ['事件代码:1337', '进程图像:C:\\\\Windows\\\\System32\\\\WindowsPowerShell\\\\v1.0\\\\powershell.exe', '注册表路径:HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run', '目标主机:castelblack.north.sevenkingdoms.local']
+missing   : ['被持久化文件(notepad.exe)的哈希校验值', '写入进程PowerShell的命令行历史记录', '注册表项的前一个值状态', '关联的文件落地操作(T1105)证据']
+agent     : qwen32b-ft
+处置(建议): escalate -> castelblack.north.sevenkingdoms.local  risk=high  status=proposed
+处置(建议): monitor -> 用户vagrant(CASTELBLACK)  risk=high  status=proposed
+
+# 批量自测完成
+=== done 2026-07-14 08:58Z ===
