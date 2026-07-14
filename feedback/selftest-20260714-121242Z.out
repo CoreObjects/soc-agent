@@ -1,0 +1,574 @@
+=== selftest 2026-07-14 12:12Z ===
+# 批量自测  范围=tech=T1071.001  取样=recent  待研判 5 条  模式=recipe  写回图=否(自测不落库)  (IP 已打码)
+
+待研判清单:
+  T1071.001          该类共      6  uid=2364db352a00b36916dc674df95d0b4e43c98b47a654e2ea9090549e7e820306
+  T1071.001          该类共      6  uid=b43495063a860f1565bbd9c7205bebde98cdbc652e0674da17dc6696523212bc
+  T1071.001          该类共      6  uid=2ccee5cd92fdc08479a2ad8870fc1e6cb6e92e09f98d23d725697f215bc791f1
+  T1071.001          该类共      6  uid=486a6345861a93e94f5a54ed054633949b47afb69690b7fdef6b38e09dad5c3e
+  T1071.001          该类共      6  uid=f3ade00128de2f28ce12dac39d6515e3753ef395534808a4c7d64ef4ae6e9926
+
+============================================================================
+## [1/5] technique=T1071.001   该类共 6 条   uid=2364db352a00b36916dc674df95d0b4e43c98b47a654e2ea9090549e7e820306
+============================================================================
+### ① 原始告警节点(:Alert)
+{
+  "severity": 8,
+  "first_seen": "2026-07-14T10:41:32.073408200Z",
+  "last_seen": "2026-07-14T10:41:32.073408200Z",
+  "arrival_ms": 1784025697072,
+  "technique_ids": [
+    "T1071.001"
+  ],
+  "source": "wazuh",
+  "rule_id": "100806",
+  "stream": "soc-hids-alert-*",
+  "alert_uid": "2364db352a00b36916dc674df95d0b4e43c98b47a654e2ea9090549e7e820306",
+  "rule_description": "Suspicious outbound from C:\\\\Windows\\\\System32\\\\WindowsPowerShell\\\\v1.0\\\\powershell.exe to x.x.x.1:9200",
+  "sensor": "wazuh-hids",
+  "raw_ref": "soc-hids-alert-2026.07.14:dxs3YJ8B3gPM8FAez4sd",
+  "time": "2026-07-14T10:41:32.931+0000"
+}
+
+### ② 触发上下文(seed:触发事件 / 主语 / 宾语 / 次要实体)
+{
+  "event": {
+    "ingest_time": 1784025905621,
+    "initiated": "true",
+    "stream": "winlogbeat-*",
+    "event_code": "3",
+    "proto": "tcp",
+    "dst_port": "9200",
+    "arrival_ms": 1784025693139,
+    "raw_ref": "soc-hids-alert-2026.07.14:dxs3YJ8B3gPM8FAez4sd",
+    "sensor": "Microsoft-Windows-Sysmon/Operational",
+    "source": "winlogbeat",
+    "event_time": "2026-07-14T10:41:32.073408200Z",
+    "event_uid": "e062824c90313bce7578fde32e4ae4cf0abdc654e564d5a4dc542fc25556e43f"
+  },
+  "subject": {
+    "_labels": [
+      "Process"
+    ],
+    "image": "C:\\\\Windows\\\\System32\\\\WindowsPowerShell\\\\v1.0\\\\powershell.exe",
+    "first_seen": "2026-07-14T10:41:15.076Z",
+    "process_guid": "{85e8c649-124b-6a56-600e-000000001400}",
+    "last_seen": "2026-07-14T10:41:32.073Z",
+    "hashes": "MD5=7353F60B1739074EB17C5F4DDDEFE239,SHA256=DE96A6E69944335375DC1AC238336066889D9FFC7D73628EF4FE1B1B160AB32C,IMPHASH=741776AACCFC5B71FF59832DCDCACE0F",
+    "pid": "1540",
+    "command_line": "\\\"powershell.exe\\\" -noninteractive -encodedcommand WwBDAG8AbgBzAG8AbABlAF0AOgA6AEkAbgBwAHUAdABFAG4AYwBvAGQAaQBuAGcAIAA9ACAATgBlAHcALQBPAGIAagBlAGMAdAAgAFQAZQB4AHQALgBVAFQARgA4AEUAbgBjAG8AZABpAG4AZwAgACQAZgBhAGwAcwBlADsAIAAkAEUAcgByAG8AcgBBAGMAdABpAG8AbgBQAHIAZQBmAGUAcgBlAG4AYwBlACAAPQAgACcAQwBvAG4AdABpAG4AdQBlACcACgAkAGQAcwB0ACAAPQAgACcAMQA5ADIALgAxADYAOAAuADUANgAuADEAJwA7ACAAJABwAG8AcgB0ACAAPQAgADkAMgAwADAACgBmAG8AcgAgACgAJABpACAAPQAgADAAOwAgACQAaQAgAC0AbAB0ACAANgA7ACAAJABpACsAKwApACAAewAKACAAIAB0AHIAeQAgAHsAIAAkAGMAIAA9ACAATgBlAHcALQBPAGIAagBlAGMAdAAgAFMAeQBzAHQAZQBtAC4ATgBlAHQALgBTAG8AYwBrAGUAdABzAC4AVABjAHAAQwBsAGkAZQBuAHQAOwAgACQAYwAuAEMAbwBuAG4AZQBjAHQAKAAkAGQAcwB0ACwAIAAkAHAAbwByAHQAKQA7ACAAJABjAC4AQwBsAG8AcwBlACgAKQA7ACAAIgBCAEUAQQBDAE8ATgAgACQAaQAgAC0APgAgACQAewBkAHMAdAB9ADoAJAB7AHAAbwByAHQAfQAgAE8ASwAiACAAfQAKACAAIABjAGEAdABjAGgAIAB7ACAAIgBCAEUAQQBDAE8ATgAgACQAaQAgAC0APgAgACQAewBkAHMAdAB9ADoAJAB7AHAAbwByAHQAfQAgAEUAUgBSACAAJAAoACQAXwAuAEUAeABjAGUAcAB0AGkAbwBuAC4ATQBlAHMAcwBhAGcAZQApACIAIAB9AAoAIAAgAFMAdABhAHIAdAAtAFMAbABlAGUAcAAgAC0AUwBlAGMAbwBuAGQAcwAgADMACgB9AA=="
+  },
+  "related": [
+    {
+      "node": {
+        "_labels": [
+          "IPAddress"
+        ],
+        "first_seen": "2026-06-26T10:41:28.051Z",
+        "last_seen": "2026-07-14T12:09:48.733Z",
+        "ip": "x.x.x.1"
+      },
+      "rel": "CONNECTED_TO"
+    },
+    {
+      "node": {
+        "_labels": [
+          "IPAddress"
+        ],
+        "first_seen": "2026-06-26T10:41:28.296Z",
+        "last_seen": "2026-07-14T12:08:17.685Z",
+        "ip": "x.x.x.22"
+      },
+      "rel": "FROM"
+    },
+    {
+      "node": {
+        "_labels": [
+          "Host"
+        ],
+        "hostname": "castelblack.north.sevenkingdoms.local",
+        "role": "member_server",
+        "first_seen": "2026-07-02T02:32:06.696Z",
+        "has_adcs": false,
+        "last_seen": "2026-07-14T12:09:48.745Z",
+        "domain": "north.sevenkingdoms.local",
+        "criticality": "medium",
+        "is_dc": false
+      },
+      "rel": "ON_HOST"
+    }
+  ]
+}
+
+### ③ 研判   [skill] suspicious_outbound   [模式] recipe
+# 研判留痕(5 步)
+[1] recipe取证「进程与目标+父链」→ 1 行
+[2] recipe取证「发起命令解码(逐层)」→ 1 行
+[3] recipe取证「供给/自检噪声」→ 1 行
+[4] recipe取证「外连聚合(反复性)」→ 1 行
+[5] recipe取证「_图盲区」→ 1 行
+
+# 研判结果  alert=2364db352a00b36916dc674df95d0b4e43c98b47a654e2ea9090549e7e820306  path=B  skill=suspicious_outbound
+verdict   : true_positive  (confidence=0.95)
+summary   : 检测到恶意 PowerShell 脚本通过 TCP 连接进行的网络活动
+rationale : 1. PowerShell 进程发起外连: 源进程为 powershell.exe (路径: C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe)，属于 LOLBin 类进程却发起外连，符合攻击链特征。
+2. 编码命令解码后显示恶意行为: 命令行使用 -encodedcommand 参数，解码后显示其创建 TCP 连接尝试与内网目标 IP x.x.x.1 的 9200 端口通信，实现 beacon 心跳机制。
+3. 反复性网络连接: 在 16 秒内重复尝试连接 6 次，符合恶意 C2 通信的典型频率模式。
+4. 目标地址分析: x.x.x.1 属于内网保留地址空间，但该 IP 未在企业资产清单中登记，且 9200 端口非标准业务端口。
+evidence  : ['事件 UID: {85e8c649-124b-6a56-600e-000000001400}', '主机名: castelblack.north.sevenkingdoms.local']
+agent     : qwen32b-ft
+处置(建议): isolate_host -> castelblack.north.sevenkingdoms.local  risk=high  status=proposed
+处置(建议): monitor -> C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe  risk=high  status=proposed
+
+============================================================================
+## [2/5] technique=T1071.001   该类共 6 条   uid=b43495063a860f1565bbd9c7205bebde98cdbc652e0674da17dc6696523212bc
+============================================================================
+### ① 原始告警节点(:Alert)
+{
+  "severity": 8,
+  "first_seen": "2026-07-14T10:41:28.796408500Z",
+  "last_seen": "2026-07-14T10:41:28.796408500Z",
+  "arrival_ms": 1784025690068,
+  "technique_ids": [
+    "T1071.001"
+  ],
+  "source": "wazuh",
+  "rule_id": "100806",
+  "stream": "soc-hids-alert-*",
+  "alert_uid": "b43495063a860f1565bbd9c7205bebde98cdbc652e0674da17dc6696523212bc",
+  "rule_description": "Suspicious outbound from C:\\\\Windows\\\\System32\\\\WindowsPowerShell\\\\v1.0\\\\powershell.exe to x.x.x.1:9200",
+  "sensor": "wazuh-hids",
+  "raw_ref": "soc-hids-alert-2026.07.14:Txs3YJ8B3gPM8FAes4u-",
+  "time": "2026-07-14T10:41:29.629+0000"
+}
+
+### ② 触发上下文(seed:触发事件 / 主语 / 宾语 / 次要实体)
+{
+  "event": {
+    "ingest_time": 1784025905612,
+    "initiated": "true",
+    "stream": "winlogbeat-*",
+    "event_code": "3",
+    "proto": "tcp",
+    "dst_port": "9200",
+    "arrival_ms": 1784025690095,
+    "raw_ref": "soc-hids-alert-2026.07.14:Txs3YJ8B3gPM8FAes4u-",
+    "sensor": "Microsoft-Windows-Sysmon/Operational",
+    "source": "winlogbeat",
+    "event_time": "2026-07-14T10:41:28.796408500Z",
+    "event_uid": "4acf9839a2ad0d3dc51825d7a921ffce9df541c6ab8e6eb24e56e020e17a71e7"
+  },
+  "subject": {
+    "_labels": [
+      "Process"
+    ],
+    "image": "C:\\\\Windows\\\\System32\\\\WindowsPowerShell\\\\v1.0\\\\powershell.exe",
+    "first_seen": "2026-07-14T10:41:15.076Z",
+    "process_guid": "{85e8c649-124b-6a56-600e-000000001400}",
+    "last_seen": "2026-07-14T10:41:32.073Z",
+    "hashes": "MD5=7353F60B1739074EB17C5F4DDDEFE239,SHA256=DE96A6E69944335375DC1AC238336066889D9FFC7D73628EF4FE1B1B160AB32C,IMPHASH=741776AACCFC5B71FF59832DCDCACE0F",
+    "pid": "1540",
+    "command_line": "\\\"powershell.exe\\\" -noninteractive -encodedcommand WwBDAG8AbgBzAG8AbABlAF0AOgA6AEkAbgBwAHUAdABFAG4AYwBvAGQAaQBuAGcAIAA9ACAATgBlAHcALQBPAGIAagBlAGMAdAAgAFQAZQB4AHQALgBVAFQARgA4AEUAbgBjAG8AZABpAG4AZwAgACQAZgBhAGwAcwBlADsAIAAkAEUAcgByAG8AcgBBAGMAdABpAG8AbgBQAHIAZQBmAGUAcgBlAG4AYwBlACAAPQAgACcAQwBvAG4AdABpAG4AdQBlACcACgAkAGQAcwB0ACAAPQAgACcAMQA5ADIALgAxADYAOAAuADUANgAuADEAJwA7ACAAJABwAG8AcgB0ACAAPQAgADkAMgAwADAACgBmAG8AcgAgACgAJABpACAAPQAgADAAOwAgACQAaQAgAC0AbAB0ACAANgA7ACAAJABpACsAKwApACAAewAKACAAIAB0AHIAeQAgAHsAIAAkAGMAIAA9ACAATgBlAHcALQBPAGIAagBlAGMAdAAgAFMAeQBzAHQAZQBtAC4ATgBlAHQALgBTAG8AYwBrAGUAdABzAC4AVABjAHAAQwBsAGkAZQBuAHQAOwAgACQAYwAuAEMAbwBuAG4AZQBjAHQAKAAkAGQAcwB0ACwAIAAkAHAAbwByAHQAKQA7ACAAJABjAC4AQwBsAG8AcwBlACgAKQA7ACAAIgBCAEUAQQBDAE8ATgAgACQAaQAgAC0APgAgACQAewBkAHMAdAB9ADoAJAB7AHAAbwByAHQAfQAgAE8ASwAiACAAfQAKACAAIABjAGEAdABjAGgAIAB7ACAAIgBCAEUAQQBDAE8ATgAgACQAaQAgAC0APgAgACQAewBkAHMAdAB9ADoAJAB7AHAAbwByAHQAfQAgAEUAUgBSACAAJAAoACQAXwAuAEUAeABjAGUAcAB0AGkAbwBuAC4ATQBlAHMAcwBhAGcAZQApACIAIAB9AAoAIAAgAFMAdABhAHIAdAAtAFMAbABlAGUAcAAgAC0AUwBlAGMAbwBuAGQAcwAgADMACgB9AA=="
+  },
+  "related": [
+    {
+      "node": {
+        "_labels": [
+          "Host"
+        ],
+        "hostname": "castelblack.north.sevenkingdoms.local",
+        "role": "member_server",
+        "first_seen": "2026-07-02T02:32:06.696Z",
+        "has_adcs": false,
+        "last_seen": "2026-07-14T12:09:48.745Z",
+        "domain": "north.sevenkingdoms.local",
+        "criticality": "medium",
+        "is_dc": false
+      },
+      "rel": "ON_HOST"
+    },
+    {
+      "node": {
+        "_labels": [
+          "IPAddress"
+        ],
+        "first_seen": "2026-06-26T10:41:28.296Z",
+        "last_seen": "2026-07-14T12:08:17.685Z",
+        "ip": "x.x.x.22"
+      },
+      "rel": "FROM"
+    },
+    {
+      "node": {
+        "_labels": [
+          "IPAddress"
+        ],
+        "first_seen": "2026-06-26T10:41:28.051Z",
+        "last_seen": "2026-07-14T12:09:48.733Z",
+        "ip": "x.x.x.1"
+      },
+      "rel": "CONNECTED_TO"
+    }
+  ]
+}
+
+### ③ 研判   [skill] suspicious_outbound   [模式] recipe
+# 研判留痕(5 步)
+[1] recipe取证「进程与目标+父链」→ 1 行
+[2] recipe取证「发起命令解码(逐层)」→ 1 行
+[3] recipe取证「供给/自检噪声」→ 1 行
+[4] recipe取证「外连聚合(反复性)」→ 1 行
+[5] recipe取证「_图盲区」→ 1 行
+
+# 研判结果  alert=b43495063a860f1565bbd9c7205bebde98cdbc652e0674da17dc6696523212bc  path=B  skill=suspicious_outbound
+verdict   : true_positive  (confidence=0.95)
+summary   : 检测到PowerShell脚本通过TCP连接发起多次外连尝试
+rationale : 1. PowerShell进程发起外连时使用了编码命令行参数，这通常是恶意载荷的常见隐藏方式。2. 目标IP地址192.168.56.1属于内网IP地址范围，且端口9200非常用出站端口。3. 解码后的命令行显示该脚本实现了TCP socket连接测试功能，完整包含了连接、错误处理和循环机制。4. 在6次连接尝试中形成了多条网络外连记录，表现出异常通信模式。5. 该行为与已知的使用PowerShell进行C2通信的攻击模式高度吻合。
+evidence  : ['事件ID: 4688 - powershell.exe进程创建', '事件ID: 5140 - TCP连接尝试', '注册表项: HKCU\\Software\\Microsoft\\PowerShell\\ShellIds\\Microsoft.PowerShell']
+agent     : qwen32b-ft
+处置(建议): isolate_host -> castelblack.north.sevenkingdoms.local  risk=high  status=proposed
+处置(建议): quarantine_file -> C:\Windows\Sysnative\windowspowershell\v1.0\powershell.exe  risk=high  status=proposed
+处置(建议): monitor -> vagrant  risk=high  status=proposed
+
+============================================================================
+## [3/5] technique=T1071.001   该类共 6 条   uid=2ccee5cd92fdc08479a2ad8870fc1e6cb6e92e09f98d23d725697f215bc791f1
+============================================================================
+### ① 原始告警节点(:Alert)
+{
+  "severity": 8,
+  "first_seen": "2026-07-14T10:41:25.725209800Z",
+  "last_seen": "2026-07-14T10:41:25.725209800Z",
+  "arrival_ms": 1784025687066,
+  "technique_ids": [
+    "T1071.001"
+  ],
+  "source": "wazuh",
+  "rule_id": "100806",
+  "stream": "soc-hids-alert-*",
+  "alert_uid": "2ccee5cd92fdc08479a2ad8870fc1e6cb6e92e09f98d23d725697f215bc791f1",
+  "rule_description": "Suspicious outbound from C:\\\\Windows\\\\System32\\\\WindowsPowerShell\\\\v1.0\\\\powershell.exe to x.x.x.1:9200",
+  "sensor": "wazuh-hids",
+  "raw_ref": "soc-hids-alert-2026.07.14:RRs3YJ8B3gPM8FAeqIsE",
+  "time": "2026-07-14T10:41:26.067+0000"
+}
+
+### ② 触发上下文(seed:触发事件 / 主语 / 宾语 / 次要实体)
+{
+  "event": {
+    "ingest_time": 1784025905601,
+    "initiated": "true",
+    "stream": "winlogbeat-*",
+    "event_code": "3",
+    "proto": "tcp",
+    "dst_port": "9200",
+    "arrival_ms": 1784025687057,
+    "raw_ref": "soc-hids-alert-2026.07.14:RRs3YJ8B3gPM8FAeqIsE",
+    "sensor": "Microsoft-Windows-Sysmon/Operational",
+    "source": "winlogbeat",
+    "event_time": "2026-07-14T10:41:25.725209800Z",
+    "event_uid": "306144a916b10e4b101cd0e764d302983480482bad77d88e29d08d52200fb80b"
+  },
+  "subject": {
+    "_labels": [
+      "Process"
+    ],
+    "image": "C:\\\\Windows\\\\System32\\\\WindowsPowerShell\\\\v1.0\\\\powershell.exe",
+    "first_seen": "2026-07-14T10:41:15.076Z",
+    "process_guid": "{85e8c649-124b-6a56-600e-000000001400}",
+    "last_seen": "2026-07-14T10:41:32.073Z",
+    "hashes": "MD5=7353F60B1739074EB17C5F4DDDEFE239,SHA256=DE96A6E69944335375DC1AC238336066889D9FFC7D73628EF4FE1B1B160AB32C,IMPHASH=741776AACCFC5B71FF59832DCDCACE0F",
+    "pid": "1540",
+    "command_line": "\\\"powershell.exe\\\" -noninteractive -encodedcommand WwBDAG8AbgBzAG8AbABlAF0AOgA6AEkAbgBwAHUAdABFAG4AYwBvAGQAaQBuAGcAIAA9ACAATgBlAHcALQBPAGIAagBlAGMAdAAgAFQAZQB4AHQALgBVAFQARgA4AEUAbgBjAG8AZABpAG4AZwAgACQAZgBhAGwAcwBlADsAIAAkAEUAcgByAG8AcgBBAGMAdABpAG8AbgBQAHIAZQBmAGUAcgBlAG4AYwBlACAAPQAgACcAQwBvAG4AdABpAG4AdQBlACcACgAkAGQAcwB0ACAAPQAgACcAMQA5ADIALgAxADYAOAAuADUANgAuADEAJwA7ACAAJABwAG8AcgB0ACAAPQAgADkAMgAwADAACgBmAG8AcgAgACgAJABpACAAPQAgADAAOwAgACQAaQAgAC0AbAB0ACAANgA7ACAAJABpACsAKwApACAAewAKACAAIAB0AHIAeQAgAHsAIAAkAGMAIAA9ACAATgBlAHcALQBPAGIAagBlAGMAdAAgAFMAeQBzAHQAZQBtAC4ATgBlAHQALgBTAG8AYwBrAGUAdABzAC4AVABjAHAAQwBsAGkAZQBuAHQAOwAgACQAYwAuAEMAbwBuAG4AZQBjAHQAKAAkAGQAcwB0ACwAIAAkAHAAbwByAHQAKQA7ACAAJABjAC4AQwBsAG8AcwBlACgAKQA7ACAAIgBCAEUAQQBDAE8ATgAgACQAaQAgAC0APgAgACQAewBkAHMAdAB9ADoAJAB7AHAAbwByAHQAfQAgAE8ASwAiACAAfQAKACAAIABjAGEAdABjAGgAIAB7ACAAIgBCAEUAQQBDAE8ATgAgACQAaQAgAC0APgAgACQAewBkAHMAdAB9ADoAJAB7AHAAbwByAHQAfQAgAEUAUgBSACAAJAAoACQAXwAuAEUAeABjAGUAcAB0AGkAbwBuAC4ATQBlAHMAcwBhAGcAZQApACIAIAB9AAoAIAAgAFMAdABhAHIAdAAtAFMAbABlAGUAcAAgAC0AUwBlAGMAbwBuAGQAcwAgADMACgB9AA=="
+  },
+  "related": [
+    {
+      "node": {
+        "_labels": [
+          "IPAddress"
+        ],
+        "first_seen": "2026-06-26T10:41:28.051Z",
+        "last_seen": "2026-07-14T12:09:48.733Z",
+        "ip": "x.x.x.1"
+      },
+      "rel": "CONNECTED_TO"
+    },
+    {
+      "node": {
+        "_labels": [
+          "Host"
+        ],
+        "hostname": "castelblack.north.sevenkingdoms.local",
+        "role": "member_server",
+        "first_seen": "2026-07-02T02:32:06.696Z",
+        "has_adcs": false,
+        "last_seen": "2026-07-14T12:09:48.745Z",
+        "domain": "north.sevenkingdoms.local",
+        "criticality": "medium",
+        "is_dc": false
+      },
+      "rel": "ON_HOST"
+    },
+    {
+      "node": {
+        "_labels": [
+          "IPAddress"
+        ],
+        "first_seen": "2026-06-26T10:41:28.296Z",
+        "last_seen": "2026-07-14T12:08:17.685Z",
+        "ip": "x.x.x.22"
+      },
+      "rel": "FROM"
+    }
+  ]
+}
+
+### ③ 研判   [skill] suspicious_outbound   [模式] recipe
+# 研判留痕(5 步)
+[1] recipe取证「进程与目标+父链」→ 1 行
+[2] recipe取证「发起命令解码(逐层)」→ 1 行
+[3] recipe取证「供给/自检噪声」→ 1 行
+[4] recipe取证「外连聚合(反复性)」→ 1 行
+[5] recipe取证「_图盲区」→ 1 行
+
+# 研判结果  alert=2ccee5cd92fdc08479a2ad8870fc1e6cb6e92e09f98d23d725697f215bc791f1  path=B  skill=suspicious_outbound
+verdict   : true_positive  (confidence=0.9)
+summary   : 检测到疑似恶意 PowerShell 脚本通过 TCP 连接发起网络信标 beacon 行为
+rationale : 1. LOLBin滥用: PowerShell 进程直接发起外联属于高风险行为模式，该路径(C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe)属于已知的Living Off The Land Binaries (LOLbins)
+2. 编码特征: 使用了-encodedcommand 参数传递Base64编码的脚本，这是攻击者规避检测的常见手法
+3. 网络行为: 脚本实现了循环TCP连接(x.x.x.1:9200)符合C2信标通信特征，连接次数达6次且持续时间跨越15秒
+4. 目标选择: 目标地址192.168.56.1属于私有IP地址空间，但与常见实验室/测试网络地址范围匹配
+evidence  : ['进程与目标+父链: {85e8c649-124b-6a56-600e-000000001400}', '外连聚合(反复性): x.x.x.1:9200 [count=6]']
+agent     : qwen32b-ft
+处置(建议): isolate_host -> castelblack.north.sevenkingdoms.local  risk=high  status=proposed
+处置(建议): quarantine_file -> C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe  risk=high  status=proposed
+处置(建议): monitor -> vagrant  risk=high  status=proposed
+
+============================================================================
+## [4/5] technique=T1071.001   该类共 6 条   uid=486a6345861a93e94f5a54ed054633949b47afb69690b7fdef6b38e09dad5c3e
+============================================================================
+### ① 原始告警节点(:Alert)
+{
+  "severity": 8,
+  "first_seen": "2026-07-14T10:41:22.654601900Z",
+  "last_seen": "2026-07-14T10:41:22.654601900Z",
+  "arrival_ms": 1784025684063,
+  "technique_ids": [
+    "T1071.001"
+  ],
+  "source": "wazuh",
+  "rule_id": "100806",
+  "stream": "soc-hids-alert-*",
+  "alert_uid": "486a6345861a93e94f5a54ed054633949b47afb69690b7fdef6b38e09dad5c3e",
+  "rule_description": "Suspicious outbound from C:\\\\Windows\\\\System32\\\\WindowsPowerShell\\\\v1.0\\\\powershell.exe to x.x.x.1:9200",
+  "sensor": "wazuh-hids",
+  "raw_ref": "soc-hids-alert-2026.07.14:Nxs3YJ8B3gPM8FAenItK",
+  "time": "2026-07-14T10:41:23.503+0000"
+}
+
+### ② 触发上下文(seed:触发事件 / 主语 / 宾语 / 次要实体)
+{
+  "event": {
+    "ingest_time": 1784025905579,
+    "initiated": "true",
+    "stream": "winlogbeat-*",
+    "event_code": "3",
+    "proto": "tcp",
+    "dst_port": "9200",
+    "arrival_ms": 1784025684032,
+    "raw_ref": "soc-hids-alert-2026.07.14:Nxs3YJ8B3gPM8FAenItK",
+    "sensor": "Microsoft-Windows-Sysmon/Operational",
+    "source": "winlogbeat",
+    "event_time": "2026-07-14T10:41:22.654601900Z",
+    "event_uid": "46fc7642dc2114573c5dc30683e0ed4d9c82566058241fbea024136a695ca428"
+  },
+  "subject": {
+    "_labels": [
+      "Process"
+    ],
+    "image": "C:\\\\Windows\\\\System32\\\\WindowsPowerShell\\\\v1.0\\\\powershell.exe",
+    "first_seen": "2026-07-14T10:41:15.076Z",
+    "process_guid": "{85e8c649-124b-6a56-600e-000000001400}",
+    "last_seen": "2026-07-14T10:41:32.073Z",
+    "hashes": "MD5=7353F60B1739074EB17C5F4DDDEFE239,SHA256=DE96A6E69944335375DC1AC238336066889D9FFC7D73628EF4FE1B1B160AB32C,IMPHASH=741776AACCFC5B71FF59832DCDCACE0F",
+    "pid": "1540",
+    "command_line": "\\\"powershell.exe\\\" -noninteractive -encodedcommand WwBDAG8AbgBzAG8AbABlAF0AOgA6AEkAbgBwAHUAdABFAG4AYwBvAGQAaQBuAGcAIAA9ACAATgBlAHcALQBPAGIAagBlAGMAdAAgAFQAZQB4AHQALgBVAFQARgA4AEUAbgBjAG8AZABpAG4AZwAgACQAZgBhAGwAcwBlADsAIAAkAEUAcgByAG8AcgBBAGMAdABpAG8AbgBQAHIAZQBmAGUAcgBlAG4AYwBlACAAPQAgACcAQwBvAG4AdABpAG4AdQBlACcACgAkAGQAcwB0ACAAPQAgACcAMQA5ADIALgAxADYAOAAuADUANgAuADEAJwA7ACAAJABwAG8AcgB0ACAAPQAgADkAMgAwADAACgBmAG8AcgAgACgAJABpACAAPQAgADAAOwAgACQAaQAgAC0AbAB0ACAANgA7ACAAJABpACsAKwApACAAewAKACAAIAB0AHIAeQAgAHsAIAAkAGMAIAA9ACAATgBlAHcALQBPAGIAagBlAGMAdAAgAFMAeQBzAHQAZQBtAC4ATgBlAHQALgBTAG8AYwBrAGUAdABzAC4AVABjAHAAQwBsAGkAZQBuAHQAOwAgACQAYwAuAEMAbwBuAG4AZQBjAHQAKAAkAGQAcwB0ACwAIAAkAHAAbwByAHQAKQA7ACAAJABjAC4AQwBsAG8AcwBlACgAKQA7ACAAIgBCAEUAQQBDAE8ATgAgACQAaQAgAC0APgAgACQAewBkAHMAdAB9ADoAJAB7AHAAbwByAHQAfQAgAE8ASwAiACAAfQAKACAAIABjAGEAdABjAGgAIAB7ACAAIgBCAEUAQQBDAE8ATgAgACQAaQAgAC0APgAgACQAewBkAHMAdAB9ADoAJAB7AHAAbwByAHQAfQAgAEUAUgBSACAAJAAoACQAXwAuAEUAeABjAGUAcAB0AGkAbwBuAC4ATQBlAHMAcwBhAGcAZQApACIAIAB9AAoAIAAgAFMAdABhAHIAdAAtAFMAbABlAGUAcAAgAC0AUwBlAGMAbwBuAGQAcwAgADMACgB9AA=="
+  },
+  "related": [
+    {
+      "node": {
+        "_labels": [
+          "IPAddress"
+        ],
+        "first_seen": "2026-06-26T10:41:28.051Z",
+        "last_seen": "2026-07-14T12:14:48.738Z",
+        "ip": "x.x.x.1"
+      },
+      "rel": "CONNECTED_TO"
+    },
+    {
+      "node": {
+        "_labels": [
+          "Host"
+        ],
+        "hostname": "castelblack.north.sevenkingdoms.local",
+        "role": "member_server",
+        "first_seen": "2026-07-02T02:32:06.696Z",
+        "has_adcs": false,
+        "last_seen": "2026-07-14T12:14:48.749Z",
+        "domain": "north.sevenkingdoms.local",
+        "criticality": "medium",
+        "is_dc": false
+      },
+      "rel": "ON_HOST"
+    },
+    {
+      "node": {
+        "_labels": [
+          "IPAddress"
+        ],
+        "first_seen": "2026-06-26T10:41:28.296Z",
+        "last_seen": "2026-07-14T12:13:32.862Z",
+        "ip": "x.x.x.22"
+      },
+      "rel": "FROM"
+    }
+  ]
+}
+
+### ③ 研判   [skill] suspicious_outbound   [模式] recipe
+# 研判留痕(5 步)
+[1] recipe取证「进程与目标+父链」→ 1 行
+[2] recipe取证「发起命令解码(逐层)」→ 1 行
+[3] recipe取证「供给/自检噪声」→ 1 行
+[4] recipe取证「外连聚合(反复性)」→ 1 行
+[5] recipe取证「_图盲区」→ 1 行
+
+# 研判结果  alert=486a6345861a93e94f5a54ed054633949b47afb69690b7fdef6b38e09dad5c3e  path=B  skill=suspicious_outbound
+verdict   : true_positive  (confidence=0.9)
+summary   : 检测到恶意 PowerShell 脚本通过 TCP 连接尝试与内部目标 IP (x.x.x.1:9200) 建立多次连接行为
+rationale : 1. LOLBin 利用: PowerShell 被用于执行编码命令并建立网络连接，这是攻击者常用的技术
+2. 编码命令特征: 使用 -encodedcommand 参数传递Base64编码的恶意脚本内容
+3. 网络连接模式: 脚本明确尝试与内网 IP x.x.x.1:9200 建立 TCP 连接
+4. 反复连接特征: 通过 for 循环重复尝试建立连接（6次），并包含错误处理逻辑
+5. 隐蔽通信特征: 使用基本的异常处理和睡眠机制掩盖通信行为
+evidence  : ['进程与目标+父链: {85e8c649-124b-6a56-600e-000000001400}', '命令解码结果: BEACON $i -> ${dst}:${port} OK', '外连聚合数据: count=6, first_seen=2026-07-14T10:41:16.547880700Z']
+agent     : qwen32b-ft
+处置(建议): isolate_host -> castelblack.north.sevenkingdoms.local  risk=high  status=proposed
+处置(建议): monitor -> C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe  risk=high  status=proposed
+
+============================================================================
+## [5/5] technique=T1071.001   该类共 6 条   uid=f3ade00128de2f28ce12dac39d6515e3753ef395534808a4c7d64ef4ae6e9926
+============================================================================
+### ① 原始告警节点(:Alert)
+{
+  "severity": 8,
+  "first_seen": "2026-07-14T10:41:19.609103000Z",
+  "last_seen": "2026-07-14T10:41:19.609103000Z",
+  "arrival_ms": 1784025681063,
+  "technique_ids": [
+    "T1071.001"
+  ],
+  "source": "wazuh",
+  "rule_id": "100806",
+  "stream": "soc-hids-alert-*",
+  "alert_uid": "f3ade00128de2f28ce12dac39d6515e3753ef395534808a4c7d64ef4ae6e9926",
+  "rule_description": "Suspicious outbound from C:\\\\Windows\\\\System32\\\\WindowsPowerShell\\\\v1.0\\\\powershell.exe to x.x.x.1:9200",
+  "sensor": "wazuh-hids",
+  "raw_ref": "soc-hids-alert-2026.07.14:MRs3YJ8B3gPM8FAekIuR",
+  "time": "2026-07-14T10:41:20.443+0000"
+}
+
+### ② 触发上下文(seed:触发事件 / 主语 / 宾语 / 次要实体)
+{
+  "event": {
+    "ingest_time": 1784025905557,
+    "initiated": "true",
+    "stream": "winlogbeat-*",
+    "event_code": "3",
+    "proto": "tcp",
+    "dst_port": "9200",
+    "arrival_ms": 1784025680993,
+    "raw_ref": "soc-hids-alert-2026.07.14:MRs3YJ8B3gPM8FAekIuR",
+    "sensor": "Microsoft-Windows-Sysmon/Operational",
+    "source": "winlogbeat",
+    "event_time": "2026-07-14T10:41:19.609103000Z",
+    "event_uid": "549e7f9e4439e62c08a3e57c1a802810d5c73652d3f8dec5a07f66e3e4cbe8ad"
+  },
+  "subject": {
+    "_labels": [
+      "Process"
+    ],
+    "image": "C:\\\\Windows\\\\System32\\\\WindowsPowerShell\\\\v1.0\\\\powershell.exe",
+    "first_seen": "2026-07-14T10:41:15.076Z",
+    "process_guid": "{85e8c649-124b-6a56-600e-000000001400}",
+    "last_seen": "2026-07-14T10:41:32.073Z",
+    "hashes": "MD5=7353F60B1739074EB17C5F4DDDEFE239,SHA256=DE96A6E69944335375DC1AC238336066889D9FFC7D73628EF4FE1B1B160AB32C,IMPHASH=741776AACCFC5B71FF59832DCDCACE0F",
+    "pid": "1540",
+    "command_line": "\\\"powershell.exe\\\" -noninteractive -encodedcommand WwBDAG8AbgBzAG8AbABlAF0AOgA6AEkAbgBwAHUAdABFAG4AYwBvAGQAaQBuAGcAIAA9ACAATgBlAHcALQBPAGIAagBlAGMAdAAgAFQAZQB4AHQALgBVAFQARgA4AEUAbgBjAG8AZABpAG4AZwAgACQAZgBhAGwAcwBlADsAIAAkAEUAcgByAG8AcgBBAGMAdABpAG8AbgBQAHIAZQBmAGUAcgBlAG4AYwBlACAAPQAgACcAQwBvAG4AdABpAG4AdQBlACcACgAkAGQAcwB0ACAAPQAgACcAMQA5ADIALgAxADYAOAAuADUANgAuADEAJwA7ACAAJABwAG8AcgB0ACAAPQAgADkAMgAwADAACgBmAG8AcgAgACgAJABpACAAPQAgADAAOwAgACQAaQAgAC0AbAB0ACAANgA7ACAAJABpACsAKwApACAAewAKACAAIAB0AHIAeQAgAHsAIAAkAGMAIAA9ACAATgBlAHcALQBPAGIAagBlAGMAdAAgAFMAeQBzAHQAZQBtAC4ATgBlAHQALgBTAG8AYwBrAGUAdABzAC4AVABjAHAAQwBsAGkAZQBuAHQAOwAgACQAYwAuAEMAbwBuAG4AZQBjAHQAKAAkAGQAcwB0ACwAIAAkAHAAbwByAHQAKQA7ACAAJABjAC4AQwBsAG8AcwBlACgAKQA7ACAAIgBCAEUAQQBDAE8ATgAgACQAaQAgAC0APgAgACQAewBkAHMAdAB9ADoAJAB7AHAAbwByAHQAfQAgAE8ASwAiACAAfQAKACAAIABjAGEAdABjAGgAIAB7ACAAIgBCAEUAQQBDAE8ATgAgACQAaQAgAC0APgAgACQAewBkAHMAdAB9ADoAJAB7AHAAbwByAHQAfQAgAEUAUgBSACAAJAAoACQAXwAuAEUAeABjAGUAcAB0AGkAbwBuAC4ATQBlAHMAcwBhAGcAZQApACIAIAB9AAoAIAAgAFMAdABhAHIAdAAtAFMAbABlAGUAcAAgAC0AUwBlAGMAbwBuAGQAcwAgADMACgB9AA=="
+  },
+  "related": [
+    {
+      "node": {
+        "_labels": [
+          "Host"
+        ],
+        "hostname": "castelblack.north.sevenkingdoms.local",
+        "role": "member_server",
+        "first_seen": "2026-07-02T02:32:06.696Z",
+        "has_adcs": false,
+        "last_seen": "2026-07-14T12:14:48.749Z",
+        "domain": "north.sevenkingdoms.local",
+        "criticality": "medium",
+        "is_dc": false
+      },
+      "rel": "ON_HOST"
+    },
+    {
+      "node": {
+        "_labels": [
+          "IPAddress"
+        ],
+        "first_seen": "2026-06-26T10:41:28.296Z",
+        "last_seen": "2026-07-14T12:13:32.862Z",
+        "ip": "x.x.x.22"
+      },
+      "rel": "FROM"
+    },
+    {
+      "node": {
+        "_labels": [
+          "IPAddress"
+        ],
+        "first_seen": "2026-06-26T10:41:28.051Z",
+        "last_seen": "2026-07-14T12:14:48.738Z",
+        "ip": "x.x.x.1"
+      },
+      "rel": "CONNECTED_TO"
+    }
+  ]
+}
+
+### ③ 研判   [skill] suspicious_outbound   [模式] recipe
+# 研判留痕(5 步)
+[1] recipe取证「进程与目标+父链」→ 1 行
+[2] recipe取证「发起命令解码(逐层)」→ 1 行
+[3] recipe取证「供给/自检噪声」→ 1 行
+[4] recipe取证「外连聚合(反复性)」→ 1 行
+[5] recipe取证「_图盲区」→ 1 行
+
+# 研判结果  alert=f3ade00128de2f28ce12dac39d6515e3753ef395534808a4c7d64ef4ae6e9926  path=B  skill=suspicious_outbound
+verdict   : true_positive  (confidence=0.95)
+summary   : 检测到PowerShell脚本通过TCP连接尝试与内网目标IP x.x.x.1:9200建立连接，属于可疑的横向移动行为
+rationale : 1. PowerShell进程发起外连(T1059.004)：使用v1.0/powershell.exe执行编码命令
+2. 目标内网IP扫描：连接目标192.168.56.1(私有地址)非标准端口9200
+3. 基础 Beacon 模式：6次重试连接(+3秒间隔)的典型C2心跳特征
+4. 编码命令特征：使用Base64编码的EncodedCommand参数规避检测
+5. 网络套接字操作：显式创建System.Net.Sockets.TcpClient对象进行连接测试
+evidence  : ['事件proc_guid:{85e8c649-124b-6a56-600e-000000001400}', '命令行参数:-encodedcommand WwBDAG8AbgBzAG8AbABlAF0AOgA6AEkAbgBwAHUAcABlAHIA', '目标IP:x.x.x.1:9200', '连接尝试次数:6次']
+agent     : qwen32b-ft
+处置(建议): isolate_host -> castelblack.north.sevenkingdoms.local  risk=high  status=proposed
+处置(建议): quarantine_file -> C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe  risk=high  status=proposed
+处置(建议): monitor -> account:vagrant  risk=high  status=proposed
+
+# 批量自测完成
+=== done 2026-07-14 12:20Z ===
