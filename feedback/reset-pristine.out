@@ -1,0 +1,6 @@
+=== reset-to-pristine(图台账+openGauss规则双清)2026-07-15 09:12Z ===
+neo4j=bolt://10.185.93.0:7687  og=127.0.0.1 db=soc enabled=True
+图台账:Verdict+Disposition 2 → 0;残留 CONCLUDED 边=0(应0);事实 Alert=30475(保留)
+openGauss 规则:2 → 0
+PRISTINE OK:图台账 + openGauss 规则已双清,恢复'只有事实、零研判'最初态,两边同步
+=== done ===
