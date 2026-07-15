@@ -11,9 +11,9 @@ description: 研判 Webshell 上传/落地/利用告警。当告警涉及"上传
 **触发**:WAF 侧信号弱且不稳(很多 webshell 上传对 CRS 是"干净"的 multipart)。**真正高保真信号在主机侧**:Web 工作进程(w3wp/php-cgi)在 wwwroot/inetpub 下写出脚本扩展名文件(Sysmon EID11 WROTE)。
 
 ## 研判决策树
-1. **Web 主机上,Web 进程有没有写出脚本文件到 web 目录?(核心问句,主机侧起手)**(recipe「主机侧-落盘脚本」)—— w3wp WROTE 脚本到 wwwroot/inetpub + 脚本扩展名 = 强信号。
-2. **这个 webshell 有没有被执行(回连/命令)?**(recipe「主机侧-执行/回连」)—— w3wp 随后 SPAWNED cmd/powershell(铁证)或外连 C2。
-3. **能对上一条 Web 上传告警/请求吗?** —— 同 Host + 时间窗(⚠️ 请求↔落盘无因果强键,是"同 Host + 近邻"弱关联)。
+1. **WAF 侧:上传类请求打了什么、被拦否?**(recipe「告警(WAF上传请求)」:`payload`/`target_uri`/`http_status`/`outcome`/命中 CRS 规则)—— `outcome=blocked` = 上传被拦,基本止于尝试。
+2. **★后端 Web 进程有没有写出脚本 + 随后派生/外连?(核心,判是否落地)**(recipe「跨层-后端落地(落盘+利用)」)—— w3wp/php-cgi `WROTE` 脚本到 wwwroot/inetpub/htdocs(脚本扩展名)+ 随后 `SPAWNED` cmd/powershell 或 `CONNECTED_TO` 外连 = 三件套铁证。**后端为被监控主机时才有;容器化后端(本靶场 DVWA)= 盲区**。
+3. **能对上这条 WAF 上传请求吗?** —— 同 Host + 时间窗(⚠️ 请求↔落盘无因果强键,是"同 Host + 近邻"弱关联)。
 4. **文件是不是已知恶意?**(File.sha256 对经验/黑名单;⚠️ 哈希常空)。
 
 ## 误报/良性场景
@@ -28,4 +28,5 @@ description: 研判 Webshell 上传/落地/利用告警。当告警涉及"上传
 - **判定核心**:`WROTE`(落盘)+`SPAWNED`(执行)+`CONNECTED_TO`(回连)三段齐 → 确定级,无需依赖薄弱的 WAF 请求侧。
 
 ## 图盲区(取不到就写 missing_evidence)
-上传请求的文件名/multipart 内容/落盘路径(WAF 侧给不出)、请求↔落盘的因果强键(现靠同 Host+时间窗)、HTTP 响应码、落盘文件哈希、站点物理路径映射(判 URL 可达/可执行)。
+**已入图可用**:WAF 侧 `payload`/`http_status`/`outcome`(被拦否)/命中 CRS 规则/打击端点。
+**仍盲**:后端 Web 主机主机侧遥测(容器化=无 `WROTE`/`SPAWNED`→跨层三件套空)、上传 multipart 内容/落盘路径、请求↔落盘的因果强键(现靠同 Host+时间窗)、落盘文件哈希、站点物理路径映射(判 URL 可达/可执行)。
