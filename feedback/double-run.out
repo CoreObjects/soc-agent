@@ -1,0 +1,19 @@
+=== P3' 换实例双跑总验收 2026-07-15 08:47Z ===
+og_enabled=True neo4j=bolt://10.185.93.0:7687
+kerberoast 告警取样: 8
+[1] path=B verdict=false_positive lean=None pattern=cross_domain uid=1a503cc6597005
+[2] path=A verdict=false_positive lean=None pattern=d0fb52fd32e7 uid=906c75de02ea34
+[3] path=A verdict=false_positive lean=None pattern=d0fb52fd32e7 uid=5218b2b4076308
+[4] path=A verdict=false_positive lean=None pattern=d0fb52fd32e7 uid=cc832285c6407d
+[5] path=B verdict=false_positive lean=None pattern=cross_domain uid=c1a6052caf6cbd
+[6] path=A verdict=false_positive lean=None pattern=879fe59704d8 uid=57c13bc03684ed
+[7] path=A verdict=false_positive lean=None pattern=879fe59704d8 uid=a7c04ede8ec115
+[8] path=A verdict=false_positive lean=None pattern=879fe59704d8 uid=85091fa9c4e867
+
+=== 汇总 ===
+快通道(0 LLM) 6 条 / 慢通道 2 条
+图台账收敛(pattern_id → 共享该结论的告警数): [('879fe59704d8', 3), ('d0fb52fd32e7', 3), ('cross_domain', 2)]
+openGauss kerberoast 规则(去重后): [('exculpatory', 'active', 2)]
+
+ACCEPTANCE: 换实例双跑完成 —— 快通道>0 且 图收敛(共享节点)且 规则条数<<告警数 = 通过
+=== done ===
