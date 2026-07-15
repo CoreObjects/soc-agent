@@ -18,6 +18,19 @@ assert cfg.og_enabled, "OG_HOST 未配 → 规则库仍是内存 fake;检查 .en
 
 repo = make_repository(cfg)                 # CachedPatternRepository(OpenGaussPatternRepository)
 SH = "__smoke_test_kerberoast__"
+
+
+def _cleanup():
+    import psycopg2
+    c = psycopg2.connect(host=cfg.og_host, port=cfg.og_port, dbname=cfg.og_db,
+                         user=cfg.og_user, password=cfg.og_password)
+    c.autocommit = True
+    with c.cursor() as cur:
+        cur.execute("DELETE FROM %s.patterns WHERE sig_hash=%%s" % cfg.og_schema, (SH,))
+    c.close()
+
+
+_cleanup()                                  # 先清残留(幂等:上一轮夭折留的行不污染本轮)
 rule = PatternRule(skill="__smoke__", layer="incriminating", sig="enc=RC4;spn_fanout=>=5", sig_hash=SH,
                    verdict=VerdictTemplate("true_positive", confidence=0.9, canonical_rationale="smoke RC4 扇出"),
                    dispositions=[DispositionTemplate("disable_account", "account", "requester", "high")],
@@ -35,12 +48,6 @@ try:
     assert repo.find_active(SH) is None, "deprecated 仍被 find_active 服务"
     print("OK: upsert/find_active/dedup(hit=%s)/status/cache 全通" % g2.stats.get("hit_count"))
 finally:
-    import psycopg2
-    c = psycopg2.connect(host=cfg.og_host, port=cfg.og_port, dbname=cfg.og_db,
-                         user=cfg.og_user, password=cfg.og_password)
-    c.autocommit = True
-    with c.cursor() as cur:
-        cur.execute("DELETE FROM %s.patterns WHERE sig_hash=%%s" % cfg.og_schema, (SH,))
-    c.close()
+    _cleanup()
     print("cleanup: 测试行已删")
 print("SMOKE OK")
