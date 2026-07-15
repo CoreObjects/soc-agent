@@ -41,6 +41,16 @@ class Config:
     llm_api_key: str
     skills_dir: str
     max_iterations: int
+    # 攻击模式规则库(图外权威 = openGauss;OG_HOST 为空 → 用内存 fake,便于本地/单测)
+    og_host: str
+    og_port: int
+    og_db: str
+    og_user: str
+    og_password: str
+
+    @property
+    def og_enabled(self) -> bool:
+        return bool(self.og_host)
 
     @classmethod
     def from_env(cls, env=None, dotenv_path=None) -> "Config":
@@ -63,4 +73,9 @@ class Config:
             llm_api_key=g("LLM_API_KEY", "EMPTY"),
             skills_dir=g("SKILLS_DIR", str(_REPO_ROOT / "skills")),
             max_iterations=int(g("MAX_ITERATIONS", "12")),
+            og_host=g("OG_HOST", ""),
+            og_port=int(g("OG_PORT", "5432")),
+            og_db=g("OG_DB", "soc"),
+            og_user=g("OG_USER", "soc_agent"),
+            og_password=g("OG_PASSWORD", ""),
         )
