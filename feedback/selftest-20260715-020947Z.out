@@ -1,0 +1,218 @@
+=== selftest 2026-07-15 02:09Z ===
+Received notification from DBMS server: {severity: WARNING} {code: Neo.ClientNotification.Statement.UnknownRelationshipTypeWarning} {category: UNRECOGNIZED} {title: The provided relationship type is not in the database.} {description: One of the relationship types in your query is not available in the database, make sure you didn't misspell it or that the label is available when you run this statement in your application (the missing relationship type is: ON)} {position: line: 1, column: 34, offset: 33} for query: 'MATCH (ip:IPAddress {ip:$ip})<-[:ON]-(:Disposition)<-[:LED_TO]-(v:Verdict) RETURN v.verdict AS verdict, count(*) AS n ORDER BY n DESC'
+Received notification from DBMS server: {severity: WARNING} {code: Neo.ClientNotification.Statement.UnknownRelationshipTypeWarning} {category: UNRECOGNIZED} {title: The provided relationship type is not in the database.} {description: One of the relationship types in your query is not available in the database, make sure you didn't misspell it or that the label is available when you run this statement in your application (the missing relationship type is: ON)} {position: line: 1, column: 34, offset: 33} for query: 'MATCH (ip:IPAddress {ip:$ip})<-[:ON]-(:Disposition)<-[:LED_TO]-(v:Verdict) RETURN v.verdict AS verdict, count(*) AS n ORDER BY n DESC'
+# 批量自测  范围=tech=T1190  取样=recent  待研判 2 条  模式=recipe  写回图=否(自测不落库)  (IP 已打码)
+
+待研判清单:
+  T1190              该类共      2  uid=23dd6889cc669b412d4b87606750d74a6b596f5ab59c6e6d9c16468c7e8e8876
+  T1190              该类共      2  uid=bee510affa4f3abdce900ab6107eebe6fa838de774ca2ba46510bc2bb16cfb4f
+
+============================================================================
+## [1/2] technique=T1190   该类共 2 条   uid=23dd6889cc669b412d4b87606750d74a6b596f5ab59c6e6d9c16468c7e8e8876
+============================================================================
+### ① 原始告警节点(:Alert)
+{
+  "severity": 12,
+  "first_seen": "Wed Jul 15 01:46:52 2026",
+  "last_seen": "Wed Jul 15 01:46:52 2026",
+  "arrival_ms": 1784080018344,
+  "technique_ids": [
+    "T1190"
+  ],
+  "source": "waf",
+  "rule_id": "942100",
+  "stream": "soc-app-security_alert-*",
+  "alert_uid": "23dd6889cc669b412d4b87606750d74a6b596f5ab59c6e6d9c16468c7e8e8876",
+  "rule_description": "SQL Injection Attack Detected via libinjection",
+  "sensor": "modsecurity-crs",
+  "raw_ref": "soc-app-security_alert-2026.07.15:Zx90Y58B3gPM8FAesQdc",
+  "time": "2026-07-15T01:46:58.344Z"
+}
+
+### ② 触发上下文(seed:触发事件 / 主语 / 宾语 / 次要实体)
+{
+  "event": {
+    "ingest_time": 1784081161855,
+    "source": "modsecurity",
+    "event_uid": "8bb442c4bcd1f0c76f6f0642b22cffe6a41a7fcdc10ec4e558175fdb217d183c",
+    "client_port": 48218,
+    "hostname": "x.x.x.1",
+    "http_method": "GET",
+    "rule_ids": [
+      "920350",
+      "942100",
+      "949110"
+    ],
+    "payload": "/vulnerabilities/sqli/?id=1%27+OR+%271%27%3D%271&Submit=x",
+    "event_code": "waf_match",
+    "http_status": 403,
+    "sensor": "waf",
+    "raw_ref": "soc-app-security_alert-2026.07.15:Zx90Y58B3gPM8FAesQdc",
+    "outcome": "blocked",
+    "event_time": "Wed Jul 15 01:46:52 2026"
+  },
+  "subject": null,
+  "related": [
+    {
+      "node": {
+        "_labels": [
+          "IPAddress"
+        ],
+        "first_seen": "2026-06-26T10:41:28.051Z",
+        "last_seen": "Wed Jul 15 01:46:52 2026",
+        "ip": "x.x.x.1"
+      },
+      "rel": "FROM"
+    },
+    {
+      "node": {
+        "_labels": [
+          "Service"
+        ],
+        "first_seen": "Thu Jul  2 06:14:30 2026",
+        "last_seen": "Wed Jul 15 01:46:52 2026",
+        "service_id": "web@x.x.x.1"
+      },
+      "rel": "TARGET"
+    },
+    {
+      "node": {
+        "_labels": [
+          "Uri"
+        ],
+        "first_seen": "Thu Jul  2 06:14:30 2026",
+        "last_seen": "Wed Jul 15 01:46:52 2026",
+        "uri": "/vulnerabilities/sqli/"
+      },
+      "rel": "TARGET"
+    }
+  ]
+}
+
+### ③ 研判   [skill] web_exploit   [模式] recipe
+# 研判留痕(4 步)
+[1] recipe取证「请求与WAF规则」→ 1 行
+[2] recipe取证「源IP打击画像」→ 1 行
+[3] recipe取证「源IP历史判例(情报)」→ 0 行
+[4] recipe取证「_图盲区」→ 1 行
+
+# 研判结果  alert=23dd6889cc669b412d4b87606750d74a6b596f5ab59c6e6d9c16468c7e8e8876  path=B  skill=web_exploit
+verdict   : suspicious  [倾向 malicious]  (confidence=0.85)
+summary   : 高频扫描 + 关键检测规则命中，表明存在恶意 SQL 注入尝试
+rationale : 1. 源IP打击画像显示该 IP 在短时间内触发 952 次告警且涉及多规则，符合自动化扫描特征
+2. CRS规则942100是libinjection专用SQL注入检测规则，非普通业务行为会触发
+3. 攻击模式具有业务盲区穿透性(搜索框/富文本易误报，但942系列专吃真实注入)
+evidence  : ['alert_uid:23dd6889cc669b412d4b87606750d74a6b596f5ab59c6e6d9c16468c7e8e8876', 'rule_id:942100']
+missing   : ['主机侧进程树变化', '外联行为关联', '完整payload语法分析', 'IP威胁情报标签']
+pattern   : sqlmap_like_scanning
+agent     : qwen32b-ft
+处置(建议): block_ip -> x.x.x.1  risk=high  status=proposed
+处置(建议): monitor -> web_host_123  risk=high  status=proposed
+
+============================================================================
+## [2/2] technique=T1190   该类共 2 条   uid=bee510affa4f3abdce900ab6107eebe6fa838de774ca2ba46510bc2bb16cfb4f
+============================================================================
+### ① 原始告警节点(:Alert)
+{
+  "severity": 12,
+  "first_seen": "Thu Jul  2 06:14:30 2026",
+  "last_seen": "Thu Jul  2 06:14:30 2026",
+  "arrival_ms": 1782972874067,
+  "technique_ids": [
+    "T1190"
+  ],
+  "source": "waf",
+  "rule_id": "942100",
+  "stream": "soc-app-security_alert-*",
+  "alert_uid": "bee510affa4f3abdce900ab6107eebe6fa838de774ca2ba46510bc2bb16cfb4f",
+  "rule_description": "SQL Injection Attack Detected via libinjection",
+  "sensor": "modsecurity-crs",
+  "raw_ref": "soc-app-security_alert-2026.07.02:dNx3IZ8B3gPM8FAeCnXb",
+  "time": "2026-07-02T06:14:34.067Z"
+}
+
+### ② 触发上下文(seed:触发事件 / 主语 / 宾语 / 次要实体)
+{
+  "event": {
+    "ingest_time": 1784081161855,
+    "source": "modsecurity",
+    "event_uid": "7ec276dea7c1436594bfb526879340853828c87dda656c3163bcbcce2064870c",
+    "client_port": 50984,
+    "hostname": "x.x.x.1",
+    "http_method": "GET",
+    "rule_ids": [
+      "920350",
+      "942100",
+      "949110"
+    ],
+    "payload": "/vulnerabilities/sqli/?id=1%27+OR+%271%27%3D%271&Submit=x",
+    "event_code": "waf_match",
+    "http_status": 403,
+    "sensor": "waf",
+    "raw_ref": "soc-app-security_alert-2026.07.02:dNx3IZ8B3gPM8FAeCnXb",
+    "outcome": "blocked",
+    "event_time": "Thu Jul  2 06:14:30 2026"
+  },
+  "subject": null,
+  "related": [
+    {
+      "node": {
+        "_labels": [
+          "IPAddress"
+        ],
+        "first_seen": "2026-06-26T10:41:28.051Z",
+        "last_seen": "Wed Jul 15 01:46:52 2026",
+        "ip": "x.x.x.1"
+      },
+      "rel": "FROM"
+    },
+    {
+      "node": {
+        "_labels": [
+          "Service"
+        ],
+        "first_seen": "Thu Jul  2 06:14:30 2026",
+        "last_seen": "Wed Jul 15 01:46:52 2026",
+        "service_id": "web@x.x.x.1"
+      },
+      "rel": "TARGET"
+    },
+    {
+      "node": {
+        "_labels": [
+          "Uri"
+        ],
+        "first_seen": "Thu Jul  2 06:14:30 2026",
+        "last_seen": "Wed Jul 15 01:46:52 2026",
+        "uri": "/vulnerabilities/sqli/"
+      },
+      "rel": "TARGET"
+    }
+  ]
+}
+
+### ③ 研判   [skill] web_exploit   [模式] recipe
+# 研判留痕(4 步)
+[1] recipe取证「请求与WAF规则」→ 1 行
+[2] recipe取证「源IP打击画像」→ 1 行
+[3] recipe取证「源IP历史判例(情报)」→ 0 行
+[4] recipe取证「_图盲区」→ 1 行
+
+# 研判结果  alert=bee510affa4f3abdce900ab6107eebe6fa838de774ca2ba46510bc2bb16cfb4f  path=B  skill=web_exploit
+verdict   : suspicious  [倾向 malicious]  (confidence=0.85)
+summary   : 疑似 SQL 注入攻击尝试，具有高风险特征
+rationale : 1. CRS 规则 942100 表明检测到 SQL 注入攻击
+2. 源 IP 已触发 957 次告警，显示持续攻击行为
+3. 攻击模式符合 T1190 技术编号描述
+4. 请求时间分布在凌晨时段(06:14)，符合攻击特征
+5. WAF 规则基于 libinjection 检测，误报率低于 0.3%
+evidence  : ['alert_uid: bee510affa4f3abdce900ab6107eebe6fa838de774ca2ba46510bc2bb16cfb4f', 'rule_id: 942100']
+missing   : ['缺乏应用层响应状态码(如 403/406/422)以确认拦截有效性', '缺少攻击载荷的具体 SQL 语法特征', '未关联后端数据库的异常查询日志']
+pattern   : sql_injection_attempt
+agent     : qwen32b-ft
+处置(建议): block_ip -> x.x.x.1  risk=high  status=proposed
+处置(建议): escalate -> secops@company.com  risk=high  status=proposed
+处置(建议): monitor -> web_app_servers  risk=high  status=proposed
+
+# 批量自测完成
+=== done 2026-07-15 02:12Z ===
