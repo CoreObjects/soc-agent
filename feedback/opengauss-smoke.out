@@ -1,11 +1,9 @@
-=== openGauss 规则库冒烟 2026-07-15 08:27Z ===
+=== openGauss 规则库冒烟 2026-07-15 08:30Z ===
 og_enabled=True host=127.0.0.1 db=soc user=soc_agent
-OK: upsert/find_active/dedup(hit=2)/status/cache 全通
+cleanup: 测试行已删
 Traceback (most recent call last):
-  File "/home/soc/soc-agent/deploy/opengauss-redis/smoke_patterns.py", line 43, in <module>
-    cur.execute("DELETE FROM patterns WHERE sig_hash=%s", (SH,))
-psycopg2.errors.UndefinedTable: relation "patterns" does not exist on gaussdb
-LINE 1: DELETE FROM patterns WHERE sig_hash='__smoke_test_kerberoast...
-                    ^
-
+  File "/home/soc/soc-agent/deploy/opengauss-redis/smoke_patterns.py", line 28, in <module>
+    assert got is not None, "find_active 拿不到刚 upsert 的 active 规则"
+           ^^^^^^^^^^^^^^^
+AssertionError: find_active 拿不到刚 upsert 的 active 规则
 === done ===
