@@ -1,0 +1,18 @@
+=== openGauss+Redis provision 2026-07-15 07:41Z ===
+[1] 镜像(优先服务器网直拉)
+  pull opengauss/opengauss:5.0.0 …
+    sudo: docker: command not found
+  pull redis:7 …
+    sudo: docker: command not found
+[2] 起 openGauss(host :15432 → 容器 5432)
+  cid sudo: docker: command not found
+[3] 起 Redis(host :16379 → 容器 6379)
+  cid sudo: docker: command not found
+[4] 等就绪 ~35s
+[5] 冒烟(不打印密码)
+  容器状态:
+sudo: docker: command not found
+  redis ping : 
+  openGauss 就绪日志(找 ready/normal/listen):
+  openGauss gsql 版本(容器内,权威连通性):
+=== done ===
