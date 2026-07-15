@@ -5,6 +5,7 @@ Verdict / Disposition 研判/处置结论;to_props() 直接喂图写回经验层
 InvestigationResult  一次研判的产出汇总(快/慢通道同形状)。
 """
 import hashlib
+import json
 from dataclasses import dataclass, field
 from typing import Any, Optional
 from uuid import uuid4
@@ -12,11 +13,8 @@ from uuid import uuid4
 VERDICTS = {"true_positive", "false_positive", "benign", "suspicious"}
 # suspicious 的倾向(把"存疑"分诊成带方向+优先级,而非一坨"我不知道")
 LEANS = {"malicious", "benign", "unknown"}
-# 处置动作受控词表(避免 LLM 自由发挥出不可执行的"废话动作");未知动作归一为 escalate
-DISPOSITION_ACTIONS = {
-    "disable_account", "block_ip", "isolate_host", "kill_process", "reset_password",
-    "revoke_sessions", "quarantine_file", "escalate", "monitor", "none",
-}
+# ★处置动作受控词表不再硬编码在此:执行类原语由处置接口文档(soc_agent/response/interface.py)驱动,
+#   非执行动作见 response.interface.NON_EXECUTING(escalate/monitor/none)。
 DISPOSITION_STATUS = {"proposed", "executed", "failed", "simulated"}
 RISKS = {"low", "high"}
 DISPOSITION_BY = {"auto", "analyst"}
@@ -114,14 +112,15 @@ class Disposition:
     默认 propose-only(status=proposed, by=auto):第一版一律仅建议,人审后执行。
     收敛键 conv_key = (action + target_kind + target):同动作同目标合一条(封两个不同 IP=两条,是真历史)。
     """
-    action: str                        # block_ip | isolate_host | disable_account | kill_process | none ...
-    target: Optional[str] = None
-    target_kind: Optional[str] = None  # ip|account|host|process|file|none(缺则按 action 派生;供 :ON 解析)
+    action: str                        # 基础处置原语 id(=interface 里的 primitive):disable_account | isolate_host | remove_from_group ...
+    target: Optional[str] = None       # 主目标值(= 原语 target.key_field 参数解析出的实体值),供 :ON / conv_key
+    target_kind: Optional[str] = None  # ip|account|host|process|file|domain|none(缺则按 action 派生;供 :ON 解析)
+    params: dict = field(default_factory=dict)   # 全部已绑定的具体参数值(如 {"sam":"hacker2","group":"Domain Admins"})
     risk: str = "low"                  # low | high
     status: str = "proposed"           # proposed | executed | failed | simulated
     simulated: bool = False
     by: str = "auto"                   # auto | analyst
-    rollback_handle: Optional[dict] = None
+    rollback_handle: Optional[dict] = None       # 处置面回执:{execution_id, inverse, params, prev_state} —— 回退凭据
     decided_at: Optional[str] = None
     disposition_id: str = field(default_factory=_new_id)
 
@@ -146,10 +145,14 @@ class Disposition:
             "action": self.action,
             "target": self.target,
             "target_kind": self.target_kind,
+            # 嵌套 dict 不能直接当 Neo4j 属性 → json 串存;回退 CLI 读回 json.loads
+            "params": json.dumps(self.params, ensure_ascii=False),
             "risk": self.risk,
             "status": self.status,
             "simulated": self.simulated,
             "by": self.by,
+            "rollback_handle": (json.dumps(self.rollback_handle, ensure_ascii=False)
+                                if self.rollback_handle is not None else None),  # 回退凭据必须落台账(先前漏了)
             "decided_at": self.decided_at,
         }
 

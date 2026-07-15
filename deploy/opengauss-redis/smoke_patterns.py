@@ -10,7 +10,7 @@ sys.path.insert(0, _ROOT)
 
 from soc_agent.config import Config
 from soc_agent.patterns.factory import make_repository
-from soc_agent.patterns.rule import PatternRule, VerdictTemplate, DispositionTemplate
+from soc_agent.patterns.rule import PatternRule, VerdictTemplate, PrimitiveStepTemplate
 
 cfg = Config.from_env(dotenv_path=os.path.join(_ROOT, ".env"))
 print("og_enabled=%s host=%s db=%s user=%s" % (cfg.og_enabled, cfg.og_host, cfg.og_db, cfg.og_user))
@@ -33,14 +33,15 @@ def _cleanup():
 _cleanup()                                  # 先清残留(幂等:上一轮夭折留的行不污染本轮)
 rule = PatternRule(skill="__smoke__", layer="incriminating", sig="enc=RC4;spn_fanout=>=5", sig_hash=SH,
                    verdict=VerdictTemplate("true_positive", confidence=0.9, canonical_rationale="smoke RC4 扇出"),
-                   dispositions=[DispositionTemplate("disable_account", "account", "requester", "high")],
+                   plan=[PrimitiveStepTemplate(order=1, primitive="disable_account",
+                                               params={"sam": {"source": "entity_role", "role": "requester"}}, risk="high")],
                    status="active")
 try:
     repo.upsert(rule)
     got = repo.find_active(SH)
     assert got is not None, "find_active 拿不到刚 upsert 的 active 规则"
     assert got.verdict.verdict == "true_positive"
-    assert got.dispositions[0].target_field == "requester", "模板序列化丢字段"
+    assert got.plan[0].params["sam"]["role"] == "requester", "计划模板序列化丢字段"
     repo.upsert(rule)                        # 再铸 → 去重 + hit_count++
     g2 = repo.get(SH)
     assert g2.stats.get("hit_count", 0) >= 2, "去重/计数不对(应 >=2)"

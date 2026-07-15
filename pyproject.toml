@@ -8,6 +8,7 @@ requires-python = ">=3.10"
 dependencies = [
     "neo4j>=5.14",
     "openai>=1.30",
+    "pyyaml>=6.0",       # 处置接口文档 interface.yaml(server2 权威源;缺它则回退已提交的 interface.json)
 ]
 
 [project.optional-dependencies]

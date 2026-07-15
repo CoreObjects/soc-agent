@@ -4,7 +4,7 @@
 仓储必须:按 sig_hash 去重(upsert 幂等)、find_active 只服务 active(快通道热读)、状态可转、命中计数。
 openGauss/Redis 具体适配按这份接口另建;本测用内存 fake。
 """
-from soc_agent.patterns.rule import PatternRule, VerdictTemplate, DispositionTemplate
+from soc_agent.patterns.rule import PatternRule, VerdictTemplate, PrimitiveStepTemplate
 from soc_agent.patterns.repository import InMemoryPatternRepository
 
 
@@ -12,8 +12,8 @@ def _rule(sig_hash="h1", status="active", skill="kerberoast", layer="incriminati
     return PatternRule(
         skill=skill, layer=layer, sig="enc=RC4;spn_fanout=>=5", sig_hash=sig_hash,
         verdict=VerdictTemplate(verdict="true_positive", confidence=0.9, canonical_rationale="RC4 扇出"),
-        dispositions=[DispositionTemplate(action="disable_account", target_kind="account",
-                                          target_field="requester", risk="high")],
+        plan=[PrimitiveStepTemplate(order=1, primitive="disable_account",
+                                    params={"sam": {"source": "entity_role", "role": "requester"}}, risk="high")],
         status=status)
 
 

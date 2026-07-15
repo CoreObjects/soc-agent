@@ -4,7 +4,7 @@
 """
 import json
 
-from .rule import DispositionTemplate, PatternRule, VerdictTemplate
+from .rule import PatternRule, PrimitiveStepTemplate, VerdictTemplate
 
 _DEFAULT_STATS = {"hit_count": 0, "last_hit": None, "tp_confirmed": 0, "fp_reverted": 0}
 
@@ -13,7 +13,8 @@ def rule_to_row(r: PatternRule) -> dict:
     return {
         "sig_hash": r.sig_hash, "skill": r.skill, "layer": r.layer, "sig": r.sig,
         "verdict_tmpl": json.dumps(r.verdict.to_dict(), ensure_ascii=False),
-        "disp_tmpl": json.dumps([d.to_dict() for d in r.dispositions], ensure_ascii=False),
+        # disp_tmpl 列名沿用(不改库表);内容 = 有序处置计划(PrimitiveStepTemplate 列表)的 json blob
+        "disp_tmpl": json.dumps([s.to_dict() for s in r.plan], ensure_ascii=False),
         "status": r.status,
         "stats": json.dumps(r.stats, ensure_ascii=False),
         "provenance": json.dumps(r.provenance, ensure_ascii=False),
@@ -22,11 +23,11 @@ def rule_to_row(r: PatternRule) -> dict:
 
 def row_to_rule(row: dict) -> PatternRule:
     vt = json.loads(row["verdict_tmpl"])
-    dts = json.loads(row["disp_tmpl"]) or []
+    steps = json.loads(row["disp_tmpl"]) or []
     return PatternRule(
         skill=row["skill"], layer=row["layer"], sig=row["sig"], sig_hash=row["sig_hash"],
         verdict=VerdictTemplate(**vt),
-        dispositions=[DispositionTemplate(**d) for d in dts],
+        plan=[PrimitiveStepTemplate.from_dict(s) for s in steps],
         status=row["status"],
         stats=json.loads(row["stats"]) if row.get("stats") else dict(_DEFAULT_STATS),
         provenance=json.loads(row["provenance"]) if row.get("provenance") else {},

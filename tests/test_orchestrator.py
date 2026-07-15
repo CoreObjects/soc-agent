@@ -58,8 +58,7 @@ def test_slow_path_runs_tools_then_finalizes(tmp_path):
     assert r.verdict.verdict == "true_positive"
     assert r.verdict.agent == "qwen32b-ft"
     assert r.skill == "kerberoast"
-    assert r.dispositions[0].action == "disable_account"
-    assert r.dispositions[0].status == "proposed"       # 默认仅建议
+    assert r.dispositions == []                          # ★研判只出 verdict;处置由独立 composer 环节组装
     assert graph.queries                                # run_cypher 真被调过
     sys_msg = llm.calls[0]["messages"][0]
     assert sys_msg["role"] == "system"
@@ -109,17 +108,6 @@ def test_exhausts_to_suspicious_when_never_finalizes(tmp_path):
     r = _run(tmp_path, llm, FakeGraph(), max_iterations=3)
     assert r.verdict.verdict == "suspicious"
     assert r.verdict.missing_evidence                   # 说明未结论/证据不足
-
-
-def test_freeform_disposition_action_normalized_to_escalate(tmp_path):
-    llm = FakeLLMClient([
-        LLMResponse(tool_calls=[ToolCall("c0", "run_cypher", {"query": "MATCH (n) RETURN n"})]),
-        LLMResponse(tool_calls=[ToolCall("c1", "finalize_verdict", {
-            "verdict": "suspicious", "confidence": 0.5, "rationale": "x",
-            "dispositions": [{"action": "推动淘汰RC4等弱加密", "target": "NORTH", "risk": "high"}]})]),
-    ])
-    r = _run(tmp_path, llm, FakeGraph())
-    assert r.dispositions[0].action == "escalate"      # 词表外的自由发挥 → 归一为升级人工
 
 
 def _kerberoast_skill_with_recipe(base, recipe_ret):
@@ -208,20 +196,6 @@ def test_skill_router_none_falls_back_to_generic_layer(tmp_path):
     from soc_agent.orchestrator import SkillRouter
     picked = SkillRouter(llm=llm, registry=reg).route(_alert())      # T1558.003 → identity 层
     assert picked is not None and picked.name == "generic_identity"
-
-
-def test_guardrail_blocks_sensor_kill_through_build_result():
-    # 端到端:LLM 建议杀 wazuh-agent → build_result 里的护栏降级为 escalate + 记留痕
-    from soc_agent.orchestrator import build_result
-    args = {"verdict": "true_positive", "confidence": 0.9, "rationale": "x",
-            "dispositions": [{"action": "kill_process",
-                              "target": r"C:\Program Files (x86)\ossec-agent\wazuh-agent.exe", "risk": "high"},
-                             {"action": "isolate_host", "target": r"C:\Windows\powershell.exe", "risk": "high"}]}
-    r = build_result(_alert(), "lsass_dump", args, "qwen32b-ft", trace=[])
-    assert r.dispositions[0].action == "escalate"                 # 杀传感器 → 硬拒降级
-    assert r.dispositions[1].action == "escalate"                 # isolate_host 目标是文件路径 → 打回
-    guards = [t for t in r.trace if t.get("tool") == "guardrail"]
-    assert {g["decision"] for g in guards} == {"blocked", "retargeted"}
 
 
 def test_suspicious_lean_normalized_in_build_result():

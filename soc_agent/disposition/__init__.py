@@ -1,33 +1,22 @@
-"""处置层 · P5a 提议时护栏(不真做,只把提议整成安全的)。
+"""处置层 · 提议时护栏(不真做,只把提议整成安全的)。
 
-三件事:
-  ① NEVER-TOUCH 硬拒:传感器进程(security_agent)、受保护主机(DC/网关,config)、
-     受保护账号(krbtgt/Domain Admins 等)—— 命中 → 降级为 escalate(交人工),绝不自伤。
-  ② 目标类型解析:action 与 target 类型必须匹配(isolate_host 要主机、kill_process 要进程…),
-     明显不符(如 isolate_host 目标是文件路径)→ 降级为 escalate。
-  ③ 高危 gated / 低危 auto 分级 + 审计。
-真执行(真做/模拟/回退)是 P5b,需 server2 可触达控制面,另做。纯逻辑,可单测。
+三件事(全部按**处置接口文档**驱动,不再硬编码原语语义):
+  ① NEVER-TOUCH 硬拒:传感器进程(security_agent)、受保护主机(DC/网关/CA)、受保护账号(krbtgt/DA 等)
+     —— 命中 → 降级为 escalate(交人工),绝不自伤。
+  ② 目标类型解析:原语期望的目标类型(interface.kind_of)与 target 明显不符 → 降级 escalate。
+  ③ gating:变更类原语(interface.is_gated)→ gated(人审后才真做);只读/非执行动作 → auto。
+护栏逐条独立处理(被拦的一步降级 escalate,其余步保留)→ 多步计划不会被单步毁掉。
+真执行(真做/模拟/回退)是后续 range 处置面 + 执行器,另做。纯逻辑,可单测。
 """
 import os
 import re
 
 from ..models import Disposition
 from ..recipe_lib import security_agent
+from ..response import default_interface
+from ..response.interface import NON_EXECUTING
 
-__all__ = ["apply_guardrail", "default_policy", "policy_from_graph", "GATED_ACTIONS"]
-
-# 高危(需人工确认才可执行)vs 低危/无操作(可自动)
-GATED_ACTIONS = {"disable_account", "isolate_host", "kill_process", "block_ip",
-                 "reset_password", "revoke_sessions", "quarantine_file"}
-
-# action → 期望目标实体类型
-_EXPECT = {
-    "isolate_host": "host", "kill_process": "process", "quarantine_file": "file",
-    "disable_account": "account", "reset_password": "account", "revoke_sessions": "account",
-    "block_ip": "ip",
-}
-# 会作用到"进程/主机/文件"的动作 —— 只对这些查传感器 NEVER-TOUCH
-_TOUCHES_ENDPOINT = {"kill_process", "isolate_host", "quarantine_file"}
+__all__ = ["apply_guardrail", "default_policy", "policy_from_graph"]
 
 _PATH = re.compile(r"^[A-Za-z]:[\\/]|\\")
 _IPV4 = re.compile(r"^\d{1,3}(\.\d{1,3}){3}$")
@@ -79,26 +68,39 @@ def _looks_like(target, kind):
         return is_path or t.lower().endswith(".exe")
     if kind == "file":
         return is_path
-    if kind in ("host", "account"):
+    if kind in ("host", "account", "domain"):
         return not is_path and not is_ip
     return True
 
 
-def _never_touch(action, target, policy):
+def _host_matches(target, protected):
+    """★修子串 bug:按主机名标签/精确 FQDN 比,不用子串(旧 `dc01 in adc01` 会误判)。
+    protected 给 'dc01' 或 'dc01.corp.local' 都能保护 dc01,但不误伤 adc01。"""
+    t = (target or "").lower().strip()
+    p = (protected or "").lower().strip()
+    if not t or not p:
+        return False
+    return t == p or t.split(".")[0] == p.split(".")[0]
+
+
+def _never_touch(action, target, policy, iface):
     """命中 NEVER-TOUCH 返回原因串,否则 None。"""
     t = (target or "")
     tl = t.lower().strip()
-    if action in _TOUCHES_ENDPOINT:
+    if iface.touches_endpoint(action):          # 端点面(隔离/杀进程/取证/隔离文件)→ 查传感器
         agent = security_agent(t)
         if agent:
             return f"目标是安全/监控代理({agent})——绝不 kill/隔离传感器"
-    for h in policy.get("protected_hosts", []):
-        if h.lower() in tl:
-            return f"目标是受保护主机({h})——DC/网关/mgmt 不动"
-    for a in policy.get("protected_accounts", []):
-        al = a.lower()
-        if tl == al or tl.startswith(al + "\\") or tl.endswith("\\" + al):
-            return f"目标是受保护账号({a})——AD 关键账号不禁用"
+    kind = iface.kind_of(action)
+    if kind == "host":
+        for h in policy.get("protected_hosts", []):
+            if _host_matches(t, h):
+                return f"目标是受保护主机({h})——DC/网关/mgmt 不动"
+    if kind == "account":
+        for a in policy.get("protected_accounts", []):
+            al = a.lower()
+            if tl == al or tl.startswith(al + "\\") or tl.endswith("\\" + al):
+                return f"目标是受保护账号({a})——AD 关键账号不禁用"
     return None
 
 
@@ -107,24 +109,31 @@ def _escalate(orig, reason):
                        status="proposed", by="auto")
 
 
-def apply_guardrail(dispositions, policy=None):
-    """把一串提议处置整成安全的:NEVER-TOUCH 硬拒 + 目标类型解析 + gated/auto 分级。
-    返回 (safe_dispositions, audit)。audit 每条 = {action,target,decision,reason?}。"""
+def apply_guardrail(dispositions, policy=None, iface=None):
+    """把一串提议处置整成安全的:NEVER-TOUCH 硬拒 + 目标类型解析 + gating(接口文档驱动)。
+    返回 (safe_dispositions, audit)。audit 每条 = {action,target,decision,reason?}。
+    逐条独立:被拦的一步降级 escalate、其余保留 —— 多步计划不被单步毁掉。"""
     policy = policy or default_policy()
+    iface = iface or default_interface()
     safe, audit = [], []
     for d in dispositions or []:
-        reason = _never_touch(d.action, d.target, policy)
+        # 非执行/agent 侧动作(escalate/monitor/none)直接放行为 auto
+        if d.action in NON_EXECUTING:
+            audit.append({"action": d.action, "target": d.target, "decision": "auto"})
+            safe.append(d)
+            continue
+        reason = _never_touch(d.action, d.target, policy, iface)
         if reason:
             audit.append({"action": d.action, "target": d.target, "decision": "blocked", "reason": reason})
             safe.append(_escalate(d, reason))
             continue
-        exp = _EXPECT.get(d.action)
-        if exp and d.target and not _looks_like(d.target, exp):
-            reason = f"目标 {d.target!r} 不像{exp}(action={d.action})"
+        kind = iface.kind_of(d.action)
+        if kind != "none" and d.target and not _looks_like(d.target, kind):
+            reason = f"目标 {d.target!r} 不像{kind}(action={d.action})"
             audit.append({"action": d.action, "target": d.target, "decision": "retargeted", "reason": reason})
             safe.append(_escalate(d, reason))
             continue
-        decision = "gated" if d.action in GATED_ACTIONS else "auto"
+        decision = "gated" if iface.is_gated(d.action) else "auto"
         audit.append({"action": d.action, "target": d.target, "decision": decision})
         safe.append(d)                                 # 保留(status 保持 proposed:首期一律仅建议)
     return safe, audit

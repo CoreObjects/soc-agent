@@ -103,3 +103,43 @@ def test_policy_from_graph_survives_graph_error():
     from soc_agent.disposition import policy_from_graph
     pol = policy_from_graph(Boom())               # 图挂了也别崩,退回默认策略
     assert "protected_accounts" in pol
+
+
+# ---- 接口文档驱动 + 修子串 bug 的回归 ----
+
+def test_substring_host_bug_fixed_adc01_not_matched_when_protecting_dc01():
+    # ★旧 bug:`dc01 in adc01`(子串)会误伤不相干的 adc01。修后按标签比,adc01 不被 dc01 保护。
+    pol = {"protected_hosts": ["dc01.corp.local"], "protected_accounts": []}
+    safe, audit = apply_guardrail([Disposition(action="isolate_host", target="adc01.corp.local", risk="high")], pol)
+    assert safe[0].action == "isolate_host"       # adc01 ≠ dc01,不该被拦
+    assert audit[0]["decision"] == "gated"
+
+
+def test_protected_host_matched_by_short_or_fqdn():
+    pol = {"protected_hosts": ["dc01"], "protected_accounts": []}
+    # 给短名保护,目标给 FQDN,仍要命中(标签匹配)
+    safe, _ = apply_guardrail([Disposition(action="isolate_host", target="dc01.corp.local", risk="high")], pol)
+    assert safe[0].action == "escalate"
+
+
+def test_collect_artifact_is_auto_not_gated():
+    # 只读取证 → interface gating=auto → 不进人审队列
+    safe, audit = apply_guardrail([Disposition(action="collect_artifact", target="host1", risk="low")], _pol())
+    assert safe[0].action == "collect_artifact"
+    assert audit[0]["decision"] == "auto"
+
+
+def test_remove_from_group_gated_and_protected_account_blocked():
+    # 多参原语:主目标=账号(sam)。普通账号 gated;受保护账号 blocked。
+    safe, audit = apply_guardrail(
+        [Disposition(action="remove_from_group", target="eddard.stark",
+                     params={"sam": "eddard.stark", "group": "Domain Admins"}, risk="high")], _pol())
+    assert safe[0].action == "remove_from_group" and audit[0]["decision"] == "gated"
+    blk, aud = apply_guardrail([Disposition(action="remove_from_group", target="krbtgt", risk="high")], _pol())
+    assert blk[0].action == "escalate" and aud[0]["decision"] == "blocked"
+
+
+def test_domain_scoped_primitive_is_gated():
+    # rotate_krbtgt 域级 → 恒 gated(接口文档里 gating=gated)
+    safe, audit = apply_guardrail([Disposition(action="rotate_krbtgt", target="north.sevenkingdoms.local")], _pol())
+    assert audit[0]["decision"] == "gated"

@@ -7,6 +7,7 @@ import argparse
 import sys
 from pathlib import Path
 
+from .composer import Composer
 from .config import Config
 from .disposition import policy_from_graph
 from .graph.client import Neo4jGraph
@@ -131,8 +132,9 @@ def build_orchestrator(config: Config):
     router = SkillRouter(llm=llm, registry=registry, agent_name=config.llm_model)
     recipe_inv = RecipeInvestigator(
         llm=llm, graph=graph, schema=schema, registry=registry, agent_name=config.llm_model, policy=policy)
+    composer = Composer(llm=llm, agent_name=config.llm_model)   # 独立处置编排环节(读 interface.yaml)
     orch = FastSlowInvestigator(graph=graph, repo=repo, registry=registry,
-                                recipe_inv=recipe_inv, router=router, policy=policy)
+                                recipe_inv=recipe_inv, router=router, policy=policy, composer=composer)
     return graph, orch, repo
 
 

@@ -9,7 +9,6 @@ from dataclasses import dataclass
 from typing import Callable, Optional
 
 from ..graph.guard import ReadOnlyViolation, assert_read_only
-from ..models import DISPOSITION_ACTIONS
 
 __all__ = ["Tool", "ToolBox", "default_toolbox", "FINALIZE"]
 
@@ -86,7 +85,8 @@ def _run_cypher_tool(graph) -> Tool:
 def _finalize_verdict_tool() -> Tool:
     return Tool(
         name=FINALIZE,
-        description=("取证充分后调用它给出**结构化研判结论 + 建议处置**,结束本次研判。"
+        description=("取证充分后调用它给出**结构化研判结论**,结束本次研判。"
+                     "★只做定性(判 verdict),不给处置 —— 处置由研判之后的独立环节按接口文档组装。"
                      "证据不足时用 verdict=suspicious 并在 missing_evidence 说明缺什么;"
                      "★verdict=suspicious 时**必须**给 lean(存疑的倾向,便于分诊):"
                      "malicious=大概率攻击待确证 / benign=大概率正常但没法完全排除 / unknown=真两可。"),
@@ -105,17 +105,6 @@ def _finalize_verdict_tool() -> Tool:
                 "missing_evidence": {"type": "array", "items": {"type": "string"},
                                      "description": "取不到的关键证据"},
                 "pattern": {"type": "string", "description": "识别出的攻击模式名(可空)"},
-                "dispositions": {
-                    "type": "array",
-                    "items": {"type": "object", "properties": {
-                        "action": {"type": "string", "enum": sorted(DISPOSITION_ACTIONS),
-                                   "description": "只能从词表里选;别自由发挥"},
-                        "target": {"type": "string", "description": "作用实体(账号/IP/主机/进程)"},
-                        "risk": {"type": "string", "enum": ["low", "high"]},
-                    }, "required": ["action"]},
-                    "description": ("建议处置(仅建议,不自动执行)。verdict=suspicious 或证据不足时"
-                                    "用 escalate/monitor,别提高危动作。"),
-                },
             },
             "required": ["verdict", "confidence", "rationale"],
         },

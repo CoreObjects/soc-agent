@@ -7,13 +7,16 @@ neo4j 惰性导入(方法内),故 build_write_statements 等纯逻辑本机可�
 """
 __all__ = ["Neo4jGraph", "build_write_statements", "build_constraints"]
 
-# 处置目标类型 → (实体 label, 键字段);:ON 绑真实体用。label/键来自固定表,非用户输入 → 安全内插。
+# 处置目标类型 → (实体 label, 匹配字段);:ON 绑真实体用。label/字段来自固定表,非用户输入 → 安全内插。
+# ★匹配字段取"处置目标值就是那个字段"的:sam(账号)/ip/process_guid/sha256(文件的图唯一键)/fqdn(域)。
+#   host 只能按 hostname(prop,图唯一键是 asset_id、但处置时只握有主机名)——靠"仅唯一命中才绑"防绑错。
 _ENTITY_BY_KIND = {
     "ip": ("IPAddress", "ip"),
     "account": ("Account", "sam"),
     "host": ("Host", "hostname"),
     "process": ("Process", "process_guid"),
-    "file": ("File", "path"),
+    "file": ("File", "sha256"),
+    "domain": ("Domain", "fqdn"),
 }
 
 
@@ -22,7 +25,8 @@ def build_constraints():
     return [
         "CREATE CONSTRAINT verdict_pattern_id IF NOT EXISTS FOR (v:Verdict) REQUIRE v.pattern_id IS UNIQUE",
         "CREATE CONSTRAINT verdict_id IF NOT EXISTS FOR (v:Verdict) REQUIRE v.verdict_id IS UNIQUE",
-        "CREATE CONSTRAINT disposition_key IF NOT EXISTS FOR (d:Disposition) REQUIRE d.disposition_key IS UNIQUE",
+        "CREATE CONSTRAINT responseplan_id IF NOT EXISTS FOR (p:ResponsePlan) REQUIRE p.plan_id IS UNIQUE",
+        "CREATE CONSTRAINT disposition_step_key IF NOT EXISTS FOR (d:Disposition) REQUIRE d.step_key IS UNIQUE",
     ]
 
 
@@ -31,7 +35,11 @@ def build_write_statements(alert_uid, result):
 
     ★收敛:verdict 带 pattern(pattern_id)→ 共享 Verdict 节点(按 pattern_id),per-alert 数据落 CONCLUDED 边;
     无 pattern(慢通道未命中)→ per-alert fork(按 verdict_id)。图只存台账/历史,规则本体在 openGauss。
-    Disposition 按 conv_key(action+目标)收敛,并 :ON 绑到真实体(可解析且单一时;0/多命中不硬造边)。
+
+    ★响应台账(一告警一响应计划,审计流水):(:Verdict)-[:LED_TO]->(:ResponsePlan {plan_id,status})
+      -[:STEP {order}]->(:Disposition {step_key, primitive/params/rollback_handle/status})-[:ON]->真实体。
+      每步是独立台账条目(带自己的 rollback_handle/execution_id),不按 conv_key 合并 —— 响应审计要全历史。
+      :ON 仅"唯一命中"才绑(0/多命中不硬造边,防绑错)。
     """
     if result is None or result.verdict is None:
         return []
@@ -60,21 +68,34 @@ def build_write_statements(alert_uid, result):
             {"alert_uid": alert_uid, "vkey": v.verdict_id, "node_props": node_props, "edge_props": edge_props}))
         vmatch, vkey = "MATCH (a:Alert {alert_uid:$alert_uid})-[:CONCLUDED]->(v:Verdict {verdict_id:$vkey}) ", v.verdict_id
 
-    for d in result.dispositions or []:
-        props = d.to_props()
-        dkey = props["disposition_key"]
+    disps = result.dispositions or []
+    if disps:                           # 有处置 → 建响应计划台账(一告警一计划)
+        plan_id = alert_uid
         stmts.append((
-            vmatch + "MERGE (v)-[:LED_TO]->(d:Disposition {disposition_key:$dkey}) SET d += $props "
-            "RETURN d.disposition_key AS id",
-            {"alert_uid": alert_uid, "vkey": vkey, "dkey": dkey, "props": props}))
-        ent = _ENTITY_BY_KIND.get(d.target_kind)
-        if ent and d.target:            # :ON 绑真实体(单一命中才绑;0/多→无行/不硬造)
-            label, keyf = ent
+            vmatch + "MERGE (v)-[:LED_TO]->(p:ResponsePlan {plan_id:$plan_id}) SET p += $plan_props "
+            "RETURN p.plan_id AS id",
+            {"alert_uid": alert_uid, "vkey": vkey, "plan_id": plan_id,
+             "plan_props": {"plan_id": plan_id, "status": "proposed"}}))
+        for i, d in enumerate(disps, start=1):
+            props = d.to_props()
+            step_key = f"{plan_id}#{i}"
+            props["step_key"] = step_key
+            props["order"] = i
             stmts.append((
-                "MATCH (d:Disposition {disposition_key:$dkey}) "
-                f"MATCH (e:{label} {{{keyf}:$target}}) WITH d, e LIMIT 1 "
-                f"MERGE (d)-[:ON]->(e) RETURN e.{keyf} AS bound",
-                {"dkey": dkey, "target": d.target}))
+                "MATCH (p:ResponsePlan {plan_id:$plan_id}) "
+                "MERGE (p)-[:STEP {order:$order}]->(d:Disposition {step_key:$dkey}) SET d += $props "
+                "RETURN d.step_key AS id",
+                {"plan_id": plan_id, "order": i, "dkey": step_key, "props": props}))
+            ent = _ENTITY_BY_KIND.get(d.target_kind)
+            if ent and d.target:        # :ON 绑真实体(仅唯一命中才绑;0/多→不硬造边)
+                label, keyf = ent
+                stmts.append((
+                    "MATCH (d:Disposition {step_key:$dkey}) "
+                    f"OPTIONAL MATCH (e0:{label} {{{keyf}:$target}}) "
+                    "WITH d, collect(e0) AS es WHERE size(es) = 1 "
+                    "WITH d, es[0] AS e "
+                    f"MERGE (d)-[:ON]->(e) RETURN e.{keyf} AS bound",
+                    {"dkey": step_key, "target": d.target}))
     return stmts
 
 

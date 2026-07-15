@@ -1,7 +1,7 @@
 """规则序列化(↔DB行)+ 进程内热读缓存。纯逻辑,本地可测(openGauss 适配复用序列化)。"""
 from soc_agent.patterns.cache import CachedPatternRepository
 from soc_agent.patterns.repository import InMemoryPatternRepository
-from soc_agent.patterns.rule import PatternRule, VerdictTemplate, DispositionTemplate
+from soc_agent.patterns.rule import PatternRule, VerdictTemplate, PrimitiveStepTemplate
 from soc_agent.patterns.serialize import rule_to_row, row_to_rule
 
 
@@ -9,7 +9,8 @@ def _rule(sig_hash="h1", status="active"):
     return PatternRule(
         skill="kerberoast", layer="incriminating", sig="enc=RC4;spn_fanout=>=5", sig_hash=sig_hash,
         verdict=VerdictTemplate("true_positive", lean=None, confidence=0.9, canonical_rationale="RC4 扇出"),
-        dispositions=[DispositionTemplate("disable_account", "account", "requester", "high")],
+        plan=[PrimitiveStepTemplate(order=1, primitive="disable_account",
+                                    params={"sam": {"source": "entity_role", "role": "requester"}}, risk="high")],
         status=status)
 
 
@@ -19,8 +20,9 @@ def test_serialize_roundtrip():
     assert back.sig_hash == r.sig_hash and back.skill == r.skill and back.layer == r.layer
     assert back.status == r.status
     assert back.verdict.verdict == "true_positive" and back.verdict.confidence == 0.9
-    assert back.dispositions[0].action == "disable_account"
-    assert back.dispositions[0].target_field == "requester"
+    assert back.plan[0].primitive == "disable_account"
+    assert back.plan[0].params["sam"]["role"] == "requester"
+    assert back.plan[0].order == 1 and back.plan[0].risk == "high"
     assert back.pattern_id == r.pattern_id
 
 

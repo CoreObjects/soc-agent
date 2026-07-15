@@ -1,0 +1,780 @@
+{
+  "version": "2026.07",
+  "scope": {
+    "domains": [
+      "north.sevenkingdoms.local",
+      "essos.local",
+      "sevenkingdoms.local"
+    ],
+    "subnets": [
+      "192.168.56.0/24"
+    ]
+  },
+  "primitives": [
+    {
+      "id": "disable_account",
+      "category": "identity",
+      "phase": "P1",
+      "summary": "禁用一个 AD 用户账号(拒绝登录；已签发 TGT 到期前仍有效)",
+      "target": {
+        "kind": "account",
+        "key_field": "sam",
+        "extra_keys": [
+          "domain"
+        ]
+      },
+      "params": [
+        {
+          "name": "sam",
+          "type": "string",
+          "required": true,
+          "source": "entity_role"
+        },
+        {
+          "name": "domain",
+          "type": "string",
+          "required": false,
+          "source": "entity_role"
+        }
+      ],
+      "preconditions": [
+        "target_exists",
+        "not_never_touch",
+        "in_scope"
+      ],
+      "effect": "置 userAccountControl ACCOUNTDISABLE；不影响现有会话",
+      "gating": "gated",
+      "blast_radius": "single_target",
+      "risk_default": "high",
+      "idempotent": true,
+      "idempotency_key": [
+        "primitive",
+        "sam",
+        "domain"
+      ],
+      "reversible": {
+        "mode": "full",
+        "inverse": "enable_account",
+        "inverse_param_map": {
+          "sam": "sam",
+          "domain": "domain"
+        }
+      },
+      "rollback_handle_schema": {
+        "execution_id": "str",
+        "primitive": "str",
+        "target": {
+          "sam": "str",
+          "domain": "str"
+        },
+        "prev_state": {
+          "was_enabled": "bool"
+        }
+      },
+      "failure_modes": [
+        {
+          "code": "TARGET_NOT_FOUND",
+          "retriable": false
+        },
+        {
+          "code": "WINRM_UNREACHABLE",
+          "retriable": true
+        },
+        {
+          "code": "SCOPE_DENIED",
+          "retriable": false
+        }
+      ],
+      "enforcement_point": "winrm",
+      "execution": "sync",
+      "audit_fields": [
+        "execution_id",
+        "actor",
+        "approver",
+        "ts",
+        "params",
+        "result",
+        "rollback_handle"
+      ]
+    },
+    {
+      "id": "enable_account",
+      "category": "identity",
+      "phase": "P1",
+      "summary": "启用一个被禁用的 AD 账号(disable_account 的 inverse)",
+      "target": {
+        "kind": "account",
+        "key_field": "sam",
+        "extra_keys": [
+          "domain"
+        ]
+      },
+      "params": [
+        {
+          "name": "sam",
+          "type": "string",
+          "required": true,
+          "source": "entity_role"
+        },
+        {
+          "name": "domain",
+          "type": "string",
+          "required": false,
+          "source": "entity_role"
+        }
+      ],
+      "gating": "gated",
+      "blast_radius": "single_target",
+      "risk_default": "low",
+      "idempotent": true,
+      "reversible": {
+        "mode": "full",
+        "inverse": "disable_account"
+      },
+      "enforcement_point": "winrm",
+      "planned_by_composer": false
+    },
+    {
+      "id": "expire_password",
+      "category": "identity",
+      "phase": "P1",
+      "summary": "强制账号下次登录改密(比 reset 温和，不改现有口令)",
+      "target": {
+        "kind": "account",
+        "key_field": "sam",
+        "extra_keys": [
+          "domain"
+        ]
+      },
+      "params": [
+        {
+          "name": "sam",
+          "type": "string",
+          "required": true,
+          "source": "entity_role"
+        },
+        {
+          "name": "domain",
+          "type": "string",
+          "required": false,
+          "source": "entity_role"
+        }
+      ],
+      "preconditions": [
+        "target_exists",
+        "not_never_touch",
+        "in_scope"
+      ],
+      "gating": "gated",
+      "blast_radius": "single_target",
+      "risk_default": "high",
+      "idempotent": true,
+      "reversible": {
+        "mode": "full",
+        "inverse": "unexpire_password"
+      },
+      "enforcement_point": "winrm"
+    },
+    {
+      "id": "unexpire_password",
+      "category": "identity",
+      "phase": "P1",
+      "summary": "撤销 expire_password(inverse)",
+      "target": {
+        "kind": "account",
+        "key_field": "sam"
+      },
+      "params": [
+        {
+          "name": "sam",
+          "type": "string",
+          "required": true,
+          "source": "entity_role"
+        }
+      ],
+      "gating": "gated",
+      "risk_default": "low",
+      "reversible": {
+        "mode": "full",
+        "inverse": "expire_password"
+      },
+      "enforcement_point": "winrm",
+      "planned_by_composer": false
+    },
+    {
+      "id": "add_to_group",
+      "category": "identity",
+      "phase": "P1",
+      "summary": "把账号加入一个组(典型：加入隔离/受限组做遏制)",
+      "target": {
+        "kind": "account",
+        "key_field": "sam"
+      },
+      "params": [
+        {
+          "name": "sam",
+          "type": "string",
+          "required": true,
+          "source": "entity_role"
+        },
+        {
+          "name": "group",
+          "type": "string",
+          "required": true,
+          "source": "entity_role"
+        }
+      ],
+      "preconditions": [
+        "target_exists",
+        "not_never_touch",
+        "in_scope"
+      ],
+      "gating": "gated",
+      "blast_radius": "single_target",
+      "risk_default": "high",
+      "idempotent": true,
+      "reversible": {
+        "mode": "full",
+        "inverse": "remove_from_group",
+        "inverse_param_map": {
+          "sam": "sam",
+          "group": "group"
+        }
+      },
+      "enforcement_point": "winrm"
+    },
+    {
+      "id": "remove_from_group",
+      "category": "identity",
+      "phase": "P1",
+      "summary": "把账号移出一个组(典型：从特权组剥离做遏制)",
+      "target": {
+        "kind": "account",
+        "key_field": "sam"
+      },
+      "params": [
+        {
+          "name": "sam",
+          "type": "string",
+          "required": true,
+          "source": "entity_role"
+        },
+        {
+          "name": "group",
+          "type": "string",
+          "required": true,
+          "source": "entity_role"
+        }
+      ],
+      "preconditions": [
+        "target_exists",
+        "not_never_touch",
+        "in_scope"
+      ],
+      "gating": "gated",
+      "blast_radius": "single_target",
+      "risk_default": "high",
+      "idempotent": true,
+      "reversible": {
+        "mode": "full",
+        "inverse": "add_to_group",
+        "inverse_param_map": {
+          "sam": "sam",
+          "group": "group"
+        }
+      },
+      "enforcement_point": "winrm"
+    },
+    {
+      "id": "reset_password",
+      "category": "identity",
+      "phase": "P2",
+      "summary": "重置账号口令为一个新的已知口令",
+      "target": {
+        "kind": "account",
+        "key_field": "sam"
+      },
+      "params": [
+        {
+          "name": "sam",
+          "type": "string",
+          "required": true,
+          "source": "entity_role"
+        }
+      ],
+      "preconditions": [
+        "target_exists",
+        "not_never_touch",
+        "in_scope"
+      ],
+      "gating": "gated",
+      "blast_radius": "single_target",
+      "risk_default": "high",
+      "reversible": {
+        "mode": "compensating"
+      },
+      "enforcement_point": "winrm"
+    },
+    {
+      "id": "revoke_sessions",
+      "category": "identity",
+      "phase": "P2",
+      "summary": "强制注销账号在主机上的活动会话",
+      "target": {
+        "kind": "account",
+        "key_field": "sam"
+      },
+      "params": [
+        {
+          "name": "sam",
+          "type": "string",
+          "required": true,
+          "source": "entity_role"
+        }
+      ],
+      "gating": "gated",
+      "blast_radius": "single_target",
+      "risk_default": "high",
+      "reversible": {
+        "mode": "none"
+      },
+      "enforcement_point": "winrm"
+    },
+    {
+      "id": "revoke_kerberos",
+      "category": "identity",
+      "phase": "P2",
+      "summary": "清除主机上的 Kerberos 票缓存(klist purge)",
+      "target": {
+        "kind": "host",
+        "key_field": "hostname"
+      },
+      "params": [
+        {
+          "name": "hostname",
+          "type": "string",
+          "required": true,
+          "source": "entity_role"
+        }
+      ],
+      "gating": "gated",
+      "blast_radius": "host",
+      "risk_default": "high",
+      "reversible": {
+        "mode": "none"
+      },
+      "enforcement_point": "winrm"
+    },
+    {
+      "id": "disable_computer_account",
+      "category": "identity",
+      "phase": "P2",
+      "summary": "禁用一个计算机账号(被攻陷主机凭据≠用户禁用)",
+      "target": {
+        "kind": "host",
+        "key_field": "hostname"
+      },
+      "params": [
+        {
+          "name": "hostname",
+          "type": "string",
+          "required": true,
+          "source": "entity_role"
+        }
+      ],
+      "preconditions": [
+        "target_exists",
+        "not_never_touch",
+        "in_scope"
+      ],
+      "gating": "gated",
+      "blast_radius": "single_target",
+      "risk_default": "high",
+      "reversible": {
+        "mode": "full",
+        "inverse": "enable_computer_account"
+      },
+      "enforcement_point": "winrm"
+    },
+    {
+      "id": "rotate_krbtgt",
+      "category": "identity",
+      "phase": "break_glass",
+      "summary": "双重轮换 krbtgt(域级 break-glass，唯一复原=VM 快照)",
+      "target": {
+        "kind": "domain",
+        "key_field": "fqdn"
+      },
+      "params": [
+        {
+          "name": "fqdn",
+          "type": "string",
+          "required": true,
+          "source": "entity_role"
+        }
+      ],
+      "preconditions": [
+        "in_scope",
+        "elevated_approval"
+      ],
+      "gating": "gated",
+      "blast_radius": "domain",
+      "risk_default": "high",
+      "reversible": {
+        "mode": "none"
+      },
+      "enforcement_point": "winrm",
+      "break_glass": true,
+      "planned_by_composer": false
+    },
+    {
+      "id": "block_ip",
+      "category": "network",
+      "phase": "P1",
+      "summary": "在网关封禁一个源 IP(app 层，宿主 nft/iptables DOCKER-USER)",
+      "target": {
+        "kind": "ip",
+        "key_field": "ip"
+      },
+      "params": [
+        {
+          "name": "ip",
+          "type": "string",
+          "required": true,
+          "source": "entity_role"
+        }
+      ],
+      "preconditions": [
+        "not_shared_egress",
+        "in_scope"
+      ],
+      "gating": "gated",
+      "blast_radius": "single_target",
+      "risk_default": "high",
+      "idempotent": true,
+      "idempotency_key": [
+        "primitive",
+        "ip"
+      ],
+      "reversible": {
+        "mode": "full",
+        "inverse": "unblock_ip",
+        "inverse_param_map": {
+          "ip": "ip"
+        }
+      },
+      "rollback_handle_schema": {
+        "execution_id": "str",
+        "primitive": "str",
+        "target": {
+          "ip": "str"
+        },
+        "prev_state": {
+          "nft_handle": "str"
+        }
+      },
+      "enforcement_point": "iptables",
+      "execution": "sync"
+    },
+    {
+      "id": "unblock_ip",
+      "category": "network",
+      "phase": "P1",
+      "summary": "解封 IP(block_ip 的 inverse)",
+      "target": {
+        "kind": "ip",
+        "key_field": "ip"
+      },
+      "params": [
+        {
+          "name": "ip",
+          "type": "string",
+          "required": true,
+          "source": "entity_role"
+        }
+      ],
+      "gating": "gated",
+      "risk_default": "low",
+      "reversible": {
+        "mode": "full",
+        "inverse": "block_ip"
+      },
+      "enforcement_point": "iptables",
+      "planned_by_composer": false
+    },
+    {
+      "id": "block_domain",
+      "category": "network",
+      "phase": "P2",
+      "summary": "阻断一个域名解析(GOAD 上 DC DNS sinkhole；真设备在 SWG/代理)",
+      "target": {
+        "kind": "domain",
+        "key_field": "fqdn"
+      },
+      "params": [
+        {
+          "name": "fqdn",
+          "type": "string",
+          "required": true,
+          "source": "entity_role"
+        }
+      ],
+      "gating": "gated",
+      "blast_radius": "single_target",
+      "risk_default": "high",
+      "reversible": {
+        "mode": "full",
+        "inverse": "unblock_domain"
+      },
+      "enforcement_point": "dc_dns"
+    },
+    {
+      "id": "block_port",
+      "category": "network",
+      "phase": "P2",
+      "summary": "在主机上封禁一个端口(isolate_host 的窄变体)",
+      "target": {
+        "kind": "host",
+        "key_field": "hostname"
+      },
+      "params": [
+        {
+          "name": "hostname",
+          "type": "string",
+          "required": true,
+          "source": "entity_role"
+        },
+        {
+          "name": "port",
+          "type": "int",
+          "required": true,
+          "source": "literal"
+        }
+      ],
+      "gating": "gated",
+      "blast_radius": "host",
+      "risk_default": "high",
+      "reversible": {
+        "mode": "full",
+        "inverse": "unblock_port"
+      },
+      "enforcement_point": "winrm"
+    },
+    {
+      "id": "isolate_host",
+      "category": "endpoint",
+      "phase": "P1",
+      "summary": "隔离主机(除 mgmt 外全阻的防火墙规则组，=EDR 隔离)",
+      "target": {
+        "kind": "host",
+        "key_field": "hostname"
+      },
+      "params": [
+        {
+          "name": "hostname",
+          "type": "string",
+          "required": true,
+          "source": "entity_role"
+        },
+        {
+          "name": "enforcement_point",
+          "type": "string",
+          "required": false,
+          "source": "literal"
+        }
+      ],
+      "preconditions": [
+        "target_exists",
+        "not_never_touch",
+        "in_scope"
+      ],
+      "gating": "gated",
+      "blast_radius": "host",
+      "risk_default": "high",
+      "idempotent": true,
+      "reversible": {
+        "mode": "full",
+        "inverse": "release_host",
+        "inverse_param_map": {
+          "hostname": "hostname"
+        }
+      },
+      "rollback_handle_schema": {
+        "execution_id": "str",
+        "primitive": "str",
+        "target": {
+          "hostname": "str"
+        },
+        "prev_state": {
+          "rule_group": "str"
+        }
+      },
+      "enforcement_point": "winrm",
+      "execution": "sync"
+    },
+    {
+      "id": "release_host",
+      "category": "endpoint",
+      "phase": "P1",
+      "summary": "解除主机隔离(isolate_host 的 inverse)",
+      "target": {
+        "kind": "host",
+        "key_field": "hostname"
+      },
+      "params": [
+        {
+          "name": "hostname",
+          "type": "string",
+          "required": true,
+          "source": "entity_role"
+        }
+      ],
+      "gating": "gated",
+      "risk_default": "low",
+      "reversible": {
+        "mode": "full",
+        "inverse": "isolate_host"
+      },
+      "enforcement_point": "winrm",
+      "planned_by_composer": false
+    },
+    {
+      "id": "collect_artifact",
+      "category": "endpoint",
+      "phase": "P1",
+      "summary": "只读取证(进程树/文件样本/注册表导出)，非变更，可前置于破坏性步骤",
+      "target": {
+        "kind": "host",
+        "key_field": "hostname"
+      },
+      "params": [
+        {
+          "name": "hostname",
+          "type": "string",
+          "required": true,
+          "source": "entity_role"
+        },
+        {
+          "name": "what",
+          "type": "string",
+          "required": false,
+          "source": "literal"
+        }
+      ],
+      "preconditions": [
+        "target_exists",
+        "in_scope"
+      ],
+      "gating": "auto",
+      "blast_radius": "single_target",
+      "risk_default": "low",
+      "reversible": {
+        "mode": "none"
+      },
+      "enforcement_point": "winrm",
+      "execution": "sync"
+    },
+    {
+      "id": "kill_process",
+      "category": "endpoint",
+      "phase": "P2",
+      "summary": "结束一个进程(PID 由 Sysmon process_guid 解析)",
+      "target": {
+        "kind": "process",
+        "key_field": "process_guid"
+      },
+      "params": [
+        {
+          "name": "process_guid",
+          "type": "string",
+          "required": true,
+          "source": "entity_role"
+        }
+      ],
+      "preconditions": [
+        "target_exists",
+        "not_never_touch",
+        "in_scope"
+      ],
+      "gating": "gated",
+      "blast_radius": "single_target",
+      "risk_default": "high",
+      "reversible": {
+        "mode": "none"
+      },
+      "enforcement_point": "winrm"
+    },
+    {
+      "id": "quarantine_file",
+      "category": "endpoint",
+      "phase": "P2",
+      "summary": "隔离一个文件(移入隔离区+ACL 拒绝，记原路径+sha256)",
+      "target": {
+        "kind": "file",
+        "key_field": "sha256",
+        "extra_keys": [
+          "path"
+        ]
+      },
+      "params": [
+        {
+          "name": "sha256",
+          "type": "string",
+          "required": true,
+          "source": "entity_role"
+        }
+      ],
+      "preconditions": [
+        "target_exists",
+        "not_never_touch",
+        "in_scope"
+      ],
+      "gating": "gated",
+      "blast_radius": "single_target",
+      "risk_default": "high",
+      "reversible": {
+        "mode": "full",
+        "inverse": "restore_file"
+      },
+      "rollback_handle_schema": {
+        "execution_id": "str",
+        "primitive": "str",
+        "target": {
+          "sha256": "str"
+        },
+        "prev_state": {
+          "orig_path": "str",
+          "quarantine_path": "str",
+          "sha256": "str"
+        }
+      },
+      "enforcement_point": "winrm"
+    },
+    {
+      "id": "restore_file",
+      "category": "endpoint",
+      "phase": "P2",
+      "summary": "还原被隔离的文件(quarantine_file 的 inverse)",
+      "target": {
+        "kind": "file",
+        "key_field": "sha256"
+      },
+      "params": [
+        {
+          "name": "sha256",
+          "type": "string",
+          "required": true,
+          "source": "entity_role"
+        }
+      ],
+      "gating": "gated",
+      "risk_default": "low",
+      "reversible": {
+        "mode": "full",
+        "inverse": "quarantine_file"
+      },
+      "enforcement_point": "winrm",
+      "planned_by_composer": false
+    }
+  ]
+}

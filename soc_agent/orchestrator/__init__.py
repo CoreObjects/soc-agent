@@ -6,9 +6,8 @@
 """
 import json
 
-from ..disposition import apply_guardrail
-from ..models import DISPOSITION_ACTIONS, LEANS, RISKS, VERDICTS, Alert, Disposition, InvestigationResult, Verdict
-from ..patterns.apply import mint_rule_from_result, result_from_rule
+from ..models import LEANS, VERDICTS, Alert, InvestigationResult, Verdict
+from ..patterns.apply import dispositions_from_plan, mint_rule_from_result, result_from_rule
 from ..patterns.match import match_active
 from ..skills_runtime import SkillNotFound
 from ..tools import FINALIZE, finalize_spec
@@ -18,7 +17,10 @@ __all__ = ["AgentInvestigator", "RecipeInvestigator", "SkillRouter", "FastSlowIn
 
 
 def build_result(alert, skill_name, args, agent_name, trace=None, path="B", policy=None) -> InvestigationResult:
-    """finalize 参数 → InvestigationResult(verdict 归一、处置动作限定词表)。两种研判器共用。"""
+    """finalize 参数 → InvestigationResult(只出 verdict + 证据)。两种研判器共用。
+
+    ★处置不再从 finalize 出 —— 研判保持干净;处置由独立 composer 环节在研判之后组装(见 FastSlowInvestigator)。
+    """
     v = args.get("verdict")
     if v not in VERDICTS:
         v = "suspicious"
@@ -34,22 +36,8 @@ def build_result(alert, skill_name, args, agent_name, trace=None, path="B", poli
         missing_evidence=list(args.get("missing_evidence") or []),
         pattern=args.get("pattern"), agent=agent_name,
     )
-    dispositions = []
-    for d in args.get("dispositions") or []:
-        risk = d.get("risk") if d.get("risk") in RISKS else "low"
-        act = d.get("action") or "none"
-        if act not in DISPOSITION_ACTIONS:
-            act = "escalate"
-        dispositions.append(Disposition(action=act, target=d.get("target"), risk=risk))
-    # ★P5a 处置护栏:NEVER-TOUCH 硬拒(传感器/DC/关键账号)+ 目标类型解析 + gated/auto
-    dispositions, audit = apply_guardrail(dispositions, policy)
-    trace = list(trace or [])
-    for a in audit:
-        if a["decision"] in ("blocked", "retargeted"):        # 只把"干预"记进留痕(gated/auto 是常态)
-            trace.append({"tool": "guardrail", "decision": a["decision"], "action": a["action"],
-                          "target": a["target"], "reason": a.get("reason")})
     return InvestigationResult(alert_uid=alert.alert_uid, path=path, verdict=verdict,
-                               dispositions=dispositions, skill=skill_name, trace=trace)
+                               dispositions=[], skill=skill_name, trace=list(trace or []))
 
 # technique → 层(仅用于"未命中具体 skill 时选该层通用兜底";具体 skill 按 technique 直配)
 _LAYER_BY_PREFIX = {
@@ -123,11 +111,10 @@ _SCAFFOLD = (
     "4) 证据充分、或确认图里已无更多可查 → 调用 finalize_verdict 给出结论并结束。\n"
     "取证只从图取,不臆造。**证据不足就 verdict=suspicious 并在 missing_evidence 写清缺什么,别硬判 TP/FP;"
     "且 suspicious 必须带 lean(malicious/benign/unknown)标明倾向哪边、定优先级。**\n"
+    "★只做定性(判 verdict),不用给处置 —— 处置由研判之后的独立环节按接口文档组装。\n"
     "\n## 工具用法\n"
     "- run_cypher 可传 params 对象绑定 $ 参数(如 {query:'...WHERE a.sam=$sam', params:{sam:'jon.snow'}}),"
-    "或直接把具体值内联进查询;seed 里给了触发事件的账号/时间/主机等具体值,别用没有值的 $ 参数。\n"
-    "- 处置动作只能从词表选:disable_account/block_ip/isolate_host/kill_process/reset_password/"
-    "revoke_sessions/quarantine_file/escalate/monitor/none。**verdict=suspicious 或证据不足时用 escalate/monitor,别提高危动作。**"
+    "或直接把具体值内联进查询;seed 里给了触发事件的账号/时间/主机等具体值,别用没有值的 $ 参数。"
 )
 
 
@@ -245,7 +232,7 @@ _RECIPE_SCAFFOLD = (
     "- 再看:目标是否特权/属特权组、请求者 enc 基线、SPN 扇出。\n"
     "- 证据足 → 给明确 verdict;确实不足 → suspicious 并在 missing_evidence 写清缺什么。\n"
     "- ★出 suspicious **必须**带 lean(malicious=大概率攻击待确证 / benign=大概率正常但没法完全排除 / "
-    "unknown=真两可)—— 别只甩「存疑」,要说往哪边倾、好定优先级。处置动作用限定词表。"
+    "unknown=真两可)—— 别只甩「存疑」,要说往哪边倾、好定优先级。★只判 verdict,不给处置(处置另有独立环节)。"
 )
 
 
@@ -324,13 +311,14 @@ class FastSlowInvestigator:
     upsert 成规则(TP/FP 自动 active、可疑 pending)——下次同判别特征走快通道。
     """
 
-    def __init__(self, graph, repo, registry, recipe_inv, router=None, policy=None):
+    def __init__(self, graph, repo, registry, recipe_inv, router=None, policy=None, composer=None):
         self.graph = graph
         self.repo = repo
         self.registry = registry
         self.recipe_inv = recipe_inv
         self.router = router          # LLM SkillRouter,确定性路由失败时兜底
         self.policy = policy
+        self.composer = composer      # 独立 composer 环节(慢通道 TP 后组装响应计划);None=先不组处置
 
     def _route(self, alert):
         try:
@@ -348,8 +336,16 @@ class FastSlowInvestigator:
             rule = match_active(self.repo, skill.name, disc.get("layers") or [])
             if rule is not None:
                 return result_from_rule(alert, skill.name, rule, disc.get("bindings") or {}, self.policy)  # path A
-        result = self.recipe_inv.investigate(alert, seed, skill)      # path B 慢通道
-        minted = mint_rule_from_result(skill.name, disc, result) if disc is not None else None
+        result = self.recipe_inv.investigate(alert, seed, skill)      # path B 慢通道(只出 verdict)
+        # ★独立 composer 环节:仅对坐实(TP)组装响应计划;组一次 → 固化进规则 → 快通道复用
+        plan = None
+        if (disc is not None and self.composer is not None and result.verdict is not None
+                and result.verdict.verdict == "true_positive"):
+            plan = self.composer.compose(result, disc, skill, seed) or None
+            if plan:
+                result.dispositions = dispositions_from_plan(
+                    plan, disc.get("bindings") or {}, self.policy)   # 本告警的具体处置(落台账)
+        minted = mint_rule_from_result(skill.name, disc, result, plan=plan) if disc is not None else None
         if result.verdict is not None:
             # ★收敛键只认判别器给的规则 sig_hash;LLM 自由文本 pattern 不作准
             # (否则台账裂:铸规则的这条告警 与 复用它的快通道告警 不收敛到同一 Verdict 节点)
