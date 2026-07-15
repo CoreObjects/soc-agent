@@ -1,0 +1,216 @@
+=== selftest 2026-07-15 02:22Z ===
+# 批量自测  范围=tech=T1190  取样=recent  待研判 2 条  模式=recipe  写回图=否(自测不落库)  (IP 已打码)
+
+待研判清单:
+  T1190              该类共      2  uid=23dd6889cc669b412d4b87606750d74a6b596f5ab59c6e6d9c16468c7e8e8876
+  T1190              该类共      2  uid=bee510affa4f3abdce900ab6107eebe6fa838de774ca2ba46510bc2bb16cfb4f
+
+============================================================================
+## [1/2] technique=T1190   该类共 2 条   uid=23dd6889cc669b412d4b87606750d74a6b596f5ab59c6e6d9c16468c7e8e8876
+============================================================================
+### ① 原始告警节点(:Alert)
+{
+  "severity": 12,
+  "first_seen": "Wed Jul 15 01:46:52 2026",
+  "last_seen": "Wed Jul 15 01:46:52 2026",
+  "arrival_ms": 1784080018344,
+  "technique_ids": [
+    "T1190"
+  ],
+  "source": "waf",
+  "rule_id": "942100",
+  "stream": "soc-app-*",
+  "alert_uid": "23dd6889cc669b412d4b87606750d74a6b596f5ab59c6e6d9c16468c7e8e8876",
+  "rule_description": "SQL Injection Attack Detected via libinjection",
+  "sensor": "modsecurity-crs",
+  "raw_ref": "soc-app-security_alert-2026.07.15:Zx90Y58B3gPM8FAesQdc",
+  "time": "2026-07-15T01:46:58.344Z"
+}
+
+### ② 触发上下文(seed:触发事件 / 主语 / 宾语 / 次要实体)
+{
+  "event": {
+    "ingest_time": 1784081161855,
+    "source": "modsecurity",
+    "event_uid": "8bb442c4bcd1f0c76f6f0642b22cffe6a41a7fcdc10ec4e558175fdb217d183c",
+    "client_port": 48218,
+    "hostname": "x.x.x.1",
+    "http_method": "GET",
+    "rule_ids": [
+      "920350",
+      "942100",
+      "949110"
+    ],
+    "payload": "/vulnerabilities/sqli/?id=1%27+OR+%271%27%3D%271&Submit=x",
+    "event_code": "waf_match",
+    "http_status": 403,
+    "sensor": "waf",
+    "raw_ref": "soc-app-security_alert-2026.07.15:Zx90Y58B3gPM8FAesQdc",
+    "outcome": "blocked",
+    "event_time": "Wed Jul 15 01:46:52 2026"
+  },
+  "subject": null,
+  "related": [
+    {
+      "node": {
+        "_labels": [
+          "IPAddress"
+        ],
+        "first_seen": "2026-06-26T10:41:28.051Z",
+        "last_seen": "Wed Jul 15 01:46:52 2026",
+        "ip": "x.x.x.1"
+      },
+      "rel": "FROM"
+    },
+    {
+      "node": {
+        "_labels": [
+          "Service"
+        ],
+        "first_seen": "Thu Jul  2 06:14:30 2026",
+        "last_seen": "Wed Jul 15 01:46:52 2026",
+        "service_id": "web@x.x.x.1"
+      },
+      "rel": "TARGET"
+    },
+    {
+      "node": {
+        "_labels": [
+          "Uri"
+        ],
+        "first_seen": "Thu Jul  2 06:14:30 2026",
+        "last_seen": "Wed Jul 15 01:46:52 2026",
+        "uri": "/vulnerabilities/sqli/"
+      },
+      "rel": "TARGET"
+    }
+  ]
+}
+
+### ③ 研判   [skill] web_exploit   [模式] recipe
+# 研判留痕(4 步)
+[1] recipe取证「请求与WAF命中」→ 1 行
+[2] recipe取证「源IP的WAF打击画像」→ 1 行
+[3] recipe取证「跨层-后端落地」→ 1 行
+[4] recipe取证「_图盲区」→ 1 行
+
+# 研判结果  alert=23dd6889cc669b412d4b87606750d74a6b596f5ab59c6e6d9c16468c7e8e8876  path=B  skill=web_exploit
+verdict   : suspicious  [倾向 malicious]  (confidence=0.85)
+summary   : WAF检测到SQL注入攻击尝试
+rationale : 1. 请求参数包含典型的SQL注入载荷模式('OR '1'='1')
+2. 命中多个CRS规则(942100, 941390)表明攻击特征明显
+3. 攻击目标端点与常见SQL注入漏洞演示路径匹配
+4. 攻击载荷使用了经典的盲注查询结构
+5. 源IP存在多端点扫描行为(命中2个不同CRS规则)
+evidence  : ['alert_uid:23dd6889cc669b412d4b87606750d74a6b596f5ab59c6e6d9c16468c7e8e8876']
+missing   : ['后端数据库日志', '应用层异常行为记录', '源IP威胁情报数据']
+agent     : qwen32b-ft
+处置(建议): escalate -> 安全分析团队  risk=high  status=proposed
+处置(建议): monitor -> web@x.x.x.1  risk=high  status=proposed
+
+============================================================================
+## [2/2] technique=T1190   该类共 2 条   uid=bee510affa4f3abdce900ab6107eebe6fa838de774ca2ba46510bc2bb16cfb4f
+============================================================================
+### ① 原始告警节点(:Alert)
+{
+  "severity": 12,
+  "first_seen": "Thu Jul  2 06:14:30 2026",
+  "last_seen": "Thu Jul  2 06:14:30 2026",
+  "arrival_ms": 1782972874067,
+  "technique_ids": [
+    "T1190"
+  ],
+  "source": "waf",
+  "rule_id": "942100",
+  "stream": "soc-app-security_alert-*",
+  "alert_uid": "bee510affa4f3abdce900ab6107eebe6fa838de774ca2ba46510bc2bb16cfb4f",
+  "rule_description": "SQL Injection Attack Detected via libinjection",
+  "sensor": "modsecurity-crs",
+  "raw_ref": "soc-app-security_alert-2026.07.02:dNx3IZ8B3gPM8FAeCnXb",
+  "time": "2026-07-02T06:14:34.067Z"
+}
+
+### ② 触发上下文(seed:触发事件 / 主语 / 宾语 / 次要实体)
+{
+  "event": {
+    "ingest_time": 1784081161855,
+    "source": "modsecurity",
+    "event_uid": "7ec276dea7c1436594bfb526879340853828c87dda656c3163bcbcce2064870c",
+    "client_port": 50984,
+    "hostname": "x.x.x.1",
+    "http_method": "GET",
+    "rule_ids": [
+      "920350",
+      "942100",
+      "949110"
+    ],
+    "payload": "/vulnerabilities/sqli/?id=1%27+OR+%271%27%3D%271&Submit=x",
+    "event_code": "waf_match",
+    "http_status": 403,
+    "sensor": "waf",
+    "raw_ref": "soc-app-security_alert-2026.07.02:dNx3IZ8B3gPM8FAeCnXb",
+    "outcome": "blocked",
+    "event_time": "Thu Jul  2 06:14:30 2026"
+  },
+  "subject": null,
+  "related": [
+    {
+      "node": {
+        "_labels": [
+          "IPAddress"
+        ],
+        "first_seen": "2026-06-26T10:41:28.051Z",
+        "last_seen": "Wed Jul 15 01:46:52 2026",
+        "ip": "x.x.x.1"
+      },
+      "rel": "FROM"
+    },
+    {
+      "node": {
+        "_labels": [
+          "Service"
+        ],
+        "first_seen": "Thu Jul  2 06:14:30 2026",
+        "last_seen": "Wed Jul 15 01:46:52 2026",
+        "service_id": "web@x.x.x.1"
+      },
+      "rel": "TARGET"
+    },
+    {
+      "node": {
+        "_labels": [
+          "Uri"
+        ],
+        "first_seen": "Thu Jul  2 06:14:30 2026",
+        "last_seen": "Wed Jul 15 01:46:52 2026",
+        "uri": "/vulnerabilities/sqli/"
+      },
+      "rel": "TARGET"
+    }
+  ]
+}
+
+### ③ 研判   [skill] web_exploit   [模式] recipe
+# 研判留痕(4 步)
+[1] recipe取证「请求与WAF命中」→ 1 行
+[2] recipe取证「源IP的WAF打击画像」→ 1 行
+[3] recipe取证「跨层-后端落地」→ 1 行
+[4] recipe取证「_图盲区」→ 1 行
+
+# 研判结果  alert=bee510affa4f3abdce900ab6107eebe6fa838de774ca2ba46510bc2bb16cfb4f  path=B  skill=web_exploit
+verdict   : suspicious  [倾向 malicious]  (confidence=0.85)
+summary   : WAF检测到SQL注入攻击尝试
+rationale : 1. 请求携带典型SQL注入载荷（OR '1'='1'），匹配攻击模式T1190
+2. 命中多个CRS规则（942100/941390），规则链包含SQL注入检测专有规则
+3. 攻击载荷结构符合libinjection检测特征
+4. 目标端点为已知漏洞路径/vulnerabilities/sqli/
+5. 跨层验证盲区存在，无法确认是否成功绕过WAF
+evidence  : ['alert_uid:bee510affa4f3abdce900ab6107eebe6fa838de774ca2ba46510bc2bb16cfb4f', 'rule_id:942100', 'payload:/vulnerabilities/sqli/?id=1%27+OR+%271%27%3D%271&Submit=x']
+missing   : ['后端应用日志验证是否成功绕过WAF', '攻击载荷在应用层的实际执行结果', '源IP的历史攻击行为记录']
+pattern   : SQL Injection (T1190)
+agent     : qwen32b-ft
+处置(建议): escalate -> security_ops_team  risk=high  status=proposed
+处置(建议): monitor -> web@x.x.x.1  risk=high  status=proposed
+
+# 批量自测完成
+=== done 2026-07-15 02:24Z ===
