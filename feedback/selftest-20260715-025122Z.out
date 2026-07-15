@@ -1,0 +1,124 @@
+=== selftest 2026-07-15 02:51Z ===
+# 批量自测  范围=tech=T1505.003  取样=recent  待研判 1 条  模式=recipe  写回图=否(自测不落库)  (IP 已打码)
+
+待研判清单:
+  T1505.003          该类共      1  uid=f6f3b1458aecf045b5597de9b28819bafb595441544f8d5312c73f161b6e129e
+
+============================================================================
+## [1/1] technique=T1505.003   该类共 1 条   uid=f6f3b1458aecf045b5597de9b28819bafb595441544f8d5312c73f161b6e129e
+============================================================================
+### ① 原始告警节点(:Alert)
+{
+  "severity": 8,
+  "first_seen": "2026-07-15T02:39:37.579569500Z",
+  "last_seen": "2026-07-15T02:39:37.579569500Z",
+  "arrival_ms": 1784083179862,
+  "technique_ids": [
+    "T1505.003"
+  ],
+  "source": "wazuh",
+  "rule_id": "100808",
+  "stream": "soc-hids-alert-*",
+  "alert_uid": "f6f3b1458aecf045b5597de9b28819bafb595441544f8d5312c73f161b6e129e",
+  "rule_description": "Possible webshell drop: C:\\\\inetpub\\\\wwwroot\\\\soc-healthcheck.aspx written by C:\\\\Windows\\\\System32\\\\WindowsPowerShell\\\\v1.0\\\\powershell.exe",
+  "sensor": "wazuh-hids",
+  "raw_ref": "soc-hids-alert-2026.07.15:ix-kY58B3gPM8FAe7TxB",
+  "time": "2026-07-15T02:39:38.494+0000"
+}
+
+### ② 触发上下文(seed:触发事件 / 主语 / 宾语 / 次要实体)
+{
+  "event": {
+    "creation_time": "2026-07-15 02:39:37.578",
+    "ingest_time": 1784083214186,
+    "stream": "winlogbeat-*",
+    "event_code": "11",
+    "arrival_ms": 1784083178566,
+    "raw_ref": "soc-hids-alert-2026.07.15:ix-kY58B3gPM8FAe7TxB",
+    "sensor": "Microsoft-Windows-Sysmon/Operational",
+    "source": "winlogbeat",
+    "event_time": "2026-07-15T02:39:37.579569500Z",
+    "event_uid": "6696cd79645a065e4aa1310dae92ef4cb37f0ceb5ee334bac3d305430a359d10"
+  },
+  "subject": {
+    "_labels": [
+      "Process"
+    ],
+    "image": "C:\\\\Windows\\\\System32\\\\WindowsPowerShell\\\\v1.0\\\\powershell.exe",
+    "first_seen": "2026-07-15T02:39:37.303Z",
+    "process_guid": "{85e8c649-f2e9-6a56-0d0f-000000001400}",
+    "last_seen": "2026-07-15T02:39:37.579Z",
+    "hashes": "MD5=7353F60B1739074EB17C5F4DDDEFE239,SHA256=DE96A6E69944335375DC1AC238336066889D9FFC7D73628EF4FE1B1B160AB32C,IMPHASH=741776AACCFC5B71FF59832DCDCACE0F",
+    "pid": "5080",
+    "command_line": "\\\"powershell.exe\\\" -noninteractive -encodedcommand WwBDAG8AbgBzAG8AbABlAF0AOgA6AEkAbgBwAHUAdABFAG4AYwBvAGQAaQBuAGcAIAA9ACAATgBlAHcALQBPAGIAagBlAGMAdAAgAFQAZQB4AHQALgBVAFQARgA4AEUAbgBjAG8AZABpAG4AZwAgACQAZgBhAGwAcwBlADsAIAAkAEUAcgByAG8AcgBBAGMAdABpAG8AbgBQAHIAZQBmAGUAcgBlAG4AYwBlAD0AJwBDAG8AbgB0AGkAbgB1AGUAJwAKACQAcAAgAD0AIAAnAEMAOgBcAGkAbgBlAHQAcAB1AGIAXAB3AHcAdwByAG8AbwB0AFwAcwBvAGMALQBoAGUAYQBsAHQAaABjAGgAZQBjAGsALgBhAHMAcAB4ACcACgBTAGUAdAAtAEMAbwBuAHQAZQBuAHQAIAAtAFAAYQB0AGgAIAAkAHAAIAAtAFYAYQBsAHUAZQAgACcAPAAlAC0ALQAgAGIAZQBuAGkAZwBuACAAUwBPAEMAIABoAGUAYQBsAHQAaAAgAHAAYQBnAGUALAAgAG4AbwAgAGMAbwBkAGUAIAAtAC0AJQA+AE8ASwAnACAALQBFAG4AYwBvAGQAaQBuAGcAIABVAFQARgA4AAoAIgBXAFIATwBUAEUAIAAkAHAAIgAKAFMAdABhAHIAdAAtAFMAbABlAGUAcAAgAC0AUwBlAGMAbwBuAGQAcwAgADIACgBSAGUAbQBvAHYAZQAtAEkAdABlAG0AIAAkAHAAIAAtAEYAbwByAGMAZQAgAC0ARQByAHIAbwByAEEAYwB0AGkAbwBuACAAUwBpAGwAZQBuAHQAbAB5AEMAbwBuAHQAaQBuAHUAZQAKACIAUgBFAE0ATwBWAEUARAAgACQAcAAgACgAYgBlAG4AaQBnAG4ALAAgAGMAbABlAGEAbgBlAGQAIAB1AHAAKQAiAA=="
+  },
+  "related": [
+    {
+      "node": {
+        "_labels": [
+          "File"
+        ],
+        "path": "C:\\\\inetpub\\\\wwwroot\\\\soc-healthcheck.aspx",
+        "first_seen": "2026-07-15T02:39:37.579569500Z",
+        "last_seen": "2026-07-15T02:39:37.579569500Z",
+        "host": "castelblack.north.sevenkingdoms.local"
+      },
+      "rel": "WROTE"
+    },
+    {
+      "node": {
+        "_labels": [
+          "File"
+        ],
+        "path": "C:\\inetpub\\wwwroot\\soc-healthcheck.aspx",
+        "first_seen": "2026-07-15T02:39:37.579Z",
+        "last_seen": "2026-07-15T02:39:37.579Z",
+        "host": "castelblack.north.sevenkingdoms.local"
+      },
+      "rel": "WROTE"
+    },
+    {
+      "node": {
+        "_labels": [
+          "Host"
+        ],
+        "hostname": "castelblack.north.sevenkingdoms.local",
+        "role": "member_server",
+        "first_seen": "2026-07-02T02:32:06.696Z",
+        "has_adcs": false,
+        "last_seen": "2026-07-15T02:49:49.011Z",
+        "domain": "north.sevenkingdoms.local",
+        "criticality": "medium",
+        "is_dc": false
+      },
+      "rel": "ON_HOST"
+    }
+  ]
+}
+
+### ③ 研判   [skill] webshell   [模式] recipe
+# 研判留痕(5 步)
+[1] recipe取证「落盘事件(写入进程+文件)」→ 1 行
+[2] recipe取证「写入命令解码(逐层)」→ 1 行
+[3] recipe取证「供给/自检噪声」→ 1 行
+[4] recipe取证「写入进程-派生与外连」→ 1 行
+[5] recipe取证「_图盲区」→ 1 行
+
+# 研判结果  alert=f6f3b1458aecf045b5597de9b28819bafb595441544f8d5312c73f161b6e129e  path=B  skill=webshell
+verdict   : false_positive  (confidence=0.85)
+summary   : 该事件被判定为误报，原因如下：
+1. 写入进程是 PowerShell，属于管理运维工具，非 web 服务进程（如 w3wp/php-cgi）
+2. 写入内容为合法的 UTF8 编码文件，包含 SOC 健康检查注释标记（<%-- SOC health page --%>）
+3. 写入行为符合预期的服务器健康监测模式，包含自动清理机制
+4. 未观察到后续的进程派生或外连行为
+rationale : 根据证据分析，该事件符合以下良性特征：
+1. 写入进程属性：PowerShell 是标准管理工具，非 web 工作进程
+2. 文件内容特征：包含明确的注释说明且无执行逻辑
+3. 行为模式完整：包含写入-睡眠-清理的完整生命周期
+4. 无恶意指标：未生成执行命令的派生进程或网络连接
+evidence  : ['落盘事件(写入进程+文件)', '写入命令解码(逐层)', '写入进程-派生与外连']
+agent     : qwen32b-ft
+处置(建议): none -> castelblack.north.sevenkingdoms.local  risk=low  status=proposed
+
+# 批量自测完成
+=== done 2026-07-15 02:52Z ===
