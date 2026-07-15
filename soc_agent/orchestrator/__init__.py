@@ -8,10 +8,13 @@ import json
 
 from ..disposition import apply_guardrail
 from ..models import DISPOSITION_ACTIONS, LEANS, RISKS, VERDICTS, Alert, Disposition, InvestigationResult, Verdict
+from ..patterns.apply import mint_rule_from_result, result_from_rule
+from ..patterns.match import match_active
 from ..skills_runtime import SkillNotFound
 from ..tools import FINALIZE, finalize_spec
 
-__all__ = ["AgentInvestigator", "RecipeInvestigator", "SkillRouter", "build_result", "infer_layer"]
+__all__ = ["AgentInvestigator", "RecipeInvestigator", "SkillRouter", "FastSlowInvestigator",
+           "build_result", "infer_layer"]
 
 
 def build_result(alert, skill_name, args, agent_name, trace=None, path="B", policy=None) -> InvestigationResult:
@@ -311,3 +314,43 @@ class RecipeInvestigator:
             "verdict": "suspicious", "confidence": 0.0,
             "rationale": "recipe 已取证但模型未给结论", "missing_evidence": ["模型未 finalize"],
         }, self.agent_name, trace, policy=self.policy)
+
+
+class FastSlowInvestigator:
+    """顶层编排:确定性路由 → 快通道(命中规则套模板,0 LLM,path A)→ 未命中慢通道 + 当场生成规则。
+
+    快通道:skill.discriminate 产分层判别特征 → 图外规则库查 active 规则(先证伪)→ 命中即套 verdict+处置模板
+    (处置目标用 bindings 换实例填)。未命中 → RecipeInvestigator 慢通道(1 次 LLM 定性,path B),再把结论
+    upsert 成规则(TP/FP 自动 active、可疑 pending)——下次同判别特征走快通道。
+    """
+
+    def __init__(self, graph, repo, registry, recipe_inv, router=None, policy=None):
+        self.graph = graph
+        self.repo = repo
+        self.registry = registry
+        self.recipe_inv = recipe_inv
+        self.router = router          # LLM SkillRouter,确定性路由失败时兜底
+        self.policy = policy
+
+    def _route(self, alert):
+        try:
+            return self.registry.select(alert, infer_layer(alert))   # 确定性 technique→skill,无 LLM
+        except SkillNotFound:
+            if self.router is not None:
+                return self.router.route(alert)
+            raise
+
+    def investigate(self, alert, seed=None) -> InvestigationResult:
+        skill = self._route(alert)
+        disc = None
+        if getattr(skill, "discriminate", None):
+            disc = skill.discriminate(self.graph, alert, seed) or {}
+            rule = match_active(self.repo, skill.name, disc.get("layers") or [])
+            if rule is not None:
+                return result_from_rule(alert, skill.name, rule, disc.get("bindings") or {}, self.policy)  # path A
+        result = self.recipe_inv.investigate(alert, seed, skill)      # path B 慢通道
+        if disc is not None:                                         # 当场沉淀规则(下次快通道)
+            rule = mint_rule_from_result(skill.name, disc, result)
+            if rule is not None:
+                self.repo.upsert(rule)
+        return result

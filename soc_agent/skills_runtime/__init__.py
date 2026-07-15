@@ -59,18 +59,26 @@ class Skill:
     path: Path
     is_generic: bool = False
     recipe: Optional[object] = None                # ① 确定性取证脚本 collect(graph,alert,seed)→证据(sink①)
-    patterns: list = field(default_factory=list)   # ② 模式判别→处置(P4)
+    discriminate: Optional[object] = None          # ② 判别 spec discriminate(graph,alert,seed)→分层判别特征(→图外规则库)
+    patterns: list = field(default_factory=list)   # (legacy,未用;规则本体在 openGauss,不在 skill)
+
+
+def _load_attr(dir_path: Path, filename: str, attr: str):
+    """加载 skill 目录里某 .py 的某函数;不存在→None;★出错→None(每文件隔离,坏文件不拖垮 registry/daemon)。"""
+    fp = dir_path / filename
+    if not fp.exists():
+        return None
+    try:
+        spec = importlib.util.spec_from_file_location(f"skill_{attr}_{dir_path.name}", fp)
+        mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mod)
+        return getattr(mod, attr, None)
+    except Exception:               # 语法/导入错等 → 该 skill 缺这块能力,但不炸整个加载
+        return None
 
 
 def _load_recipe(dir_path: Path):
-    """加载 skill 目录里的 recipe.py 的 collect 函数(确定性取证脚本);无则 None。"""
-    rp = dir_path / "recipe.py"
-    if not rp.exists():
-        return None
-    spec = importlib.util.spec_from_file_location(f"skill_recipe_{dir_path.name}", rp)
-    mod = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(mod)
-    return getattr(mod, "collect", None)
+    return _load_attr(dir_path, "recipe.py", "collect")
 
 
 def load_skill(dir_path, is_generic: bool = False) -> Skill:
@@ -88,6 +96,7 @@ def load_skill(dir_path, is_generic: bool = False) -> Skill:
         path=dir_path,
         is_generic=is_generic,
         recipe=_load_recipe(dir_path),
+        discriminate=_load_attr(dir_path, "discriminator.py", "discriminate"),
     )
 
 
