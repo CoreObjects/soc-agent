@@ -10,11 +10,11 @@ description: 研判 Webshell 上传/落地/利用告警。当告警涉及"上传
 
 **触发**:WAF 侧信号弱且不稳(很多 webshell 上传对 CRS 是"干净"的 multipart)。**真正高保真信号在主机侧**:Web 工作进程(w3wp/php-cgi)在 wwwroot/inetpub 下写出脚本扩展名文件(Sysmon EID11 WROTE)。
 
-## 研判决策树
-1. **WAF 侧:上传类请求打了什么、被拦否?**(recipe「告警(WAF上传请求)」:`payload`/`target_uri`/`http_status`/`outcome`/命中 CRS 规则)—— `outcome=blocked` = 上传被拦,基本止于尝试。
-2. **★后端 Web 进程有没有写出脚本 + 随后派生/外连?(核心,判是否落地)**(recipe「跨层-后端落地(落盘+利用)」)—— w3wp/php-cgi `WROTE` 脚本到 wwwroot/inetpub/htdocs(脚本扩展名)+ 随后 `SPAWNED` cmd/powershell 或 `CONNECTED_TO` 外连 = 三件套铁证。**后端为被监控主机时才有;容器化后端(本靶场 DVWA)= 盲区**。
-3. **能对上这条 WAF 上传请求吗?** —— 同 Host + 时间窗(⚠️ 请求↔落盘无因果强键,是"同 Host + 近邻"弱关联)。
-4. **文件是不是已知恶意?**(File.sha256 对经验/黑名单;⚠️ 哈希常空)。
+## 研判决策树(host-side 主线:落盘事件即触发)
+1. **★谁写的?(决定性)**(recipe「落盘事件」:`writer_is_webproc`/`writer_image`)—— 写入进程是 **w3wp/php-cgi/tomcat** = webshell 强信号(web 服务进程本不该写脚本);是**部署/管理进程**(msdeploy/powershell 部署)或**安全代理** = 偏良性。
+2. **写哪了?写的什么?**(recipe「落盘事件」`in_webroot`/`dropped_paths` +「写入命令解码(逐层)」+「供给/自检噪声」)—— 落 `inetpub/wwwroot/htdocs` 且脚本扩展 = 升权;解码写入命令看是真 webshell 代码还是无害内容;命中 Ansible 供给/健康页=证伪。
+3. **★随后有没有利用?**(recipe「写入进程-派生与外连」)—— 写入进程随后 `SPAWNED` cmd/powershell 或 `CONNECTED_TO` 外连 = 从"落盘"升"活跃 webshell"(铁证)。
+4. **能对上一条 WAF 上传请求吗?** —— 同 Host + 时间窗(⚠️ 需 WAF→后端同主机映射,当前盲;请求↔落盘无因果强键)。文件哈希对黑名单(⚠️ 常空)。
 
 ## 误报/良性场景
 - **合法部署/发布**:CI/CD、部署账号写 .aspx/.php 到站点目录 —— 区分靠**谁写的**:正常发布是部署进程/msdeploy,**不是 w3wp 应用池身份**(w3wp 自己写脚本文件本就极罕见)。
@@ -28,5 +28,5 @@ description: 研判 Webshell 上传/落地/利用告警。当告警涉及"上传
 - **判定核心**:`WROTE`(落盘)+`SPAWNED`(执行)+`CONNECTED_TO`(回连)三段齐 → 确定级,无需依赖薄弱的 WAF 请求侧。
 
 ## 图盲区(取不到就写 missing_evidence)
-**已入图可用**:WAF 侧 `payload`/`http_status`/`outcome`(被拦否)/命中 CRS 规则/打击端点。
-**仍盲**:后端 Web 主机主机侧遥测(容器化=无 `WROTE`/`SPAWNED`→跨层三件套空)、上传 multipart 内容/落盘路径、请求↔落盘的因果强键(现靠同 Host+时间窗)、落盘文件哈希、站点物理路径映射(判 URL 可达/可执行)。
+**已入图可用**:写入进程(image/命令,可解码)、落盘路径、是否 web 根、写入进程随后派生/外连。
+**仍盲**:落盘文件哈希/内容、WAF 上传请求↔落盘关联(需 WAF→后端同主机映射)、站点物理路径→URL 可达性、落盘脚本后续被 w3wp 读取执行。
