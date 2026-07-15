@@ -1,0 +1,117 @@
+=== selftest 2026-07-15 02:45Z ===
+# 批量自测  范围=tech=T1505.003  取样=recent  待研判 1 条  模式=recipe  写回图=否(自测不落库)  (IP 已打码)
+
+待研判清单:
+  T1505.003          该类共      1  uid=f6f3b1458aecf045b5597de9b28819bafb595441544f8d5312c73f161b6e129e
+
+============================================================================
+## [1/1] technique=T1505.003   该类共 1 条   uid=f6f3b1458aecf045b5597de9b28819bafb595441544f8d5312c73f161b6e129e
+============================================================================
+### ① 原始告警节点(:Alert)
+{
+  "severity": 8,
+  "first_seen": "2026-07-15T02:39:37.579569500Z",
+  "last_seen": "2026-07-15T02:39:37.579569500Z",
+  "arrival_ms": 1784083179862,
+  "technique_ids": [
+    "T1505.003"
+  ],
+  "source": "wazuh",
+  "rule_id": "100808",
+  "stream": "soc-hids-alert-*",
+  "alert_uid": "f6f3b1458aecf045b5597de9b28819bafb595441544f8d5312c73f161b6e129e",
+  "rule_description": "Possible webshell drop: C:\\\\inetpub\\\\wwwroot\\\\soc-healthcheck.aspx written by C:\\\\Windows\\\\System32\\\\WindowsPowerShell\\\\v1.0\\\\powershell.exe",
+  "sensor": "wazuh-hids",
+  "raw_ref": "soc-hids-alert-2026.07.15:ix-kY58B3gPM8FAe7TxB",
+  "time": "2026-07-15T02:39:38.494+0000"
+}
+
+### ② 触发上下文(seed:触发事件 / 主语 / 宾语 / 次要实体)
+{
+  "event": {
+    "creation_time": "2026-07-15 02:39:37.578",
+    "ingest_time": 1784083214186,
+    "stream": "winlogbeat-*",
+    "event_code": "11",
+    "arrival_ms": 1784083178566,
+    "raw_ref": "winlogbeat-7.17.22-2026.07.15:gR-kY58B3gPM8FAe5zzz",
+    "sensor": "Microsoft-Windows-Sysmon/Operational",
+    "source": "winlogbeat",
+    "event_time": "2026-07-15T02:39:37.579Z",
+    "event_uid": "6696cd79645a065e4aa1310dae92ef4cb37f0ceb5ee334bac3d305430a359d10"
+  },
+  "subject": {
+    "_labels": [
+      "Process"
+    ],
+    "image": "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+    "first_seen": "2026-07-15T02:39:37.303Z",
+    "process_guid": "{85e8c649-f2e9-6a56-0d0f-000000001400}",
+    "last_seen": "2026-07-15T02:39:37.579Z",
+    "hashes": "MD5=7353F60B1739074EB17C5F4DDDEFE239,SHA256=DE96A6E69944335375DC1AC238336066889D9FFC7D73628EF4FE1B1B160AB32C,IMPHASH=741776AACCFC5B71FF59832DCDCACE0F",
+    "pid": "5080",
+    "command_line": "\"powershell.exe\" -noninteractive -encodedcommand WwBDAG8AbgBzAG8AbABlAF0AOgA6AEkAbgBwAHUAdABFAG4AYwBvAGQAaQBuAGcAIAA9ACAATgBlAHcALQBPAGIAagBlAGMAdAAgAFQAZQB4AHQALgBVAFQARgA4AEUAbgBjAG8AZABpAG4AZwAgACQAZgBhAGwAcwBlADsAIAAkAEUAcgByAG8AcgBBAGMAdABpAG8AbgBQAHIAZQBmAGUAcgBlAG4AYwBlAD0AJwBDAG8AbgB0AGkAbgB1AGUAJwAKACQAcAAgAD0AIAAnAEMAOgBcAGkAbgBlAHQAcAB1AGIAXAB3AHcAdwByAG8AbwB0AFwAcwBvAGMALQBoAGUAYQBsAHQAaABjAGgAZQBjAGsALgBhAHMAcAB4ACcACgBTAGUAdAAtAEMAbwBuAHQAZQBuAHQAIAAtAFAAYQB0AGgAIAAkAHAAIAAtAFYAYQBsAHUAZQAgACcAPAAlAC0ALQAgAGIAZQBuAGkAZwBuACAAUwBPAEMAIABoAGUAYQBsAHQAaAAgAHAAYQBnAGUALAAgAG4AbwAgAGMAbwBkAGUAIAAtAC0AJQA+AE8ASwAnACAALQBFAG4AYwBvAGQAaQBuAGcAIABVAFQARgA4AAoAIgBXAFIATwBUAEUAIAAkAHAAIgAKAFMAdABhAHIAdAAtAFMAbABlAGUAcAAgAC0AUwBlAGMAbwBuAGQAcwAgADIACgBSAGUAbQBvAHYAZQAtAEkAdABlAG0AIAAkAHAAIAAtAEYAbwByAGMAZQAgAC0ARQByAHIAbwByAEEAYwB0AGkAbwBuACAAUwBpAGwAZQBuAHQAbAB5AEMAbwBuAHQAaQBuAHUAZQAKACIAUgBFAE0ATwBWAEUARAAgACQAcAAgACgAYgBlAG4AaQBnAG4ALAAgAGMAbABlAGEAbgBlAGQAIAB1AHAAKQAiAA=="
+  },
+  "related": [
+    {
+      "node": {
+        "_labels": [
+          "File"
+        ],
+        "path": "C:\\\\inetpub\\\\wwwroot\\\\soc-healthcheck.aspx",
+        "first_seen": "2026-07-15T02:39:37.579569500Z",
+        "last_seen": "2026-07-15T02:39:37.579569500Z",
+        "host": "castelblack.north.sevenkingdoms.local"
+      },
+      "rel": "WROTE"
+    },
+    {
+      "node": {
+        "_labels": [
+          "File"
+        ],
+        "path": "C:\\inetpub\\wwwroot\\soc-healthcheck.aspx",
+        "first_seen": "2026-07-15T02:39:37.579Z",
+        "last_seen": "2026-07-15T02:39:37.579Z",
+        "host": "castelblack.north.sevenkingdoms.local"
+      },
+      "rel": "WROTE"
+    },
+    {
+      "node": {
+        "_labels": [
+          "Host"
+        ],
+        "hostname": "castelblack.north.sevenkingdoms.local",
+        "role": "member_server",
+        "first_seen": "2026-07-02T02:32:06.696Z",
+        "has_adcs": false,
+        "last_seen": "2026-07-15T02:42:48.799Z",
+        "domain": "north.sevenkingdoms.local",
+        "criticality": "medium",
+        "is_dc": false
+      },
+      "rel": "ON_HOST"
+    }
+  ]
+}
+
+### ③ 研判   [skill] webshell   [模式] recipe
+# 研判留痕(3 步)
+[1] recipe取证「告警(WAF上传请求)」→ 1 行
+[2] recipe取证「跨层-后端落地(落盘+利用)」→ 1 行
+[3] recipe取证「_图盲区」→ 1 行
+
+# 研判结果  alert=f6f3b1458aecf045b5597de9b28819bafb595441544f8d5312c73f161b6e129e  path=B  skill=webshell
+verdict   : suspicious  [倾向 malicious]  (confidence=0.85)
+summary   : 告警指向可能的 webshell 落地，但缺乏后端主机的具体信息，无法完全确认。
+rationale : 根据 WAF 侧的规则描述，检测到了可疑的文件写入行为，且文件路径和写入进程显得异常。然而，由于无法从后端主机获取进一步的证据链，如文件实际内容、写入操作的上下文及随后的进程行为，只能基于现有信息进行推测。这要求我们提高警惕，但证据尚未完全形成铁证。
+evidence  : ['告警(WAF上传请求)']
+missing   : ['后端主机的文件系统变更记录', '写入文件的详细内容及其特征分析', '写入操作后的进程树变化及网络连接行为']
+pattern   : webshell
+agent     : qwen32b-ft
+处置(建议): monitor -> 相关主机和网络流量  risk=high  status=proposed
+处置(建议): escalate -> SOC 团队进行深入调查  risk=high  status=proposed
+
+# 批量自测完成
+=== done 2026-07-15 02:47Z ===
