@@ -10,7 +10,7 @@
 |---|---|---|---|---|
 | identity | **kerberoast** | T1558.003 | ✅ 自研规则 100801(RC4 4769) | ✅ **真机验通**:FP(跨域机器账号引荐票)+ **TP**(vagrant 同域 roast;修过一个漏报) |
 | identity | **adcs** | T1649 | ✅ 自研规则 100803(4886/4887) | ✅ **真机验通**:suspicious **带 lean 分诊**(subject_dn 比对;SAN 仍盲) |
-| identity | dcsync | T1003.006 | ❌ 无检测规则 | ⚠️ **未校准假设**(取证未经真数据) |
+| identity | **dcsync** | T1003.006 | ✅ 自研规则 100807(4662+复制GUID);需开 DS-Access 审计+复制权 SACL | ✅ **真机验通**:FP(DC 机器账号正常复制;dc_host 比对+actor_is_machine);修 obj.dn/class→obj.guid、actor.type→sam结尾$ |
 | identity | **lateral_movement** | T1550.002/003 · T1021.* | ✅ 自研规则 100805(4624 型3/10) | ✅ **真机验通**:取证正确(账号/登录型/目标主机+role/源IP/基线/扇出);修了 e.result→e.outcome |
 | host | **lsass_dump** | T1003.001 | ✅ 自研规则 100802(EID10) | ✅ **真机验通**:FP(安全代理自检)+ **TP**(comsvcs 转储) |
 | host | **ingress_tool_transfer** | T1105 | ⚠️ 默认 Sysmon EID11 | ✅ **真机验**:FP 通路(配管供给噪声);TP 通路未见真样本 |
@@ -24,9 +24,9 @@
 
 ## 验证进度小结
 
-- **已真机验+校准(9):** kerberoast · lsass_dump · adcs · ingress_tool_transfer · suspicious_process · **registry_persistence** · **lateral_movement** · **c2_beacon** · **suspicious_outbound**(靶场完善 B1/B2/B3:良性发生器造真告警→取证验通,不造攻击)。其中 kerberoast/lsass_dump 的 TP 通路已用真攻击走通;adcs 用 subject_dn 分诊;registry/lateral/network 用良性活动(写 Run 键 / 远程 SYSVOL / 周期外连)验取证。network 顺带把 verdict 从"看不透编码→存疑"改到解码后可决。
-- **未校准假设(7):** 3 个具体 skill(dcsync/web/webshell)+ 4 个 generic。取证逻辑只过了"空图不崩"冒烟,**未经真实数据验证**。
-- **踩坑固化:** ① Wazuh 规则**别加 `win.system.channel` 字段**(会让 EID 规则不匹配)② 采集 `alert_min_level=7`,规则 **level≥7** 才进图 ③ 注册表 TargetObject 反斜杠单/双不一(alert 路径双转义)—— ingest `_parse_registry` 已丢空段归一 ④ **聚合边不存 `count`**(mapper 注释:现算)—— 周期性要 `count(e)` 数 Event,别读 `c.count` ⑤ EID3 端口 leaf 名是 **`dst_port`** 非 `dest_port` ⑥ `RESOLVES_TO` 在 cypher 声明了但**无 mapper 造边**(DNS 应答未映射)—— 查它每告警刷 warning,域反解/信誉是盲区。
+- **已真机验+校准(10):** kerberoast · lsass_dump · adcs · ingress_tool_transfer · suspicious_process · **registry_persistence** · **lateral_movement** · **c2_beacon** · **suspicious_outbound** · **dcsync**(靶场完善 B1-B4:良性发生器造真告警→取证验通,不造攻击 —— **Phase B 收口**)。其中 kerberoast/lsass_dump 的 TP 通路已用真攻击走通;adcs 用 subject_dn 分诊;registry/lateral/network/dcsync 用良性活动(写 Run 键 / 远程 SYSVOL / 周期外连 / DC 正常复制)验取证。network 顺带把 verdict 从"看不透编码→存疑"改到解码后可决。
+- **未校准假设(6):** 2 个具体 skill(web_exploit/webshell,需 Phase C WAF 接入)+ 4 个 generic。取证逻辑只过了"空图不崩"冒烟,**未经真实数据验证**。
+- **踩坑固化:** ① Wazuh 规则**别加 `win.system.channel` 字段**(会让 EID 规则不匹配)② 采集 `alert_min_level=7`,规则 **level≥7** 才进图 ③ 注册表 TargetObject 反斜杠单/双不一(alert 路径双转义)—— ingest `_parse_registry` 已丢空段归一 ④ **聚合边不存 `count`**(mapper 注释:现算)—— 周期性要 `count(e)` 数 Event,别读 `c.count` ⑤ EID3 端口 leaf 名是 **`dst_port`** 非 `dest_port` ⑥ `RESOLVES_TO` 在 cypher 声明了但**无 mapper 造边**(DNS 应答未映射)—— 查它每告警刷 warning,域反解/信誉是盲区 ⑦ **DCSync 4662 良性发生器**:光开 DS-Access 审计子类不够,域/config NC 根要加**复制权审计 SACL**;`repadmin /syncall` 用 **pull-only(`/Aed`)**,`/P` 推送方向撞 `8453`;单DC/域拓扑靠林级 config/schema 复制产良性 4662。
 - **验证方式:** 只在隔离靶场造出该类真告警去验(不裸上生产——生产研判错致命)。**不做合成 fixture**(假信心)。
 
 ## 各层"要造告警来验"的成本差
