@@ -12,5 +12,6 @@ def make_repository(cfg):
     from .opengauss_repo import OpenGaussPatternRepository
     backing = OpenGaussPatternRepository(
         host=cfg.og_host, port=cfg.og_port, dbname=cfg.og_db,
-        user=cfg.og_user, password=cfg.og_password)
+        user=cfg.og_user, password=cfg.og_password,
+        schema=getattr(cfg, "og_schema", "app"))
     return CachedPatternRepository(backing)

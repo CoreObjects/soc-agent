@@ -47,6 +47,7 @@ class Config:
     og_db: str
     og_user: str
     og_password: str
+    og_schema: str
 
     @property
     def og_enabled(self) -> bool:
@@ -78,4 +79,5 @@ class Config:
             og_db=g("OG_DB", "soc"),
             og_user=g("OG_USER", "soc_agent"),
             og_password=g("OG_PASSWORD", ""),
+            og_schema=g("OG_SCHEMA", "app"),
         )
