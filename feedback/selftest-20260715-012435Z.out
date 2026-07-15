@@ -1,0 +1,502 @@
+=== selftest 2026-07-15 01:24Z ===
+Received notification from DBMS server: {severity: WARNING} {code: Neo.ClientNotification.Statement.UnknownPropertyKeyWarning} {category: UNRECOGNIZED} {title: The provided property key is not in the database} {description: One of the property names in your query is not available in the database, make sure you didn't misspell it or that the label is available when you run this statement in your application (the missing property name is: dn)} {position: line: 1, column: 312, offset: 311} for query: "MATCH (a:Alert {alert_uid:$aid})<-[:TRIGGERED]-(e:Event {event_code:'4662'})-[:BY]->(actor:Account) OPTIONAL MATCH (e)-[:ACCESSED]->(obj) RETURN actor.sam AS actor_sam, actor.domain AS actor_domain, actor.type AS actor_type, coalesce(actor.privileged,false) AS actor_privileged, e.properties AS properties, obj.dn AS obj_dn, obj.object_class AS obj_class"
+Received notification from DBMS server: {severity: WARNING} {code: Neo.ClientNotification.Statement.UnknownPropertyKeyWarning} {category: UNRECOGNIZED} {title: The provided property key is not in the database} {description: One of the property names in your query is not available in the database, make sure you didn't misspell it or that the label is available when you run this statement in your application (the missing property name is: object_class)} {position: line: 1, column: 330, offset: 329} for query: "MATCH (a:Alert {alert_uid:$aid})<-[:TRIGGERED]-(e:Event {event_code:'4662'})-[:BY]->(actor:Account) OPTIONAL MATCH (e)-[:ACCESSED]->(obj) RETURN actor.sam AS actor_sam, actor.domain AS actor_domain, actor.type AS actor_type, coalesce(actor.privileged,false) AS actor_privileged, e.properties AS properties, obj.dn AS obj_dn, obj.object_class AS obj_class"
+Received notification from DBMS server: {severity: WARNING} {code: Neo.ClientNotification.Statement.UnknownPropertyKeyWarning} {category: UNRECOGNIZED} {title: The provided property key is not in the database} {description: One of the property names in your query is not available in the database, make sure you didn't misspell it or that the label is available when you run this statement in your application (the missing property name is: dn)} {position: line: 1, column: 312, offset: 311} for query: "MATCH (a:Alert {alert_uid:$aid})<-[:TRIGGERED]-(e:Event {event_code:'4662'})-[:BY]->(actor:Account) OPTIONAL MATCH (e)-[:ACCESSED]->(obj) RETURN actor.sam AS actor_sam, actor.domain AS actor_domain, actor.type AS actor_type, coalesce(actor.privileged,false) AS actor_privileged, e.properties AS properties, obj.dn AS obj_dn, obj.object_class AS obj_class"
+Received notification from DBMS server: {severity: WARNING} {code: Neo.ClientNotification.Statement.UnknownPropertyKeyWarning} {category: UNRECOGNIZED} {title: The provided property key is not in the database} {description: One of the property names in your query is not available in the database, make sure you didn't misspell it or that the label is available when you run this statement in your application (the missing property name is: object_class)} {position: line: 1, column: 330, offset: 329} for query: "MATCH (a:Alert {alert_uid:$aid})<-[:TRIGGERED]-(e:Event {event_code:'4662'})-[:BY]->(actor:Account) OPTIONAL MATCH (e)-[:ACCESSED]->(obj) RETURN actor.sam AS actor_sam, actor.domain AS actor_domain, actor.type AS actor_type, coalesce(actor.privileged,false) AS actor_privileged, e.properties AS properties, obj.dn AS obj_dn, obj.object_class AS obj_class"
+# 批量自测  范围=tech=T1003.006  取样=recent  待研判 5 条  模式=recipe  写回图=否(自测不落库)  (IP 已打码)
+
+待研判清单:
+  T1003.006          该类共     42  uid=3e760c116cbfdf5959098eb53b90107f45c93674c90b1ac47c8e902c87d92d13
+  T1003.006          该类共     42  uid=fbd4d25b9b1e4a90054d524745fd4aa0c8e1c3eb3bb7228e356b2cbea5dc18c3
+  T1003.006          该类共     42  uid=531587af99650f23f4fa075a65a78b9298b015d3a22bde825b10dc37e32622f6
+  T1003.006          该类共     42  uid=f57c86ad17d02a71eaa0e0dbdd4e10796cd43ce9239e4c3fb63bececedb9a606
+  T1003.006          该类共     42  uid=0d4c83bd4f05ab81227871cea38456e1738855a3bd7a9e5b5b14e6dafda2f463
+
+============================================================================
+## [1/5] technique=T1003.006   该类共 42 条   uid=3e760c116cbfdf5959098eb53b90107f45c93674c90b1ac47c8e902c87d92d13
+============================================================================
+### ① 原始告警节点(:Alert)
+{
+  "severity": 8,
+  "first_seen": "2026-07-15T01:20:03.612575900Z",
+  "last_seen": "2026-07-15T01:20:03.612575900Z",
+  "arrival_ms": 1784078407087,
+  "technique_ids": [
+    "T1003.006"
+  ],
+  "source": "wazuh",
+  "rule_id": "100807",
+  "stream": "soc-hids-alert-*",
+  "alert_uid": "3e760c116cbfdf5959098eb53b90107f45c93674c90b1ac47c8e902c87d92d13",
+  "rule_description": "Possible DCSync: directory replication rights access by KINGSLANDING$",
+  "sensor": "wazuh-hids",
+  "raw_ref": "soc-hids-alert-2026.07.15:9R5cY58B3gPM8FAeGeyZ",
+  "time": "2026-07-15T01:20:04.745+0000"
+}
+
+### ② 触发上下文(seed:触发事件 / 主语 / 宾语 / 次要实体)
+{
+  "event": {
+    "ingest_time": 1784078413681,
+    "access_mask": "0x100",
+    "stream": "winlogbeat-*",
+    "event_code": "4662",
+    "arrival_ms": 1784078404833,
+    "sensor": "Security",
+    "raw_ref": "soc-hids-alert-2026.07.15:9R5cY58B3gPM8FAeGeyZ",
+    "source": "winlogbeat",
+    "operation": "Object Access",
+    "properties": "%%7688    {1131f6aa-9c07-11d1-f79f-00c04fc2dcd2}   {19195a5b-6da0-11d0-afd3-00c04fd930c9}",
+    "event_time": "2026-07-15T01:20:03.612575900Z",
+    "event_uid": "83963b017b832bd3e0b4df8cd8612ab5ffee23bf659aa7d14f3cd70ecd199082"
+  },
+  "subject": {
+    "_labels": [
+      "Account"
+    ],
+    "upn": "KINGSLANDING$@SEVENKINGDOMS.LOCAL",
+    "first_seen": "2026-06-26T10:05:29.972Z",
+    "last_seen": "2026-07-15T01:20:03.612Z",
+    "domain": "SEVENKINGDOMS",
+    "sam": "kingslanding$",
+    "sid": "S-1-5-21-3669086071-63869131-912362612-1001"
+  },
+  "related": [
+    {
+      "node": {
+        "_labels": [
+          "DirectoryObject"
+        ],
+        "first_seen": "2026-06-26T10:43:17.525Z",
+        "last_seen": "2026-07-15T01:20:03.612Z",
+        "guid": "%{861130f0-df4a-4937-a198-e526766d973b}"
+      },
+      "rel": "ACCESSED"
+    },
+    {
+      "node": {
+        "_labels": [
+          "Host"
+        ],
+        "hostname": "winterfell.north.sevenkingdoms.local",
+        "role": "domain_controller",
+        "first_seen": "2026-07-02T02:32:07.265Z",
+        "has_adcs": false,
+        "last_seen": "2026-07-15T01:20:03.612Z",
+        "domain": "north.sevenkingdoms.local",
+        "criticality": "critical",
+        "is_dc": true
+      },
+      "rel": "ON_HOST"
+    }
+  ]
+}
+
+### ③ 研判   [skill] dcsync   [模式] recipe
+# 研判留痕(4 步)
+[1] recipe取证「发起者与对象」→ 1 行
+[2] recipe取证「发起者估值」→ 1 行
+[3] recipe取证「域DC」→ 1 行
+[4] recipe取证「_图盲区」→ 1 行
+
+# 研判结果  alert=3e760c116cbfdf5959098eb53b90107f45c93674c90b1ac47c8e902c87d92d13  path=B  skill=dcsync
+verdict   : false_positive  (confidence=0.98)
+summary   : DC 正常复制
+rationale : 根据证据「发起者与对象」中的 actor_sam 字段为 '$' 结尾的机器账号,且与证据「域DC」中的 dc_host 匹配,证明是域控机器账号发起的正常目录复制操作。
+evidence  : ['发起者与对象', '域DC']
+pattern   : DC-to-DC 正常复制
+agent     : qwen32b-ft
+处置(建议): 无
+
+============================================================================
+## [2/5] technique=T1003.006   该类共 42 条   uid=fbd4d25b9b1e4a90054d524745fd4aa0c8e1c3eb3bb7228e356b2cbea5dc18c3
+============================================================================
+### ① 原始告警节点(:Alert)
+{
+  "severity": 8,
+  "first_seen": "2026-07-15T01:19:03.610461800Z",
+  "last_seen": "2026-07-15T01:19:03.610461800Z",
+  "arrival_ms": 1784078345059,
+  "technique_ids": [
+    "T1003.006"
+  ],
+  "source": "wazuh",
+  "rule_id": "100807",
+  "stream": "soc-hids-alert-*",
+  "alert_uid": "fbd4d25b9b1e4a90054d524745fd4aa0c8e1c3eb3bb7228e356b2cbea5dc18c3",
+  "rule_description": "Possible DCSync: directory replication rights access by KINGSLANDING$",
+  "sensor": "wazuh-hids",
+  "raw_ref": "soc-hids-alert-2026.07.15:EB5bY58B3gPM8FAeJ-xN",
+  "time": "2026-07-15T01:19:04.821+0000"
+}
+
+### ② 触发上下文(seed:触发事件 / 主语 / 宾语 / 次要实体)
+{
+  "event": {
+    "ingest_time": 1784078413330,
+    "access_mask": "0x100",
+    "stream": "winlogbeat-*",
+    "event_code": "4662",
+    "arrival_ms": 1784078345398,
+    "sensor": "Security",
+    "raw_ref": "soc-hids-alert-2026.07.15:EB5bY58B3gPM8FAeJ-xN",
+    "source": "winlogbeat",
+    "operation": "Object Access",
+    "properties": "%%7688    {1131f6aa-9c07-11d1-f79f-00c04fc2dcd2}   {19195a5b-6da0-11d0-afd3-00c04fd930c9}",
+    "event_time": "2026-07-15T01:19:03.610461800Z",
+    "event_uid": "59f251ac1d13f53c7c70ee2b3a9b3cd95e02dad18391e0f4d1f7aa3740df04ea"
+  },
+  "subject": {
+    "_labels": [
+      "Account"
+    ],
+    "upn": "KINGSLANDING$@SEVENKINGDOMS.LOCAL",
+    "first_seen": "2026-06-26T10:05:29.972Z",
+    "last_seen": "2026-07-15T01:20:03.612Z",
+    "domain": "SEVENKINGDOMS",
+    "sam": "kingslanding$",
+    "sid": "S-1-5-21-3669086071-63869131-912362612-1001"
+  },
+  "related": [
+    {
+      "node": {
+        "_labels": [
+          "Host"
+        ],
+        "hostname": "winterfell.north.sevenkingdoms.local",
+        "role": "domain_controller",
+        "first_seen": "2026-07-02T02:32:07.265Z",
+        "has_adcs": false,
+        "last_seen": "2026-07-15T01:20:03.612Z",
+        "domain": "north.sevenkingdoms.local",
+        "criticality": "critical",
+        "is_dc": true
+      },
+      "rel": "ON_HOST"
+    },
+    {
+      "node": {
+        "_labels": [
+          "DirectoryObject"
+        ],
+        "first_seen": "2026-06-26T10:43:17.525Z",
+        "last_seen": "2026-07-15T01:20:03.612Z",
+        "guid": "%{861130f0-df4a-4937-a198-e526766d973b}"
+      },
+      "rel": "ACCESSED"
+    }
+  ]
+}
+
+### ③ 研判   [skill] dcsync   [模式] recipe
+# 研判留痕(4 步)
+[1] recipe取证「发起者与对象」→ 1 行
+[2] recipe取证「发起者估值」→ 1 行
+[3] recipe取证「域DC」→ 1 行
+[4] recipe取证「_图盲区」→ 1 行
+
+# 研判结果  alert=fbd4d25b9b1e4a90054d524745fd4aa0c8e1c3eb3bb7228e356b2cbea5dc18c3  path=B  skill=dcsync
+verdict   : false_positive  (confidence=0.98)
+summary   : DC正常复制
+rationale : 根据域DC记录，发起者账户kingslanding$与本域DC机器账号dc01匹配，属于DC-to-DC正常复制流程。其调用的DS-Replication-Get-Changes(1131f6aa)是域内DC进行目录复制的常规操作。
+evidence  : ['事件4662的properties字段含复制GUID', '域DC记录显示kingslanding$为合法DC机器账号']
+missing   : ['复制范围是否包含krbtgt账户', '前置ACL修改事件5136']
+pattern   : DC间目录同步
+agent     : qwen32b-ft
+处置(建议): 无
+
+============================================================================
+## [3/5] technique=T1003.006   该类共 42 条   uid=531587af99650f23f4fa075a65a78b9298b015d3a22bde825b10dc37e32622f6
+============================================================================
+### ① 原始告警节点(:Alert)
+Received notification from DBMS server: {severity: WARNING} {code: Neo.ClientNotification.Statement.UnknownPropertyKeyWarning} {category: UNRECOGNIZED} {title: The provided property key is not in the database} {description: One of the property names in your query is not available in the database, make sure you didn't misspell it or that the label is available when you run this statement in your application (the missing property name is: dn)} {position: line: 1, column: 312, offset: 311} for query: "MATCH (a:Alert {alert_uid:$aid})<-[:TRIGGERED]-(e:Event {event_code:'4662'})-[:BY]->(actor:Account) OPTIONAL MATCH (e)-[:ACCESSED]->(obj) RETURN actor.sam AS actor_sam, actor.domain AS actor_domain, actor.type AS actor_type, coalesce(actor.privileged,false) AS actor_privileged, e.properties AS properties, obj.dn AS obj_dn, obj.object_class AS obj_class"
+Received notification from DBMS server: {severity: WARNING} {code: Neo.ClientNotification.Statement.UnknownPropertyKeyWarning} {category: UNRECOGNIZED} {title: The provided property key is not in the database} {description: One of the property names in your query is not available in the database, make sure you didn't misspell it or that the label is available when you run this statement in your application (the missing property name is: object_class)} {position: line: 1, column: 330, offset: 329} for query: "MATCH (a:Alert {alert_uid:$aid})<-[:TRIGGERED]-(e:Event {event_code:'4662'})-[:BY]->(actor:Account) OPTIONAL MATCH (e)-[:ACCESSED]->(obj) RETURN actor.sam AS actor_sam, actor.domain AS actor_domain, actor.type AS actor_type, coalesce(actor.privileged,false) AS actor_privileged, e.properties AS properties, obj.dn AS obj_dn, obj.object_class AS obj_class"
+Received notification from DBMS server: {severity: WARNING} {code: Neo.ClientNotification.Statement.UnknownPropertyKeyWarning} {category: UNRECOGNIZED} {title: The provided property key is not in the database} {description: One of the property names in your query is not available in the database, make sure you didn't misspell it or that the label is available when you run this statement in your application (the missing property name is: dn)} {position: line: 1, column: 312, offset: 311} for query: "MATCH (a:Alert {alert_uid:$aid})<-[:TRIGGERED]-(e:Event {event_code:'4662'})-[:BY]->(actor:Account) OPTIONAL MATCH (e)-[:ACCESSED]->(obj) RETURN actor.sam AS actor_sam, actor.domain AS actor_domain, actor.type AS actor_type, coalesce(actor.privileged,false) AS actor_privileged, e.properties AS properties, obj.dn AS obj_dn, obj.object_class AS obj_class"
+Received notification from DBMS server: {severity: WARNING} {code: Neo.ClientNotification.Statement.UnknownPropertyKeyWarning} {category: UNRECOGNIZED} {title: The provided property key is not in the database} {description: One of the property names in your query is not available in the database, make sure you didn't misspell it or that the label is available when you run this statement in your application (the missing property name is: object_class)} {position: line: 1, column: 330, offset: 329} for query: "MATCH (a:Alert {alert_uid:$aid})<-[:TRIGGERED]-(e:Event {event_code:'4662'})-[:BY]->(actor:Account) OPTIONAL MATCH (e)-[:ACCESSED]->(obj) RETURN actor.sam AS actor_sam, actor.domain AS actor_domain, actor.type AS actor_type, coalesce(actor.privileged,false) AS actor_privileged, e.properties AS properties, obj.dn AS obj_dn, obj.object_class AS obj_class"
+{
+  "severity": 8,
+  "first_seen": "2026-07-15T01:18:48.222393400Z",
+  "last_seen": "2026-07-15T01:18:48.222393400Z",
+  "arrival_ms": 1784078333051,
+  "technique_ids": [
+    "T1003.006"
+  ],
+  "source": "wazuh",
+  "rule_id": "100807",
+  "stream": "soc-hids-alert-*",
+  "alert_uid": "531587af99650f23f4fa075a65a78b9298b015d3a22bde825b10dc37e32622f6",
+  "rule_description": "Possible DCSync: directory replication rights access by WINTERFELL$",
+  "sensor": "wazuh-hids",
+  "raw_ref": "soc-hids-alert-2026.07.15:3R5aY58B3gPM8FAe-Otr",
+  "time": "2026-07-15T01:18:49.237+0000"
+}
+
+### ② 触发上下文(seed:触发事件 / 主语 / 宾语 / 次要实体)
+{
+  "event": {
+    "ingest_time": 1784078413093,
+    "access_mask": "0x100",
+    "stream": "winlogbeat-*",
+    "event_code": "4662",
+    "arrival_ms": 1784078329476,
+    "sensor": "Security",
+    "raw_ref": "soc-hids-alert-2026.07.15:3R5aY58B3gPM8FAe-Otr",
+    "source": "winlogbeat",
+    "operation": "Object Access",
+    "properties": "%%7688    {1131f6aa-9c07-11d1-f79f-00c04fc2dcd2}   {19195a5b-6da0-11d0-afd3-00c04fd930c9}",
+    "event_time": "2026-07-15T01:18:48.222393400Z",
+    "event_uid": "e371e71c7cd55bee05d58c3aa901a9601a0d1db667fd35728504795c303879e8"
+  },
+  "subject": {
+    "_labels": [
+      "Account"
+    ],
+    "upn": "WINTERFELL$@NORTH.SEVENKINGDOMS.LOCAL",
+    "first_seen": "2026-06-26T10:28:49.227Z",
+    "last_seen": "2026-07-15T01:24:48.633Z",
+    "domain": "NORTH",
+    "sam": "winterfell$",
+    "sid": "S-1-5-21-1229275207-304159137-1120826147-1001"
+  },
+  "related": [
+    {
+      "node": {
+        "_labels": [
+          "Host"
+        ],
+        "hostname": "kingslanding.sevenkingdoms.local",
+        "role": "domain_controller",
+        "first_seen": "2026-07-02T02:32:09.289Z",
+        "has_adcs": true,
+        "last_seen": "2026-07-15T01:24:36.372Z",
+        "domain": "sevenkingdoms.local",
+        "criticality": "critical",
+        "is_dc": true
+      },
+      "rel": "ON_HOST"
+    },
+    {
+      "node": {
+        "_labels": [
+          "DirectoryObject"
+        ],
+        "first_seen": "2026-06-26T10:13:25.788Z",
+        "last_seen": "2026-07-15T01:18:48.222Z",
+        "guid": "%{23a162f2-a634-48bd-89aa-714518b48d06}"
+      },
+      "rel": "ACCESSED"
+    }
+  ]
+}
+
+### ③ 研判   [skill] dcsync   [模式] recipe
+# 研判留痕(4 步)
+[1] recipe取证「发起者与对象」→ 1 行
+[2] recipe取证「发起者估值」→ 1 行
+[3] recipe取证「域DC」→ 1 行
+[4] recipe取证「_图盲区」→ 1 行
+
+# 研判结果  alert=531587af99650f23f4fa075a65a78b9298b015d3a22bde825b10dc37e32622f6  path=B  skill=dcsync
+verdict   : false_positive  (confidence=0.98)
+summary   : DC 正常复制
+rationale : 证据「发起者与对象」中 actor_sam=winterfell$ 与 dc_host=dc02 同为域控机器账号(冬季镇.dc02),且操作属性含标准复制 GUID {1131f6aa...}。根据方法论第1步:actor 是本域 DC 机器账号 → benign(DC 正常复制)。
+evidence  : ['alert_uid:531587af99650f23f4fa075a65a78b9298b015d3a22bde825b10dc37e32622f6']
+missing   : ['复制范围(是否含 krbtgt/全域)']
+agent     : qwen32b-ft
+处置(建议): none -> 冬季镇.dc02  risk=low  status=proposed
+
+============================================================================
+## [4/5] technique=T1003.006   该类共 42 条   uid=f57c86ad17d02a71eaa0e0dbdd4e10796cd43ce9239e4c3fb63bececedb9a606
+============================================================================
+### ① 原始告警节点(:Alert)
+{
+  "severity": 8,
+  "first_seen": "2026-07-15T01:18:41.768953800Z",
+  "last_seen": "2026-07-15T01:18:41.768953800Z",
+  "arrival_ms": 1784078323045,
+  "technique_ids": [
+    "T1003.006"
+  ],
+  "source": "wazuh",
+  "rule_id": "100807",
+  "stream": "soc-hids-alert-*",
+  "alert_uid": "f57c86ad17d02a71eaa0e0dbdd4e10796cd43ce9239e4c3fb63bececedb9a606",
+  "rule_description": "Possible DCSync: directory replication rights access by KINGSLANDING$",
+  "sensor": "wazuh-hids",
+  "raw_ref": "soc-hids-alert-2026.07.15:nx5aY58B3gPM8FAe0etQ",
+  "time": "2026-07-15T01:18:42.046+0000"
+}
+
+### ② 触发上下文(seed:触发事件 / 主语 / 宾语 / 次要实体)
+{
+  "event": {
+    "ingest_time": 1784078413014,
+    "access_mask": "0x100",
+    "stream": "winlogbeat-*",
+    "event_code": "4662",
+    "arrival_ms": 1784078322196,
+    "sensor": "Security",
+    "raw_ref": "soc-hids-alert-2026.07.15:nx5aY58B3gPM8FAe0etQ",
+    "source": "winlogbeat",
+    "operation": "Object Access",
+    "properties": "%%7688    {1131f6aa-9c07-11d1-f79f-00c04fc2dcd2}   {19195a5b-6da0-11d0-afd3-00c04fd930c9}",
+    "event_time": "2026-07-15T01:18:41.768953800Z",
+    "event_uid": "3fedf209475143d09fe550dd96ed1a098db707d6f263fbf063b6fc143c889ca1"
+  },
+  "subject": {
+    "_labels": [
+      "Account"
+    ],
+    "upn": "KINGSLANDING$@SEVENKINGDOMS.LOCAL",
+    "first_seen": "2026-06-26T10:05:29.972Z",
+    "last_seen": "2026-07-15T01:24:55.912Z",
+    "domain": "SEVENKINGDOMS",
+    "sam": "kingslanding$",
+    "sid": "S-1-5-21-3669086071-63869131-912362612-1001"
+  },
+  "related": [
+    {
+      "node": {
+        "_labels": [
+          "Host"
+        ],
+        "hostname": "winterfell.north.sevenkingdoms.local",
+        "role": "domain_controller",
+        "first_seen": "2026-07-02T02:32:07.265Z",
+        "has_adcs": false,
+        "last_seen": "2026-07-15T01:24:55.912Z",
+        "domain": "north.sevenkingdoms.local",
+        "criticality": "critical",
+        "is_dc": true
+      },
+      "rel": "ON_HOST"
+    },
+    {
+      "node": {
+        "_labels": [
+          "DirectoryObject"
+        ],
+        "first_seen": "2026-06-26T10:43:17.525Z",
+        "last_seen": "2026-07-15T01:24:55.912Z",
+        "guid": "%{861130f0-df4a-4937-a198-e526766d973b}"
+      },
+      "rel": "ACCESSED"
+    }
+  ]
+}
+
+### ③ 研判   [skill] dcsync   [模式] recipe
+# 研判留痕(4 步)
+[1] recipe取证「发起者与对象」→ 1 行
+[2] recipe取证「发起者估值」→ 1 行
+[3] recipe取证「域DC」→ 1 行
+[4] recipe取证「_图盲区」→ 1 行
+
+# 研判结果  alert=f57c86ad17d02a71eaa0e0dbdd4e10796cd43ce9239e4c3fb63bececedb9a606  path=B  skill=dcsync
+verdict   : false_positive  (confidence=0.98)
+summary   : DC正常复制
+rationale : 根据域DC记录，发起者账户kingslanding$与DC主机dc01.sevenkingdoms.local匹配，是合法域控机器账号。其请求GUID{1131f6aa...}对应标准DS-Replication-Get-Changes操作，属于域内正常复制流量。
+evidence  : ['Event:4662(properties含复制GUID)', 'DomainDC:sevenkingdoms.local@dc01']
+agent     : qwen32b-ft
+处置(建议): 无
+
+============================================================================
+## [5/5] technique=T1003.006   该类共 42 条   uid=0d4c83bd4f05ab81227871cea38456e1738855a3bd7a9e5b5b14e6dafda2f463
+============================================================================
+### ① 原始告警节点(:Alert)
+{
+  "severity": 8,
+  "first_seen": "2026-07-15T01:18:38.771855200Z",
+  "last_seen": "2026-07-15T01:18:38.771855200Z",
+  "arrival_ms": 1784078321042,
+  "technique_ids": [
+    "T1003.006"
+  ],
+  "source": "wazuh",
+  "rule_id": "100807",
+  "stream": "soc-hids-alert-*",
+  "alert_uid": "0d4c83bd4f05ab81227871cea38456e1738855a3bd7a9e5b5b14e6dafda2f463",
+  "rule_description": "Possible DCSync: directory replication rights access by KINGSLANDING$",
+  "sensor": "wazuh-hids",
+  "raw_ref": "soc-hids-alert-2026.07.15:fh5aY58B3gPM8FAeyet8",
+  "time": "2026-07-15T01:18:39.825+0000"
+}
+
+### ② 触发上下文(seed:触发事件 / 主语 / 宾语 / 次要实体)
+Received notification from DBMS server: {severity: WARNING} {code: Neo.ClientNotification.Statement.UnknownPropertyKeyWarning} {category: UNRECOGNIZED} {title: The provided property key is not in the database} {description: One of the property names in your query is not available in the database, make sure you didn't misspell it or that the label is available when you run this statement in your application (the missing property name is: dn)} {position: line: 1, column: 312, offset: 311} for query: "MATCH (a:Alert {alert_uid:$aid})<-[:TRIGGERED]-(e:Event {event_code:'4662'})-[:BY]->(actor:Account) OPTIONAL MATCH (e)-[:ACCESSED]->(obj) RETURN actor.sam AS actor_sam, actor.domain AS actor_domain, actor.type AS actor_type, coalesce(actor.privileged,false) AS actor_privileged, e.properties AS properties, obj.dn AS obj_dn, obj.object_class AS obj_class"
+Received notification from DBMS server: {severity: WARNING} {code: Neo.ClientNotification.Statement.UnknownPropertyKeyWarning} {category: UNRECOGNIZED} {title: The provided property key is not in the database} {description: One of the property names in your query is not available in the database, make sure you didn't misspell it or that the label is available when you run this statement in your application (the missing property name is: object_class)} {position: line: 1, column: 330, offset: 329} for query: "MATCH (a:Alert {alert_uid:$aid})<-[:TRIGGERED]-(e:Event {event_code:'4662'})-[:BY]->(actor:Account) OPTIONAL MATCH (e)-[:ACCESSED]->(obj) RETURN actor.sam AS actor_sam, actor.domain AS actor_domain, actor.type AS actor_type, coalesce(actor.privileged,false) AS actor_privileged, e.properties AS properties, obj.dn AS obj_dn, obj.object_class AS obj_class"
+{
+  "event": {
+    "ingest_time": 1784078412838,
+    "access_mask": "0x100",
+    "stream": "winlogbeat-*",
+    "event_code": "4662",
+    "arrival_ms": 1784078320166,
+    "sensor": "Security",
+    "raw_ref": "soc-hids-alert-2026.07.15:fh5aY58B3gPM8FAeyet8",
+    "source": "winlogbeat",
+    "operation": "Object Access",
+    "properties": "%%7688    {1131f6aa-9c07-11d1-f79f-00c04fc2dcd2}   {bf967a87-0de6-11d0-a285-00aa003049e2}",
+    "event_time": "2026-07-15T01:18:38.771855200Z",
+    "event_uid": "4daa26085d2828ba485d850830cce8b11cd5c2615e65d8f2d4b9f1aa52806d33"
+  },
+  "subject": {
+    "_labels": [
+      "Account"
+    ],
+    "upn": "KINGSLANDING$@SEVENKINGDOMS.LOCAL",
+    "first_seen": "2026-06-26T10:05:29.972Z",
+    "last_seen": "2026-07-15T01:24:55.912Z",
+    "domain": "SEVENKINGDOMS",
+    "sam": "kingslanding$",
+    "sid": "S-1-5-21-3669086071-63869131-912362612-1001"
+  },
+  "related": [
+    {
+      "node": {
+        "_labels": [
+          "Host"
+        ],
+        "hostname": "winterfell.north.sevenkingdoms.local",
+        "role": "domain_controller",
+        "first_seen": "2026-07-02T02:32:07.265Z",
+        "has_adcs": false,
+        "last_seen": "2026-07-15T01:24:55.912Z",
+        "domain": "north.sevenkingdoms.local",
+        "criticality": "critical",
+        "is_dc": true
+      },
+      "rel": "ON_HOST"
+    },
+    {
+      "node": {
+        "_labels": [
+          "DirectoryObject"
+        ],
+        "first_seen": "2026-06-26T10:14:14.687Z",
+        "last_seen": "2026-07-15T01:18:39.512Z",
+        "guid": "%{d707a593-5473-4ad7-8d94-8b4f91e10a9e}"
+      },
+      "rel": "ACCESSED"
+    }
+  ]
+}
+
+### ③ 研判   [skill] dcsync   [模式] recipe
+# 研判留痕(4 步)
+[1] recipe取证「发起者与对象」→ 1 行
+[2] recipe取证「发起者估值」→ 1 行
+[3] recipe取证「域DC」→ 1 行
+[4] recipe取证「_图盲区」→ 1 行
+
+# 研判结果  alert=0d4c83bd4f05ab81227871cea38456e1738855a3bd7a9e5b5b14e6dafda2f463  path=B  skill=dcsync
+verdict   : false_positive  (confidence=0.98)
+summary   : DC正常复制
+rationale : 根据证据「发起者与对象」中的actor_sam字段显示请求者为kingslanding$机器账号，与证据「域DC」中的dc_host字段dc01均为域控主机名相符。机器账号名称符合DC命名规范且使用$后缀，属于域控制器计算机账户。其调用DS-Replication-Get-Changes({1131f6aa-9c07-11d1-f79f-00c04fc2dcd2})属于域控之间正常的密码哈希复制操作。
+evidence  : ['alert_uid:0d4c83bd4f05ab81227871cea38456e1738855a3bd7a9e5b5b14e6dafda2f463', 'event_code:4662', 'actor_sam:kingslanding$']
+pattern   : DC_INTER_SITE_REPLICATION
+agent     : qwen32b-ft
+处置(建议): 无
+
+# 批量自测完成
+=== done 2026-07-15 01:28Z ===
