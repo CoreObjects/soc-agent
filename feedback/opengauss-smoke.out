@@ -1,17 +1,11 @@
-=== openGauss 规则库冒烟 2026-07-15 08:23Z ===
+=== openGauss 规则库冒烟 2026-07-15 08:27Z ===
 og_enabled=True host=127.0.0.1 db=soc user=soc_agent
+OK: upsert/find_active/dedup(hit=2)/status/cache 全通
 Traceback (most recent call last):
-  File "/home/soc/soc-agent/deploy/opengauss-redis/smoke_patterns.py", line 19, in <module>
-    repo = make_repository(cfg)                 # CachedPatternRepository(OpenGaussPatternRepository)
-           ^^^^^^^^^^^^^^^^^^^^
-  File "/home/soc/soc-agent/soc_agent/patterns/factory.py", line 13, in make_repository
-    backing = OpenGaussPatternRepository(
-              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/soc/soc-agent/soc_agent/patterns/opengauss_repo.py", line 40, in __init__
-    self._ensure_schema()
-  File "/home/soc/soc-agent/soc_agent/patterns/opengauss_repo.py", line 58, in _ensure_schema
-    cur.execute(_DDL)
-psycopg2.errors.InsufficientPrivilege: permission denied for schema public
-DETAIL:  N/A
+  File "/home/soc/soc-agent/deploy/opengauss-redis/smoke_patterns.py", line 43, in <module>
+    cur.execute("DELETE FROM patterns WHERE sig_hash=%s", (SH,))
+psycopg2.errors.UndefinedTable: relation "patterns" does not exist on gaussdb
+LINE 1: DELETE FROM patterns WHERE sig_hash='__smoke_test_kerberoast...
+                    ^
 
 === done ===
