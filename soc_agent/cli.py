@@ -12,12 +12,14 @@ from .disposition import policy_from_graph
 from .graph.client import Neo4jGraph
 from .llm.qwen import QwenClient
 from .models import Alert
-from .orchestrator import AgentInvestigator, RecipeInvestigator, SkillRouter
+from .orchestrator import AgentInvestigator, FastSlowInvestigator, RecipeInvestigator, SkillRouter
+from .patterns.factory import make_repository
 from .schema import graph_schema
 from .skills_runtime import SkillRegistry
 from .tools import default_toolbox
 
-__all__ = ["investigate_alert", "render_result", "render_trace", "AlertNotFound", "main"]
+__all__ = ["investigate_alert", "run_investigation", "build_orchestrator",
+           "render_result", "render_trace", "AlertNotFound", "main"]
 
 _REPO_ROOT = Path(__file__).resolve().parents[1]
 
@@ -109,6 +111,41 @@ def build(config: Config):
     recipe_inv = RecipeInvestigator(
         llm=llm, graph=graph, schema=schema, registry=registry, agent_name=config.llm_model, policy=policy)
     return graph, router, agent_inv, recipe_inv
+
+
+def build_orchestrator(config: Config):
+    """装配快慢通道编排器(FastSlowInvestigator):确定性路由→快通道(命中规则免LLM)→慢通道+生成规则。
+
+    规则库 = openGauss(OG_HOST 配了)或内存 fake;图台账收敛约束建好。返回 (graph, orch, repo)。
+    """
+    graph = Neo4jGraph(config.neo4j_uri, config.neo4j_user, config.neo4j_password, config.neo4j_database)
+    try:
+        graph.ensure_constraints()         # 台账收敛唯一约束(幂等)
+    except Exception as e:                 # 权限/版本问题不阻断研判(约束缺失只影响并发去重强度)
+        print(f"[warn] ensure_constraints 跳过: {e}")
+    llm = QwenClient(base_url=config.llm_api_base, model=config.llm_model, api_key=config.llm_api_key)
+    schema = graph_schema()
+    registry = SkillRegistry(config.skills_dir)
+    policy = policy_from_graph(graph)
+    repo = make_repository(config)         # og_enabled → openGauss+缓存;否则内存 fake
+    router = SkillRouter(llm=llm, registry=registry, agent_name=config.llm_model)
+    recipe_inv = RecipeInvestigator(
+        llm=llm, graph=graph, schema=schema, registry=registry, agent_name=config.llm_model, policy=policy)
+    orch = FastSlowInvestigator(graph=graph, repo=repo, registry=registry,
+                                recipe_inv=recipe_inv, router=router, policy=policy)
+    return graph, orch, repo
+
+
+def run_investigation(graph, orch, alert_uid):
+    """快慢通道研判一条告警 + 写回台账(收敛)。返回 InvestigationResult。"""
+    node = graph.get_alert(alert_uid)
+    if node is None:
+        raise AlertNotFound(f"图里没有 alert_uid={alert_uid} 的 :Alert")
+    alert = Alert.from_node(node)
+    seed = graph.seed(alert)
+    result = orch.investigate(alert, seed=seed)
+    graph.write_result(alert_uid, result)
+    return result
 
 
 def choose_investigator(skill, mode, agent_inv, recipe_inv):
