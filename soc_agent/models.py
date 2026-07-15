@@ -4,6 +4,7 @@ Alert                取自图 :Alert 节点(研判入口)。
 Verdict / Disposition 研判/处置结论;to_props() 直接喂图写回经验层。
 InvestigationResult  一次研判的产出汇总(快/慢通道同形状)。
 """
+import hashlib
 from dataclasses import dataclass, field
 from typing import Any, Optional
 from uuid import uuid4
@@ -23,6 +24,10 @@ DISPOSITION_BY = {"auto", "analyst"}
 
 def _new_id() -> str:
     return uuid4().hex
+
+
+def _sha(text: str) -> str:
+    return hashlib.sha256(text.encode("utf-8")).hexdigest()
 
 
 @dataclass
@@ -94,14 +99,24 @@ class Verdict:
         }
 
 
+# 处置动作 → 目标实体类型(供 :ON 边解析到真实体 + 处置收敛键)
+_ACTION_KIND = {
+    "block_ip": "ip",
+    "disable_account": "account", "reset_password": "account", "revoke_sessions": "account",
+    "isolate_host": "host", "kill_process": "process", "quarantine_file": "file",
+}
+
+
 @dataclass
 class Disposition:
     """处置结论。写回 (:Verdict)-[:LED_TO]->(:Disposition)-[:ON]->实体。
 
     默认 propose-only(status=proposed, by=auto):第一版一律仅建议,人审后执行。
+    收敛键 conv_key = (action + target_kind + target):同动作同目标合一条(封两个不同 IP=两条,是真历史)。
     """
     action: str                        # block_ip | isolate_host | disable_account | kill_process | none ...
     target: Optional[str] = None
+    target_kind: Optional[str] = None  # ip|account|host|process|file|none(缺则按 action 派生;供 :ON 解析)
     risk: str = "low"                  # low | high
     status: str = "proposed"           # proposed | executed | failed | simulated
     simulated: bool = False
@@ -117,12 +132,20 @@ class Disposition:
             raise ValueError(f"未知 status: {self.status!r}(允许 {sorted(DISPOSITION_STATUS)})")
         if self.by not in DISPOSITION_BY:
             raise ValueError(f"未知 by: {self.by!r}(允许 {sorted(DISPOSITION_BY)})")
+        if self.target_kind is None:
+            self.target_kind = _ACTION_KIND.get(self.action, "none")
+
+    def conv_key(self) -> str:
+        """处置台账收敛键:同 action+目标 → 一个 Disposition 节点(不同目标各一条)。"""
+        return _sha("|".join(["disp", self.action, self.target_kind or "", self.target or ""]))
 
     def to_props(self) -> dict:
         return {
             "disposition_id": self.disposition_id,
+            "disposition_key": self.conv_key(),
             "action": self.action,
             "target": self.target,
+            "target_kind": self.target_kind,
             "risk": self.risk,
             "status": self.status,
             "simulated": self.simulated,
