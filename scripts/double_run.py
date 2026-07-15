@@ -19,6 +19,19 @@ cfg = Config.from_env(dotenv_path=os.path.join(_ROOT, ".env"))
 print("og_enabled=%s neo4j=%s" % (cfg.og_enabled, cfg.neo4j_uri))
 graph, orch, repo = build_orchestrator(cfg)
 try:
+    if "--reset" in sys.argv:            # 清 kerberoast 规则 + 台账,从 0 经验重跑(干净演示 slow→mint→fast)
+        import psycopg2
+        c = psycopg2.connect(host=cfg.og_host, port=cfg.og_port, dbname=cfg.og_db,
+                             user=cfg.og_user, password=cfg.og_password)
+        c.autocommit = True
+        with c.cursor() as cur:
+            cur.execute("DELETE FROM %s.patterns WHERE skill='kerberoast'" % cfg.og_schema)
+        c.close()
+        graph.run_write(                 # 删 kerberoast 告警的台账(经验层,非事实;会重新生成)
+            "MATCH (a:Alert)-[cc:CONCLUDED]->(v:Verdict) WHERE 'T1558.003' IN coalesce(a.technique_ids,[]) "
+            "OPTIONAL MATCH (v)-[:LED_TO]->(d:Disposition) DETACH DELETE v, d RETURN count(*) AS n")
+        print("--reset: 已清 kerberoast 规则库 + 台账,从 0 经验开始")
+
     rows = graph.run_cypher(
         "MATCH (a:Alert) WHERE 'T1558.003' IN coalesce(a.technique_ids,[]) "
         "RETURN a.alert_uid AS uid, a.rule_description AS d ORDER BY a.arrival_ms DESC LIMIT 8")

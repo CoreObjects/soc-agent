@@ -349,8 +349,11 @@ class FastSlowInvestigator:
             if rule is not None:
                 return result_from_rule(alert, skill.name, rule, disc.get("bindings") or {}, self.policy)  # path A
         result = self.recipe_inv.investigate(alert, seed, skill)      # path B 慢通道
-        if disc is not None:                                         # 当场沉淀规则(下次快通道)
-            rule = mint_rule_from_result(skill.name, disc, result)
-            if rule is not None:
-                self.repo.upsert(rule)
+        minted = mint_rule_from_result(skill.name, disc, result) if disc is not None else None
+        if result.verdict is not None:
+            # ★收敛键只认判别器给的规则 sig_hash;LLM 自由文本 pattern 不作准
+            # (否则台账裂:铸规则的这条告警 与 复用它的快通道告警 不收敛到同一 Verdict 节点)
+            result.verdict.pattern = minted.pattern_id if minted is not None else None
+        if minted is not None:                                       # 当场沉淀规则(下次同判别特征走快通道)
+            self.repo.upsert(minted)
         return result

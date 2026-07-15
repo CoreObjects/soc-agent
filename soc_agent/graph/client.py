@@ -121,6 +121,11 @@ class Neo4jGraph:
             for c in build_constraints():
                 s.execute_write(lambda tx, q=c: tx.run(q).consume())
 
+    def run_write(self, cypher, **params):
+        """维护/回写专用写(execute_write);★研判取证一律走 run_cypher(只读)。仅约束/清理/回写用。"""
+        with self._session() as s:
+            return s.execute_write(lambda tx: [r.data() for r in tx.run(cypher, **params)])
+
     def write_result(self, alert_uid, result):
         """把研判/处置结论写回经验层(execute_write)。"""
         stmts = build_write_statements(alert_uid, result)

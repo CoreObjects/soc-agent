@@ -5,7 +5,7 @@ cd "$(cd "$(dirname "$0")/.." && pwd)" || exit 1
 OUT="feedback/double-run.out"; mkdir -p feedback
 {
   echo "=== P3' 换实例双跑总验收 $(date -u '+%F %H:%MZ' 2>/dev/null) ==="
-  .venv/bin/python scripts/double_run.py 2>&1
+  .venv/bin/python scripts/double_run.py --reset 2>&1
   echo "=== done ==="
 } 2>&1 | tee "$OUT"
 git add "$OUT" >/dev/null 2>&1 || true

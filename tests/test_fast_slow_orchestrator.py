@@ -101,6 +101,21 @@ def test_exculpatory_fp_short_circuits():
     assert len(llm.calls) == 1
 
 
+def test_slow_result_pattern_is_rule_sig_not_llm_freetext():
+    # 慢通道 result.verdict.pattern 必须=生成规则的 sig_hash(收敛键),不是 LLM 自由文本 →
+    # 铸规则的这条告警才和后续快通道复用者收敛到同一 Verdict 节点
+    repo = InMemoryPatternRepository()
+    skill = _skill({"layers": _SPRAY_LAYERS, "bindings": {"requester": "vagrant"}})
+    llm = FakeLLMClient([LLMResponse(tool_calls=[ToolCall("c", "finalize_verdict", {
+        "verdict": "true_positive", "confidence": 0.9, "rationale": "r", "pattern": "my_free_text",
+        "dispositions": [{"action": "disable_account", "target": "vagrant", "risk": "high"}]})])])
+    orch = _wire(repo, skill, llm)
+    r = orch.investigate(_alert("a1"))
+    minted = repo.all()[0]
+    assert r.verdict.pattern == minted.pattern_id      # = sig_hash
+    assert r.verdict.pattern != "my_free_text"         # 不认 LLM 自由文本
+
+
 def test_suspicious_mints_pending_not_active():
     repo = InMemoryPatternRepository()
     skill = _skill({"layers": _SPRAY_LAYERS, "bindings": {"requester": "u"}})
