@@ -1,0 +1,492 @@
+=== selftest 2026-07-15 01:35Z ===
+# 批量自测  范围=tech=T1003.006  取样=recent  待研判 5 条  模式=recipe  写回图=否(自测不落库)  (IP 已打码)
+
+待研判清单:
+  T1003.006          该类共     51  uid=cd2c975dff6abf1a8f3b7a665ee76447470badd3f99ec4295a67e46741f5838d
+  T1003.006          该类共     51  uid=9abde0e19b6c505e4ae3c24b2acf989b14ec0d84094ab36afcf6442fa708940e
+  T1003.006          该类共     51  uid=36871ace59e85e1316be49ae5d55e3b8239fbb320178d554d63c10f8e179b737
+  T1003.006          该类共     51  uid=daab3cdd88f7a63d7ae8cabc93dad38c9dc166c61c7892f8b8748e82593e2361
+  T1003.006          该类共     51  uid=1febfe4b3a5acf4f6e13c3ee1b005740aad279339e5007ace816f343e41f36a9
+
+============================================================================
+## [1/5] technique=T1003.006   该类共 51 条   uid=cd2c975dff6abf1a8f3b7a665ee76447470badd3f99ec4295a67e46741f5838d
+============================================================================
+### ① 原始告警节点(:Alert)
+{
+  "severity": 8,
+  "first_seen": "2026-07-15T01:28:55.934527800Z",
+  "last_seen": "2026-07-15T01:28:55.934527800Z",
+  "arrival_ms": 1784078940389,
+  "technique_ids": [
+    "T1003.006"
+  ],
+  "source": "wazuh",
+  "rule_id": "100807",
+  "stream": "soc-hids-alert-*",
+  "alert_uid": "cd2c975dff6abf1a8f3b7a665ee76447470badd3f99ec4295a67e46741f5838d",
+  "rule_description": "Possible DCSync: directory replication rights access by KINGSLANDING$",
+  "sensor": "wazuh-hids",
+  "raw_ref": "soc-hids-alert-2026.07.15:yx5kY58B3gPM8FAePPXQ",
+  "time": "2026-07-15T01:28:56.966+0000"
+}
+
+### ② 触发上下文(seed:触发事件 / 主语 / 宾语 / 次要实体)
+{
+  "event": {
+    "ingest_time": 1784079006025,
+    "access_mask": "0x100",
+    "stream": "winlogbeat-*",
+    "event_code": "4662",
+    "arrival_ms": 1784078937208,
+    "sensor": "Security",
+    "raw_ref": "soc-hids-alert-2026.07.15:yx5kY58B3gPM8FAePPXQ",
+    "source": "winlogbeat",
+    "operation": "Object Access",
+    "properties": "%%7688    {1131f6aa-9c07-11d1-f79f-00c04fc2dcd2}   {19195a5b-6da0-11d0-afd3-00c04fd930c9}",
+    "event_time": "2026-07-15T01:28:55.934527800Z",
+    "event_uid": "ded45d965960c902f8ee23c6f8ecbb9600f35427a90927a5a9807be00651e831"
+  },
+  "subject": {
+    "_labels": [
+      "Account"
+    ],
+    "upn": "KINGSLANDING$@SEVENKINGDOMS.LOCAL",
+    "first_seen": "2026-06-26T10:05:29.972Z",
+    "last_seen": "2026-07-15T01:29:14.810Z",
+    "domain": "SEVENKINGDOMS",
+    "sam": "kingslanding$",
+    "sid": "S-1-5-21-3669086071-63869131-912362612-1001"
+  },
+  "related": [
+    {
+      "node": {
+        "_labels": [
+          "DirectoryObject"
+        ],
+        "first_seen": "2026-06-26T10:43:17.525Z",
+        "last_seen": "2026-07-15T01:28:55.934Z",
+        "guid": "%{861130f0-df4a-4937-a198-e526766d973b}"
+      },
+      "rel": "ACCESSED"
+    },
+    {
+      "node": {
+        "_labels": [
+          "Host"
+        ],
+        "hostname": "winterfell.north.sevenkingdoms.local",
+        "role": "domain_controller",
+        "first_seen": "2026-07-02T02:32:07.265Z",
+        "has_adcs": false,
+        "last_seen": "2026-07-15T01:29:49.729Z",
+        "domain": "north.sevenkingdoms.local",
+        "criticality": "critical",
+        "is_dc": true
+      },
+      "rel": "ON_HOST"
+    }
+  ]
+}
+
+### ③ 研判   [skill] dcsync   [模式] recipe
+# 研判留痕(4 步)
+[1] recipe取证「发起者与对象」→ 1 行
+[2] recipe取证「发起者估值」→ 1 行
+[3] recipe取证「域DC」→ 1 行
+[4] recipe取证「_图盲区」→ 1 行
+
+# 研判结果  alert=cd2c975dff6abf1a8f3b7a665ee76447470badd3f99ec4295a67e46741f5838d  path=B  skill=dcsync
+verdict   : false_positive  (confidence=0.98)
+summary   : DC正常复制
+rationale : 根据证据「域DC」，请求者sam为kingslanding$，与目标域sevenkingdoms.local同属一域且为DC机器账号。证据「发起者与对象」显示actor_is_machine=true且event_host_is_dc=true，符合DC-to-DC正常复制模式（TRUSTS边见证跨域信任）。
+evidence  : ['发起者与对象', '域DC']
+pattern   : DC内部复制
+agent     : qwen32b-ft
+处置(建议): 无
+
+============================================================================
+## [2/5] technique=T1003.006   该类共 51 条   uid=9abde0e19b6c505e4ae3c24b2acf989b14ec0d84094ab36afcf6442fa708940e
+============================================================================
+### ① 原始告警节点(:Alert)
+{
+  "severity": 8,
+  "first_seen": "2026-07-15T01:28:03.642649400Z",
+  "last_seen": "2026-07-15T01:28:03.642649400Z",
+  "arrival_ms": 1784078885356,
+  "technique_ids": [
+    "T1003.006"
+  ],
+  "source": "wazuh",
+  "rule_id": "100807",
+  "stream": "soc-hids-alert-*",
+  "alert_uid": "9abde0e19b6c505e4ae3c24b2acf989b14ec0d84094ab36afcf6442fa708940e",
+  "rule_description": "Possible DCSync: directory replication rights access by KINGSLANDING$",
+  "sensor": "wazuh-hids",
+  "raw_ref": "soc-hids-alert-2026.07.15:3x5jY58B3gPM8FAeZfTW",
+  "time": "2026-07-15T01:28:04.669+0000"
+}
+
+### ② 触发上下文(seed:触发事件 / 主语 / 宾语 / 次要实体)
+{
+  "event": {
+    "ingest_time": 1784079005710,
+    "access_mask": "0x100",
+    "stream": "winlogbeat-*",
+    "event_code": "4662",
+    "arrival_ms": 1784078884725,
+    "sensor": "Security",
+    "raw_ref": "winlogbeat-7.17.22-2026.07.15:3R5jY58B3gPM8FAeY_R4",
+    "source": "winlogbeat",
+    "operation": "Object Access",
+    "properties": "%%7688\n\t\t{1131f6aa-9c07-11d1-f79f-00c04fc2dcd2}\n\t{19195a5b-6da0-11d0-afd3-00c04fd930c9}",
+    "event_time": "2026-07-15T01:28:03.642Z",
+    "event_uid": "afeb907a7b13f8da31507c552afefae1e3ca2b2128b7bd819df87e4f77eaaec3"
+  },
+  "subject": {
+    "_labels": [
+      "Account"
+    ],
+    "upn": "KINGSLANDING$@SEVENKINGDOMS.LOCAL",
+    "first_seen": "2026-06-26T10:05:29.972Z",
+    "last_seen": "2026-07-15T01:31:14.834Z",
+    "domain": "SEVENKINGDOMS",
+    "sam": "kingslanding$",
+    "sid": "S-1-5-18"
+  },
+  "related": [
+    {
+      "node": {
+        "_labels": [
+          "Host"
+        ],
+        "hostname": "winterfell.north.sevenkingdoms.local",
+        "role": "domain_controller",
+        "first_seen": "2026-07-02T02:32:07.265Z",
+        "has_adcs": false,
+        "last_seen": "2026-07-15T01:31:16.491Z",
+        "domain": "north.sevenkingdoms.local",
+        "criticality": "critical",
+        "is_dc": true
+      },
+      "rel": "ON_HOST"
+    },
+    {
+      "node": {
+        "_labels": [
+          "DirectoryObject"
+        ],
+        "first_seen": "2026-06-26T10:43:17.525Z",
+        "last_seen": "2026-07-15T01:30:50.776Z",
+        "guid": "%{861130f0-df4a-4937-a198-e526766d973b}"
+      },
+      "rel": "ACCESSED"
+    }
+  ]
+}
+
+### ③ 研判   [skill] dcsync   [模式] recipe
+# 研判留痕(4 步)
+[1] recipe取证「发起者与对象」→ 1 行
+[2] recipe取证「发起者估值」→ 1 行
+[3] recipe取证「域DC」→ 1 行
+[4] recipe取证「_图盲区」→ 1 行
+
+# 研判结果  alert=9abde0e19b6c505e4ae3c24b2acf989b14ec0d84094ab36afcf6442fa708940e  path=B  skill=dcsync
+verdict   : false_positive  (confidence=0.98)
+summary   : DC正常复制
+rationale : 根据证据「域DC」中的dc_host(dc01)与actor_sam(kingslanding$)匹配且均为SEVENKINGDOMS域机器账号，符合DC间正常复制的决定性特征。properties中含DS-Replication-Get-Changes(1131f6aa)属于域功能标准操作。
+evidence  : ['event_code:4662', 'actor_sam:kingslanding$']
+pattern   : T1003.006_DC_Repl_FalsePos
+agent     : qwen32b-ft
+处置(建议): 无
+
+============================================================================
+## [3/5] technique=T1003.006   该类共 51 条   uid=36871ace59e85e1316be49ae5d55e3b8239fbb320178d554d63c10f8e179b737
+============================================================================
+### ① 原始告警节点(:Alert)
+{
+  "severity": 8,
+  "first_seen": "2026-07-15T01:26:55.918638500Z",
+  "last_seen": "2026-07-15T01:26:55.918638500Z",
+  "arrival_ms": 1784078818321,
+  "technique_ids": [
+    "T1003.006"
+  ],
+  "source": "wazuh",
+  "rule_id": "100807",
+  "stream": "soc-hids-alert-*",
+  "alert_uid": "36871ace59e85e1316be49ae5d55e3b8239fbb320178d554d63c10f8e179b737",
+  "rule_description": "Possible DCSync: directory replication rights access by KINGSLANDING$",
+  "sensor": "wazuh-hids",
+  "raw_ref": "soc-hids-alert-2026.07.15:1R5iY58B3gPM8FAeX_P7",
+  "time": "2026-07-15T01:26:56.979+0000"
+}
+
+### ② 触发上下文(seed:触发事件 / 主语 / 宾语 / 次要实体)
+{
+  "event": {
+    "ingest_time": 1784079005093,
+    "access_mask": "0x100",
+    "stream": "winlogbeat-*",
+    "event_code": "4662",
+    "arrival_ms": 1784078817239,
+    "sensor": "Security",
+    "raw_ref": "soc-hids-alert-2026.07.15:1R5iY58B3gPM8FAeX_P7",
+    "source": "winlogbeat",
+    "operation": "Object Access",
+    "properties": "%%7688    {1131f6aa-9c07-11d1-f79f-00c04fc2dcd2}   {19195a5b-6da0-11d0-afd3-00c04fd930c9}",
+    "event_time": "2026-07-15T01:26:55.918638500Z",
+    "event_uid": "5d0c2eddc1d8f9b40c4f87d92a2f23fe1ee46a0f42193156adebdb82922bfc8a"
+  },
+  "subject": {
+    "_labels": [
+      "Account"
+    ],
+    "upn": "KINGSLANDING$@SEVENKINGDOMS.LOCAL",
+    "first_seen": "2026-06-26T10:05:29.972Z",
+    "last_seen": "2026-07-15T01:34:55.962Z",
+    "domain": "SEVENKINGDOMS",
+    "sam": "kingslanding$",
+    "sid": "S-1-5-21-3669086071-63869131-912362612-1001"
+  },
+  "related": [
+    {
+      "node": {
+        "_labels": [
+          "DirectoryObject"
+        ],
+        "first_seen": "2026-06-26T10:43:17.525Z",
+        "last_seen": "2026-07-15T01:34:55.962Z",
+        "guid": "%{861130f0-df4a-4937-a198-e526766d973b}"
+      },
+      "rel": "ACCESSED"
+    },
+    {
+      "node": {
+        "_labels": [
+          "Host"
+        ],
+        "hostname": "winterfell.north.sevenkingdoms.local",
+        "role": "domain_controller",
+        "first_seen": "2026-07-02T02:32:07.265Z",
+        "has_adcs": false,
+        "last_seen": "2026-07-15T01:34:55.962Z",
+        "domain": "north.sevenkingdoms.local",
+        "criticality": "critical",
+        "is_dc": true
+      },
+      "rel": "ON_HOST"
+    }
+  ]
+}
+
+### ③ 研判   [skill] dcsync   [模式] recipe
+# 研判留痕(4 步)
+[1] recipe取证「发起者与对象」→ 1 行
+[2] recipe取证「发起者估值」→ 1 行
+[3] recipe取证「域DC」→ 1 行
+[4] recipe取证「_图盲区」→ 1 行
+
+# 研判结果  alert=36871ace59e85e1316be49ae5d55e3b8239fbb320178d554d63c10f8e179b737  path=B  skill=dcsync
+verdict   : false_positive  (confidence=0.98)
+summary   : DC正常复制
+rationale : 根据证据「域DC」中的dc_host(dc01)与actor_sam(kingslanding$)匹配且均为SEVENKINGDOMS域机器账号，符合DC间正常复制行为。证据「发起者与对象」显示actor_is_machine为真且event_host是DC，无跨域信任参与。
+evidence  : ['发起者与对象', '域DC']
+pattern   : DC间定期Active Directory域服务复制
+agent     : qwen32b-ft
+处置(建议): 无
+
+============================================================================
+## [4/5] technique=T1003.006   该类共 51 条   uid=daab3cdd88f7a63d7ae8cabc93dad38c9dc166c61c7892f8b8748e82593e2361
+============================================================================
+### ① 原始告警节点(:Alert)
+{
+  "severity": 8,
+  "first_seen": "2026-07-15T01:25:50.754376500Z",
+  "last_seen": "2026-07-15T01:25:50.754376500Z",
+  "arrival_ms": 1784078753286,
+  "technique_ids": [
+    "T1003.006"
+  ],
+  "source": "wazuh",
+  "rule_id": "100807",
+  "stream": "soc-hids-alert-*",
+  "alert_uid": "daab3cdd88f7a63d7ae8cabc93dad38c9dc166c61c7892f8b8748e82593e2361",
+  "rule_description": "Possible DCSync: directory replication rights access by KINGSLANDING$",
+  "sensor": "wazuh-hids",
+  "raw_ref": "soc-hids-alert-2026.07.15:xR5hY58B3gPM8FAeYfLx",
+  "time": "2026-07-15T01:25:51.850+0000"
+}
+
+### ② 触发上下文(seed:触发事件 / 主语 / 宾语 / 次要实体)
+{
+  "event": {
+    "ingest_time": 1784079004637,
+    "access_mask": "0x100",
+    "stream": "winlogbeat-*",
+    "event_code": "4662",
+    "arrival_ms": 1784078752731,
+    "sensor": "Security",
+    "raw_ref": "soc-hids-alert-2026.07.15:xR5hY58B3gPM8FAeYfLx",
+    "source": "winlogbeat",
+    "operation": "Object Access",
+    "properties": "%%7688    {1131f6aa-9c07-11d1-f79f-00c04fc2dcd2}   {19195a5b-6da0-11d0-afd3-00c04fd930c9}",
+    "event_time": "2026-07-15T01:25:50.754376500Z",
+    "event_uid": "da4f0d1f9a11fc710fde3a12a877109ffbd392b911327843bd1fdc698013c16d"
+  },
+  "subject": {
+    "_labels": [
+      "Account"
+    ],
+    "upn": "KINGSLANDING$@SEVENKINGDOMS.LOCAL",
+    "first_seen": "2026-06-26T10:05:29.972Z",
+    "last_seen": "2026-07-15T01:34:55.962Z",
+    "domain": "SEVENKINGDOMS",
+    "sam": "kingslanding$",
+    "sid": "S-1-5-21-3669086071-63869131-912362612-1001"
+  },
+  "related": [
+    {
+      "node": {
+        "_labels": [
+          "Host"
+        ],
+        "hostname": "winterfell.north.sevenkingdoms.local",
+        "role": "domain_controller",
+        "first_seen": "2026-07-02T02:32:07.265Z",
+        "has_adcs": false,
+        "last_seen": "2026-07-15T01:34:55.962Z",
+        "domain": "north.sevenkingdoms.local",
+        "criticality": "critical",
+        "is_dc": true
+      },
+      "rel": "ON_HOST"
+    },
+    {
+      "node": {
+        "_labels": [
+          "DirectoryObject"
+        ],
+        "first_seen": "2026-06-26T10:43:17.525Z",
+        "last_seen": "2026-07-15T01:34:55.962Z",
+        "guid": "%{861130f0-df4a-4937-a198-e526766d973b}"
+      },
+      "rel": "ACCESSED"
+    }
+  ]
+}
+
+### ③ 研判   [skill] dcsync   [模式] recipe
+# 研判留痕(4 步)
+[1] recipe取证「发起者与对象」→ 1 行
+[2] recipe取证「发起者估值」→ 1 行
+[3] recipe取证「域DC」→ 1 行
+[4] recipe取证「_图盲区」→ 1 行
+
+# 研判结果  alert=daab3cdd88f7a63d7ae8cabc93dad38c9dc166c61c7892f8b8748e82593e2361  path=B  skill=dcsync
+verdict   : false_positive  (confidence=0.98)
+summary   : DC正常复制
+rationale : 根据证据「域DC」，发起者sam短名kingslanding$与dc_host dc01不匹配。但证据显示事件主机Winterfell是SEVENKINGDOMS域的DC（event_host_is_dc=true），且actor_sam是机器账号。结合方法论第1步，DC之间正常的复制行为不会跨域且obj_guid为合法值，故判定为DC-to-DC同步的良性操作。
+evidence  : ['发起者与对象', '域DC']
+missing   : ['复制范围(是否含 krbtgt/全域)']
+agent     : qwen32b-ft
+处置(建议): none -> kingslanding$  risk=low  status=proposed
+
+============================================================================
+## [5/5] technique=T1003.006   该类共 51 条   uid=1febfe4b3a5acf4f6e13c3ee1b005740aad279339e5007ace816f343e41f36a9
+============================================================================
+### ① 原始告警节点(:Alert)
+{
+  "severity": 8,
+  "first_seen": "2026-07-15T01:24:55.912319800Z",
+  "last_seen": "2026-07-15T01:24:55.912319800Z",
+  "arrival_ms": 1784078700252,
+  "technique_ids": [
+    "T1003.006"
+  ],
+  "source": "wazuh",
+  "rule_id": "100807",
+  "stream": "soc-hids-alert-*",
+  "alert_uid": "1febfe4b3a5acf4f6e13c3ee1b005740aad279339e5007ace816f343e41f36a9",
+  "rule_description": "Possible DCSync: directory replication rights access by KINGSLANDING$",
+  "sensor": "wazuh-hids",
+  "raw_ref": "soc-hids-alert-2026.07.15:xx5gY58B3gPM8FAekvHG",
+  "time": "2026-07-15T01:24:56.941+0000"
+}
+
+### ② 触发上下文(seed:触发事件 / 主语 / 宾语 / 次要实体)
+{
+  "event": {
+    "ingest_time": 1784078712979,
+    "access_mask": "0x100",
+    "stream": "winlogbeat-*",
+    "event_code": "4662",
+    "arrival_ms": 1784078697250,
+    "sensor": "Security",
+    "raw_ref": "soc-hids-alert-2026.07.15:xx5gY58B3gPM8FAekvHG",
+    "source": "winlogbeat",
+    "operation": "Object Access",
+    "properties": "%%7688    {1131f6aa-9c07-11d1-f79f-00c04fc2dcd2}   {19195a5b-6da0-11d0-afd3-00c04fd930c9}",
+    "event_time": "2026-07-15T01:24:55.912319800Z",
+    "event_uid": "165b6259bd21a7bbda22da58edd5233f60c0e084d08063596fa9c8827b8d535f"
+  },
+  "subject": {
+    "_labels": [
+      "Account"
+    ],
+    "upn": "KINGSLANDING$@SEVENKINGDOMS.LOCAL",
+    "first_seen": "2026-06-26T10:05:29.972Z",
+    "last_seen": "2026-07-15T01:34:55.962Z",
+    "domain": "SEVENKINGDOMS",
+    "sam": "kingslanding$",
+    "sid": "S-1-5-21-3669086071-63869131-912362612-1001"
+  },
+  "related": [
+    {
+      "node": {
+        "_labels": [
+          "DirectoryObject"
+        ],
+        "first_seen": "2026-06-26T10:43:17.525Z",
+        "last_seen": "2026-07-15T01:34:55.962Z",
+        "guid": "%{861130f0-df4a-4937-a198-e526766d973b}"
+      },
+      "rel": "ACCESSED"
+    },
+    {
+      "node": {
+        "_labels": [
+          "Host"
+        ],
+        "hostname": "winterfell.north.sevenkingdoms.local",
+        "role": "domain_controller",
+        "first_seen": "2026-07-02T02:32:07.265Z",
+        "has_adcs": false,
+        "last_seen": "2026-07-15T01:34:55.962Z",
+        "domain": "north.sevenkingdoms.local",
+        "criticality": "critical",
+        "is_dc": true
+      },
+      "rel": "ON_HOST"
+    }
+  ]
+}
+
+### ③ 研判   [skill] dcsync   [模式] recipe
+# 研判留痕(4 步)
+[1] recipe取证「发起者与对象」→ 1 行
+[2] recipe取证「发起者估值」→ 1 行
+[3] recipe取证「域DC」→ 1 行
+[4] recipe取证「_图盲区」→ 1 行
+
+# 研判结果  alert=1febfe4b3a5acf4f6e13c3ee1b005740aad279339e5007ace816f343e41f36a9  path=B  skill=dcsync
+verdict   : false_positive  (confidence=0.98)
+summary   : DC正常复制
+rationale : 根据证据「域DC」中的dc_host(dc01)与actor_sam(kingslanding$)匹配且均为SEVENKINGDOMS域机器账号，符合DC间正常复制的决定性特征。properties中含DS-Replication-Get-Changes(1131f6aa)属于域功能标准操作。
+evidence  : ['event_code:4662', 'actor_sam:kingslanding$']
+pattern   : T1003.006_DC_Repl_FalsePos
+agent     : qwen32b-ft
+处置(建议): 无
+
+# 批量自测完成
+=== done 2026-07-15 01:38Z ===
