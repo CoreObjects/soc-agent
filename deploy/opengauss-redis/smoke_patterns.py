@@ -40,7 +40,7 @@ finally:
                          user=cfg.og_user, password=cfg.og_password)
     c.autocommit = True
     with c.cursor() as cur:
-        cur.execute("DELETE FROM patterns WHERE sig_hash=%s", (SH,))
+        cur.execute("DELETE FROM %s.patterns WHERE sig_hash=%%s" % cfg.og_schema, (SH,))
     c.close()
     print("cleanup: 测试行已删")
 print("SMOKE OK")
