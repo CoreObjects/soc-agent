@@ -164,9 +164,26 @@ def main(argv=None):
     ap.add_argument("--trace", action="store_true", help="打印研判留痕")
     ap.add_argument("--mode", choices=["recipe", "auto"], default="recipe",
                     help="recipe=确定性取证+LLM定性(默认,稳);auto=LLM 自主规划查询(对比用)")
+    ap.add_argument("--fast-slow", action="store_true",
+                    help="走快慢通道编排(规则库+composer 处置):坐实(TP)会组响应计划并写入台账(status=proposed),供 respond CLI 人审")
     args = ap.parse_args(argv)
 
     config = Config.from_env(dotenv_path=args.dotenv)
+    if args.fast_slow:
+        graph, orch, _repo = build_orchestrator(config)
+        try:
+            result = run_investigation(graph, orch, args.alert_uid)
+        finally:
+            graph.close()
+        if args.trace:
+            print(render_trace(result))
+            print()
+        print(render_result(result))
+        if result.dispositions:
+            print(f"[处置] 已组响应计划(plan_id={args.alert_uid},{len(result.dispositions)} 步)写入台账,"
+                  f"待人审:  python -m soc_agent.respond_cli list")
+        return 0
+
     graph, router, agent_inv, recipe_inv = build(config)
     try:
         node = graph.get_alert(args.alert_uid)

@@ -1,9 +1,14 @@
 """全量对称重置 → 最初态(只有事实、零研判)。图台账 与 openGauss 规则【一起清】,保持两边同步。
 
 清:
-- 图(Neo4j):所有 :Verdict / :Disposition 节点 + 其边(CONCLUDED/LED_TO/ON)—— 研判/处置台账(经验层)。
+- 图(Neo4j):所有 :Verdict / :Disposition / :ResponsePlan 节点 + 其边(CONCLUDED/LED_TO/STEP/ON)—— 研判/处置台账。
   ★事实(Alert/Event/账号/主机… + ingest 的所有边)一律不动。
 - openGauss:app.patterns 全清 —— 攻击模式规则(可复用经验,研发阶段可重建)。
+
+★三态一致(真执行引入的第三态=range 真实状态,如禁掉的账号/隔离规则/nft):本脚本在 server2,碰不到 range 态。
+  清图【前】先对账:若台账里有已执行处置,警告必须先在靶场那台跑 `bash deploy/setup/61-response-reset.sh`
+  (blunt 恢复 range 态:重启用 lab 账号/删 SOC-Isolate 规则/flush soc-response nft),否则清图后这些真实副作用
+  变成孤儿、下次攻击剧本复现不了(攻击者登不上)。顺序:range 态 → 图台账 → openGauss。
 
 用途:研发阶段每次小测收尾、或这台(ephemeral)下线前跑一次;避免"图脏了一堆已研判告警、openGauss 经验却没了"两边对不上。
 """
@@ -20,14 +25,24 @@ cfg = Config.from_env(dotenv_path=os.path.join(_ROOT, ".env"))
 print("neo4j=%s  og=%s db=%s enabled=%s" % (cfg.neo4j_uri, cfg.og_host, cfg.og_db, cfg.og_enabled))
 
 # ---- 图:清研判台账,保留事实 ----
+_LEDGER = "n:Verdict OR n:Disposition OR n:ResponsePlan"
 graph = Neo4jGraph(cfg.neo4j_uri, cfg.neo4j_user, cfg.neo4j_password, cfg.neo4j_database)
 try:
-    n_before = graph.run_cypher("MATCH (n) WHERE n:Verdict OR n:Disposition RETURN count(n) AS n")[0]["n"]
-    graph.run_write("MATCH (n) WHERE n:Verdict OR n:Disposition DETACH DELETE n")   # DETACH 连带删 CONCLUDED/LED_TO/ON
-    n_after = graph.run_cypher("MATCH (n) WHERE n:Verdict OR n:Disposition RETURN count(n) AS n")[0]["n"]
+    # 对账:已执行(未回退)的处置 → range 真实态可能是脏的
+    executed = graph.run_cypher(
+        "MATCH (d:Disposition) WHERE d.status='executed' RETURN count(d) AS n")[0]["n"]
+    if executed:
+        print("⚠️⚠️ 台账里有 %d 个【已执行】处置(禁账号/隔离/nft 等 range 真实副作用)。" % executed)
+        print("   清图前请先在靶场那台跑:  bash deploy/setup/61-response-reset.sh")
+        print("   (blunt 恢复 range 态:重启用 lab 账号 / 删 SOC-Isolate 规则 / flush soc-response nft)")
+        print("   否则清图后这些副作用成孤儿,下次攻击剧本复现不了。")
+
+    n_before = graph.run_cypher("MATCH (n) WHERE " + _LEDGER + " RETURN count(n) AS n")[0]["n"]
+    graph.run_write("MATCH (n) WHERE " + _LEDGER + " DETACH DELETE n")   # DETACH 连带删 CONCLUDED/LED_TO/STEP/ON
+    n_after = graph.run_cypher("MATCH (n) WHERE " + _LEDGER + " RETURN count(n) AS n")[0]["n"]
     alerts = graph.run_cypher("MATCH (a:Alert) RETURN count(a) AS n")[0]["n"]
     conc = graph.run_cypher("MATCH ()-[c:CONCLUDED]->() RETURN count(c) AS n")[0]["n"]
-    print("图台账:Verdict+Disposition %d → %d;残留 CONCLUDED 边=%d(应0);事实 Alert=%d(保留)"
+    print("图台账:Verdict+Disposition+ResponsePlan %d → %d;残留 CONCLUDED 边=%d(应0);事实 Alert=%d(保留)"
           % (n_before, n_after, conc, alerts))
 finally:
     graph.close()
