@@ -78,16 +78,17 @@ def q_request_rollback(plan_id, at):
 
 
 def q_claim(plan_id, runner, now, lease_until, from_status="approved", to_status="executing"):
-    """★CAS + lease 领取(防两个 runner 双执行):仅当仍是 from_status,或已 to_status 但租约过期(可重领)。
-    Neo4j 写事务对该节点加锁 → 并发下只有一个领到,另一个 WHERE 重判失败、返回空。"""
+    """★CAS + lease 领取(防两个 runner 双执行):仅当状态在 from_status(可给多个,如回退接受 executed|failed),
+    或已 to_status 但租约过期(可重领)。Neo4j 写事务对该节点加锁 → 并发下只有一个领到,另一个 WHERE 重判失败、返回空。"""
+    froms = from_status if isinstance(from_status, (list, tuple)) else [from_status]
     return (
         "MATCH (p:ResponsePlan {plan_id:$plan_id}) "
-        "WHERE p.status = $from_status "
+        "WHERE p.status IN $from_statuses "
         "   OR (p.status = $to_status AND coalesce(p.lease_until, '') < $now) "
         "SET p.status = $to_status, p.claimed_by = $runner, p.lease_until = $lease_until, p.claimed_at = $now "
         "RETURN p.plan_id AS claimed",
         {"plan_id": plan_id, "runner": runner, "now": now, "lease_until": lease_until,
-         "from_status": from_status, "to_status": to_status})
+         "from_statuses": list(froms), "to_status": to_status})
 
 
 def q_record_step(plan_id, order, status, execution_id=None, rollback_handle=None, error=None, at=None):

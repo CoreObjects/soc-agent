@@ -72,9 +72,10 @@ def run_plan(graph, client, plan_id, now, lease_until, runner_id="server2-respon
 
 
 def rollback_plan(graph, client, plan_id, now, lease_until, runner_id="server2-respond"):
-    """server2 直接经 appliance HTTP 逆序回退一个 executed 计划。"""
-    if not _rw(graph, ledger.q_claim(plan_id, runner_id, now, lease_until, "executed", "rolling_back")):
-        return {"ok": False, "error": "计划非 executed 或已被领取"}
+    """server2 直接经 appliance HTTP 逆序回退一个 executed 或 failed(部分执行)的计划,撤销已执行的步骤。"""
+    if not _rw(graph, ledger.q_claim(plan_id, runner_id, now, lease_until,
+                                     ["executed", "failed", "rollback_requested"], "rolling_back")):
+        return {"ok": False, "error": "计划非 executed/failed 或已被领取"}
     ok, steps = True, []
     for s in _rc(graph, ledger.q_rollbackable_steps(plan_id)):     # 已逆序
         h = s.get("rollback_handle")

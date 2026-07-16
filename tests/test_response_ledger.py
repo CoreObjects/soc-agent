@@ -40,12 +40,18 @@ def test_request_rollback_only_from_executed():
 def test_claim_is_cas_with_lease_expiry():
     c, p = ledger.q_claim("a1", runner="r1", now="t2", lease_until="t3",
                           from_status="approved", to_status="executing")
-    # CAS:仅当仍 approved,或已 executing 但租约过期(可重领)才领
-    assert "p.status = $from_status" in c
+    # CAS:仅当状态在 from_statuses,或已 executing 但租约过期(可重领)才领
+    assert "p.status IN $from_statuses" in c
     assert "p.status = $to_status AND coalesce(p.lease_until, '') < $now" in c
     assert "SET p.status = $to_status" in c and "p.claimed_by = $runner" in c
     assert p["runner"] == "r1" and p["now"] == "t2" and p["lease_until"] == "t3"
-    assert p["from_status"] == "approved" and p["to_status"] == "executing"
+    assert p["from_statuses"] == ["approved"] and p["to_status"] == "executing"
+
+
+def test_claim_accepts_multiple_from_statuses():
+    # 回退要能领取 executed 或 failed(部分执行)的计划
+    c, p = ledger.q_claim("a1", "r", "t", "t2", from_status=["executed", "failed"], to_status="rolling_back")
+    assert p["from_statuses"] == ["executed", "failed"]
 
 
 def test_record_step_writes_result_and_handle():

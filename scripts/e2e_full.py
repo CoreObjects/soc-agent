@@ -36,21 +36,31 @@ def _steps(graph, pid):
 
 graph, orch, repo = build_orchestrator(cfg)
 try:
+    # 保护账号(禁了会瘫靶场/无意义)—— demo 优先挑非保护账号的请求者,好看到完整 disable+回退
+    PROTECTED = {"vagrant", "krbtgt", "administrator", "domain admins", "enterprise admins"}
     cand = graph.run_cypher(
         "MATCH (a:Alert)<-[:TRIGGERED]-(e:Event {event_code:'4769'})-[:BY]->(req:Account) "
         "WHERE 'T1558.003' IN a.technique_ids AND NOT coalesce(req.sam,'') ENDS WITH '$' "
-        "RETURN DISTINCT a.alert_uid AS uid, req.sam AS requester LIMIT 25")
-    print("候选(非机器账号请求者)kerberoast: %d" % len(cand))
+        "RETURN DISTINCT a.alert_uid AS uid, req.sam AS requester LIMIT 60")
+    from collections import Counter
+    reqs = Counter((c["requester"] or "?") for c in cand)
+    print("候选(非机器账号请求者)kerberoast: %d;请求者分布: %s" % (len(cand), dict(reqs)))
+    # 非保护账号排前面,优先investigate
+    cand.sort(key=lambda c: (c["requester"] or "").lower() in PROTECTED)
     plan_id = None
-    for c in cand[:8]:
+    tp_protected = None
+    for c in cand[:12]:
         r = run_investigation(graph, orch, c["uid"])
         v = r.verdict
         disp = ", ".join("%s→%s" % (d.action, d.target) for d in (r.dispositions or [])) or "无"
         print("  [%s] req=%s → %s 处置:%s" % (c["uid"][:12], c["requester"],
                                               v.verdict if v else "?", disp))
         if v and v.verdict == "true_positive" and r.dispositions:
-            plan_id = c["uid"]
-            break
+            if (c["requester"] or "").lower() not in PROTECTED:
+                plan_id = c["uid"]
+                break                                    # 非保护账号的 TP:能看到完整 disable
+            tp_protected = tp_protected or c["uid"]      # 保护账号 TP:兜底(展示服务端护栏拦截)
+    plan_id = plan_id or tp_protected
     if not plan_id:
         print("\n没找到 TP+计划的告警(这批可能都是机器账号跨域票=FP)。")
         sys.exit(0)
@@ -78,6 +88,8 @@ try:
 
     print("[rollback] 经 appliance 逆序回退:")
     rb = respond_cli.rollback_plan(graph, client, plan_id, respond_cli._now(), respond_cli._lease())
+    if rb.get("error"):
+        print("    %s" % rb["error"])
     for s in rb.get("steps", []):
         print("    step %s : %s %s" % (s["order"], s["status"], s.get("error") or ""))
     print("  → 计划 %s" % ("rolled_back" if rb.get("ok") else "rollback_failed"))
