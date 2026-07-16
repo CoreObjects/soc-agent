@@ -28,14 +28,19 @@ print("neo4j=%s  og=%s db=%s enabled=%s" % (cfg.neo4j_uri, cfg.og_host, cfg.og_d
 _LEDGER = "n:Verdict OR n:Disposition OR n:ResponsePlan"
 graph = Neo4jGraph(cfg.neo4j_uri, cfg.neo4j_user, cfg.neo4j_password, cfg.neo4j_database)
 try:
-    # 对账:已执行(未回退)的处置 → range 真实态可能是脏的
+    # ★对账硬拦:台账有【已执行】(未回退)处置 → range 真实态是脏的 → 中止,先恢复 range 再清图。
+    #   (server2 碰不到 ansible,不能自动恢复;恢复走靶场那台。避免"图清了、账号还禁着、状态看不懂"。)
     executed = graph.run_cypher(
         "MATCH (d:Disposition) WHERE d.status='executed' RETURN count(d) AS n")[0]["n"]
+    if executed and os.environ.get("FORCE") != "1":
+        print("⛔ 中止:台账里有 %d 个【已执行】处置(禁账号/隔离/nft 等 range 真实副作用),未清图。" % executed)
+        print("   顺序必须 range→图→OG。先在靶场那台恢复 range 态,二选一:")
+        print("     · 精确回退(推荐):server2 `respond_cli rollback <plan>` → 靶场 `bash deploy/setup/60-response-run.sh`")
+        print("     · blunt 兜底:靶场 `bash deploy/setup/61-response-reset.sh`(删隔离规则+flush nft;账号加 RESET_ACCOUNTS=1)")
+        print("   确认 range 已恢复、仍要强清:  FORCE=1 bash scripts/reset_pristine.sh")
+        sys.exit(2)   # finally 会 close;SystemExit 传播 → 不清图、不清 OG(顺序卡死)
     if executed:
-        print("⚠️⚠️ 台账里有 %d 个【已执行】处置(禁账号/隔离/nft 等 range 真实副作用)。" % executed)
-        print("   清图前请先在靶场那台跑:  bash deploy/setup/61-response-reset.sh")
-        print("   (blunt 恢复 range 态:重启用 lab 账号 / 删 SOC-Isolate 规则 / flush soc-response nft)")
-        print("   否则清图后这些副作用成孤儿,下次攻击剧本复现不了。")
+        print("⚠️ FORCE=1:跳过对账,强清 %d 个已执行处置的台账(请自行确认 range 态已恢复)。" % executed)
 
     n_before = graph.run_cypher("MATCH (n) WHERE " + _LEDGER + " RETURN count(n) AS n")[0]["n"]
     graph.run_write("MATCH (n) WHERE " + _LEDGER + " DETACH DELETE n")   # DETACH 连带删 CONCLUDED/LED_TO/STEP/ON
