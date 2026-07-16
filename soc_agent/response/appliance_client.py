@@ -19,6 +19,8 @@ class ApplianceClient:
         self.url = (url or "").rstrip("/")
         self.token = token or None
         self.timeout = timeout
+        # ★内网设备直连,永不走企业代理(否则被 HIS Proxy 等拦)。空 ProxyHandler = 禁用所有代理。
+        self._opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))
 
     @property
     def enabled(self) -> bool:
@@ -31,7 +33,7 @@ class ApplianceClient:
         if self.token:
             req.add_header("X-Response-Token", self.token)
         try:
-            with urllib.request.urlopen(req, timeout=self.timeout) as r:
+            with self._opener.open(req, timeout=self.timeout) as r:
                 body = r.read().decode("utf-8")
         except Exception as e:                       # 网络/超时/HTTP 错 → 统一抛,调用方决定退回队列通道
             raise ApplianceError("%s %s: %s" % (method, path, e)) from e
