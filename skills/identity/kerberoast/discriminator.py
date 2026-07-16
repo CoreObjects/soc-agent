@@ -54,5 +54,7 @@ def discriminate(graph, alert, seed=None):
                           "enc": enc, "spn_fanout": spn_fanout}},
         ],
         "bindings": {"requester": req_sam or None, "target_service": b.get("tgt_sam"),
+                     # 各账号角色的域(供处置路由到该域的 DC;约定 <role>_domain)
+                     "requester_domain": b.get("req_domain"), "target_service_domain": b.get("tgt_domain"),
                      "req_host": b.get("req_host")},   # 源主机(供 collect_artifact 等绑真主机;取不到=None)
     }

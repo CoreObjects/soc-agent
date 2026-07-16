@@ -89,6 +89,17 @@ def test_mint_fp_uses_exculpatory_layer():
     assert mint_rule_from_result("kerberoast", disc, result).layer == "exculpatory"
 
 
+def test_account_step_injects_target_domain_for_dc_routing():
+    # 账号类原语:从 <role>_domain 绑定注入目标账号的域,供 appliance 路由到该域 DC
+    rule = PatternRule(skill="kerberoast", layer="incriminating", sig="s", sig_hash="h",
+                       verdict=VerdictTemplate("true_positive", confidence=0.9, canonical_rationale="r"),
+                       plan=[_step(1, "expire_password", "target_service", "high")], status="active")
+    res = result_from_rule(_alert(), "kerberoast", rule,
+                           {"target_service": "sql_svc", "target_service_domain": "essos.local"})
+    assert res.dispositions[0].target == "sql_svc"
+    assert res.dispositions[0].params["domain"] == "essos.local"   # 注入了域
+
+
 def test_dispositions_from_plan_applies_guardrail():
     # composer 出的计划落地为具体处置时,仍过护栏:受保护账号 → 降级 escalate
     plan = [_step(1, "disable_account", "requester", "high")]

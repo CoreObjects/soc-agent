@@ -33,6 +33,13 @@ def _disposition_from_step(step, bindings, iface) -> Disposition:
     resolved = _resolve_params(step.params, bindings)
     kf = iface.target_key_field(step.primitive)               # 主目标 = 原语 target.key_field 参数
     target = resolved.get(kf) if kf else None
+    # 账号类原语:注入目标账号的域(约定 <role>_domain),供 appliance 路由到该域的 DC
+    if iface.kind_of(step.primitive) == "account" and "domain" not in resolved:
+        spec = (step.params or {}).get(kf) or {}
+        role = spec.get("role") if isinstance(spec, dict) else None
+        dom = (bindings or {}).get(role + "_domain") if role else None
+        if dom:
+            resolved["domain"] = dom
     return Disposition(action=step.primitive, target=target, target_kind=iface.kind_of(step.primitive),
                        params=resolved, risk=step.risk)
 

@@ -52,11 +52,13 @@ def test_user_spray_features():
 
 
 def test_bindings_carry_instance_values():
-    g = FakeGraph({"req_sam": "vagrant", "req_domain": "NORTH", "tgt_sam": "sql_svc", "tgt_domain": "NORTH",
+    g = FakeGraph({"req_sam": "vagrant", "req_domain": "NORTH", "tgt_sam": "sql_svc", "tgt_domain": "ESSOS",
                    "enc": "0x17", "fanout": 7, "req_host": "castelblack"})
     b = _discriminate()(g, _alert())["bindings"]
-    # 实例值只在 bindings(含源主机,供 collect_artifact 绑真主机),不进 features
-    assert b == {"requester": "vagrant", "target_service": "sql_svc", "req_host": "castelblack"}
+    # 实例值只在 bindings(含各账号的域,供处置路由到对的 DC),不进 features
+    assert b == {"requester": "vagrant", "target_service": "sql_svc",
+                 "requester_domain": "NORTH", "target_service_domain": "ESSOS",
+                 "req_host": "castelblack"}
 
 
 def test_bindings_req_host_none_when_absent():
