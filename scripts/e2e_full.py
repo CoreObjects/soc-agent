@@ -78,6 +78,11 @@ try:
     for s in res.get("steps", []):
         print("    %s. %s→%s : %s %s" % (s["order"], s["primitive"], s.get("target"),
                                          s["status"], s.get("error") or ""))
+        out = (s.get("output") or "").strip()
+        if out:
+            for line in out.splitlines():
+                if line.strip():
+                    print("        | %s" % line)      # 真实 ansible/nft 输出(看是否真跑成)
     print("  → 计划 %s" % ("executed" if res.get("ok") else "failed"))
 
     print("[验台账] 执行后每步:")

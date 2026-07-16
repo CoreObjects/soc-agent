@@ -63,7 +63,8 @@ def run_plan(graph, client, plan_id, now, lease_until, runner_id="server2-respon
             plan_id, s.get("order"), st, res.get("execution_id"),
             json.dumps(rh, ensure_ascii=False) if rh else None, res.get("error"), now))
         steps.append({"order": s.get("order"), "primitive": s.get("primitive"),
-                      "target": s.get("target"), "status": st, "error": res.get("error")})
+                      "target": s.get("target"), "status": st, "error": res.get("error"),
+                      "output": (res.get("output") or "")[-700:]})   # appliance 回的真实执行输出(ansible/nft)
         if st != "executed":
             ok = False
             break
