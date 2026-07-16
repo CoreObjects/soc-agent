@@ -1,0 +1,28 @@
+=== e2e-full(找TP→approve→execute→rollback 全闭环)2026-07-16 02:57Z ===
+Received notification from DBMS server: {severity: WARNING} {code: Neo.ClientNotification.Statement.UnknownRelationshipTypeWarning} {category: UNRECOGNIZED} {title: The provided relationship type is not in the database.} {description: One of the relationship types in your query is not available in the database, make sure you didn't misspell it or that the label is available when you run this statement in your application (the missing relationship type is: HAS_IP)} {position: line: 1, column: 490, offset: 489} for query: "MATCH (a:Alert {alert_uid:$aid})<-[:TRIGGERED]-(trig:Event {event_code:'4769'})-[:BY]->(req:Account) OPTIONAL MATCH (trig)-[:REQUESTED]->(tgt) WITH req, trig, tgt.sam AS tgt_sam, tgt.domain AS tgt_domain, trig.event_time AS t0, trig.enc_type AS enc OPTIONAL MATCH (req)<-[:BY]-(e:Event {event_code:'4769'})-[:REQUESTED]->(t)   WHERE e.event_time >= toString(datetime(t0) - duration('PT10M')) AND e.event_time <= t0 OPTIONAL MATCH (trig)-[:FROM]->(fip:IPAddress) OPTIONAL MATCH (fh:Host)-[:HAS_IP]->(fip) RETURN req.sam AS req_sam, req.domain AS req_domain, tgt_sam, tgt_domain, enc, count(DISTINCT t) AS fanout, head(collect(DISTINCT fh.hostname)) AS req_host"
+Received notification from DBMS server: {severity: WARNING} {code: Neo.ClientNotification.Statement.UnknownPropertyKeyWarning} {category: UNRECOGNIZED} {title: The provided property key is not in the database} {description: One of the property names in your query is not available in the database, make sure you didn't misspell it or that the label is available when you run this statement in your application (the missing property name is: rollback_handle)} {position: line: 1, column: 265, offset: 264} for query: 'MATCH (p:ResponsePlan {plan_id:$plan_id})-[st:STEP]->(d:Disposition) RETURN st.order AS order, d.step_key AS step_key, d.action AS primitive,        d.params AS params, d.target AS target, d.target_kind AS target_kind,        d.risk AS risk, d.status AS status, d.rollback_handle AS rollback_handle ORDER BY st.order'
+Received notification from DBMS server: {severity: WARNING} {code: Neo.ClientNotification.Statement.UnknownPropertyKeyWarning} {category: UNRECOGNIZED} {title: The provided property key is not in the database} {description: One of the property names in your query is not available in the database, make sure you didn't misspell it or that the label is available when you run this statement in your application (the missing property name is: rollback_handle)} {position: line: 1, column: 265, offset: 264} for query: 'MATCH (p:ResponsePlan {plan_id:$plan_id})-[st:STEP]->(d:Disposition) RETURN st.order AS order, d.step_key AS step_key, d.action AS primitive,        d.params AS params, d.target AS target, d.target_kind AS target_kind,        d.risk AS risk, d.status AS status, d.rollback_handle AS rollback_handle ORDER BY st.order'
+appliance health: {'ok': True, 'service': 'range-response-appliance', 'version': 'n/a', 'dry_run': True}  (dry_run=True)
+候选(非机器账号请求者)kerberoast: 22
+  [43abbce06dd3] req=vagrant → true_positive 处置:expire_password→sql_svc, disable_account→vagrant
+
+=== TP 计划 plan_id=43abbce06dd381ca346174eca9d5a4ad3ad9dc8fa8d44b7b0b7cb86b88409b2c ===
+  1. expire_password target=sql_svc params={"sam": "sql_svc"}
+  2. disable_account target=vagrant params={"sam": "vagrant"}
+
+[approve] OK
+[execute] 经 appliance 逐步执行:
+    1. expire_password→sql_svc : executed 
+    2. disable_account→vagrant : refused NEVER_TOUCH: 受保护账号 vagrant,拒绝处置
+  → 计划 failed
+[验台账] 执行后每步:
+    1. expire_password status=executed execution_id=有 handle={"execution_id": "e30ef4d2901d4ae2903fe75c4e05ef17", "inverse": "unexpire_password", "params": {"sam": "sql_svc"}, "prev_state": {}}
+    2. disable_account status=refused execution_id=None handle=None
+[rollback] 经 appliance 逆序回退:
+  → 计划 rollback_failed
+[验台账] 回退后每步:
+    1. expire_password status=executed
+    2. disable_account status=refused
+
+闭环走完。DRY 下机制通=可切真做(靶场重起服务去掉 DRY);真做后清理用 `bash scripts/reset_pristine.sh`。
+=== done ===
