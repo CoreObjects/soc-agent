@@ -3,7 +3,9 @@
 orchestrator 跑它把关键证据一次性收齐(含★跨域信任),再交 LLM 定性。
 不依赖模型自己规划该查什么 —— 模型只负责"看着证据下判断"。
 graph.run_cypher(query, **params) 只读;多步依赖(后步用前步取出的账号/域)。
+★同域/机器账号判定走 ._kerb 共享原语,和 signature.py 用同一份(NetBIOS 归一),不漂。
 """
+from ._kerb import is_machine, same_domain as _same_domain
 
 
 def collect(graph, alert, seed=None):
@@ -41,9 +43,8 @@ def collect(graph, alert, seed=None):
     #    跨域信任的正常 RC4 主要豁免【机器账号】跨域引荐票(如 DC$ 请父域票据);
     #    【普通用户】对服务账号 SPN 请 RC4(尤其多 SPN 扇出)= Kerberoast,跨域信任不豁免。
     tgt_domain = b.get("tgt_domain")
-    req_is_machine = bool(req_sam and req_sam.endswith("$"))
-    same_domain = bool(req_domain and tgt_domain
-                       and req_domain.strip().upper() == tgt_domain.strip().upper())
+    req_is_machine = is_machine(req_sam)
+    same_domain = _same_domain(req_domain, tgt_domain)     # ★NetBIOS 归一(与 signature.py 同一份原语,不漂)
     fp = {"req_is_machine": req_is_machine, "same_domain": same_domain,
           "req_domain": req_domain, "tgt_domain": tgt_domain,
           "_note": "NetBIOS 名(如 NORTH)与 FQDN(如 north.sevenkingdoms.local)是同一个域,勿当两个域。"

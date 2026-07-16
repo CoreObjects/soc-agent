@@ -334,7 +334,7 @@ class FastSlowInvestigator:
 
     def investigate(self, alert, seed=None) -> InvestigationResult:
         # ── 快通道:跑全部签名(自锚定、过滤伪签名)→ 全局两趟先证伪碰撞 → 命中即套模板(0 LLM)──
-        sigs = signatures.run_all(self.graph, alert, seed)
+        sigs = signatures.run_all(self.registry, self.graph, alert, seed)
         hit = match_all(self.repo, sigs)
         if hit is not None:
             rule, entry = hit

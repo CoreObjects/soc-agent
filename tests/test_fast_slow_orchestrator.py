@@ -38,7 +38,7 @@ def _entry(bindings, layers=None):
 
 def _patch_sigs(monkeypatch, entry):
     """控制 signatures.run_all 的输出(=快通道拿到的签名 list)。"""
-    monkeypatch.setattr(signatures_mod, "run_all", lambda g, a, s=None: [entry])
+    monkeypatch.setattr(signatures_mod, "run_all", lambda reg, g, a, s=None: [entry])
 
 
 def _skill():
@@ -164,7 +164,7 @@ def test_no_signature_still_investigates_slow(monkeypatch):
     repo = InMemoryPatternRepository()
     llm = FakeLLMClient([_finalize("suspicious")])
     orch = _wire(repo, _skill(), llm)
-    monkeypatch.setattr(signatures_mod, "run_all", lambda g, a, s=None: [])
+    monkeypatch.setattr(signatures_mod, "run_all", lambda reg, g, a, s=None: [])
     r = orch.investigate(_alert("a1"))
     assert r.path == "B" and r.verdict.verdict == "suspicious"
     assert repo.all() == []                            # 无签名 → 不沉淀
