@@ -15,14 +15,24 @@ from ..response import default_interface
 __all__ = ["Composer", "build_entity_frame"]
 
 
+def _infer_kind(role):
+    """从角色名推断实体 kind(供 composer 按 kind 绑参、防 host 参数绑到账号)。"""
+    r = role.lower()
+    if r.endswith("_host") or r == "host" or r.endswith("_hostname"):
+        return "host"
+    if r.endswith("_ip") or r == "ip":
+        return "ip"
+    return "account"
+
+
 def build_entity_frame(bindings, seed=None):
-    """判别器 bindings(角色→值)[+ seed 未来扩充] → entity_frame {role: {value, kind?}}。
-    供 composer 知道有哪些角色可绑;空值角色不进。"""
+    """判别器 bindings(角色→值)→ entity_frame {role: {value, kind}}。
+    供 composer 知道有哪些角色可绑及其类型;空值角色、路由用的 <role>_domain 不进。"""
     frame = {}
     for role, val in (bindings or {}).items():
-        if val in (None, ""):
+        if val in (None, "") or role.endswith("_domain"):
             continue
-        frame[role] = {"value": val}
+        frame[role] = {"value": val, "kind": _infer_kind(role)}
     return frame
 
 
@@ -58,7 +68,7 @@ class Composer:
                              tools=[self._compose_spec(entity_frame)], tool_choice="required")
         for tc in (resp.tool_calls or []):
             if tc.name == "compose_response":
-                return self._parse(tc.arguments or {})
+                return self._parse(tc.arguments or {}, entity_frame)
         return []
 
     # ---- 提示 ----
@@ -110,7 +120,7 @@ class Composer:
                 "required": ["steps"]}}}
 
     # ---- 解析 ----
-    def _parse(self, args) -> list:
+    def _parse(self, args, entity_frame) -> list:
         menu = self.iface.composer_menu_ids()
         steps = []
         order = 0
@@ -118,14 +128,26 @@ class Composer:
             prim = s.get("primitive")
             if prim not in menu:                    # 只认菜单内正向原语(过滤幻觉/纯 inverse)
                 continue
+            kf = self.iface.target_key_field(prim)
+            want_kind = self.iface.kind_of(prim)
             params = {}
+            drop = False
             for pname, spec in (s.get("params") or {}).items():
                 if not isinstance(spec, dict):
                     continue
                 if spec.get("role"):
-                    params[pname] = {"source": "entity_role", "role": spec["role"]}
+                    role = spec["role"]
+                    # ★主目标参数:绑定角色必须存在且 kind 匹配(防把 host 参数绑到账号角色,如 collect_artifact 绑 vagrant)
+                    if pname == kf:
+                        fr = entity_frame.get(role)
+                        if not fr or (fr.get("kind") and fr["kind"] != want_kind):
+                            drop = True
+                            break
+                    params[pname] = {"source": "entity_role", "role": role}
                 elif "value" in spec:
                     params[pname] = {"source": "literal", "value": spec["value"]}
+            if drop:                                # 主目标绑错 kind/无此角色 → 丢弃该步
+                continue
             order += 1
             p = self.iface.get(prim)
             risk = s.get("risk") or (p.risk_default if p else "low")

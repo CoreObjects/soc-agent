@@ -39,9 +39,23 @@ def _compose(steps):
 
 
 def test_build_entity_frame_from_bindings():
-    ef = build_entity_frame({"requester": "hacker2", "target_service": "sql_svc", "empty": None})
-    assert ef["requester"]["value"] == "hacker2"
-    assert "empty" not in ef                       # 空值角色不进 frame
+    ef = build_entity_frame({"requester": "hacker2", "req_host": "srv02", "empty": None,
+                             "requester_domain": "NORTH"})
+    assert ef["requester"] == {"value": "hacker2", "kind": "account"}
+    assert ef["req_host"] == {"value": "srv02", "kind": "host"}     # _host → host kind
+    assert "empty" not in ef                       # 空值角色不进
+    assert "requester_domain" not in ef            # 路由用的 <role>_domain 不作可绑角色
+
+
+def test_compose_drops_step_when_target_kind_mismatch():
+    # collect_artifact 需要 host,却被绑到账号角色 requester → kind 不匹配 → 丢弃(防绑错,如真机把 host 绑到 vagrant)
+    llm = FakeLLMClient([_compose([
+        {"primitive": "collect_artifact", "params": {"hostname": {"role": "requester"}}},
+        {"primitive": "disable_account", "params": {"sam": {"role": "requester"}}},
+    ])])
+    comp = Composer(llm=llm, iface=_iface())
+    plan = comp.compose(_result(), {"bindings": {"requester": "hacker2"}}, _skill())
+    assert [s.primitive for s in plan] == ["disable_account"]     # 只留 kind 匹配的 frame
 
 
 def test_compose_returns_role_bound_ordered_plan():

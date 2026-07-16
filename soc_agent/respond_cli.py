@@ -65,7 +65,8 @@ def run_plan(graph, client, plan_id, now, lease_until, runner_id="server2-respon
         steps.append({"order": s.get("order"), "primitive": s.get("primitive"),
                       "target": s.get("target"), "status": st, "error": res.get("error"),
                       "output": (res.get("output") or "")[-700:]})   # appliance 回的真实执行输出(ansible/nft)
-        if st != "executed":
+        # refused(护栏策略拒)≠ 执行失败:记录但继续跑其余独立步;只有真 failed 才按 on_failure 中止
+        if st == "failed":
             ok = False
             break
     _rw(graph, ledger.q_finish_plan(plan_id, "executed" if ok else "failed", now))
