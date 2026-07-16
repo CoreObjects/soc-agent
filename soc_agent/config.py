@@ -48,10 +48,17 @@ class Config:
     og_user: str
     og_password: str
     og_schema: str
+    # 靶场处置面 HTTP appliance(server2 直接调,免两台来回跑);空 → 退回图台账队列 + range-runner 通道
+    response_url: str
+    response_token: str
 
     @property
     def og_enabled(self) -> bool:
         return bool(self.og_host)
+
+    @property
+    def appliance_enabled(self) -> bool:
+        return bool(self.response_url)
 
     @classmethod
     def from_env(cls, env=None, dotenv_path=None) -> "Config":
@@ -80,4 +87,6 @@ class Config:
             og_user=g("OG_USER", "soc_agent"),
             og_password=g("OG_PASSWORD", ""),
             og_schema=g("OG_SCHEMA", "app"),
+            response_url=g("RESPONSE_URL", ""),
+            response_token=g("RESPONSE_TOKEN", ""),
         )

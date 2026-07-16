@@ -44,6 +44,51 @@ def test_reject_and_request_rollback():
     assert "'rollback_requested'" in g2.writes[0][0]
 
 
+class FakeClient:
+    enabled = True
+
+    def __init__(self):
+        self.calls = []
+
+    def execute(self, primitive, params):
+        self.calls.append(("execute", primitive, params))
+        return {"status": "executed", "execution_id": "ex1",
+                "rollback_handle": {"inverse": "enable_account", "params": params}}
+
+    def rollback(self, handle):
+        self.calls.append(("rollback", handle))
+        return {"status": "executed"}
+
+
+def test_run_plan_executes_via_client_and_writes_back():
+    g = FakeGraph(read_rows=[{"order": 1, "primitive": "disable_account",
+                              "params": '{"sam":"hacker2"}', "target": "hacker2"}],
+                  write_rows=[{"claimed": "a1"}])
+    c = FakeClient()
+    r = respond_cli.run_plan(g, c, "a1", now="t", lease_until="t2")
+    assert r["ok"] and r["steps"][0]["status"] == "executed"
+    assert c.calls[0] == ("execute", "disable_account", {"sam": "hacker2"})   # 参数 json 串解出来传给 appliance
+    # claim + record + finish 都写回了(状态转移语句)
+    assert any("SET p.status = $to_status" in q for q, _ in g.writes)   # CAS claim
+    assert any("d.execution_id = $execution_id" in q for q, _ in g.writes)  # record_step
+    assert any("SET p.status = $status" in q for q, _ in g.writes)      # finish
+
+
+def test_run_plan_claim_fail_returns_error():
+    g = FakeGraph(read_rows=[], write_rows=[])          # claim 返回空 → 没领到
+    r = respond_cli.run_plan(g, FakeClient(), "a1", now="t", lease_until="t2")
+    assert r["ok"] is False and "领取" in r["error"]
+
+
+def test_rollback_plan_calls_client_and_marks():
+    g = FakeGraph(read_rows=[{"order": 2, "rollback_handle": '{"inverse":"enable_account","params":{"sam":"h"}}'}],
+                  write_rows=[{"claimed": "a1"}])
+    c = FakeClient()
+    r = respond_cli.rollback_plan(g, c, "a1", now="t", lease_until="t2")
+    assert r["ok"] and c.calls[0][0] == "rollback"
+    assert c.calls[0][1] == {"inverse": "enable_account", "params": {"sam": "h"}}   # handle json 解出来
+
+
 def test_list_pending_joins_steps():
     # 计划列表(读)+ 每个计划的步骤(读)
     g = FakeGraph(read_rows=[{"plan_id": "a1", "status": "proposed", "verdict": "true_positive",
