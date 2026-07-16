@@ -1,0 +1,10 @@
+=== daemon --once  2026-07-16 11:12Z ===
+-- selftest(内存 fake,先证明逻辑没坏)--
+selftest: seen=['u1', 'u2', 'u1', 'u2'] c1={'selected': 3, 'concluded': 2, 'failed': 1, 'dead_lettered': 0} c2={'selected': 3, 'concluded': 2, 'failed': 0, 'dead_lettered': 1} writes=['poison']
+SELFTEST: PASS
+-- --once(真基建:排空未研判告警)--
+[daemon 11:14:01Z] --once 完成:{'selected': 20, 'concluded': 20, 'failed': 0, 'dead_lettered': 0}
+-- 剩余未研判计数(应随范围闸收敛)--
+范围闸内仍未研判: 79  (techs= ['T1558.003'] )
+全库仍未研判(含范围闸外): 41982
+=== done 2026-07-16 11:14Z ===
