@@ -1,6 +1,8 @@
-=== reset-to-pristine(图台账+openGauss规则双清)2026-07-15 09:12Z ===
+=== reset-to-pristine(图台账+openGauss规则双清)2026-07-16 02:02Z ===
+Received notification from DBMS server: {severity: WARNING} {code: Neo.ClientNotification.Statement.UnknownLabelWarning} {category: UNRECOGNIZED} {title: The provided label is not in the database.} {description: One of the labels in your query is not available in the database, make sure you didn't misspell it or that the label is available when you run this statement in your application (the missing label name is: ResponsePlan)} {position: line: 1, column: 49, offset: 48} for query: 'MATCH (n) WHERE n:Verdict OR n:Disposition OR n:ResponsePlan RETURN count(n) AS n'
+Received notification from DBMS server: {severity: WARNING} {code: Neo.ClientNotification.Statement.UnknownLabelWarning} {category: UNRECOGNIZED} {title: The provided label is not in the database.} {description: One of the labels in your query is not available in the database, make sure you didn't misspell it or that the label is available when you run this statement in your application (the missing label name is: ResponsePlan)} {position: line: 1, column: 49, offset: 48} for query: 'MATCH (n) WHERE n:Verdict OR n:Disposition OR n:ResponsePlan RETURN count(n) AS n'
 neo4j=bolt://10.185.93.0:7687  og=127.0.0.1 db=soc enabled=True
-图台账:Verdict+Disposition 2 → 0;残留 CONCLUDED 边=0(应0);事实 Alert=30475(保留)
-openGauss 规则:2 → 0
+图台账:Verdict+Disposition+ResponsePlan 0 → 0;残留 CONCLUDED 边=0(应0);事实 Alert=37659(保留)
+openGauss 规则:0 → 0
 PRISTINE OK:图台账 + openGauss 规则已双清,恢复'只有事实、零研判'最初态,两边同步
 === done ===
