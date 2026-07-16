@@ -1,42 +1,36 @@
-=== e2e-full(找TP→approve→execute→rollback 全闭环)2026-07-16 03:52Z ===
+=== e2e-full(找TP→approve→execute→rollback 全闭环)2026-07-16 04:27Z ===
 appliance health: {'ok': True, 'service': 'range-response-appliance', 'version': 'n/a', 'dry_run': False}  (dry_run=False)
 候选(非机器账号请求者)kerberoast: 22;请求者分布: {'vagrant': 22}
-  [43abbce06dd3] req=vagrant → true_positive 处置:collect_artifact→vagrant, disable_account→vagrant, expire_password→sql_svc
-  [6ec302bc135c] req=vagrant → true_positive 处置:collect_artifact→vagrant, disable_account→vagrant, expire_password→sql_svc
-  [2c087f186c7e] req=vagrant → true_positive 处置:collect_artifact→vagrant, disable_account→vagrant, expire_password→sansa.stark
-  [a2063126565b] req=vagrant → true_positive 处置:collect_artifact→vagrant, disable_account→vagrant, expire_password→jon.snow
-  [98f207762542] req=vagrant → true_positive 处置:collect_artifact→vagrant, disable_account→vagrant, expire_password→jon.snow
-  [364eca8bc3f3] req=vagrant → true_positive 处置:collect_artifact→vagrant, disable_account→vagrant, expire_password→sql_svc
-  [34f9f95e15a9] req=vagrant → true_positive 处置:collect_artifact→vagrant, disable_account→vagrant, expire_password→sql_svc
-  [fc4cae6d7301] req=vagrant → true_positive 处置:collect_artifact→vagrant, disable_account→vagrant, expire_password→sql_svc
-  [cbb4de766e97] req=vagrant → true_positive 处置:collect_artifact→vagrant, disable_account→vagrant, expire_password→sql_svc
-  [d5d9ce42a33a] req=vagrant → true_positive 处置:collect_artifact→vagrant, disable_account→vagrant, expire_password→sansa.stark
-  [dc1572205826] req=vagrant → true_positive 处置:collect_artifact→vagrant, disable_account→vagrant, expire_password→jon.snow
-  [2db19e289bac] req=vagrant → true_positive 处置:collect_artifact→vagrant, disable_account→vagrant, expire_password→jon.snow
+  [43abbce06dd3] req=vagrant → true_positive 处置:escalate→None, escalate→None
+  [6ec302bc135c] req=vagrant → true_positive 处置:escalate→None, escalate→None
+  [2c087f186c7e] req=vagrant → true_positive 处置:escalate→None, escalate→None
+  [a2063126565b] req=vagrant → true_positive 处置:escalate→None, escalate→None
+  [98f207762542] req=vagrant → true_positive 处置:escalate→None, escalate→None
+  [364eca8bc3f3] req=vagrant → true_positive 处置:escalate→None, escalate→None
+  [34f9f95e15a9] req=vagrant → true_positive 处置:escalate→None, escalate→None
+  [fc4cae6d7301] req=vagrant → true_positive 处置:escalate→None, escalate→None
+  [cbb4de766e97] req=vagrant → true_positive 处置:escalate→None, escalate→None
+  [d5d9ce42a33a] req=vagrant → true_positive 处置:escalate→None, escalate→None
+  [dc1572205826] req=vagrant → true_positive 处置:escalate→None, escalate→None
+  [2db19e289bac] req=vagrant → true_positive 处置:escalate→None, escalate→None
 
 === TP 计划 plan_id=43abbce06dd381ca346174eca9d5a4ad3ad9dc8fa8d44b7b0b7cb86b88409b2c ===
-  1. collect_artifact target=vagrant params={"hostname": "vagrant"}
-  2. disable_account target=vagrant params={"sam": "vagrant", "domain": "ESSOS"}
-  3. expire_password target=sql_svc params={"sam": "sql_svc", "domain": "ESSOS"}
+  1. escalate target=None params={}
+  2. escalate target=None params={}
 
 [approve] OK
 [execute] 经 appliance 逐步执行:
-    1. collect_artifact→vagrant : failed no hosts matched —— inventory 里没有目标主机(主机名/实例不对)
-        | PLAY [Response collect_artifact (read-only)] ***********************************
-        | skipping: no hosts matched
-        | PLAY RECAP *********************************************************************
-        | [WARNING]: Could not match supplied host pattern, ignoring: vagrant
-  → 计划 failed
+    1. escalate→None : refused UNKNOWN_PRIMITIVE: appliance 未开放原语 escalate
+    2. escalate→None : refused UNKNOWN_PRIMITIVE: appliance 未开放原语 escalate
+  → 计划 executed
 [验台账] 执行后每步:
-    1. collect_artifact status=failed execution_id=None handle=None
-    2. disable_account status=proposed execution_id=None handle=None
-    3. expire_password status=proposed execution_id=None handle=None
+    1. escalate status=refused execution_id=None handle=None
+    2. escalate status=refused execution_id=None handle=None
 [rollback] 经 appliance 逆序回退:
   → 计划 rolled_back
 [验台账] 回退后每步:
-    1. collect_artifact status=failed
-    2. disable_account status=proposed
-    3. expire_password status=proposed
+    1. escalate status=refused
+    2. escalate status=refused
 
 闭环走完。DRY 下机制通=可切真做(靶场重起服务去掉 DRY);真做后清理用 `bash scripts/reset_pristine.sh`。
 === done ===
