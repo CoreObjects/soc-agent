@@ -1,6 +1,8 @@
-=== reset-to-pristine(图台账+openGauss规则双清)2026-07-16 02:57Z ===
+=== reset-to-pristine(图台账+openGauss规则双清)2026-07-16 03:06Z ===
 neo4j=bolt://10.185.93.0:7687  og=127.0.0.1 db=soc enabled=True  appliance=http://10.185.93.0:8765
-图台账:Verdict+Disposition+ResponsePlan 6 → 0;残留 CONCLUDED 边=0(应0);事实 Alert=38042(保留)
-openGauss 规则:2 → 0
+台账有 1 个已执行处置 → 调靶场 /reset 恢复 range 态(http://10.185.93.0:8765)...
+  ✅ 靶场已复位 range 态。
+图台账:Verdict+Disposition+ResponsePlan 4 → 0;残留 CONCLUDED 边=0(应0);事实 Alert=38120(保留)
+openGauss 规则:1 → 0
 PRISTINE OK:图台账 + openGauss 规则已双清,恢复'只有事实、零研判'最初态,两边同步
 === done ===
