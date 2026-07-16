@@ -28,11 +28,13 @@ def discriminate(graph, alert, seed=None):
         "WITH req, trig, tgt.sam AS tgt_sam, tgt.domain AS tgt_domain, trig.event_time AS t0, trig.enc_type AS enc "
         "OPTIONAL MATCH (req)<-[:BY]-(e:Event {event_code:'4769'})-[:REQUESTED]->(t) "
         "  WHERE e.event_time >= toString(datetime(t0) - duration('" + _FANOUT_WINDOW + "')) AND e.event_time <= t0 "
-        "OPTIONAL MATCH (trig)-[:FROM]->(fip:IPAddress) OPTIONAL MATCH (fh:Host)-[:HAS_IP]->(fip) "
         "RETURN req.sam AS req_sam, req.domain AS req_domain, tgt_sam, tgt_domain, enc, "
-        "count(DISTINCT t) AS fanout, head(collect(DISTINCT fh.hostname)) AS req_host",
+        "count(DISTINCT t) AS fanout",
         aid=aid)
     b = rows[0] if rows else {}
+    # 源主机(req_host)本可供 collect_artifact 绑真主机,但图里 Host↔IP 的 HAS_IP 边未被 ingest 填充 →
+    # 暂无法从源 IP 反查主机;留 None(composer 若组 collect_artifact,护栏按"目标未解析"降级 escalate)。
+    # 待 ingest 补 HAS_IP 后再恢复源主机反查。
 
     req_sam = b.get("req_sam") or ""
     req_is_machine = req_sam.strip().endswith("$")
