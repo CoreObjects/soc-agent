@@ -1,4 +1,4 @@
-=== e2e-full(找TP→approve→execute→rollback 全闭环)2026-07-16 03:16Z ===
+=== e2e-full(找TP→approve→execute→rollback 全闭环)2026-07-16 03:45Z ===
 appliance health: {'ok': True, 'service': 'range-response-appliance', 'version': 'n/a', 'dry_run': False}  (dry_run=False)
 候选(非机器账号请求者)kerberoast: 22;请求者分布: {'vagrant': 22}
   [43abbce06dd3] req=vagrant → true_positive 处置:expire_password→sql_svc, disable_account→vagrant
@@ -15,23 +15,21 @@ appliance health: {'ok': True, 'service': 'range-response-appliance', 'version':
   [2db19e289bac] req=vagrant → true_positive 处置:expire_password→jon.snow, disable_account→vagrant
 
 === TP 计划 plan_id=43abbce06dd381ca346174eca9d5a4ad3ad9dc8fa8d44b7b0b7cb86b88409b2c ===
-  1. expire_password target=sql_svc params={"sam": "sql_svc"}
-  2. disable_account target=vagrant params={"sam": "vagrant"}
+  1. expire_password target=sql_svc params={"sam": "sql_svc", "domain": "ESSOS"}
+  2. disable_account target=vagrant params={"sam": "vagrant", "domain": "ESSOS"}
 
 [approve] OK
 [execute] 经 appliance 逐步执行:
-    1. expire_password→sql_svc : executed 
-    2. disable_account→vagrant : refused NEVER_TOUCH: 受保护账号 vagrant,拒绝处置
+    1. expire_password→sql_svc : refused SCOPE_DENIED: 域 essos 不在作用域内
   → 计划 failed
 [验台账] 执行后每步:
-    1. expire_password status=executed execution_id=有 handle={"execution_id": "9262022dd5c84e18b479d8f67a8696f1", "inverse": "unexpire_password", "params": {"sam": "sql_svc"}, "prev_state": {}}
-    2. disable_account status=refused execution_id=None handle=None
+    1. expire_password status=refused execution_id=None handle=None
+    2. disable_account status=proposed execution_id=None handle=None
 [rollback] 经 appliance 逆序回退:
-    step 1 : executed 
   → 计划 rolled_back
 [验台账] 回退后每步:
-    1. expire_password status=rolled_back
-    2. disable_account status=refused
+    1. expire_password status=refused
+    2. disable_account status=proposed
 
 闭环走完。DRY 下机制通=可切真做(靶场重起服务去掉 DRY);真做后清理用 `bash scripts/reset_pristine.sh`。
 === done ===
