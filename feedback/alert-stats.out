@@ -1,0 +1,48 @@
+=== alert-stats  2026-07-16 11:26Z ===
+=== 未研判告警总数: 42090 ===
+
+范围闸默认放行(有签名)覆盖的未研判量: 79 / 42090  (0.2%)  —— 其余锁在闸外,等补签名
+
+按 technique(前 40):
+  technique           未研判  对应 skill               签名?
+  ------------------------------------------------------------
+  T1105             25302  ingress_tool_transfer  待写 signature.py
+  T1021.001         12162  lateral_movement       待写 signature.py
+  T1003.006          2511  dcsync                 待写 signature.py
+  T1003.001          1525  lsass_dump             待写 signature.py
+  T1140               188  —(无 skill,整套要写)        —
+  T1059.001           176  suspicious_process     待写 signature.py
+  (none)              100  —(无 skill,整套要写)        —
+  T1059                81  suspicious_process     待写 signature.py
+  T1558.003            79  kerberoast             ✅有
+  T1098                22  —(无 skill,整套要写)        —
+  T1649                12  adcs                   待写 signature.py
+  T1071.001             6  c2_beacon              待写 signature.py
+  T1531                 4  —(无 skill,整套要写)        —
+  T1547.001             2  registry_persistence   待写 signature.py
+  T1059.007             2  web_exploit            待写 signature.py
+  T1190                 2  web_exploit            待写 signature.py
+  T1505.003             1  webshell               待写 signature.py
+
+按 rule_description(前 20,给人看是啥告警):
+     25221  Executable file dropped in folder commonly used by malware
+     11792  Remote/network logon type 3 by robb.stark on castelblack.north.sevenkingdoms.local
+      2277  Possible DCSync: directory replication rights access by KINGSLANDING$
+       966  Credential dumping via LSASS access by C:\\Program Files (x86)\\ossec-agent\\wazuh-agent.exe (granted 0x1410)
+       349  Lsass process was accessed by C:\\ProgramData\\Microsoft\\Windows Defender\\Platform\\4.18.26050.15-0\\MsMpEng.exe with read permissions, possible credential dump
+       233  Remote/network logon type 3 by vagrant on meereen.essos.local
+       188  Powershell script may be using Base64 decoding method
+       187  Possible DCSync: directory replication rights access by WINTERFELL$
+       176  Powershell.exe spawned a powershell process which executed a base64 encoded command
+        90  Windows Audit Policy changed
+        84  Credential dumping via LSASS access by C:\\Program Files (x86)\\ossec-agent\\wazuh-agent.exe (granted 0x1fffff)
+        81  C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe created a new scripting file under Windows Temp or User data folder
+        52  Credential dumping via LSASS access by C:\\ProgramData\\Microsoft\\Windows Defender\\Platform\\4.18.26050.15-0\\MsMpEng.exe (granted 0x1410)
+        50  Remote/network logon type 3 by vagrant on castelblack.north.sevenkingdoms.local
+        49  Kerberoast: RC4(0x17) TGS request for service SEVENKINGDOMS.LOCAL
+        47  Possible DCSync: directory replication rights access by MEEREEN$
+        44  Remote/network logon type 3 by vagrant on winterfell.north.sevenkingdoms.local
+        43  Remote/network logon type 3 by vagrant on kingslanding.sevenkingdoms.local
+        23  Kerberoast: RC4(0x17) TGS request for service NORTH.SEVENKINGDOMS.LOCAL
+        19  Credential dumping via LSASS access by C:\\ProgramData\\Microsoft\\Windows Defender\\Platform\\4.18.26050.15-0\\MsMpEng.exe (granted 0x101000)
+=== done ===
