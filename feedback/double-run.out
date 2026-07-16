@@ -1,20 +1,21 @@
-=== P3' 换实例双跑总验收 2026-07-15 08:54Z ===
+=== P3' 换实例双跑总验收 2026-07-16 09:40Z ===
 og_enabled=True neo4j=bolt://10.185.93.0:7687
---reset: 已清 kerberoast 规则库 + 台账,从 0 经验开始
+--reset: 已清 kerberoast 规则库 + 台账(保留共享的无处置单例),从 0 经验开始
 kerberoast 告警取样: 8
-[1] path=B verdict=false_positive lean=None pattern=d0fb52fd32e7 uid=1a503cc6597005
-[2] path=A verdict=false_positive lean=None pattern=d0fb52fd32e7 uid=906c75de02ea34
-[3] path=A verdict=false_positive lean=None pattern=d0fb52fd32e7 uid=5218b2b4076308
-[4] path=A verdict=false_positive lean=None pattern=d0fb52fd32e7 uid=cc832285c6407d
-[5] path=B verdict=true_positive lean=None pattern=41acfd6a54e0 uid=c1a6052caf6cbd
-[6] path=A verdict=true_positive lean=None pattern=41acfd6a54e0 uid=57c13bc03684ed
-[7] path=A verdict=true_positive lean=None pattern=41acfd6a54e0 uid=a7c04ede8ec115
-[8] path=A verdict=true_positive lean=None pattern=41acfd6a54e0 uid=85091fa9c4e867
+[1] path=B verdict=false_positive lean=None pattern=d0fb52fd32e7 uid=0b54d78dd0df9f
+[2] path=A verdict=false_positive lean=None pattern=d0fb52fd32e7 uid=9390bdca195ea2
+[3] path=A verdict=false_positive lean=None pattern=d0fb52fd32e7 uid=17bb56c5b47084
+[4] path=A verdict=false_positive lean=None pattern=d0fb52fd32e7 uid=9f7b06769e9007
+[5] path=A verdict=false_positive lean=None pattern=d0fb52fd32e7 uid=35e25b307b2718
+[6] path=A verdict=false_positive lean=None pattern=d0fb52fd32e7 uid=766455e23002e4
+[7] path=A verdict=false_positive lean=None pattern=d0fb52fd32e7 uid=0e4288a7677da6
+[8] path=A verdict=false_positive lean=None pattern=d0fb52fd32e7 uid=1a503cc6597005
 
 === 汇总 ===
-快通道(0 LLM) 6 条 / 慢通道 2 条
-图台账收敛(pattern_id → 共享该结论的告警数): [('41acfd6a54e0', 4), ('d0fb52fd32e7', 4)]
-openGauss kerberoast 规则(去重后): [('exculpatory', 'active', 1), ('incriminating', 'active', 1)]
+快通道(0 LLM) 7 条 / 慢通道 1 条
+图台账收敛(pattern_id → 共享该结论的告警数): [('d0fb52fd32e7', 8)]
+台账闭环:Verdict 1 个,已闭环 1(其中经【无处置】单例 1、经响应计划 0);悬空 0(应0)
+openGauss kerberoast 规则(去重后): [('exculpatory', 'active', 1)]
 
-ACCEPTANCE: 换实例双跑完成 —— 快通道>0 且 图收敛(共享节点)且 规则条数<<告警数 = 通过
+ACCEPTANCE: 快通道>0 且 图收敛(共享节点)且 规则条数<<告警数 且 ★每条告警都闭环(悬空=0) → 通过
 === done ===
