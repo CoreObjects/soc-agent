@@ -189,7 +189,9 @@ def main(argv=None):
         node = graph.get_alert(args.alert_uid)
         if node is None:
             raise AlertNotFound(f"图里没有 alert_uid={args.alert_uid} 的 :Alert")
-        skill = router.route(Alert.from_node(node))          # ★LLM 按 description 选 skill
+        alert = Alert.from_node(node)
+        seed = graph.seed(alert)                             # 触发事件+涉及实体(泛化路由要读触发事件)
+        skill = router.route(alert, seed)                    # ★LLM 按 description+触发事件 选 skill
         inv, picked = choose_investigator(skill, args.mode, agent_inv, recipe_inv)
         print(f"[skill] {skill.name if skill else '(none)'}  [模式] {picked}")
         result = investigate_alert(graph, inv, args.alert_uid, skill)

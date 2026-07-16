@@ -14,7 +14,7 @@ def _result(dispositions, pattern=None):
 
 def test_unpatterned_forks_by_verdict_id_with_edge_props():
     stmts = build_write_statements("a1", _result([]))
-    assert len(stmts) == 1
+    assert len(stmts) == 2                                                    # verdict + 无处置闭环
     cypher, params = stmts[0]
     assert "CONCLUDED" in cypher and "Verdict {verdict_id:$vkey}" in cypher   # fork
     assert params["vkey"] == params["node_props"]["verdict_id"]
@@ -81,10 +81,34 @@ def test_no_verdict_returns_empty():
     assert build_write_statements("a1", InvestigationResult(alert_uid="a1", path="B", verdict=None)) == []
 
 
-def test_no_plan_when_no_dispositions():
-    # FP/benign 无处置 → 只有 verdict,无 ResponsePlan
+def test_no_op_closure_when_no_dispositions():
+    # FP/benign/无法组计划 → verdict + 闭环到「无处置」单例(:Disposition{step_key:'__no_op__'}),无 ResponsePlan
     stmts = build_write_statements("a1", _result([], pattern="P"))
-    assert len(stmts) == 1 and "ResponsePlan" not in stmts[0][0]
+    assert len(stmts) == 2
+    assert "ResponsePlan" not in stmts[0][0]
+    noop_c, noop_p = stmts[1]
+    assert "Disposition {step_key:'__no_op__'}" in noop_c and "LED_TO" in noop_c   # 无处置单例闭环
+    assert "action='none'" in noop_c
+    assert noop_p["vkey"] == "P"                                                   # 从共享 Verdict 挂出
+
+
+def test_fp_closes_loop_to_no_op_singleton():
+    # ★误报也闭环沉淀:FP 无处置 → CONCLUDED→Verdict→LED_TO→无处置单例(每条告警都闭环)
+    v = Verdict(verdict="false_positive", confidence=0.9, rationale="跨域机器账号引荐票", agent="q", pattern="FP1")
+    r = InvestigationResult(alert_uid="a9", path="A", verdict=v, dispositions=[])
+    stmts = build_write_statements("a9", r)
+    assert len(stmts) == 2
+    assert stmts[0][1]["node_props"]["verdict"] == "false_positive"
+    assert "Disposition {step_key:'__no_op__'}" in stmts[1][0]                     # FP 也落无处置单例
+
+
+def test_verdict_stores_readable_sig():
+    # R3:Verdict 落图带可读谓词 sig(“图模式”规范形),与 pattern(sig_hash)并存
+    v = Verdict(verdict="true_positive", confidence=0.9, rationale="r", agent="q",
+                pattern="H", sig="enc=RC4;spn_fanout=>=5")
+    r = InvestigationResult(alert_uid="a1", path="A", verdict=v, dispositions=[])
+    props = build_write_statements("a1", r)[0][1]["node_props"]
+    assert props["sig"] == "enc=RC4;spn_fanout=>=5" and props["pattern"] == "H"
 
 
 def test_constraints_cover_convergence_keys():

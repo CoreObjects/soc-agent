@@ -7,8 +7,9 @@
 import json
 
 from ..models import LEANS, VERDICTS, Alert, InvestigationResult, Verdict
+from ..patterns import signatures
 from ..patterns.apply import dispositions_from_plan, mint_rule_from_result, result_from_rule
-from ..patterns.match import match_active
+from ..patterns.match import match_all
 from ..skills_runtime import SkillNotFound
 from ..tools import FINALIZE, finalize_spec
 
@@ -70,23 +71,25 @@ class SkillRouter:
         self.registry = registry
         self.agent_name = agent_name
 
-    def route(self, alert):
-        skills = self.registry.specific()
+    def route(self, alert, seed=None):
+        """★泛化路由(可移植):只据【告警描述 + 触发它的底层事件】让 LLM 选 skill,**不依赖 technique_id/rule_id**
+        (真设备未必给)。候选含 generic_*,拿不准就落该类兜底;都不像选 none。"""
+        skills = self.registry.all()                 # 含 generic:让 LLM 泛化选,不做 technique→层推断
         if not skills:
-            return self.registry.generic_for_layer(infer_layer(alert))
+            return None
         catalog = "\n".join(f"- {s.name}: {s.description or '(无描述)'}" for s in skills)
         names = [s.name for s in skills]
-        system = ("你是 SOC 告警分派器。下面是可用的研判 skill(名字 + 何时适用)。"
-                  "只根据告警内容,选出**最匹配的一个** skill;若都明显不适用,选 none。\n\n"
-                  "## 可用 skills\n" + catalog)
+        ev = (seed or {}).get("event") if isinstance(seed, dict) else None    # 触发它的底层遥测事件(标准、可移植)
+        system = ("你是 SOC 告警分派器。据【告警描述 + 触发它的底层事件】选**最匹配的一个**研判 skill;"
+                  "拿不准就选对应大类的 generic_* 兜底;都明显不像选 none。\n\n## 可用 skills\n" + catalog)
         user = "告警:\n" + json.dumps({
-            "rule_id": alert.rule_id, "rule_description": alert.rule_description,
-            "source": alert.source, "sensor": alert.sensor,
-            "severity": alert.severity, "technique_ids": alert.technique_ids,
-        }, ensure_ascii=False, indent=2)
+            "rule_description": alert.rule_description, "source": alert.source,
+            "sensor": alert.sensor, "severity": alert.severity,
+            "触发它的底层事件": ev,
+        }, ensure_ascii=False, indent=2, default=str)
         spec = [{"type": "function", "function": {
             "name": "select_skill",
-            "description": "选出最匹配这条告警的研判 skill(都不匹配选 none)",
+            "description": "选出最匹配这条告警的研判 skill(拿不准选 generic_*、都不像选 none)",
             "parameters": {"type": "object", "properties": {
                 "name": {"type": "string", "enum": names + ["none"]},
                 "reason": {"type": "string"}},
@@ -98,9 +101,10 @@ class SkillRouter:
         for tc in (resp.tool_calls or []):
             if tc.name == "select_skill":
                 name = (tc.arguments or {}).get("name")
+        fallback = next((s for s in skills if getattr(s, "is_generic", False)), None)   # 兜底:任一 generic
         if not name or name == "none":
-            return self.registry.generic_for_layer(infer_layer(alert))
-        return self.registry.by_name(name) or self.registry.generic_for_layer(infer_layer(alert))
+            return fallback
+        return self.registry.by_name(name) or fallback
 
 
 _SCAFFOLD = (
@@ -304,11 +308,13 @@ class RecipeInvestigator:
 
 
 class FastSlowInvestigator:
-    """顶层编排:确定性路由 → 快通道(命中规则套模板,0 LLM,path A)→ 未命中慢通道 + 当场生成规则。
+    """顶层编排:快通道(跑全部签名→全局先证伪碰撞,0 LLM,path A)→ 未命中慢通道(泛化路由+研判+沉淀)。
 
-    快通道:skill.discriminate 产分层判别特征 → 图外规则库查 active 规则(先证伪)→ 命中即套 verdict+处置模板
-    (处置目标用 bindings 换实例填)。未命中 → RecipeInvestigator 慢通道(1 次 LLM 定性,path B),再把结论
-    upsert 成规则(TP/FP 自动 active、可疑 pending)——下次同判别特征走快通道。
+    ★快通道无路由:`signatures.run_all` 对每个攻击类型自锚定算签名(锚不到→伪签名过滤掉)→ `match_all` 全局两趟
+    先证伪(先所有类型的证伪、再坐实)碰 active 规则 → 命中即套 verdict+处置模板(bindings 换实例填),0 LLM。
+    ★快通道最大价值:把海量误报廉价打发掉,别让弱 qwen 被假告警淹了。
+    未命中 → 泛化路由选 skill → RecipeInvestigator 慢通道(1 次 LLM 定性)→ composer 组处置 → 用该 skill 的签名
+    沉淀规则(TP/FP/benign 自动 active、可疑 pending)——下次同签名走快通道。
     """
 
     def __init__(self, graph, repo, registry, recipe_inv, router=None, policy=None, composer=None):
@@ -316,40 +322,41 @@ class FastSlowInvestigator:
         self.repo = repo
         self.registry = registry
         self.recipe_inv = recipe_inv
-        self.router = router          # LLM SkillRouter,确定性路由失败时兜底
+        self.router = router          # 泛化 SkillRouter(慢通道选 skill 用;读描述+触发事件)
         self.policy = policy
         self.composer = composer      # 独立 composer 环节(慢通道 TP 后组装响应计划);None=先不组处置
 
-    def _route(self, alert):
-        try:
-            return self.registry.select(alert, infer_layer(alert))   # 确定性 technique→skill,无 LLM
-        except SkillNotFound:
-            if self.router is not None:
-                return self.router.route(alert)
-            raise
+    def _route(self, alert, seed=None):
+        """慢通道选 skill(泛化路由,读告警描述+触发事件;不依赖 technique)。"""
+        if self.router is not None:
+            return self.router.route(alert, seed)
+        return self.registry.select(alert, infer_layer(alert))       # 无 router 时的确定性兜底
 
     def investigate(self, alert, seed=None) -> InvestigationResult:
-        skill = self._route(alert)
-        disc = None
-        if getattr(skill, "discriminate", None):
-            disc = skill.discriminate(self.graph, alert, seed) or {}
-            rule = match_active(self.repo, skill.name, disc.get("layers") or [])
-            if rule is not None:
-                return result_from_rule(alert, skill.name, rule, disc.get("bindings") or {}, self.policy)  # path A
-        result = self.recipe_inv.investigate(alert, seed, skill)      # path B 慢通道(只出 verdict)
-        # ★独立 composer 环节:仅对坐实(TP)组装响应计划;组一次 → 固化进规则 → 快通道复用
+        # ── 快通道:跑全部签名(自锚定、过滤伪签名)→ 全局两趟先证伪碰撞 → 命中即套模板(0 LLM)──
+        sigs = signatures.run_all(self.graph, alert, seed)
+        hit = match_all(self.repo, sigs)
+        if hit is not None:
+            rule, entry = hit
+            return result_from_rule(alert, entry["skill"], rule, entry.get("bindings") or {}, self.policy)  # path A
+
+        # ── 慢通道:泛化路由 → recipe 取证 → qwen 研判 → composer 组处置 → 沉淀规则 ──
+        skill = self._route(alert, seed)
+        # 用"路由到的 skill 对应的、已在 run_all 里锚定算出的签名"来沉淀(锚不到→无 entry→只研判不沉淀)
+        entry = next((s for s in sigs if s.get("skill") == getattr(skill, "name", None)), None)
+        result = self.recipe_inv.investigate(alert, seed, skill)      # path B(只出 verdict)
         plan = None
-        if (disc is not None and self.composer is not None and result.verdict is not None
+        if (entry is not None and self.composer is not None and result.verdict is not None
                 and result.verdict.verdict == "true_positive"):
-            plan = self.composer.compose(result, disc, skill, seed) or None
+            plan = self.composer.compose(result, entry, skill, seed) or None
             if plan:
                 result.dispositions = dispositions_from_plan(
-                    plan, disc.get("bindings") or {}, self.policy)   # 本告警的具体处置(落台账)
-        minted = mint_rule_from_result(skill.name, disc, result, plan=plan) if disc is not None else None
+                    plan, entry.get("bindings") or {}, self.policy)   # 本告警的具体处置(落台账)
+        minted = mint_rule_from_result(entry["skill"], entry, result, plan=plan) if entry is not None else None
         if result.verdict is not None:
-            # ★收敛键只认判别器给的规则 sig_hash;LLM 自由文本 pattern 不作准
-            # (否则台账裂:铸规则的这条告警 与 复用它的快通道告警 不收敛到同一 Verdict 节点)
+            # ★收敛键只认签名算出的 sig_hash;LLM 自由文本 pattern 不作准(否则台账裂开)
             result.verdict.pattern = minted.pattern_id if minted is not None else None
-        if minted is not None:                                       # 当场沉淀规则(下次同判别特征走快通道)
+            result.verdict.sig = minted.sig if minted is not None else None   # 可读谓词("图模式")随台账落图
+        if minted is not None:                                       # 当场沉淀规则(下次同签名走快通道)
             self.repo.upsert(minted)
         return result

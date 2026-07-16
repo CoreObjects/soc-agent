@@ -58,7 +58,7 @@ def result_from_rule(alert, skill_name, rule: PatternRule, bindings: dict, polic
     vt = rule.verdict
     verdict = Verdict(verdict=vt.verdict, lean=vt.lean, confidence=vt.confidence,
                       summary=vt.canonical_rationale, rationale=vt.canonical_rationale,
-                      pattern=rule.pattern_id, agent="fast-channel")
+                      pattern=rule.pattern_id, sig=rule.sig, agent="fast-channel")
     bindings = bindings or {}
     disps = [_disposition_from_step(s, bindings, iface)
              for s in sorted(rule.plan, key=lambda s: s.order)]

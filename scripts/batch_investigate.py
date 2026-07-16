@@ -123,7 +123,7 @@ def main():
             print("\n### ② 触发上下文(seed:触发事件 / 主语 / 宾语 / 次要实体)")
             print(_dump(seed))
 
-            skill = router.route(alert)                                # ★LLM 按 description 选 skill
+            skill = router.route(alert, seed)                          # ★LLM 按 description+触发事件 选 skill
             inv, picked = choose_investigator(skill, mode, agent_inv, recipe_inv)
             print(f"\n### ③ 研判   [skill] {skill.name if skill else '(none)'}   [模式] {picked}")
             try:

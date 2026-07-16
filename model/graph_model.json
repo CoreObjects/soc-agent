@@ -127,13 +127,15 @@
   "experience_layer": {
     "desc": "Agent 调查完把研判/处置结论写回图,挂在告警之后,沉淀为可查询、可复用的历史经验(自进化载体)。留存永久,不随 30 天事件裁。★唯一'取证后写回图'的东西,不违反原则③(事实层始终是取证输入,经验层是叠加的判例)。",
     "nodes": [
-      {"name": "Verdict", "keys": ["verdict_id"], "props": ["verdict_id", "verdict", "confidence", "summary", "rationale", "investigated_at", "agent"], "note": "研判结论。verdict ∈ {true_positive, false_positive, benign, suspicious, ...}"},
-      {"name": "Disposition", "keys": ["disposition_id"], "props": ["disposition_id", "action", "target", "status", "decided_at", "by"], "note": "处置结论。action ∈ {block_ip, isolate_host, disable_account, kill_process, none, ...};status ∈ {proposed, executed, failed};by ∈ {auto, analyst}"}
+      {"name": "Verdict", "keys": ["pattern_id", "verdict_id"], "props": ["verdict", "lean", "confidence", "summary", "rationale", "pattern", "sig", "investigated_at", "agent"], "note": "研判结论。verdict ∈ {true_positive, false_positive, benign, suspicious}。★命中/沉淀了攻击模式→按 pattern_id(=sig_hash)收敛成共享节点(同模式多告警共用一个 Verdict、per-alert 细节落 CONCLUDED 边);未命中模式→按 verdict_id per-alert fork。sig=该模式可读谓词(图模式规范形)。"},
+      {"name": "ResponsePlan", "keys": ["plan_id"], "props": ["plan_id", "status"], "note": "一告警一响应计划(审计流水台账)。plan_id=alert_uid;status ∈ {proposed, executed, failed}。"},
+      {"name": "Disposition", "keys": ["step_key"], "props": ["step_key", "order", "primitive", "action", "params", "rollback_handle", "execution_id", "status"], "note": "响应计划里的一步(独立台账条目,带自己的 rollback_handle/execution_id)。step_key=`{plan_id}#{order}`。★另有一个'无处置'单例 step_key='__no_op__'(action='none'):FP/benign/suspicious/无法组计划的 TP 都 LED_TO 它→每条告警都闭环。"}
     ],
     "edges": [
-      {"name": "CONCLUDED", "from": "Alert", "to": "Verdict", "note": "告警的研判结论"},
-      {"name": "LED_TO", "from": "Verdict", "to": "Disposition", "note": "研判导出的处置"},
-      {"name": "ON", "from": "Disposition", "to": ["Host", "Account", "IPAddress", "Process"], "note": "处置作用的实体→'这台主机被隔离过几次'从实体一跳可查"}
+      {"name": "CONCLUDED", "from": "Alert", "to": "Verdict", "note": "告警的研判结论(per-alert 细节:path/confidence/summary/rationale/证据 在此边上)"},
+      {"name": "LED_TO", "from": "Verdict", "to": ["ResponsePlan", "Disposition"], "note": "研判导出的响应:有处置→指向 ResponsePlan;无处置→直接指向'无处置'单例(:Disposition{step_key:'__no_op__'})。两者皆保证告警闭环。"},
+      {"name": "STEP", "from": "ResponsePlan", "to": "Disposition", "note": "响应计划的有序步骤(边带 order);每步是独立 Disposition 台账条目"},
+      {"name": "ON", "from": "Disposition", "to": ["Host", "Account", "IPAddress", "Process", "File", "Domain"], "note": "处置作用的实体(仅唯一命中才绑)→'这台主机被隔离过几次'从实体一跳可查"}
     ]
   },
   "connection_keys": {

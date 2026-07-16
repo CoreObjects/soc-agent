@@ -49,7 +49,7 @@ def build_write_statements(alert_uid, result):
     if result is None or result.verdict is None:
         return []
     v = result.verdict
-    node_props = {"verdict": v.verdict, "lean": v.lean, "pattern": v.pattern, "agent": v.agent}
+    node_props = {"verdict": v.verdict, "lean": v.lean, "pattern": v.pattern, "sig": v.sig, "agent": v.agent}
     edge_props = {"at": v.investigated_at, "path": result.path, "confidence": v.confidence,
                   "summary": v.summary, "rationale": v.rationale,
                   "evidence_refs": list(v.evidence_refs), "missing_evidence": list(v.missing_evidence)}
@@ -101,6 +101,14 @@ def build_write_statements(alert_uid, result):
                     "WITH d, es[0] AS e "
                     f"MERGE (d)-[:ON]->(e) RETURN e.{keyf} AS bound",
                     {"dkey": step_key, "target": d.target}))
+    else:                               # ★无处置(FP/benign/suspicious、或无法组计划的 TP)→ 闭环到「无处置」单例
+        # 复用 :Disposition label + step_key 唯一约束(单例 step_key='__no_op__',绝不撞真实 step_key `uid#i`)→
+        # reset_pristine/double_run 清 :Disposition 即连带清掉、无孤儿。误报经验也照样闭环(CONCLUDED→Verdict→无处置)。
+        stmts.append((
+            vmatch + "MERGE (n:Disposition {step_key:'__no_op__'}) "
+            "ON CREATE SET n.action='none', n.primitive='none', n.status='none' "
+            "MERGE (v)-[:LED_TO]->(n) RETURN n.step_key AS id",
+            {"alert_uid": alert_uid, "vkey": vkey}))
     return stmts
 
 

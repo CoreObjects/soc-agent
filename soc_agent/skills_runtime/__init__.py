@@ -58,8 +58,7 @@ class Skill:
     methodology: str            # SKILL.md 正文(方法论决策树)
     path: Path
     is_generic: bool = False
-    recipe: Optional[object] = None                # ① 确定性取证脚本 collect(graph,alert,seed)→证据(sink①)
-    discriminate: Optional[object] = None          # ② 判别 spec discriminate(graph,alert,seed)→分层判别特征(→图外规则库)
+    recipe: Optional[object] = None                # 确定性取证脚本 collect(graph,alert,seed)→证据(慢通道喂 LLM)
     patterns: list = field(default_factory=list)   # (legacy,未用;规则本体在 openGauss,不在 skill)
 
 
@@ -96,7 +95,7 @@ def load_skill(dir_path, is_generic: bool = False) -> Skill:
         path=dir_path,
         is_generic=is_generic,
         recipe=_load_recipe(dir_path),
-        discriminate=_load_attr(dir_path, "discriminator.py", "discriminate"),
+        # ★判别/签名不再挂在 skill 上 —— 快通道签名统一在中央 patterns/signatures.py 注册表(跑全部签名碰撞)。
     )
 
 
