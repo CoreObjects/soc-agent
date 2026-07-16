@@ -52,9 +52,17 @@ def test_user_spray_features():
 
 
 def test_bindings_carry_instance_values():
-    g = FakeGraph({"req_sam": "vagrant", "req_domain": "NORTH", "tgt_sam": "sql_svc", "tgt_domain": "NORTH", "enc": "0x17", "fanout": 7})
+    g = FakeGraph({"req_sam": "vagrant", "req_domain": "NORTH", "tgt_sam": "sql_svc", "tgt_domain": "NORTH",
+                   "enc": "0x17", "fanout": 7, "req_host": "castelblack"})
     b = _discriminate()(g, _alert())["bindings"]
-    assert b == {"requester": "vagrant", "target_service": "sql_svc"}   # 实例值只在 bindings,不进 features
+    # 实例值只在 bindings(含源主机,供 collect_artifact 绑真主机),不进 features
+    assert b == {"requester": "vagrant", "target_service": "sql_svc", "req_host": "castelblack"}
+
+
+def test_bindings_req_host_none_when_absent():
+    g = FakeGraph({"req_sam": "vagrant", "req_domain": "NORTH", "tgt_sam": "sql_svc", "tgt_domain": "NORTH",
+                   "enc": "0x17", "fanout": 7})
+    assert _discriminate()(g, _alert())["bindings"]["req_host"] is None   # 取不到源主机=None(护栏会把该步降级)
 
 
 def test_machine_cross_domain_referral_features():

@@ -21,8 +21,13 @@ _ENTITY_BY_KIND = {
 
 
 def build_constraints():
-    """图台账收敛的唯一约束(启动时建;并发 MERGE 防重复节点)。Neo4j 5 语法。"""
+    """图台账收敛的唯一约束(启动时建;并发 MERGE 防重复节点)。Neo4j 5 语法。
+
+    ★迁移:先 DROP 掉旧的 disposition_key 唯一约束 —— 新响应台账按 step_key 建 per-step 节点,
+    disposition_key(conv_key)降级为信息属性、同 action+目标跨告警会重复,旧唯一约束会误拦(P3' 遗留)。
+    """
     return [
+        "DROP CONSTRAINT disposition_key IF EXISTS",   # 迁移:清旧 conv_key 唯一约束
         "CREATE CONSTRAINT verdict_pattern_id IF NOT EXISTS FOR (v:Verdict) REQUIRE v.pattern_id IS UNIQUE",
         "CREATE CONSTRAINT verdict_id IF NOT EXISTS FOR (v:Verdict) REQUIRE v.verdict_id IS UNIQUE",
         "CREATE CONSTRAINT responseplan_id IF NOT EXISTS FOR (p:ResponsePlan) REQUIRE p.plan_id IS UNIQUE",

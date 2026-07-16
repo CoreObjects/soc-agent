@@ -122,12 +122,17 @@ def apply_guardrail(dispositions, policy=None, iface=None):
             audit.append({"action": d.action, "target": d.target, "decision": "auto"})
             safe.append(d)
             continue
+        kind = iface.kind_of(d.action)
+        if kind != "none" and not (d.target or "").strip():   # 角色没绑上/目标解析为空 → 无法执行 → 交人工
+            reason = f"目标未解析(角色未绑定?)—— 无法执行 {d.action}"
+            audit.append({"action": d.action, "target": d.target, "decision": "retargeted", "reason": reason})
+            safe.append(_escalate(d, reason))
+            continue
         reason = _never_touch(d.action, d.target, policy, iface)
         if reason:
             audit.append({"action": d.action, "target": d.target, "decision": "blocked", "reason": reason})
             safe.append(_escalate(d, reason))
             continue
-        kind = iface.kind_of(d.action)
         if kind != "none" and d.target and not _looks_like(d.target, kind):
             reason = f"目标 {d.target!r} 不像{kind}(action={d.action})"
             audit.append({"action": d.action, "target": d.target, "decision": "retargeted", "reason": reason})

@@ -143,3 +143,10 @@ def test_domain_scoped_primitive_is_gated():
     # rotate_krbtgt 域级 → 恒 gated(接口文档里 gating=gated)
     safe, audit = apply_guardrail([Disposition(action="rotate_krbtgt", target="north.sevenkingdoms.local")], _pol())
     assert audit[0]["decision"] == "gated"
+
+
+def test_unbound_target_escalates_not_hardfails():
+    # 角色没绑上(如源主机取不到)→ 目标为空 → 该步降级 escalate,不硬跑失败拖垮整个计划
+    safe, audit = apply_guardrail([Disposition(action="collect_artifact", target=None, target_kind="host")], _pol())
+    assert safe[0].action == "escalate"
+    assert audit[0]["decision"] == "retargeted" and "未解析" in audit[0]["reason"]

@@ -28,8 +28,9 @@ def discriminate(graph, alert, seed=None):
         "WITH req, trig, tgt.sam AS tgt_sam, tgt.domain AS tgt_domain, trig.event_time AS t0, trig.enc_type AS enc "
         "OPTIONAL MATCH (req)<-[:BY]-(e:Event {event_code:'4769'})-[:REQUESTED]->(t) "
         "  WHERE e.event_time >= toString(datetime(t0) - duration('" + _FANOUT_WINDOW + "')) AND e.event_time <= t0 "
+        "OPTIONAL MATCH (trig)-[:FROM]->(fip:IPAddress) OPTIONAL MATCH (fh:Host)-[:HAS_IP]->(fip) "
         "RETURN req.sam AS req_sam, req.domain AS req_domain, tgt_sam, tgt_domain, enc, "
-        "count(DISTINCT t) AS fanout",
+        "count(DISTINCT t) AS fanout, head(collect(DISTINCT fh.hostname)) AS req_host",
         aid=aid)
     b = rows[0] if rows else {}
 
@@ -50,5 +51,6 @@ def discriminate(graph, alert, seed=None):
              "features": {"req_is_machine": req_is_machine, "same_domain": same_domain,
                           "enc": enc, "spn_fanout": spn_fanout}},
         ],
-        "bindings": {"requester": req_sam or None, "target_service": b.get("tgt_sam")},
+        "bindings": {"requester": req_sam or None, "target_service": b.get("tgt_sam"),
+                     "req_host": b.get("req_host")},   # 源主机(供 collect_artifact 等绑真主机;取不到=None)
     }
