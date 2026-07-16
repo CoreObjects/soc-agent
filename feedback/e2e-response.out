@@ -1,0 +1,41 @@
+=== e2e-response(找TP→研判→组处置→列待审计划)2026-07-16 02:14Z ===
+neo4j=bolt://10.185.93.0:7687 og=127.0.0.1 enabled=True llm=http://localhost:8000/v1
+候选(非机器账号请求者)kerberoast 告警: 22
+  [43abbce06dd3] req=vagrant path=B → true_positive (conf=0.95) 处置: collect_artifact→vagrant, disable_account→vagrant, expire_password→sql_svc
+Traceback (most recent call last):
+  File "/home/soc/soc-agent/scripts/e2e_response.py", line 31, in <module>
+    r = run_investigation(graph, orch, c["uid"])
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/soc/soc-agent/soc_agent/cli.py", line 149, in run_investigation
+    graph.write_result(alert_uid, result)
+  File "/home/soc/soc-agent/soc_agent/graph/client.py", line 161, in write_result
+    return s.execute_write(_tx)
+           ^^^^^^^^^^^^^^^^^^^^
+  File "/home/soc/soc-agent/.venv/lib64/python3.11/site-packages/neo4j/_sync/work/session.py", line 808, in execute_write
+    return self._run_transaction(
+           ^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/soc/soc-agent/.venv/lib64/python3.11/site-packages/neo4j/_sync/work/session.py", line 588, in _run_transaction
+    result = transaction_function(tx, *args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/soc/soc-agent/soc_agent/graph/client.py", line 159, in _tx
+    last = tx.run(cypher, **params).data()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/soc/soc-agent/.venv/lib64/python3.11/site-packages/neo4j/_sync/work/result.py", line 782, in data
+    return [record.data(*keys) for record in self]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/soc/soc-agent/.venv/lib64/python3.11/site-packages/neo4j/_sync/work/result.py", line 782, in <listcomp>
+    return [record.data(*keys) for record in self]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/soc/soc-agent/.venv/lib64/python3.11/site-packages/neo4j/_sync/work/result.py", line 398, in __iter__
+    self._connection.fetch_message()
+  File "/home/soc/soc-agent/.venv/lib64/python3.11/site-packages/neo4j/_sync/io/_common.py", line 193, in inner
+    func(*args, **kwargs)
+  File "/home/soc/soc-agent/.venv/lib64/python3.11/site-packages/neo4j/_sync/io/_bolt.py", line 863, in fetch_message
+    res = self._process_message(tag, fields)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/soc/soc-agent/.venv/lib64/python3.11/site-packages/neo4j/_sync/io/_bolt5.py", line 1208, in _process_message
+    response.on_failure(summary_metadata or {})
+  File "/home/soc/soc-agent/.venv/lib64/python3.11/site-packages/neo4j/_sync/io/_common.py", line 263, in on_failure
+    raise self._hydrate_error(metadata)
+neo4j.exceptions.ConstraintError: {code: Neo.ClientError.Schema.ConstraintValidationFailed} {message: Node(1282555) already exists with label `Disposition` and property `disposition_key` = 'd0de1a16ddcf13034f91cb24e7f9c11935326cfd2ee85ff78a31bb9fa496aca3'}
+=== done ===
