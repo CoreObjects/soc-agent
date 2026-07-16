@@ -1,10 +1,11 @@
-"""P3' 首刀总验收(server2 真基建):Kerberoast 换实例双跑。
+"""换实例双跑总验收(server2 真基建):Kerberoast。
 
 对图里已有的 kerberoast(T1558.003)告警逐条走快慢通道研判:
-- 头一条某判别特征 → 慢通道(path B,LLM)→ 生成 active 规则;
-- 后续同判别特征 → 快通道(path A,★0 LLM)复用规则;
-核对:① 图台账按 pattern_id 收敛(多告警共享一个 Verdict 节点)② openGauss 规则去重(条数 << 告警数)。
-真跑会写台账 + 生成规则(这就是系统的正常行为)。
+- 头一条某签名 → 慢通道(path B,LLM)→ 沉淀 active 规则;
+- 后续同签名 → 快通道(path A,★0 LLM)复用规则;
+核对:① 快通道>0(0 LLM 复用)② 图台账按 pattern_id 收敛(多告警共享一个 Verdict)
+③ openGauss 规则去重(条数<<告警数)④ ★每条告警都闭环(Verdict 必有 LED_TO→ResponsePlan|无处置)。
+真跑会写台账 + 沉淀规则(系统正常行为)。
 """
 import os
 import sys
@@ -28,9 +29,12 @@ try:
             cur.execute("DELETE FROM %s.patterns WHERE skill='kerberoast'" % cfg.og_schema)
         c.close()
         graph.run_write(                 # 删 kerberoast 告警的台账(经验层,非事实;会重新生成)
-            "MATCH (a:Alert)-[cc:CONCLUDED]->(v:Verdict) WHERE 'T1558.003' IN coalesce(a.technique_ids,[]) "
-            "OPTIONAL MATCH (v)-[:LED_TO]->(d:Disposition) DETACH DELETE v, d RETURN count(*) AS n")
-        print("--reset: 已清 kerberoast 规则库 + 台账,从 0 经验开始")
+            # ★只删 kerberoast 的 Verdict + 其【每告警专属】ResponsePlan/步骤;DETACH DELETE v 自动摘掉
+            #   v→「无处置」单例的边,但绝不删单例本身(它跨所有类型共享,删了会连坐其它 scope 的闭环)。
+            "MATCH (a:Alert)-[:CONCLUDED]->(v:Verdict) WHERE 'T1558.003' IN coalesce(a.technique_ids,[]) "
+            "OPTIONAL MATCH (v)-[:LED_TO]->(p:ResponsePlan)-[:STEP]->(d:Disposition) "
+            "DETACH DELETE v, p, d")
+        print("--reset: 已清 kerberoast 规则库 + 台账(保留共享的无处置单例),从 0 经验开始")
 
     rows = graph.run_cypher(
         "MATCH (a:Alert) WHERE 'T1558.003' IN coalesce(a.technique_ids,[]) "
@@ -55,6 +59,19 @@ try:
         "AND v.pattern_id IS NOT NULL RETURN v.pattern_id AS pid, count(DISTINCT a) AS alerts ORDER BY alerts DESC")
     print("图台账收敛(pattern_id → 共享该结论的告警数):", [(c["pid"][:12], c["alerts"]) for c in conv])
 
+    # ★R5 台账闭环:每条 kerberoast 告警的 Verdict 都必有 LED_TO(→ResponsePlan 或 →无处置单例);无悬空
+    total = graph.run_cypher(
+        "MATCH (a:Alert)-[:CONCLUDED]->(v:Verdict) WHERE 'T1558.003' IN coalesce(a.technique_ids,[]) "
+        "RETURN count(DISTINCT v) AS n")[0]["n"]
+    closed = graph.run_cypher(
+        "MATCH (a:Alert)-[:CONCLUDED]->(v:Verdict)-[:LED_TO]->() WHERE 'T1558.003' IN coalesce(a.technique_ids,[]) "
+        "RETURN count(DISTINCT v) AS n")[0]["n"]
+    noop = graph.run_cypher(
+        "MATCH (a:Alert)-[:CONCLUDED]->(v:Verdict)-[:LED_TO]->(:Disposition {step_key:'__no_op__'}) "
+        "WHERE 'T1558.003' IN coalesce(a.technique_ids,[]) RETURN count(DISTINCT v) AS n")[0]["n"]
+    print("台账闭环:Verdict %d 个,已闭环 %d(其中经【无处置】单例 %d、经响应计划 %d);悬空 %d(应0)"
+          % (total, closed, noop, closed - noop, total - closed))
+
     import psycopg2
     c = psycopg2.connect(host=cfg.og_host, port=cfg.og_port, dbname=cfg.og_db,
                          user=cfg.og_user, password=cfg.og_password)
@@ -62,6 +79,8 @@ try:
         cur.execute("SELECT layer, status, count(*) FROM %s.patterns WHERE skill='kerberoast' GROUP BY layer, status" % cfg.og_schema)
         print("openGauss kerberoast 规则(去重后):", cur.fetchall())
     c.close()
-    print("\nACCEPTANCE: 换实例双跑完成 —— 快通道>0 且 图收敛(共享节点)且 规则条数<<告警数 = 通过")
+    ok = (fast > 0 and total > 0 and closed == total)
+    print("\nACCEPTANCE: 快通道>0 且 图收敛(共享节点)且 规则条数<<告警数 且 ★每条告警都闭环(悬空=0) → %s"
+          % ("通过" if ok else "★不通过(见上:快通道数/悬空数)"))
 finally:
     graph.close()
