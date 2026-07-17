@@ -1,0 +1,8 @@
+=== og-probe  2026-07-17 08:32Z ===
+  og_enabled=True host=127.0.0.1 port=5432 db=soc user=soc_agent schema=soc
+  [OK] psycopg2 可用:2.9.12 (dt dec pq3 ext lo64)
+  [OK] 连接 + 建表(soc.experience / soc.cases)
+  [PASS] 经验读写往返(rule/fingerprint 无损):True
+  [PASS] 案例读写往返(findings 无损):True
+  [DONE] 探针行已清理。openGauss 驱动 + schema + 读写全通 → Phase 6 可直接用。
+=== done ===
