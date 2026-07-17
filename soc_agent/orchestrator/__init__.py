@@ -129,7 +129,7 @@ class AgentInvestigator:
         return "\n\n".join(parts)
 
     @staticmethod
-    def _user_prompt(alert: Alert, seed) -> str:
+    def _user_prompt(alert: Alert, seed, match_report=None) -> str:
         payload = {
             "alert": {
                 "alert_uid": alert.alert_uid, "rule_id": alert.rule_id,
@@ -138,6 +138,8 @@ class AgentInvestigator:
             },
             "seed(触发事件+涉及实体)": seed or {},
         }
+        if match_report is not None:
+            payload["经验比对(已知)"] = match_report.as_context()
         return "待研判告警:\n" + json.dumps(payload, ensure_ascii=False, indent=2)
 
     @staticmethod
@@ -170,11 +172,12 @@ class AgentInvestigator:
                                    skill=(skill.name if skill else None), trace=trace)
 
     # ---- 主循环 ----
-    def investigate(self, alert: Alert, seed=None, skill=None) -> InvestigationResult:
+    def investigate(self, alert: Alert, seed=None, skill=None, forensics=None, match_report=None) -> InvestigationResult:
         # skill 由 SkillRouter(LLM 按 description)预选后传入,不在此程序 match technique
+        # forensics 忽略(agent 自主取证);match_report 作已知信息注入 prompt
         messages = [
             {"role": "system", "content": self._system_prompt(skill)},
-            {"role": "user", "content": self._user_prompt(alert, seed)},
+            {"role": "user", "content": self._user_prompt(alert, seed, match_report)},
         ]
         specs = self.toolbox.specs()
         trace = []
@@ -258,14 +261,17 @@ class RecipeInvestigator:
         except Exception:
             return None
 
-    def investigate(self, alert: Alert, seed=None, skill=None) -> InvestigationResult:
+    def investigate(self, alert: Alert, seed=None, skill=None, forensics=None, match_report=None) -> InvestigationResult:
         trace = []                                                  # skill 由 SkillRouter 预选传入
-        forensics = Forensics.coerce(skill.recipe(self.graph, alert, seed))   # ★确定性取证 → 结构化(含跨域信任)
+        if forensics is None:                                       # 流水线已取证会传进来,避免重跑 recipe
+            forensics = Forensics.coerce(skill.recipe(self.graph, alert, seed))   # ★确定性取证 → 结构化
         evidence = dict(forensics.context)                          # 人读证据(喂 LLM)
         if forensics.findings:
             evidence["结构化发现(findings)"] = [f.to_dict() for f in forensics.findings]
         if forensics.blind_spots:
             evidence["_图盲区"] = forensics.blind_spots
+        if match_report is not None:                                # ★经验比对结果作已知信息喂 LLM
+            evidence["经验比对(已知)"] = match_report.as_context()
         sim = self._recall_similar(alert)                           # ★情报召回:历史相似判例
         if sim:
             evidence["历史相似判例(情报)"] = sim

@@ -36,6 +36,8 @@ def sediment(llm, skill, result, exp_store, case_store, agent_name=None):
                   agent_name=agent_name, origin_case_id=result.alert_uid)
     if exp is None:
         return None, {"reason": "not_distilled"}
+    if exp.kind == "threat":                                        # 处置那一半:Composer 产出的剧本模板
+        exp.playbook = list(getattr(result, "playbook", None) or [])
     cases = case_store.by_skill(exp.skill) if case_store is not None else []
     passed, report = exam(exp, result.findings, cases)
     if not passed:

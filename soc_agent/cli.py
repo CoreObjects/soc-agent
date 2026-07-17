@@ -5,20 +5,29 @@
 """
 import argparse
 import sys
+from dataclasses import dataclass
 from pathlib import Path
 
+from .composer import Composer
+from .composer.plan import PrimitiveStepTemplate, dispositions_from_plan
 from .config import Config
 from .disposition import policy_from_graph
-from .experience.cases import snapshot_case
+from .experience.cases import InMemoryCaseStore, snapshot_case
+from .experience.consult import consult
+from .experience.exam import sediment
+from .experience.store import ExperienceCache, InMemoryExperienceStore
+from .forensics import Forensics
 from .graph.client import Neo4jGraph
 from .llm.qwen import QwenClient
-from .models import Alert
+from .models import Alert, InvestigationResult, Verdict
 from .orchestrator import AgentInvestigator, RecipeInvestigator, SkillRouter
+from .response import default_interface
 from .schema import graph_schema
 from .skills_runtime import SkillRegistry
 from .tools import default_toolbox
 
-__all__ = ["investigate_alert", "render_result", "render_trace", "AlertNotFound", "main"]
+__all__ = ["investigate_alert", "render_result", "render_trace", "AlertNotFound", "main",
+           "Pipeline", "build_pipeline", "run_pipeline", "collect_forensics"]
 
 _REPO_ROOT = Path(__file__).resolve().parents[1]
 
@@ -119,6 +128,118 @@ def choose_investigator(skill, mode, agent_inv, recipe_inv):
     return agent_inv, ("auto" if mode == "auto" else "auto(无 recipe)")
 
 
+# ============ 流水线:取证 → 经验研判短路 / LLM 研判 → 处置 → 回流沉淀 ============
+def collect_forensics(graph, alert, seed, skill):
+    """取证阶段:有 recipe 跑出结构化 Forensics;无 recipe(agent skill)→ 空 Forensics(必落 LLM)。"""
+    if skill is not None and skill.recipe is not None:
+        return Forensics.coerce(skill.recipe(graph, alert, seed))
+    return Forensics()
+
+
+@dataclass
+class Pipeline:
+    """一条流水线所需的全部装配件(build_pipeline 造,run_pipeline 用)。"""
+    graph: object
+    router: object
+    agent_inv: object
+    recipe_inv: object
+    composer: object
+    llm: object
+    policy: object
+    iface: object
+    exp_store: object          # ExperienceCache(包 openGauss 或 InMemory)
+    case_store: object         # CaseStore
+    agent_name: str
+
+    def close(self):
+        self.graph.close()
+
+
+def _open_stores(config):
+    """经验/案例库:og_enabled 且连得上 → openGauss(缓存包);否则降级内存(经验层≈永远走 LLM)。"""
+    if config.og_enabled:
+        try:
+            from .experience.opengauss import open_stores
+            exp, case = open_stores(config)
+            return ExperienceCache(exp), case
+        except Exception as e:                      # 连不上/缺 psycopg2 → 降级,不影响慢研判
+            print(f"[warn] openGauss 不可用,经验层降级内存(本次不持久):{str(e)[:120]}")
+    return ExperienceCache(InMemoryExperienceStore()), InMemoryCaseStore()
+
+
+def build_pipeline(config: Config) -> "Pipeline":
+    """装配完整流水线(在 build 之上加 composer + 经验/案例库)。"""
+    graph, router, agent_inv, recipe_inv = build(config)
+    iface = default_interface()
+    composer = Composer(agent_inv.llm, iface=iface, agent_name=config.llm_model)
+    exp_store, case_store = _open_stores(config)
+    return Pipeline(graph=graph, router=router, agent_inv=agent_inv, recipe_inv=recipe_inv,
+                    composer=composer, llm=agent_inv.llm, policy=agent_inv.policy, iface=iface,
+                    exp_store=exp_store, case_store=case_store, agent_name=config.llm_model)
+
+
+def _reuse_tp(pl, alert, forensics, chosen):
+    """AUTO_TP:复用威胁经验的剧本模板,按本告警实体重绑成处置。path=A。"""
+    templates = [PrimitiveStepTemplate.from_dict(d) for d in (chosen.playbook or [])]
+    disps = (dispositions_from_plan(templates, forensics.bindings, pl.policy, pl.iface)
+             if templates else [])
+    v = Verdict(verdict="true_positive", confidence=0.9,
+                summary="经验复用:威胁指纹∧规则双门命中",
+                rationale=f"复用威胁经验 {chosen.exp_id[:8]}(指纹+规则双门命中,已过生死线考试)",
+                agent=pl.agent_name)
+    return InvestigationResult(alert_uid=alert.alert_uid, path="A", verdict=v, dispositions=disps,
+                               skill=chosen.skill, findings=list(forensics.findings),
+                               bindings=dict(forensics.bindings))
+
+
+def _reuse_fp(pl, alert, forensics, chosen):
+    """AUTO_FP:命中误报业务指纹、无威胁信号 → 判 FP、无处置。path=A。"""
+    v = Verdict(verdict="false_positive", confidence=0.9,
+                summary="经验复用:误报业务指纹命中(无威胁信号)",
+                rationale=f"复用误报指纹 {chosen.exp_id[:8]}(命中已知良性业务模式,无任何威胁信号)",
+                agent=pl.agent_name)
+    return InvestigationResult(alert_uid=alert.alert_uid, path="A", verdict=v, dispositions=[],
+                               skill=chosen.skill, findings=list(forensics.findings),
+                               bindings=dict(forensics.bindings))
+
+
+def _compose_dispositions(pl, result, forensics, skill, seed):
+    """LLM 判 TP 后:Composer 组处置原语成剧本模板 → 按实体重绑成 dispositions;剧本存 result 供沉淀。"""
+    templates = pl.composer.compose(result, {"bindings": forensics.bindings}, skill, seed)
+    if templates:
+        result.dispositions = dispositions_from_plan(templates, forensics.bindings, pl.policy, pl.iface)
+        result.playbook = [t.to_dict() for t in templates]
+
+
+def run_pipeline(pl, alert_uid, mode="recipe"):
+    """跑一条告警的完整流水线。返回 (result, report, picked)。"""
+    node = pl.graph.get_alert(alert_uid)
+    if node is None:
+        raise AlertNotFound(f"图里没有 alert_uid={alert_uid} 的 :Alert")
+    alert = Alert.from_node(node)
+    seed = pl.graph.seed(alert)
+    skill = pl.router.route(alert, seed)                                        # ★LLM 选 skill
+    forensics = collect_forensics(pl.graph, alert, seed, skill)                # ★取证
+    report = consult(skill.name if skill else None, forensics.findings, pl.exp_store)   # ★经验比对
+    if report.decision == "AUTO_TP":
+        result, picked = _reuse_tp(pl, alert, forensics, report.chosen), "经验复用(AUTO_TP)"
+        pl.exp_store.bump_hit(report.chosen.exp_id)
+    elif report.decision == "AUTO_FP":
+        result, picked = _reuse_fp(pl, alert, forensics, report.chosen), "经验复用(AUTO_FP)"
+        pl.exp_store.bump_hit(report.chosen.exp_id)
+    else:                                                                       # FALLTHROUGH → LLM 研判
+        inv, picked = choose_investigator(skill, mode, pl.agent_inv, pl.recipe_inv)
+        result = inv.investigate(alert, seed=seed, skill=skill, forensics=forensics, match_report=report)
+        if result.verdict and result.verdict.verdict == "true_positive":
+            _compose_dispositions(pl, result, forensics, skill, seed)          # ★处置:组剧本
+    pl.graph.write_result(alert_uid, result)                                   # 写台账(第三类)
+    if pl.case_store is not None:
+        snapshot_case(pl.case_store, skill.name if skill else None, result)    # 存回归语料
+    if report.decision == "FALLTHROUGH":                                       # ★回流:蒸馏→考试→入库
+        sediment(pl.llm, skill, result, pl.exp_store, pl.case_store, agent_name=pl.agent_name)
+    return result, report, picked
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(description="研判单条告警(慢通道)")
     ap.add_argument("alert_uid", help="要研判的 :Alert 的 alert_uid")
@@ -129,19 +250,12 @@ def main(argv=None):
     args = ap.parse_args(argv)
 
     config = Config.from_env(dotenv_path=args.dotenv)
-    graph, router, agent_inv, recipe_inv = build(config)
+    pl = build_pipeline(config)
     try:
-        node = graph.get_alert(args.alert_uid)
-        if node is None:
-            raise AlertNotFound(f"图里没有 alert_uid={args.alert_uid} 的 :Alert")
-        alert = Alert.from_node(node)
-        seed = graph.seed(alert)                             # 触发事件+涉及实体(泛化路由要读触发事件)
-        skill = router.route(alert, seed)                    # ★LLM 按 description+触发事件 选 skill
-        inv, picked = choose_investigator(skill, args.mode, agent_inv, recipe_inv)
-        print(f"[skill] {skill.name if skill else '(none)'}  [模式] {picked}")
-        result = investigate_alert(graph, inv, args.alert_uid, skill)
+        result, report, picked = run_pipeline(pl, args.alert_uid, mode=args.mode)
+        print(f"[skill] {result.skill or '(none)'}  [决策] {report.decision}  [模式] {picked}")
     finally:
-        graph.close()
+        pl.close()
     if args.trace:
         print(render_trace(result))
         print()
