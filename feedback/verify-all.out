@@ -1,0 +1,38 @@
+=== verify-all  2026-07-17 03:43Z ===
+
+## 1. 单元测试(保留逻辑:慢研判/路由/recipe/composer/plan/ledger/护栏/图台账写/models/config/llm)
+........................................................................ [ 41%]
+.............................................................s..s....... [ 83%]
+............................                                             [100%]
+
+## 2. import 健康(第二类 patterns 已删、无残留引用)
+imports OK
+
+## 3. 连通性(neo4j 图 + 本地 qwen)
+  T1547.001          共     2  样例 uid=542d9e1692b5f57bffd35d49aac212f51d58f330679e2509eedc3cf36a7fd940
+  T1059.007          共     2  样例 uid=a29c26edcab725c0af2b6b7cbbb4571560e116f315c2f1c49c2edf2b4a408e96
+  T1190              共     2  样例 uid=bee510affa4f3abdce900ab6107eebe6fa838de774ca2ba46510bc2bb16cfb4f
+  T1505.003          共     1  样例 uid=f6f3b1458aecf045b5597de9b28819bafb595441544f8d5312c73f161b6e129e
+
+== LLM == 连通 OK,回复='就绪' finish=None
+
+预检通过 → 研判: bash scripts/run_investigation.sh <alert_uid>
+
+## 4. respond_cli(处置台账人审 CLI 可跑;reset 后应空)
+(无)
+
+## 5. 处置面连通 + 护栏派生 + 慢研判端到端 + 第三类图台账
+Received notification from DBMS server: {severity: WARNING} {code: Neo.ClientNotification.Statement.UnknownRelationshipTypeWarning} {category: UNRECOGNIZED} {title: The provided relationship type is not in the database.} {description: One of the relationship types in your query is not available in the database, make sure you didn't misspell it or that the label is available when you run this statement in your application (the missing relationship type is: HAS_IP)} {position: line: 2, column: 27, offset: 133} for query: "MATCH (a:Alert {alert_uid:$alert_uid})<-[:TRIGGERED]-(e:Event {event_code:'4769'})-[:FROM]->(ip:IPAddress)\nOPTIONAL MATCH (h:Host)-[:HAS_IP]->(ip)\nRETURN ip.ip, h.hostname, h.role"
+  [PASS] 处置面 appliance 连通(执行子系统)  — dry_run=False
+  [PASS] 护栏策略从图派生  — protected_hosts=4 protected_accounts=5
+  [PASS] 慢研判 kerberoast[recipe→recipe] (0176efc84f)  — skill=kerberoast verdict=false_positive
+  [PASS]   ↳ 第三类台账(verdict_id、无 pattern_id、LED_TO 闭环)  — vid=4db13c52 verd=false_positive pid=None led=['__no_op__']
+  [PASS] 慢研判 lsass_dump[recipe→recipe] (00190f256c)  — skill=lsass_dump verdict=false_positive
+  [PASS]   ↳ 第三类台账(verdict_id、无 pattern_id、LED_TO 闭环)  — vid=06c71c13 verd=false_positive pid=None led=['__no_op__']
+  [PASS] 慢研判 kerberoast[auto→auto] (01e7bdc055)  — skill=kerberoast verdict=false_positive
+  [PASS]   ↳ 第三类台账(verdict_id、无 pattern_id、LED_TO 闭环)  — vid=e69e793b verd=false_positive pid=None led=['__no_op__']
+  [PASS] 台账约束(verdict_id/plan_id/step_key,无 pattern_id)
+
+=== VERIFY-ALL: 9/9 通过  ===
+
+=== done ===
