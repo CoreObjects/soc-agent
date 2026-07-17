@@ -1,0 +1,36 @@
+=== inspect-lsass  2026-07-17 01:19Z ===
+未研判 T1003.001 总数: 1612;能锚定触发事件(EID10 BY 源进程)的: 1612;锚不到(将来=伪签名): 0
+
+按(源进程, granted, 安全代理?, call_trace转储库?)分桶(前 25)——先证伪应能吃掉带『代理』且不带『转储库』的那些:
+      数量  源进程                        granted    代理?    转储库?
+    1021  wazuh-agent.exe            0x1410     代理     -
+     253  msmpeng.exe                0x101000   代理     -
+     172  msmpeng.exe                0x1010     代理     -
+      88  wazuh-agent.exe            0x1fffff   代理     -
+      72  msmpeng.exe                0x1410     代理     -
+       2  rundll32.exe               0x1410     -      转储库
+       2  rundll32.exe               0x1fffff   -      转储库
+       1  wmiprvse.exe               0x1410     -      -
+       1  mrt.exe                    0x101000   -      -
+
+granted_access 含 0x10(PROCESS_VM_READ)分布(不含 0x10 基本是查询、偏良性):
+    1358  含0x10(读内存,相关)
+     254  不含0x10(仅查询,偏良性)
+
+安全代理 × call_trace转储库 交叉(『代理+无转储库』= 头号 FP,先证伪主战场):
+    1606  源=代理, 无转储库
+       4  源=非代理, 含转储库
+       2  源=非代理, 无转储库
+
+原始样本(前 5,看字段长啥样):
+  uid=e75f9c60910d  src=C:\\Program Files (x86)\\ossec-agent\\wazuh-agent.exe  granted=0x1fffff  target=C:\\Windows\\system32\\lsass.exe
+    call_trace=C:\\Windows\\SYSTEM32\\ntdll.dll+9feb4|C:\\Windows\\System32\\wow64.dll+3cf4|C:\\Windows\\System32\\wow64.dll+
+  uid=e8dc9956e22e  src=C:\\Program Files (x86)\\ossec-agent\\wazuh-agent.exe  granted=0x1410  target=C:\\Windows\\system32\\lsass.exe
+    call_trace=C:\\Windows\\SYSTEM32\\ntdll.dll+9feb4|C:\\Windows\\System32\\wow64.dll+3cf4|C:\\Windows\\System32\\wow64.dll+
+  uid=757183a24af0  src=C:\\Program Files (x86)\\ossec-agent\\wazuh-agent.exe  granted=0x1fffff  target=C:\Windows\system32\lsass.exe
+    call_trace=C:\\Windows\\SYSTEM32\\ntdll.dll+9feb4|C:\\Windows\\System32\\wow64.dll+3cf4|C:\\Windows\\System32\\wow64.dll+
+  uid=feee3b592325  src=C:\\ProgramData\\Microsoft\\Windows Defender\\Platform\\4.18.26050.15-0\\MsMpEng.exe  granted=0x101000  target=C:\Windows\system32\lsass.exe
+    call_trace=C:\\Windows\\SYSTEM32\\ntdll.dll+9feb4|C:\\Windows\\System32\\KERNELBASE.dll+2126e|C:\\ProgramData\\Microsoft\
+  uid=67b9c2ee51ce  src=C:\\Program Files (x86)\\ossec-agent\\wazuh-agent.exe  granted=0x1410  target=C:\Windows\system32\lsass.exe
+    call_trace=C:\\Windows\\SYSTEM32\\ntdll.dll+9feb4|C:\\Windows\\System32\\wow64.dll+3cf4|C:\\Windows\\System32\\wow64.dll+
+=== done ===
