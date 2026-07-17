@@ -1,46 +1,18 @@
-=== e2e-threat  2026-07-17 09:27Z ===
+=== e2e-threat  2026-07-17 09:35Z ===
   [PASS] 经验库=openGauss(非内存降级) — store=OpenGaussExperienceStore
   [PASS] 找到请求者含 jon.snow 的未研判 kerberoast 告警 — 候选 5 [('jon.snow', 'NORTH'), ('jon.snow', 'NORTH'), ('jon.snow', 'NORTH'), ('jon.snow', 'NORTH'), ('jon.snow', 'NORTH')]
   · pass1 74b48ee07c: decision=FALLTHROUGH verdict=true_positive dispositions=2 threat经验:0→1 LLM=4
   [PASS] pass1 判 TP 并蒸出威胁经验 — verdict=true_positive
-  [PASS] pass1 组了处置剧本(Composer 挑原语绑 attacker_account) — steps=2 actions=['expire_password', 'disable_account']
+  [PASS] pass1 组了处置剧本(Composer 挑原语绑 attacker_account) — steps=2 actions=['escalate', 'escalate']
   [PASS] 威胁经验带 DSL 规则 — rule={'and': [{'exists': 'kerberoast.rc4_requested'}, {'eq': ['kerberoast.s
   [PASS] 威胁经验带处置剧本模板 — steps=2
-Traceback (most recent call last):
-  File "/home/soc/soc-agent/scripts/e2e_threat.py", line 93, in <module>
-    r2, rep2, _ = run_pipeline(pl, threat_uid, mode="recipe")
-                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/soc/soc-agent/soc_agent/cli.py", line 235, in run_pipeline
-    pl.graph.write_result(alert_uid, result)                                   # 写台账(第三类)
-    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/soc/soc-agent/soc_agent/graph/client.py", line 161, in write_result
-    return s.execute_write(_tx)
-           ^^^^^^^^^^^^^^^^^^^^
-  File "/home/soc/soc-agent/.venv/lib64/python3.11/site-packages/neo4j/_sync/work/session.py", line 808, in execute_write
-    return self._run_transaction(
-           ^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/soc/soc-agent/.venv/lib64/python3.11/site-packages/neo4j/_sync/work/session.py", line 588, in _run_transaction
-    result = transaction_function(tx, *args, **kwargs)
-             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/soc/soc-agent/soc_agent/graph/client.py", line 159, in _tx
-    last = tx.run(cypher, **params).data()
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/soc/soc-agent/.venv/lib64/python3.11/site-packages/neo4j/_sync/work/result.py", line 782, in data
-    return [record.data(*keys) for record in self]
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/soc/soc-agent/.venv/lib64/python3.11/site-packages/neo4j/_sync/work/result.py", line 782, in <listcomp>
-    return [record.data(*keys) for record in self]
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/soc/soc-agent/.venv/lib64/python3.11/site-packages/neo4j/_sync/work/result.py", line 398, in __iter__
-    self._connection.fetch_message()
-  File "/home/soc/soc-agent/.venv/lib64/python3.11/site-packages/neo4j/_sync/io/_common.py", line 193, in inner
-    func(*args, **kwargs)
-  File "/home/soc/soc-agent/.venv/lib64/python3.11/site-packages/neo4j/_sync/io/_bolt.py", line 863, in fetch_message
-    res = self._process_message(tag, fields)
-          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/soc/soc-agent/.venv/lib64/python3.11/site-packages/neo4j/_sync/io/_bolt5.py", line 1208, in _process_message
-    response.on_failure(summary_metadata or {})
-  File "/home/soc/soc-agent/.venv/lib64/python3.11/site-packages/neo4j/_sync/io/_common.py", line 263, in on_failure
-    raise self._hydrate_error(metadata)
-neo4j.exceptions.ConstraintError: {code: Neo.ClientError.Schema.ConstraintValidationFailed} {message: Node(1392706) already exists with label `ResponsePlan` and property `plan_id` = '74b48ee07c2bf59c1509bed372d1f453a8b639524cbc1c9bc562ae81fb040509'}
+  · pass2 74b48ee07c: decision=AUTO_TP path=A dispositions=2 LLM=1
+  [PASS] pass2 威胁双门命中 → AUTO_TP — decision=AUTO_TP
+  [PASS] pass2 走快路径 path=A — path=A
+  [PASS] pass2 复用剧本组出处置(proposed) — dispositions=2
+  [PASS] pass2 研判/处置 0 LLM(≤routing 1 次) — LLM=1
+  [PASS] 图台账出现 path=A 的 CONCLUDED — path=A 边=1
+  [PASS] 台账写了处置计划(proposed,待 respond_cli 人审) — disposition 台账=4
+
+=== E2E-THREAT: 12/12 通过  ===
 === done ===
