@@ -139,3 +139,20 @@ def open_stores(cfg):
     conn = _connect(cfg)
     ensure_schema(conn, cfg.og_schema)
     return OpenGaussExperienceStore(conn, cfg.og_schema), OpenGaussCaseStore(conn, cfg.og_schema)
+
+
+def wipe(cfg):
+    """清空经验库 + 案例库(reset_pristine 用)。返回 (exp_before, cases_before)。"""
+    conn = _connect(cfg)
+    ensure_schema(conn, cfg.og_schema)                     # 确保表在(否则 count 报错)
+    s = cfg.og_schema
+    with conn.cursor() as cur:
+        cur.execute(f"SELECT count(*) FROM {s}.experience")
+        ne = cur.fetchone()[0]
+        cur.execute(f"SELECT count(*) FROM {s}.cases")
+        nc = cur.fetchone()[0]
+        cur.execute(f"DELETE FROM {s}.experience")
+        cur.execute(f"DELETE FROM {s}.cases")
+    conn.commit()
+    conn.close()
+    return ne, nc

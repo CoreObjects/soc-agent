@@ -65,4 +65,15 @@ try:
 finally:
     graph.close()
 
-print("PRISTINE OK:图台账已清(靶场态经 appliance /reset 复原),恢复'只有事实、零研判'最初态")
+# ---- openGauss:清第二类经验库 + 案例库(未配 OG → 内存,重启即空,跳过)----
+if cfg.og_enabled:
+    try:
+        from soc_agent.experience.opengauss import wipe
+        ne, nc = wipe(cfg)
+        print("openGauss 经验库:experience %d → 0;cases %d → 0" % (ne, nc))
+    except Exception as e:
+        print("⚠️ openGauss 清理失败(经验库未清,不影响图台账):%s" % str(e)[:120])
+else:
+    print("openGauss:未配 OG_HOST → 经验层在内存(重启即空),跳过")
+
+print("PRISTINE OK:图台账已清(靶场态经 appliance /reset 复原)+ openGauss 经验库已清,恢复'只有事实、零研判'最初态")
