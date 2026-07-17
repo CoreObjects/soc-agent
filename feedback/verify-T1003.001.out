@@ -1,0 +1,29 @@
+=== verify-signature T1003.001 n=80  2026-07-17 01:55Z ===
+technique=T1003.001  skill=lsass_dump  有签名=True  n=80  og=True
+取样未研判 T1003.001: 80 条
+
+  [  1] path=A verdict=false_positive pattern=2dce88f613a8 uid=0f792e0a9c0c
+  [  2] path=A verdict=false_positive pattern=2dce88f613a8 uid=c2c5b9ab3e51
+  [  3] path=A verdict=false_positive pattern=2dce88f613a8 uid=3847dfefd5d9
+  [  4] path=A verdict=false_positive pattern=5f6ad7e3babf uid=064d1b9faafa
+  [  5] path=A verdict=false_positive pattern=ff8c413dc977 uid=b7c3cdef5476
+  [  6] path=A verdict=false_positive pattern=5f6ad7e3babf uid=61239f67e4fb
+  [  7] path=A verdict=false_positive pattern=ff8c413dc977 uid=acd981b90287
+  [  8] path=A verdict=false_positive pattern=5f6ad7e3babf uid=3edb0bb89203
+  [  9] path=A verdict=false_positive pattern=ff8c413dc977 uid=b87afb6512e9
+  [ 10] path=A verdict=false_positive pattern=ff8c413dc977 uid=40af0f9efad9
+  [ 11] path=A verdict=false_positive pattern=5f6ad7e3babf uid=a7a336450d66
+  [ 12] path=A verdict=false_positive pattern=ff8c413dc977 uid=5627c3e07ac3
+
+=== 汇总 ===
+快通道(0 LLM) 80 / 慢通道 0
+verdict 分布: {'false_positive': 80}
+图收敛(pattern → verdict / 共享告警数 / 可读签名):
+  2dce88f613a8 false_positive ×68    access_class=reads_memory;has_dump_lib=false;src_image=wazuh-agent.exe
+  5f6ad7e3babf false_positive ×19    access_class=query_only;has_dump_lib=false;src_image=msmpeng.exe
+  ff8c413dc977 false_positive ×18    access_class=reads_memory;has_dump_lib=false;src_image=msmpeng.exe
+台账闭环:Verdict 3,已闭环 3,悬空 0(应0)
+openGauss lsass_dump 规则(去重后): [('exculpatory', 'active', 3)]
+
+ACCEPTANCE: 快通道>0 且 FP 洪水被夹(verdict 多为 false_positive)且 规则条数<<告警数 且 悬空=0 = 通过
+=== done ===
