@@ -1,0 +1,38 @@
+=== inspect-t1105  2026-07-17 02:04Z ===
+未研判 T1105 总数: 26795;能锚定(有 BY 源进程)的: 26795;锚不到: 0
+
+① 全量按【落文件的进程 image】计数(谁在掉文件)—— 前 25:
+     26637  C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe
+       105  C:\\Windows\\Microsoft.NET\\Framework64\\v4.0.30319\\csc.exe
+        53  C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe
+
+② 抽样 2500 条,按(落文件进程, 落地目录类, 后缀, 落地即执行?)分桶(前 25):
+      数量  进程                       落地目录             后缀       执行?
+    2443  powershell.exe           user_transient   .ps1     -
+      19  csc.exe                  user_transient   .dll     -
+      19  powershell.exe           user_transient   .dll     -
+      19  powershell.exe           user_transient   .cmdline -
+
+③ 命中已知供给/自检噪声(ansible/策略探针 __PSScriptPolicyTest_)的占比(这些是慢通道判的良性,★不做签名 key):
+   2479 / 2500  (99.2%)
+
+④ 原始样本(前 6):
+  writer=C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe  parent=C:\Windows\System32\cmd.exe
+    files=['C:\\\\Users\\\\vagrant\\\\AppData\\\\Local\\\\Temp\\\\__PSScriptPolicyTest_osqirtuj.he3.ps1', 'C:\\Users\\vagrant\\AppData\\Local\\Temp\\__PSScriptPolicyTest_osqirtuj.he3.ps1']
+    cmdline=PowerShell  -NoProfile -NonInteractive -ExecutionPolicy Unrestricted -EncodedCommand UABvAHcAZQByAFMAaABlAGwAbAAgAC0ATgB
+  writer=C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe  parent=C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe
+    files=['C:\\\\Users\\\\vagrant\\\\AppData\\\\Local\\\\Temp\\\\__PSScriptPolicyTest_qvq1ocxc.1eh.ps1', 'C:\\Users\\vagrant\\AppData\\Local\\Temp\\__PSScriptPolicyTest_qvq1ocxc.1eh.ps1']
+    cmdline=\"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe\" -NoProfile -NonInteractive -ExecutionPolicy Unrestric
+  writer=C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe  parent=C:\Windows\System32\cmd.exe
+    files=['C:\\\\Users\\\\vagrant\\\\AppData\\\\Local\\\\Temp\\\\__PSScriptPolicyTest_5z4k52sb.xyf.ps1', 'C:\\Users\\vagrant\\AppData\\Local\\Temp\\__PSScriptPolicyTest_5z4k52sb.xyf.ps1']
+    cmdline=PowerShell  -NoProfile -NonInteractive -ExecutionPolicy Unrestricted -EncodedCommand UABvAHcAZQByAFMAaABlAGwAbAAgAC0ATgB
+  writer=C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe  parent=C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe
+    files=['C:\\\\Users\\\\vagrant\\\\AppData\\\\Local\\\\Temp\\\\__PSScriptPolicyTest_wsuq50sg.owj.ps1', 'C:\\Users\\vagrant\\AppData\\Local\\Temp\\__PSScriptPolicyTest_wsuq50sg.owj.ps1']
+    cmdline=\"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe\" -NoProfile -NonInteractive -ExecutionPolicy Unrestric
+  writer=C:\\Windows\\Microsoft.NET\\Framework64\\v4.0.30319\\csc.exe  parent=C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe
+    files=['C:\\\\Users\\\\vagrant\\\\AppData\\\\Local\\\\Temp\\\\d50dowf1.dll', 'C:\\Users\\vagrant\\AppData\\Local\\Temp\\d50dowf1.dll']
+    cmdline="C:\Windows\Microsoft.NET\Framework64\v4.0.30319\csc.exe" /noconfig /fullpaths @"C:\Users\vagrant\AppData\Local\Temp\d50
+  writer=C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe  parent=C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe
+    files=['C:\\\\Users\\\\vagrant\\\\AppData\\\\Local\\\\Temp\\\\d50dowf1.dll', 'C:\\Users\\vagrant\\AppData\\Local\\Temp\\d50dowf1.dll']
+    cmdline=\"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe\" -NoProfile -NonInteractive -ExecutionPolicy Unrestric
+=== done ===
