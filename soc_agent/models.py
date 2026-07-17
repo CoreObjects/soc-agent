@@ -167,3 +167,5 @@ class InvestigationResult:
     latency_ms: Optional[int] = None
     skill: Optional[str] = None        # 用到的 skill
     trace: list = field(default_factory=list)          # 研判留痕(工具调用/推理)
+    findings: list = field(default_factory=list)       # list[Finding] 取证规范发现(供经验匹配/沉淀/案例快照)
+    bindings: dict = field(default_factory=dict)       # 实体角色→值(供指纹占位符抽象 + 处置重绑)

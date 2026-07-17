@@ -95,9 +95,10 @@ def test_every_layer_has_generic_fallback():
 
 
 def test_real_recipes_run_on_empty_graph():
-    # 守卫:每个 recipe 空图跑不崩、返回证据 dict(抓 recipe 语法/逻辑错)
+    # 守卫:每个 recipe 空图跑不崩、输出可归一为 Forensics(迁移的直接返回 Forensics,旧的返 dict 被 coerce)
     from pathlib import Path
 
+    from soc_agent.forensics import Forensics
     from soc_agent.models import Alert
 
     class _G:
@@ -108,7 +109,8 @@ def test_real_recipes_run_on_empty_graph():
     a = Alert.from_node({"alert_uid": "x", "technique_ids": ["T1"]})
     for s in reg.all():
         if s.recipe:
-            assert isinstance(s.recipe(_G(), a, {}), dict), f"{s.name} recipe 未返回 dict"
+            fo = Forensics.coerce(s.recipe(_G(), a, {}))
+            assert isinstance(fo, Forensics), f"{s.name} recipe 输出不可归一为 Forensics"
 
 
 def test_registry_loads_all_skills(tmp_path):

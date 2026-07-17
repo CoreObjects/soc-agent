@@ -6,6 +6,7 @@
 """
 import json
 
+from ..forensics import Forensics
 from ..models import LEANS, VERDICTS, Alert, InvestigationResult, Verdict
 from ..tools import FINALIZE, finalize_spec
 
@@ -259,7 +260,12 @@ class RecipeInvestigator:
 
     def investigate(self, alert: Alert, seed=None, skill=None) -> InvestigationResult:
         trace = []                                                  # skill 由 SkillRouter 预选传入
-        evidence = skill.recipe(self.graph, alert, seed) or {}      # ★确定性取证(含跨域信任)
+        forensics = Forensics.coerce(skill.recipe(self.graph, alert, seed))   # ★确定性取证 → 结构化(含跨域信任)
+        evidence = dict(forensics.context)                          # 人读证据(喂 LLM)
+        if forensics.findings:
+            evidence["结构化发现(findings)"] = [f.to_dict() for f in forensics.findings]
+        if forensics.blind_spots:
+            evidence["_图盲区"] = forensics.blind_spots
         sim = self._recall_similar(alert)                           # ★情报召回:历史相似判例
         if sim:
             evidence["历史相似判例(情报)"] = sim
@@ -275,11 +281,17 @@ class RecipeInvestigator:
             [{"role": "system", "content": self._prompt(skill)},
              {"role": "user", "content": user}],
             tools=finalize_spec(), tool_choice="required")   # 只给 finalize,逼它直接定性
+        result = None
         for tc in (resp.tool_calls or []):
             if tc.name == FINALIZE:
-                return build_result(alert, skill.name, tc.arguments or {}, self.agent_name, trace,
-                                    policy=self.policy)
-        return build_result(alert, skill.name, {
-            "verdict": "suspicious", "confidence": 0.0,
-            "rationale": "recipe 已取证但模型未给结论", "missing_evidence": ["模型未 finalize"],
-        }, self.agent_name, trace, policy=self.policy)
+                result = build_result(alert, skill.name, tc.arguments or {}, self.agent_name, trace,
+                                      policy=self.policy)
+                break
+        if result is None:
+            result = build_result(alert, skill.name, {
+                "verdict": "suspicious", "confidence": 0.0,
+                "rationale": "recipe 已取证但模型未给结论", "missing_evidence": ["模型未 finalize"],
+            }, self.agent_name, trace, policy=self.policy)
+        result.findings = list(forensics.findings)      # ★findings/bindings 上浮:供经验沉淀/案例快照/处置重绑
+        result.bindings = dict(forensics.bindings)
+        return result

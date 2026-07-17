@@ -9,6 +9,7 @@ from pathlib import Path
 
 from .config import Config
 from .disposition import policy_from_graph
+from .experience.cases import snapshot_case
 from .graph.client import Neo4jGraph
 from .llm.qwen import QwenClient
 from .models import Alert
@@ -26,8 +27,8 @@ class AlertNotFound(Exception):
     pass
 
 
-def investigate_alert(graph, investigator, alert_uid, skill=None):
-    """取告警 → seed → 研判(用预选 skill)→ 写回图。返回 InvestigationResult。"""
+def investigate_alert(graph, investigator, alert_uid, skill=None, case_store=None):
+    """取告警 → seed → 研判(用预选 skill)→ 写回图 → 存案例快照。返回 InvestigationResult。"""
     node = graph.get_alert(alert_uid)
     if node is None:
         raise AlertNotFound(f"图里没有 alert_uid={alert_uid} 的 :Alert")
@@ -35,6 +36,8 @@ def investigate_alert(graph, investigator, alert_uid, skill=None):
     seed = graph.seed(alert)
     result = investigator.investigate(alert, seed=seed, skill=skill)
     graph.write_result(alert_uid, result)
+    if case_store is not None:                       # 存回归考试语料(findings 快照 + verdict)
+        snapshot_case(case_store, skill.name if skill else None, result)
     return result
 
 
