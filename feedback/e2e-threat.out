@@ -1,13 +1,13 @@
-=== e2e-threat  2026-07-17 09:07Z ===
+=== e2e-threat  2026-07-17 09:27Z ===
   [PASS] 经验库=openGauss(非内存降级) — store=OpenGaussExperienceStore
-  [PASS] 找到请求者=jon.snow 的未研判 kerberoast 告警 — 候选 5(无?先在 GOAD 跑 42-kerberoast-user.sh 并等 ingest)
-  · pass1 9491bbb235: decision=FALLTHROUGH verdict=true_positive dispositions=2 threat经验:0→1 LLM=4
+  [PASS] 找到请求者含 jon.snow 的未研判 kerberoast 告警 — 候选 5 [('jon.snow', 'NORTH'), ('jon.snow', 'NORTH'), ('jon.snow', 'NORTH'), ('jon.snow', 'NORTH'), ('jon.snow', 'NORTH')]
+  · pass1 74b48ee07c: decision=FALLTHROUGH verdict=true_positive dispositions=2 threat经验:0→1 LLM=4
   [PASS] pass1 判 TP 并蒸出威胁经验 — verdict=true_positive
   [PASS] pass1 组了处置剧本(Composer 挑原语绑 attacker_account) — steps=2 actions=['expire_password', 'disable_account']
-  [PASS] 威胁经验带 DSL 规则 — rule={'and': [{'exists': 'kerberoast.rc4_requested'}, {'exists': 'kerberoas
+  [PASS] 威胁经验带 DSL 规则 — rule={'and': [{'exists': 'kerberoast.rc4_requested'}, {'eq': ['kerberoast.s
   [PASS] 威胁经验带处置剧本模板 — steps=2
 Traceback (most recent call last):
-  File "/home/soc/soc-agent/scripts/e2e_threat.py", line 84, in <module>
+  File "/home/soc/soc-agent/scripts/e2e_threat.py", line 93, in <module>
     r2, rep2, _ = run_pipeline(pl, threat_uid, mode="recipe")
                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
   File "/home/soc/soc-agent/soc_agent/cli.py", line 235, in run_pipeline
@@ -42,5 +42,5 @@ Traceback (most recent call last):
     response.on_failure(summary_metadata or {})
   File "/home/soc/soc-agent/.venv/lib64/python3.11/site-packages/neo4j/_sync/io/_common.py", line 263, in on_failure
     raise self._hydrate_error(metadata)
-neo4j.exceptions.ConstraintError: {code: Neo.ClientError.Schema.ConstraintValidationFailed} {message: Node(1392706) already exists with label `ResponsePlan` and property `plan_id` = '9491bbb235eb1468be259a32f69f691517a824f2d8450528e886039c576cf5d5'}
+neo4j.exceptions.ConstraintError: {code: Neo.ClientError.Schema.ConstraintValidationFailed} {message: Node(1392706) already exists with label `ResponsePlan` and property `plan_id` = '74b48ee07c2bf59c1509bed372d1f453a8b639524cbc1c9bc562ae81fb040509'}
 === done ===
