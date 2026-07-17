@@ -64,7 +64,10 @@ def build_write_statements(alert_uid, result):
     if disps:                           # 有处置 → 建响应计划台账(一告警一计划)
         plan_id = alert_uid
         stmts.append((
-            vmatch + "MERGE (v)-[:LED_TO]->(p:ResponsePlan {plan_id:$plan_id}) SET p += $plan_props "
+            # ★先按 plan_id 独立 MERGE 计划节点(复用已有,不撞唯一约束),再 MERGE 边——
+            #   否则新 Verdict 上 `MERGE (v)-[:LED_TO]->(p:ResponsePlan {plan_id})` 会新建 p → 重投研判时撞约束。
+            vmatch + "MERGE (p:ResponsePlan {plan_id:$plan_id}) SET p += $plan_props "
+            "MERGE (v)-[:LED_TO]->(p) "
             "RETURN p.plan_id AS id",
             {"alert_uid": alert_uid, "vkey": vkey, "plan_id": plan_id,
              "plan_props": {"plan_id": plan_id, "status": "proposed"}}))

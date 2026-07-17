@@ -30,6 +30,8 @@ def test_response_plan_ledger_with_steps_and_on_entity():
     assert len(stmts) == 4                                      # verdict + ResponsePlan + STEP + :ON
     plan_c, plan_p = stmts[1]
     assert "LED_TO" in plan_c and "ResponsePlan {plan_id:$plan_id}" in plan_c
+    assert "MERGE (p:ResponsePlan {plan_id:$plan_id})" in plan_c        # 独立 MERGE 计划(可复用、不撞约束)
+    assert "MERGE (v)-[:LED_TO]->(p:ResponsePlan" not in plan_c         # ★不在边里 co-create p(重投研判会撞唯一约束)
     assert plan_p["plan_id"] == "a1" and plan_p["plan_props"]["status"] == "proposed"
     step_c, step_p = stmts[2]
     assert "STEP {order:$order}" in step_c and "Disposition {step_key:$dkey}" in step_c
