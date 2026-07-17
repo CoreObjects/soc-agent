@@ -1,0 +1,7 @@
+=== e2e-threat  2026-07-17 08:57Z ===
+  [PASS] 经验库=openGauss(非内存降级) — store=OpenGaussExperienceStore
+  [FAIL] 找到请求者=jon.snow 的未研判 kerberoast 告警 — 候选 0(无?先在 GOAD 跑 42-kerberoast-user.sh 并等 ingest)
+  [FAIL] 完整研判后蒸出威胁经验 — 候选都没判 TP(qwen 判 FP/suspicious?看上面 pass1 verdict)
+
+=== E2E-THREAT: 1/3 通过 ★有失败,见上 ===
+=== done ===
