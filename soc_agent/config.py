@@ -44,10 +44,21 @@ class Config:
     # 靶场处置面 HTTP appliance(server2 直接调,免两台来回跑);空 → 退回图台账队列 + range-runner 通道
     response_url: str
     response_token: str
+    # 第二类经验库 openGauss(server2 原生 5432,非 docker);空 OG_HOST → 经验层降级为"永远走 LLM"
+    og_host: str
+    og_port: int
+    og_database: str
+    og_user: str
+    og_password: str
+    og_schema: str
 
     @property
     def appliance_enabled(self) -> bool:
         return bool(self.response_url)
+
+    @property
+    def og_enabled(self) -> bool:
+        return bool(self.og_host)
 
     @classmethod
     def from_env(cls, env=None, dotenv_path=None) -> "Config":
@@ -72,4 +83,10 @@ class Config:
             max_iterations=int(g("MAX_ITERATIONS", "12")),
             response_url=g("RESPONSE_URL", ""),
             response_token=g("RESPONSE_TOKEN", ""),
+            og_host=g("OG_HOST", ""),
+            og_port=int(g("OG_PORT", "5432")),
+            og_database=g("OG_DATABASE", "soc"),
+            og_user=g("OG_USER", "soc"),
+            og_password=g("OG_PASSWORD", ""),
+            og_schema=g("OG_SCHEMA", "soc"),
         )

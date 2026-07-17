@@ -52,3 +52,16 @@ def test_config_os_env_overrides_dotenv(tmp_path):
     cfg = Config.from_env(env={"NEO4J_URI": "bolt://from-os:7687"}, dotenv_path=f)
     assert cfg.neo4j_uri == "bolt://from-os:7687"   # os env 覆盖文件
     assert cfg.llm_model == "file-model"            # 文件里独有的仍生效
+
+
+def test_config_opengauss_disabled_by_default():
+    cfg = Config.from_env(env={"NEO4J_URI": "bolt://s1:7687"})
+    assert cfg.og_enabled is False                   # 未配 OG_HOST → 经验层降级为永远走 LLM
+    assert cfg.og_port == 5432 and cfg.og_schema == "soc"
+
+
+def test_config_opengauss_enabled_when_host_set():
+    cfg = Config.from_env(env={"OG_HOST": "127.0.0.1", "OG_DATABASE": "soc", "OG_USER": "soc",
+                               "OG_PASSWORD": "pw", "OG_PORT": "5432", "OG_SCHEMA": "soc"})
+    assert cfg.og_enabled is True
+    assert (cfg.og_host, cfg.og_port, cfg.og_database, cfg.og_user) == ("127.0.0.1", 5432, "soc", "soc")

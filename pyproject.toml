@@ -13,6 +13,7 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = ["pytest>=8.0"]
+og = ["psycopg2-binary>=2.9"]    # 第二类经验库 openGauss(server2 装;走 PG 协议)
 
 [build-system]
 requires = ["setuptools>=68"]
