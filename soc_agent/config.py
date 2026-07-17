@@ -99,7 +99,7 @@ class Config:
             daemon_poll_interval_s=int(g("DAEMON_POLL_INTERVAL_S", "10")),
             daemon_batch_size=int(g("DAEMON_BATCH_SIZE", "20")),
             daemon_settle_s=int(g("DAEMON_SETTLE_S", "120")),
-            daemon_techniques=[t.strip() for t in g("DAEMON_TECHNIQUES", "T1558.003").split(",") if t.strip()],
+            daemon_techniques=[t.strip() for t in g("DAEMON_TECHNIQUES", "T1558.003,T1003.001").split(",") if t.strip()],
             daemon_max_attempts=int(g("DAEMON_MAX_ATTEMPTS", "3")),
             daemon_slow_concurrency=int(g("DAEMON_SLOW_CONCURRENCY", "1")),
         )

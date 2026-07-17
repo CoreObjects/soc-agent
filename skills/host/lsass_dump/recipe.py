@@ -4,12 +4,12 @@
 看读后行为。★头号 FP:源进程本身是安全/监控代理(Wazuh/Defender/Sysmon)在做自身遥测 ——
 recipe 直接判出来并给 call_trace 转储库指纹,避免 LLM 把"传感器自检"误当攻击、更避免建议杀传感器。
 进程签名/哈希是图盲区。
+★call_trace 转储库判定走 ._lib.has_dump_lib,和 signature.py 共享同一份(不漂);
+security_agent 只当【给 LLM 的提示】(帮它第一次判快),★不做签名 key(硬编码名单=定制陷阱)。
 """
-import re
-
 from soc_agent.recipe_lib import security_agent
 
-_DUMP_LIB = re.compile(r"dbghelp|dbgcore|comsvcs|UNKNOWN|unbacked", re.I)
+from ._lib import has_dump_lib
 
 
 def collect(graph, alert, seed=None):
@@ -36,7 +36,7 @@ def collect(graph, alert, seed=None):
     # call_trace 转储库指纹:含 dbghelp/dbgcore/comsvcs/UNKNOWN = 转储工具强信号;纯系统+自身模块 = 偏良性
     ct = row.get("call_trace") or ""
     ev["call_trace 指纹"] = {
-        "含转储库(dbghelp/dbgcore/comsvcs/UNKNOWN)": bool(_DUMP_LIB.search(ct)),
+        "含转储库(dbghelp/dbgcore/comsvcs/UNKNOWN)": has_dump_lib(ct),
         "末端模块": ct.split("|")[-1][:120] if ct else None,
     }
 

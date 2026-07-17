@@ -104,3 +104,60 @@ def test_kerberoast_signature_true_cross_domain():
 def test_kerberoast_signature_none_when_no_anchor():
     # 告警不是 4769 触发(锚定查不到)→ 伪签名 → None,不参与碰撞/沉淀
     assert _kerb_signature()(FakeGraph([]), _alert()) is None
+
+
+# ---- co-located lsass_dump signature.py(★红线:键只在通用本体字段,不碰厂商/产品名单)----
+
+def _lsass_signature():
+    reg = SkillRegistry(Path(__file__).resolve().parents[1] / "skills")
+    return reg.by_name("lsass_dump").signature
+
+
+def _lsass_row(src_image, granted, call_trace):
+    return [{"src_image": src_image, "granted": granted, "call_trace": call_trace,
+             "target_image": r"C:\Windows\system32\lsass.exe", "src_guid": "g", "host": "h"}]
+
+
+def test_lsass_signature_loaded_from_skill_dir():
+    assert _lsass_signature() is not None
+
+
+def test_lsass_benign_only_exculpatory_keyed_on_raw_image():
+    # 读 lsass、无转储库 → 只出先证伪层,键在【原始进程名】(不靠硬编码名单)+ 掩码类别;良性与否留给慢通道学
+    g = FakeGraph(_lsass_row(r"C:\Program Files (x86)\ossec-agent\wazuh-agent.exe",
+                             "0x1410", r"ntdll.dll+9feb4|wow64.dll+3cf4"))
+    r = _lsass_signature()(g, _alert())
+    assert [l["layer"] for l in r["layers"]] == ["exculpatory"]           # 无转储库 → 不出坐实层
+    assert r["layers"][0]["features"] == {"src_image": "wazuh-agent.exe",  # 原始进程名做 key(值=环境数据)
+                                          "has_dump_lib": False, "access_class": "reads_memory"}
+    assert r["bindings"]["src_process"] == "wazuh-agent.exe"
+
+
+def test_lsass_dumplib_emits_universal_incriminating_without_process_name():
+    # 转储库+读内存 → 出坐实层,键在【通用信号】,★不含进程名(改名成 svchost 也躲不过转储库信号)
+    g = FakeGraph(_lsass_row(r"C:\Windows\System32\rundll32.exe",
+                             "0x1fffff", r"ntdll.dll|dbghelp.dll+1a2b|comsvcs.dll"))
+    r = _lsass_signature()(g, _alert())
+    layers = {l["layer"]: l["features"] for l in r["layers"]}
+    assert layers["incriminating"] == {"has_dump_lib": True, "access_class": "reads_memory"}
+    assert "src_image" not in layers["incriminating"]                     # ★坐实层不键进程名 = 防伪装
+    assert layers["exculpatory"]["src_image"] == "rundll32.exe"           # 先证伪层仍带进程名
+
+
+def test_lsass_unknown_edr_flows_through_no_hardcoded_list():
+    # ★红线铁证:换个不在任何名单里的 EDR,签名照常算出 key(进程名原样进 src_image),不丢、不依赖 security_agent()
+    g = FakeGraph(_lsass_row(r"C:\Program Files\AcmeEDR\acme-sensor.exe",
+                             "0x1010", r"ntdll.dll|kernelbase.dll"))
+    r = _lsass_signature()(g, _alert())
+    assert r["layers"][0]["features"]["src_image"] == "acme-sensor.exe"   # 不认识也照常做 key
+    assert [l["layer"] for l in r["layers"]] == ["exculpatory"]
+
+
+def test_lsass_query_only_access_class():
+    g = FakeGraph(_lsass_row(r"C:\Windows\System32\svchost.exe", "0x101000", "ntdll.dll"))
+    r = _lsass_signature()(g, _alert())
+    assert r["layers"][0]["features"]["access_class"] == "query_only"     # 0x101000 无 0x10(PROCESS_VM_READ)
+
+
+def test_lsass_signature_none_when_no_anchor():
+    assert _lsass_signature()(FakeGraph([]), _alert()) is None
