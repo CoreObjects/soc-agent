@@ -47,13 +47,22 @@ def _counting(*a, **k):
 pl.llm.chat = _counting
 
 try:
+    # 宽松匹配请求者(ingest 可能存 jon.snow / jon.snow@NORTH... / NORTH\jon.snow)
     rows = pl.graph.run_cypher(
         "MATCH (a:Alert)<-[:TRIGGERED]-(e:Event {event_code:'4769'})-[:BY]->(req:Account) "
-        "WHERE 'T1558.003' IN coalesce(a.technique_ids,[]) AND NOT (a)-[:CONCLUDED]->() AND req.sam=$req "
-        "RETURN DISTINCT a.alert_uid AS uid LIMIT 5", req=REQ)
+        "WHERE 'T1558.003' IN coalesce(a.technique_ids,[]) AND NOT (a)-[:CONCLUDED]->() "
+        "AND toLower(req.sam) CONTAINS toLower($req) "
+        "RETURN DISTINCT a.alert_uid AS uid, req.sam AS req_sam, req.domain AS req_domain LIMIT 5", req=REQ)
     uids = [r["uid"] for r in rows]
-    check("找到请求者=%s 的未研判 kerberoast 告警" % REQ, bool(uids),
-          "候选 %d(无?先在 GOAD 跑 42-kerberoast-user.sh 并等 ingest)" % len(uids))
+    check("找到请求者含 %s 的未研判 kerberoast 告警" % REQ, bool(uids),
+          "候选 %d %s" % (len(uids), [(r["req_sam"], r["req_domain"]) for r in rows]))
+    if not uids:
+        # 诊断:看看图里未研判 T1558.003 告警的请求者都长啥样(判断是 ingest 没跑 / 还是 sam 形态不同)
+        diag = pl.graph.run_cypher(
+            "MATCH (a:Alert)<-[:TRIGGERED]-(e:Event {event_code:'4769'})-[:BY]->(req:Account) "
+            "WHERE 'T1558.003' IN coalesce(a.technique_ids,[]) AND NOT (a)-[:CONCLUDED]->() "
+            "RETURN req.sam AS sam, req.domain AS dom, count(*) AS n ORDER BY n DESC LIMIT 10")
+        print("  ↳ 诊断:未研判 kerberoast 请求者样本 = %s" % [(d["sam"], d["dom"], d["n"]) for d in diag])
 
     threat_uid = None
     for uid in uids:
