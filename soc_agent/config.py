@@ -41,27 +41,9 @@ class Config:
     llm_api_key: str
     skills_dir: str
     max_iterations: int
-    # 攻击模式规则库(图外权威 = openGauss;OG_HOST 为空 → 用内存 fake,便于本地/单测)
-    og_host: str
-    og_port: int
-    og_db: str
-    og_user: str
-    og_password: str
-    og_schema: str
     # 靶场处置面 HTTP appliance(server2 直接调,免两台来回跑);空 → 退回图台账队列 + range-runner 通道
     response_url: str
     response_token: str
-    # daemon(P5' 自动轮询研判):单实例、慢通道串行(单弱 vLLM 是瓶颈)
-    daemon_poll_interval_s: int      # 每轮轮询间隔
-    daemon_batch_size: int           # 每轮取多少条未研判告警
-    daemon_settle_s: int             # settle 窗口 Δ:只研判 arrival 早于 now-Δ 的(等佐证事实到齐)
-    daemon_techniques: list          # 范围闸:只自动研判这些 technique(空=全放开);默认=有签名覆盖的类型
-    daemon_max_attempts: int         # 同一告警连败几次 → 写兜底 verdict 死信、不再重选
-    daemon_slow_concurrency: int     # 慢通道在飞上限(v1=1;留旋钮备将来)
-
-    @property
-    def og_enabled(self) -> bool:
-        return bool(self.og_host)
 
     @property
     def appliance_enabled(self) -> bool:
@@ -88,18 +70,6 @@ class Config:
             llm_api_key=g("LLM_API_KEY", "EMPTY"),
             skills_dir=g("SKILLS_DIR", str(_REPO_ROOT / "skills")),
             max_iterations=int(g("MAX_ITERATIONS", "12")),
-            og_host=g("OG_HOST", ""),
-            og_port=int(g("OG_PORT", "5432")),
-            og_db=g("OG_DB", "soc"),
-            og_user=g("OG_USER", "soc_agent"),
-            og_password=g("OG_PASSWORD", ""),
-            og_schema=g("OG_SCHEMA", "app"),
             response_url=g("RESPONSE_URL", ""),
             response_token=g("RESPONSE_TOKEN", ""),
-            daemon_poll_interval_s=int(g("DAEMON_POLL_INTERVAL_S", "10")),
-            daemon_batch_size=int(g("DAEMON_BATCH_SIZE", "20")),
-            daemon_settle_s=int(g("DAEMON_SETTLE_S", "120")),
-            daemon_techniques=[t.strip() for t in g("DAEMON_TECHNIQUES", "T1558.003,T1003.001").split(",") if t.strip()],
-            daemon_max_attempts=int(g("DAEMON_MAX_ATTEMPTS", "3")),
-            daemon_slow_concurrency=int(g("DAEMON_SLOW_CONCURRENCY", "1")),
         )

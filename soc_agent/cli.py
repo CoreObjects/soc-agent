@@ -7,20 +7,17 @@ import argparse
 import sys
 from pathlib import Path
 
-from .composer import Composer
 from .config import Config
 from .disposition import policy_from_graph
 from .graph.client import Neo4jGraph
 from .llm.qwen import QwenClient
 from .models import Alert
-from .orchestrator import AgentInvestigator, FastSlowInvestigator, RecipeInvestigator, SkillRouter
-from .patterns.factory import make_repository
+from .orchestrator import AgentInvestigator, RecipeInvestigator, SkillRouter
 from .schema import graph_schema
 from .skills_runtime import SkillRegistry
 from .tools import default_toolbox
 
-__all__ = ["investigate_alert", "run_investigation", "build_orchestrator",
-           "render_result", "render_trace", "AlertNotFound", "main"]
+__all__ = ["investigate_alert", "render_result", "render_trace", "AlertNotFound", "main"]
 
 _REPO_ROOT = Path(__file__).resolve().parents[1]
 
@@ -59,8 +56,6 @@ def render_result(result) -> str:
             lines.append(f"evidence  : {v.evidence_refs}")
         if v.missing_evidence:
             lines.append(f"missing   : {v.missing_evidence}")
-        if v.pattern:
-            lines.append(f"pattern   : {v.pattern}")
         lines.append(f"agent     : {v.agent}")
     for d in result.dispositions or []:
         lines.append(f"处置(建议): {d.action} -> {d.target}  risk={d.risk}  status={d.status}")
@@ -114,42 +109,6 @@ def build(config: Config):
     return graph, router, agent_inv, recipe_inv
 
 
-def build_orchestrator(config: Config):
-    """装配快慢通道编排器(FastSlowInvestigator):确定性路由→快通道(命中规则免LLM)→慢通道+生成规则。
-
-    规则库 = openGauss(OG_HOST 配了)或内存 fake;图台账收敛约束建好。返回 (graph, orch, repo)。
-    """
-    graph = Neo4jGraph(config.neo4j_uri, config.neo4j_user, config.neo4j_password, config.neo4j_database)
-    try:
-        graph.ensure_constraints()         # 台账收敛唯一约束(幂等)
-    except Exception as e:                 # 权限/版本问题不阻断研判(约束缺失只影响并发去重强度)
-        print(f"[warn] ensure_constraints 跳过: {e}")
-    llm = QwenClient(base_url=config.llm_api_base, model=config.llm_model, api_key=config.llm_api_key)
-    schema = graph_schema()
-    registry = SkillRegistry(config.skills_dir)
-    policy = policy_from_graph(graph)
-    repo = make_repository(config)         # og_enabled → openGauss+缓存;否则内存 fake
-    router = SkillRouter(llm=llm, registry=registry, agent_name=config.llm_model)
-    recipe_inv = RecipeInvestigator(
-        llm=llm, graph=graph, schema=schema, registry=registry, agent_name=config.llm_model, policy=policy)
-    composer = Composer(llm=llm, agent_name=config.llm_model)   # 独立处置编排环节(读 interface.yaml)
-    orch = FastSlowInvestigator(graph=graph, repo=repo, registry=registry,
-                                recipe_inv=recipe_inv, router=router, policy=policy, composer=composer)
-    return graph, orch, repo
-
-
-def run_investigation(graph, orch, alert_uid):
-    """快慢通道研判一条告警 + 写回台账(收敛)。返回 InvestigationResult。"""
-    node = graph.get_alert(alert_uid)
-    if node is None:
-        raise AlertNotFound(f"图里没有 alert_uid={alert_uid} 的 :Alert")
-    alert = Alert.from_node(node)
-    seed = graph.seed(alert)
-    result = orch.investigate(alert, seed=seed)
-    graph.write_result(alert_uid, result)
-    return result
-
-
 def choose_investigator(skill, mode, agent_inv, recipe_inv):
     """选定 skill 后:mode=auto → 自主;否则 skill 有 recipe 走 recipe,没有退自主。"""
     if mode != "auto" and skill is not None and skill.recipe is not None:
@@ -164,26 +123,9 @@ def main(argv=None):
     ap.add_argument("--trace", action="store_true", help="打印研判留痕")
     ap.add_argument("--mode", choices=["recipe", "auto"], default="recipe",
                     help="recipe=确定性取证+LLM定性(默认,稳);auto=LLM 自主规划查询(对比用)")
-    ap.add_argument("--fast-slow", action="store_true",
-                    help="走快慢通道编排(规则库+composer 处置):坐实(TP)会组响应计划并写入台账(status=proposed),供 respond CLI 人审")
     args = ap.parse_args(argv)
 
     config = Config.from_env(dotenv_path=args.dotenv)
-    if args.fast_slow:
-        graph, orch, _repo = build_orchestrator(config)
-        try:
-            result = run_investigation(graph, orch, args.alert_uid)
-        finally:
-            graph.close()
-        if args.trace:
-            print(render_trace(result))
-            print()
-        print(render_result(result))
-        if result.dispositions:
-            print(f"[处置] 已组响应计划(plan_id={args.alert_uid},{len(result.dispositions)} 步)写入台账,"
-                  f"待人审:  python -m soc_agent.respond_cli list")
-        return 0
-
     graph, router, agent_inv, recipe_inv = build(config)
     try:
         node = graph.get_alert(args.alert_uid)

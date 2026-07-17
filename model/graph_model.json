@@ -127,7 +127,7 @@
   "experience_layer": {
     "desc": "Agent 调查完把研判/处置结论写回图,挂在告警之后,沉淀为可查询、可复用的历史经验(自进化载体)。留存永久,不随 30 天事件裁。★唯一'取证后写回图'的东西,不违反原则③(事实层始终是取证输入,经验层是叠加的判例)。",
     "nodes": [
-      {"name": "Verdict", "keys": ["pattern_id", "verdict_id"], "props": ["verdict", "lean", "confidence", "summary", "rationale", "pattern", "sig", "investigated_at", "agent"], "note": "研判结论。verdict ∈ {true_positive, false_positive, benign, suspicious}。★命中/沉淀了攻击模式→按 pattern_id(=sig_hash)收敛成共享节点(同模式多告警共用一个 Verdict、per-alert 细节落 CONCLUDED 边);未命中模式→按 verdict_id per-alert fork。sig=该模式可读谓词(图模式规范形)。"},
+      {"name": "Verdict", "keys": ["verdict_id"], "props": ["verdict", "lean", "confidence", "summary", "rationale", "investigated_at", "agent"], "note": "研判结论(第三类经验:历史台账)。verdict ∈ {true_positive, false_positive, benign, suspicious}。per-alert:一条告警一个 Verdict(按 verdict_id),细节落 CONCLUDED 边。"},
       {"name": "ResponsePlan", "keys": ["plan_id"], "props": ["plan_id", "status"], "note": "一告警一响应计划(审计流水台账)。plan_id=alert_uid;status ∈ {proposed, executed, failed}。"},
       {"name": "Disposition", "keys": ["step_key"], "props": ["step_key", "order", "primitive", "action", "params", "rollback_handle", "execution_id", "status"], "note": "响应计划里的一步(独立台账条目,带自己的 rollback_handle/execution_id)。step_key=`{plan_id}#{order}`。★另有一个'无处置'单例 step_key='__no_op__'(action='none'):FP/benign/suspicious/无法组计划的 TP 都 LED_TO 它→每条告警都闭环。"}
     ],

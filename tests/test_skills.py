@@ -64,38 +64,6 @@ def test_skill_recipe_none_when_absent(tmp_path):
     assert load_skill(p).recipe is None
 
 
-def test_load_skill_loads_signature_if_present(tmp_path):
-    # skill 目录里有 signature.py → 加载其 signature(快通道签名函数,和 recipe 同套约定自动发现)
-    p = _write_skill(tmp_path, "identity/kerberoast",
-                     "name: kerberoast\nlayer: identity\ntechnique_ids: [T1558.003]")
-    (p / "signature.py").write_text(
-        "def signature(graph, alert, seed=None):\n    return {'layers': [], 'bindings': {'x': 1}}\n",
-        encoding="utf-8")
-    s = load_skill(p)
-    assert s.signature is not None
-    assert s.signature(None, None)["bindings"] == {"x": 1}
-
-
-def test_skill_signature_none_when_absent(tmp_path):
-    p = _write_skill(tmp_path, "host/lsass_dump", "name: lsass_dump\nlayer: host\ntechnique_ids: [T1003.001]")
-    assert load_skill(p).signature is None
-
-
-def test_skill_file_can_import_sibling_module(tmp_path):
-    # ★co-location 关键:skill 目录内文件可【相对导入】同目录小模块 → recipe/signature 共享原语不漂
-    p = _write_skill(tmp_path, "identity/kerberoast",
-                     "name: kerberoast\nlayer: identity\ntechnique_ids: [T1558.003]")
-    (p / "_kerb.py").write_text("def netbios(d):\n    return (d or '').split('.')[0].upper()\n", encoding="utf-8")
-    (p / "signature.py").write_text(
-        "from ._kerb import netbios\n"
-        "def signature(graph, alert, seed=None):\n"
-        "    return {'layers': [], 'bindings': {'nb': netbios('north.sevenkingdoms.local')}}\n",
-        encoding="utf-8")
-    s = load_skill(p)
-    assert s.signature is not None
-    assert s.signature(None, None)["bindings"]["nb"] == "NORTH"    # 相对导入生效
-
-
 def test_real_skills_dir_all_valid():
     # 守卫:仓库 skills/ 里每个 skill 都能加载(frontmatter 正常、有 description/layer、recipe 可调用)
     from pathlib import Path

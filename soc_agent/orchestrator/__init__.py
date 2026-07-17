@@ -7,20 +7,15 @@
 import json
 
 from ..models import LEANS, VERDICTS, Alert, InvestigationResult, Verdict
-from ..patterns import signatures
-from ..patterns.apply import dispositions_from_plan, mint_rule_from_result, result_from_rule
-from ..patterns.match import match_all
-from ..skills_runtime import SkillNotFound
 from ..tools import FINALIZE, finalize_spec
 
-__all__ = ["AgentInvestigator", "RecipeInvestigator", "SkillRouter", "FastSlowInvestigator",
-           "build_result", "infer_layer"]
+__all__ = ["AgentInvestigator", "RecipeInvestigator", "SkillRouter", "build_result"]
 
 
 def build_result(alert, skill_name, args, agent_name, trace=None, path="B", policy=None) -> InvestigationResult:
     """finalize 参数 → InvestigationResult(只出 verdict + 证据)。两种研判器共用。
 
-    ★处置不再从 finalize 出 —— 研判保持干净;处置由独立 composer 环节在研判之后组装(见 FastSlowInvestigator)。
+    ★处置不再从 finalize 出 —— 研判保持干净;处置由独立 composer 环节在研判之后组装。
     """
     v = args.get("verdict")
     if v not in VERDICTS:
@@ -35,27 +30,10 @@ def build_result(alert, skill_name, args, agent_name, trace=None, path="B", poli
         summary=args.get("summary") or "", rationale=args.get("rationale") or "",
         evidence_refs=list(args.get("evidence_refs") or []),
         missing_evidence=list(args.get("missing_evidence") or []),
-        pattern=args.get("pattern"), agent=agent_name,
+        agent=agent_name,
     )
     return InvestigationResult(alert_uid=alert.alert_uid, path=path, verdict=verdict,
                                dispositions=[], skill=skill_name, trace=list(trace or []))
-
-# technique → 层(仅用于"未命中具体 skill 时选该层通用兜底";具体 skill 按 technique 直配)
-_LAYER_BY_PREFIX = {
-    "identity": ["T1558", "T1649", "T1003.006", "T1550", "T1021", "T1207", "T1484", "T1556"],
-    "host": ["T1003.001", "T1003.002", "T1105", "T1547", "T1112", "T1059", "T1055", "T1218",
-             "T1543", "T1140", "T1027", "T1204", "T1053", "T1569"],
-    "application": ["T1190", "T1505"],
-    "network": ["T1071", "T1568", "T1571", "T1090", "T1041", "T1048"],
-}
-
-
-def infer_layer(alert: Alert):
-    for t in alert.technique_ids or []:
-        for layer, prefixes in _LAYER_BY_PREFIX.items():
-            if any(t == p or t.startswith(p + ".") or t == p for p in prefixes):
-                return layer
-    return None
 
 
 class SkillRouter:
@@ -305,58 +283,3 @@ class RecipeInvestigator:
             "verdict": "suspicious", "confidence": 0.0,
             "rationale": "recipe 已取证但模型未给结论", "missing_evidence": ["模型未 finalize"],
         }, self.agent_name, trace, policy=self.policy)
-
-
-class FastSlowInvestigator:
-    """顶层编排:快通道(跑全部签名→全局先证伪碰撞,0 LLM,path A)→ 未命中慢通道(泛化路由+研判+沉淀)。
-
-    ★快通道无路由:`signatures.run_all` 对每个攻击类型自锚定算签名(锚不到→伪签名过滤掉)→ `match_all` 全局两趟
-    先证伪(先所有类型的证伪、再坐实)碰 active 规则 → 命中即套 verdict+处置模板(bindings 换实例填),0 LLM。
-    ★快通道最大价值:把海量误报廉价打发掉,别让弱 qwen 被假告警淹了。
-    未命中 → 泛化路由选 skill → RecipeInvestigator 慢通道(1 次 LLM 定性)→ composer 组处置 → 用该 skill 的签名
-    沉淀规则(TP/FP/benign 自动 active、可疑 pending)——下次同签名走快通道。
-    """
-
-    def __init__(self, graph, repo, registry, recipe_inv, router=None, policy=None, composer=None):
-        self.graph = graph
-        self.repo = repo
-        self.registry = registry
-        self.recipe_inv = recipe_inv
-        self.router = router          # 泛化 SkillRouter(慢通道选 skill 用;读描述+触发事件)
-        self.policy = policy
-        self.composer = composer      # 独立 composer 环节(慢通道 TP 后组装响应计划);None=先不组处置
-
-    def _route(self, alert, seed=None):
-        """慢通道选 skill(泛化路由,读告警描述+触发事件;不依赖 technique)。"""
-        if self.router is not None:
-            return self.router.route(alert, seed)
-        return self.registry.select(alert, infer_layer(alert))       # 无 router 时的确定性兜底
-
-    def investigate(self, alert, seed=None) -> InvestigationResult:
-        # ── 快通道:跑全部签名(自锚定、过滤伪签名)→ 全局两趟先证伪碰撞 → 命中即套模板(0 LLM)──
-        sigs = signatures.run_all(self.registry, self.graph, alert, seed)
-        hit = match_all(self.repo, sigs)
-        if hit is not None:
-            rule, entry = hit
-            return result_from_rule(alert, entry["skill"], rule, entry.get("bindings") or {}, self.policy)  # path A
-
-        # ── 慢通道:泛化路由 → recipe 取证 → qwen 研判 → composer 组处置 → 沉淀规则 ──
-        skill = self._route(alert, seed)
-        # 用"路由到的 skill 对应的、已在 run_all 里锚定算出的签名"来沉淀(锚不到→无 entry→只研判不沉淀)
-        entry = next((s for s in sigs if s.get("skill") == getattr(skill, "name", None)), None)
-        result = self.recipe_inv.investigate(alert, seed, skill)      # path B(只出 verdict)
-        plan = None
-        if (entry is not None and self.composer is not None and result.verdict is not None
-                and result.verdict.verdict == "true_positive"):
-            plan = self.composer.compose(result, entry, skill, seed) or None
-            if plan:
-                result.dispositions = dispositions_from_plan(
-                    plan, entry.get("bindings") or {}, self.policy)   # 本告警的具体处置(落台账)
-        minted = mint_rule_from_result(entry["skill"], entry, result, plan=plan) if entry is not None else None
-        if result.verdict is not None:
-            # ★收敛键只认签名算出的 sig_hash;LLM 自由文本 pattern 不作准(否则台账裂开)
-            result.verdict.pattern = minted.pattern_id if minted is not None else None
-            result.verdict.sig = minted.sig if minted is not None else None   # 可读谓词("图模式")随台账落图
-        if minted is not None:                                       # 当场沉淀规则(下次同签名走快通道)
-            self.repo.upsert(minted)
-        return result

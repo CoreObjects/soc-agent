@@ -70,8 +70,6 @@ class Verdict:
     rationale: str = ""
     evidence_refs: list = field(default_factory=list)   # 引用的证据(事件/实体标识)
     missing_evidence: list = field(default_factory=list)  # 取不到的关键证据(诚实报"证据不足")
-    pattern: Optional[str] = None      # 攻击模式收敛键(=规则 pattern_id/sig_hash;台账按模式收敛)
-    sig: Optional[str] = None          # 该模式的可读谓词表示(“图模式”规范形,如 enc=RC4;spn_fanout=>=5;人读/检索用)
     agent: Optional[str] = None        # 研判者(模型/版本标识)
     investigated_at: Optional[str] = None
     verdict_id: str = field(default_factory=_new_id)
@@ -92,8 +90,6 @@ class Verdict:
             "rationale": self.rationale,
             "evidence_refs": list(self.evidence_refs),
             "missing_evidence": list(self.missing_evidence),
-            "pattern": self.pattern,
-            "sig": self.sig,
             "agent": self.agent,
             "investigated_at": self.investigated_at,
         }

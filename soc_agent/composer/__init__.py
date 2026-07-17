@@ -9,8 +9,8 @@
 """
 import json
 
-from ..patterns.rule import PrimitiveStepTemplate
 from ..response import default_interface
+from .plan import PrimitiveStepTemplate
 
 __all__ = ["Composer", "build_entity_frame"]
 

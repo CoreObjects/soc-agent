@@ -3,13 +3,17 @@
 从触发事件(EID10 访问 lsass)取源进程/掩码/call_trace;沿 SPAWNED 回溯父链、RAN_AS 取身份、
 看读后行为。★头号 FP:源进程本身是安全/监控代理(Wazuh/Defender/Sysmon)在做自身遥测 ——
 recipe 直接判出来并给 call_trace 转储库指纹,避免 LLM 把"传感器自检"误当攻击、更避免建议杀传感器。
-进程签名/哈希是图盲区。
-★call_trace 转储库判定走 ._lib.has_dump_lib,和 signature.py 共享同一份(不漂);
-security_agent 只当【给 LLM 的提示】(帮它第一次判快),★不做签名 key(硬编码名单=定制陷阱)。
+进程签名/哈希是图盲区。security_agent 只当【给 LLM 的提示】(帮它第一次判快)。
 """
+import re
+
 from soc_agent.recipe_lib import security_agent
 
-from ._lib import has_dump_lib
+_DUMP_LIB = re.compile(r"dbghelp|dbgcore|comsvcs|UNKNOWN|unbacked", re.I)   # Windows 转储相关库/未回填内存
+
+
+def has_dump_lib(call_trace) -> bool:
+    return bool(_DUMP_LIB.search(call_trace or ""))
 
 
 def collect(graph, alert, seed=None):

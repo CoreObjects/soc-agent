@@ -28,7 +28,6 @@ def build_constraints():
     """
     return [
         "DROP CONSTRAINT disposition_key IF EXISTS",   # 迁移:清旧 conv_key 唯一约束
-        "CREATE CONSTRAINT verdict_pattern_id IF NOT EXISTS FOR (v:Verdict) REQUIRE v.pattern_id IS UNIQUE",
         "CREATE CONSTRAINT verdict_id IF NOT EXISTS FOR (v:Verdict) REQUIRE v.verdict_id IS UNIQUE",
         "CREATE CONSTRAINT responseplan_id IF NOT EXISTS FOR (p:ResponsePlan) REQUIRE p.plan_id IS UNIQUE",
         "CREATE CONSTRAINT disposition_step_key IF NOT EXISTS FOR (d:Disposition) REQUIRE d.step_key IS UNIQUE",
@@ -38,8 +37,7 @@ def build_constraints():
 def build_write_statements(alert_uid, result):
     """研判结果 → [(cypher, params)]。无 verdict → []。
 
-    ★收敛:verdict 带 pattern(pattern_id)→ 共享 Verdict 节点(按 pattern_id),per-alert 数据落 CONCLUDED 边;
-    无 pattern(慢通道未命中)→ per-alert fork(按 verdict_id)。图只存台账/历史,规则本体在 openGauss。
+    ★第三类经验(历史台账):per-alert `(:Alert)-[:CONCLUDED]->(:Verdict {verdict_id})`。
 
     ★响应台账(一告警一响应计划,审计流水):(:Verdict)-[:LED_TO]->(:ResponsePlan {plan_id,status})
       -[:STEP {order}]->(:Disposition {step_key, primitive/params/rollback_handle/status})-[:ON]->真实体。
@@ -49,29 +47,18 @@ def build_write_statements(alert_uid, result):
     if result is None or result.verdict is None:
         return []
     v = result.verdict
-    node_props = {"verdict": v.verdict, "lean": v.lean, "pattern": v.pattern, "sig": v.sig, "agent": v.agent}
+    node_props = {"verdict": v.verdict, "lean": v.lean, "agent": v.agent, "verdict_id": v.verdict_id}
     edge_props = {"at": v.investigated_at, "path": result.path, "confidence": v.confidence,
                   "summary": v.summary, "rationale": v.rationale,
                   "evidence_refs": list(v.evidence_refs), "missing_evidence": list(v.missing_evidence)}
 
     stmts = []
-    if v.pattern:                       # 共享 Verdict 台账节点(收敛),per-alert 在边
-        node_props["pattern_id"] = v.pattern
-        stmts.append((
-            "MATCH (a:Alert {alert_uid:$alert_uid}) "
-            "MERGE (v:Verdict {pattern_id:$vkey}) SET v += $node_props "
-            "MERGE (a)-[c:CONCLUDED]->(v) SET c += $edge_props "
-            "RETURN v.pattern_id AS id",
-            {"alert_uid": alert_uid, "vkey": v.pattern, "node_props": node_props, "edge_props": edge_props}))
-        vmatch, vkey = "MATCH (a:Alert {alert_uid:$alert_uid})-[:CONCLUDED]->(v:Verdict {pattern_id:$vkey}) ", v.pattern
-    else:                               # 未命中模式:per-alert fork
-        node_props["verdict_id"] = v.verdict_id
-        stmts.append((
-            "MATCH (a:Alert {alert_uid:$alert_uid}) "
-            "MERGE (a)-[c:CONCLUDED]->(v:Verdict {verdict_id:$vkey}) SET v += $node_props, c += $edge_props "
-            "RETURN v.verdict_id AS id",
-            {"alert_uid": alert_uid, "vkey": v.verdict_id, "node_props": node_props, "edge_props": edge_props}))
-        vmatch, vkey = "MATCH (a:Alert {alert_uid:$alert_uid})-[:CONCLUDED]->(v:Verdict {verdict_id:$vkey}) ", v.verdict_id
+    stmts.append((                      # per-alert 台账节点(按 verdict_id)
+        "MATCH (a:Alert {alert_uid:$alert_uid}) "
+        "MERGE (a)-[c:CONCLUDED]->(v:Verdict {verdict_id:$vkey}) SET v += $node_props, c += $edge_props "
+        "RETURN v.verdict_id AS id",
+        {"alert_uid": alert_uid, "vkey": v.verdict_id, "node_props": node_props, "edge_props": edge_props}))
+    vmatch, vkey = "MATCH (a:Alert {alert_uid:$alert_uid})-[:CONCLUDED]->(v:Verdict {verdict_id:$vkey}) ", v.verdict_id
 
     disps = result.dispositions or []
     if disps:                           # 有处置 → 建响应计划台账(一告警一计划)

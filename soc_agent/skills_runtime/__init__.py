@@ -8,10 +8,8 @@ skill = 一个目录:
 选择:告警 technique 命中具体 skill;未覆盖 → 该层通用兜底(_generic/<layer>)。
 frontmatter 用极简自解析(免 yaml 依赖):`key: value`,列表写 `[a, b]`。
 """
-import importlib.machinery
 import importlib.util
-import sys
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional
 
@@ -61,35 +59,16 @@ class Skill:
     path: Path
     is_generic: bool = False
     recipe: Optional[object] = None                # recipe.py::collect(graph,alert,seed)→证据(慢通道喂 LLM)
-    signature: Optional[object] = None             # signature.py::signature(graph,alert,seed)→{layers,bindings}|None(快通道签名)
-    patterns: list = field(default_factory=list)   # (legacy,未用;规则本体在 openGauss,不在 skill)
-
-
-def _ensure_skill_pkg(dir_path: Path) -> str:
-    """把 skill 目录登记成一个唯一的合成包(__path__ 指向该目录),让目录内文件能【相对导入】同目录小模块
-    (如 signature.py `from ._kerb import ...`)→ recipe/signature 共享本地原语、不漂。包名按末两段路径取,唯一。"""
-    parts = dir_path.resolve().parts[-2:]                      # <layer>/<skill> 或 _generic/<layer>,层内唯一
-    key = "_socskill_" + "_".join("".join(c if (c.isalnum() or c == "_") else "_" for c in p) for p in parts)
-    if key not in sys.modules:
-        spec = importlib.machinery.ModuleSpec(key, loader=None, is_package=True)
-        spec.submodule_search_locations = [str(dir_path)]
-        sys.modules[key] = importlib.util.module_from_spec(spec)
-    return key
 
 
 def _load_attr(dir_path: Path, filename: str, attr: str):
-    """加载 skill 目录里某 .py 的某函数;不存在→None;★出错→None(每文件隔离,坏文件不拖垮 registry/daemon)。
-    以合成包的子模块加载 → 文件内可相对导入同目录小模块(共享原语)。"""
+    """加载 skill 目录里某 .py 的某函数;不存在→None;★出错→None(每文件隔离,坏文件不拖垮 registry)。"""
     fp = dir_path / filename
     if not fp.exists():
         return None
     try:
-        pkg = _ensure_skill_pkg(dir_path)
-        modname = f"{pkg}.{Path(filename).stem}"
-        spec = importlib.util.spec_from_file_location(
-            modname, fp, submodule_search_locations=[str(dir_path)])
+        spec = importlib.util.spec_from_file_location(f"skill_{attr}_{dir_path.name}", fp)
         mod = importlib.util.module_from_spec(spec)
-        sys.modules[modname] = mod          # 先登记:相对导入/自引用能解析到自己
         spec.loader.exec_module(mod)
         return getattr(mod, attr, None)
     except Exception:               # 语法/导入错等 → 该 skill 缺这块能力,但不炸整个加载
@@ -115,8 +94,6 @@ def load_skill(dir_path, is_generic: bool = False) -> Skill:
         path=dir_path,
         is_generic=is_generic,
         recipe=_load_recipe(dir_path),
-        # ★签名函数与 skill co-located(signature.py 挨着 recipe.py);中央 signatures 引擎自动发现、跑全部碰撞。
-        signature=_load_attr(dir_path, "signature.py", "signature"),
     )
 
 

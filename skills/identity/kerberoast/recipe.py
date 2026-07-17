@@ -3,9 +3,23 @@
 orchestrator 跑它把关键证据一次性收齐(含★跨域信任),再交 LLM 定性。
 不依赖模型自己规划该查什么 —— 模型只负责"看着证据下判断"。
 graph.run_cypher(query, **params) 只读;多步依赖(后步用前步取出的账号/域)。
-★同域/机器账号判定走 ._kerb 共享原语,和 signature.py 用同一份(NetBIOS 归一),不漂。
+★同域按 NetBIOS 归一(NORTH 与 north.sevenkingdoms.local 是同一个域)。
 """
-from ._kerb import is_machine, same_domain as _same_domain
+
+
+def _netbios(domain):
+    if not domain or domain == "-":
+        return None
+    return domain.split(".")[0].strip().upper() or None
+
+
+def is_machine(sam) -> bool:
+    return bool(sam and str(sam).strip().endswith("$"))
+
+
+def _same_domain(req_domain, tgt_domain) -> bool:
+    a, b = _netbios(req_domain), _netbios(tgt_domain)
+    return bool(a and b and a == b)
 
 
 def collect(graph, alert, seed=None):
