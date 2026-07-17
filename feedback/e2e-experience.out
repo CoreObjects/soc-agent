@@ -1,0 +1,14 @@
+=== e2e-experience  2026-07-17 08:32Z ===
+  [PASS] 经验库=openGauss(非内存降级) — store=OpenGaussExperienceStore
+  [PASS] 图里有未研判 kerberoast 告警 — 候选 8 条
+  · pass1 489cc44e06: decision=FALLTHROUGH verdict=false_positive LLM=3 exp:0→1
+  [PASS] 完整研判后沉淀出 active 经验(入 openGauss) — uid=489cc44e06
+  · pass2 489cc44e06: decision=AUTO_FP path=A LLM=1
+  [PASS] 二次研判命中经验(AUTO_*) — decision=AUTO_FP
+  [PASS] 二次研判走快路径 path=A — path=A
+  [PASS] 二次研判 LLM 骤降(≤routing 1 次,研判/处置 0) — pass2 LLM=1
+  [PASS] 图台账出现 path=A 的 CONCLUDED — path=A 边=1
+  [PASS] openGauss 有 active kerberoast 经验 — active=1 kinds=['benign_fp']
+
+=== E2E-EXPERIENCE: 8/8 通过  ===
+=== done ===
