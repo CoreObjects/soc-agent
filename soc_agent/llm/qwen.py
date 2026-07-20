@@ -32,7 +32,8 @@ def parse_openai_response(message) -> LLMResponse:
 
 
 class QwenClient:
-    def __init__(self, base_url, model, api_key="EMPTY", timeout=180, temperature=0.1):
+    def __init__(self, base_url, model, api_key="EMPTY", timeout=300, temperature=0.1,
+                 enable_thinking=False):
         import httpx                            # 惰性导入,纯逻辑测试无需装 openai/httpx
         from openai import OpenAI
         self._client = OpenAI(
@@ -42,11 +43,17 @@ class QwenClient:
         )
         self.model = model
         self.temperature = temperature
+        # ★默认关掉 qwen3 思维链:开着的话强制工具调用(tool_choice=required)会先吐一大段 Thinking,
+        #   既拖慢(易读超时)又污染工具输出。SOC 研判只要干净的工具调用,不要思维过程。
+        #   非思维模型忽略该模板参数,无害。要看思维过程再传 enable_thinking=True。
+        self.enable_thinking = enable_thinking
 
     def chat(self, messages, tools=None, tool_choice=None) -> LLMResponse:
         kwargs = dict(model=self.model, messages=messages, tools=tools or None,
                       temperature=self.temperature)
         if tool_choice is not None and tools:
             kwargs["tool_choice"] = tool_choice    # "required"=必须调工具(逼它别光说话)
+        if not self.enable_thinking:               # vLLM 透传给 qwen3 chat 模板 → 关思维
+            kwargs["extra_body"] = {"chat_template_kwargs": {"enable_thinking": False}}
         resp = self._client.chat.completions.create(**kwargs)
         return parse_openai_response(resp.choices[0].message)

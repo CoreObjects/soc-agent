@@ -37,3 +37,33 @@ def test_parse_bad_json_args_kept_as_raw():
     msg = SimpleNamespace(content="", tool_calls=[_tc("c1", "x", "{not valid json")])
     r = parse_openai_response(msg)
     assert "_raw" in r.tool_calls[0].arguments
+
+
+def _fake_qwen(enable_thinking):
+    """构造一个绕过 __init__(不导入 openai/httpx)的 QwenClient,注入假 client 捕获 create kwargs。"""
+    from soc_agent.llm.qwen import QwenClient
+    captured = {}
+
+    class _Completions:
+        def create(self, **kwargs):
+            captured.update(kwargs)
+            return SimpleNamespace(choices=[SimpleNamespace(
+                message=SimpleNamespace(content="ok", tool_calls=None))])
+
+    q = object.__new__(QwenClient)
+    q._client = SimpleNamespace(chat=SimpleNamespace(completions=_Completions()))
+    q.model, q.temperature, q.enable_thinking = "qwen3.5-9b", 0.1, enable_thinking
+    return q, captured
+
+
+def test_chat_disables_thinking_by_default():
+    # 默认关思维:强制工具调用不再先吐一大段 Thinking(否则拖慢/读超时/污染工具输出)
+    q, captured = _fake_qwen(enable_thinking=False)
+    q.chat([{"role": "user", "content": "hi"}])
+    assert captured["extra_body"] == {"chat_template_kwargs": {"enable_thinking": False}}
+
+
+def test_chat_keeps_thinking_when_enabled():
+    q, captured = _fake_qwen(enable_thinking=True)
+    q.chat([{"role": "user", "content": "hi"}])
+    assert "extra_body" not in captured
