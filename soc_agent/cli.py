@@ -108,7 +108,8 @@ def render_trace(result) -> str:
 def build(config: Config):
     """装配真客户端 + LLM skill 路由 + 两种研判器(recipe 确定性 / auto 自主)。"""
     graph = Neo4jGraph(config.neo4j_uri, config.neo4j_user, config.neo4j_password, config.neo4j_database)
-    llm = QwenClient(base_url=config.llm_api_base, model=config.llm_model, api_key=config.llm_api_key)
+    llm = QwenClient(base_url=config.llm_api_base, model=config.llm_model, api_key=config.llm_api_key,
+                     timeout=config.llm_timeout)
     schema = graph_schema()
     registry = SkillRegistry(config.skills_dir)
     policy = policy_from_graph(graph)      # 处置护栏:图里 DC/CA 主机自动进 NEVER-TOUCH(补图第二弹的收现)

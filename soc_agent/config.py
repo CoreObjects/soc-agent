@@ -39,6 +39,7 @@ class Config:
     llm_api_base: str
     llm_model: str
     llm_api_key: str
+    llm_timeout: int              # 单次 LLM 调用超时(秒);慢的大模型(如 122b enforce-eager)按需调大
     skills_dir: str
     max_iterations: int
     # 靶场处置面 HTTP appliance(server2 直接调,免两台来回跑);空 → 退回图台账队列 + range-runner 通道
@@ -79,6 +80,7 @@ class Config:
             llm_api_base=g("LLM_API_BASE", ""),
             llm_model=g("LLM_MODEL", "qwen32b-ft"),
             llm_api_key=g("LLM_API_KEY", "EMPTY"),
+            llm_timeout=int(g("LLM_TIMEOUT", "600")),
             skills_dir=g("SKILLS_DIR", str(_REPO_ROOT / "skills")),
             max_iterations=int(g("MAX_ITERATIONS", "12")),
             response_url=g("RESPONSE_URL", ""),

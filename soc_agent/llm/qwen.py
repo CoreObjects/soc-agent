@@ -32,13 +32,14 @@ def parse_openai_response(message) -> LLMResponse:
 
 
 class QwenClient:
-    def __init__(self, base_url, model, api_key="EMPTY", timeout=300, temperature=0.1,
+    def __init__(self, base_url, model, api_key="EMPTY", timeout=600, temperature=0.1,
                  enable_thinking=False):
         import httpx                            # 惰性导入,纯逻辑测试无需装 openai/httpx
         from openai import OpenAI
         self._client = OpenAI(
             base_url=base_url,
             api_key=api_key or "EMPTY",
+            max_retries=0,                       # ★不重试:本地模型超时=真慢,重试只会 3× 浪费(122b 15min 惨案)
             http_client=httpx.Client(trust_env=False, timeout=timeout),  # ★绕过公司代理
         )
         self.model = model
