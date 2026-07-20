@@ -13,7 +13,7 @@
 import os
 import sys
 
-_ROOT = os.path.expanduser("~/soc-agent")
+_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))   # 从脚本位置推导仓根,不硬编码 ~/soc-agent
 sys.path.insert(0, _ROOT)
 
 from soc_agent.config import Config
