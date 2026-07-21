@@ -72,11 +72,14 @@ print("# 批量定量验:%d 条未研判告警(到达序回放,%s)  起始沉淀
 stats = {"FALLTHROUGH": 0, "AUTO_TP": 0, "AUTO_FP": 0}
 per_tech = {}            # tech -> [总, 研判, 复用]
 ft_llm = []              # FALLTHROUGH 各条 LLM 次数(算基线单价)
+# FALLTHROUGH 分诊:verdict × 是否沉淀 —— 看 tail 到底是"存疑不沉淀(正常)"还是"该沉淀却被 exam 拒"
+ft_break = {}            # (verdict, sedimented?) -> 计数
 llm_total = 0
 try:
     for i, r in enumerate(rows, 1):
         uid, t = r["uid"], r["tech"]
         calls["n"] = 0
+        before = exp_rows()
         try:
             _res, report, _picked = run_pipeline(pl, uid, mode="recipe")
         except Exception as e:
@@ -85,17 +88,22 @@ try:
         c = calls["n"]
         llm_total += c
         d = report.decision
+        after = exp_rows()
+        vd = _res.verdict.verdict if _res.verdict else "(none)"
+        sed = after > before
         stats[d] = stats.get(d, 0) + 1
         pt = per_tech.setdefault(t, [0, 0, 0])
         pt[0] += 1
         if d == "FALLTHROUGH":
             pt[1] += 1
             ft_llm.append(c)
+            key = (vd, "沉淀" if sed else "未沉淀")
+            ft_break[key] = ft_break.get(key, 0) + 1
         else:
             pt[2] += 1
         auto = stats["AUTO_TP"] + stats["AUTO_FP"]
-        print("  [%3d] %-16s %-12s LLM=%d  沉淀行=%d  累计AUTO率=%.0f%%"
-              % (i, t[:16], d, c, exp_rows(), 100.0 * auto / i))
+        print("  [%3d] %-16s %-12s verdict=%-14s %s LLM=%d  沉淀行=%d  累计AUTO率=%.0f%%"
+              % (i, t[:16], d, vd, ("沉淀+1" if sed else "     "), c, exp_rows(), 100.0 * auto / i))
 
     N = len(rows)
     F = stats["FALLTHROUGH"]
@@ -113,6 +121,9 @@ try:
     print("\n各技战术(总/研判/复用):")
     for t, (n, f, a) in sorted(per_tech.items(), key=lambda x: -x[1][0]):
         print("  %-16s 共%-4d 研判%-4d 复用%-4d AUTO率%.0f%%" % (t[:16], n, f, a, 100.0 * a / n if n else 0))
+    print("\nFALLTHROUGH 分诊(verdict × 是否沉淀 —— suspicious/未沉淀=存疑正常;TP/FP+未沉淀=被 exam 拒,该查):")
+    for (vd, sd), n in sorted(ft_break.items(), key=lambda x: -x[1]):
+        print("  verdict=%-14s %-6s × %d" % (vd, sd, n))
 finally:
     pl.close()
 print("\n# done")
