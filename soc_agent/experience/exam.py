@@ -36,6 +36,13 @@ def sediment(llm, skill, result, exp_store, case_store, agent_name=None):
                   agent_name=agent_name, origin_case_id=result.alert_uid)
     if exp is None:
         return None, {"reason": "not_distilled"}
+    # 收敛守卫(替代删掉的 pattern_id 去重):已有 active 同类经验能覆盖本案(在这些 findings 上点火)→
+    # 不重复入库,只记它一次命中。正常流水线 FALLTHROUGH 本就没经验点火(否则会 AUTO 短路);
+    # 这条防批量重派生(path-G 重放已研判告警)/竞态下把同一模式反复插成新行 → 库膨胀。
+    for prior in (exp_store.active_for_skill(exp.skill) if exp_store is not None else []):
+        if prior.kind == exp.kind and experience_fires(prior, result.findings)[0]:
+            exp_store.bump_hit(prior.exp_id)
+            return None, {"reason": "converged", "covered_by": prior.exp_id}
     if exp.kind == "threat":                                        # 处置那一半:Composer 产出的剧本模板
         exp.playbook = list(getattr(result, "playbook", None) or [])
     cases = case_store.by_skill(exp.skill) if case_store is not None else []

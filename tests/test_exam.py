@@ -70,6 +70,30 @@ def test_sediment_rejects_when_regression_fails():
     assert exp is None and rep["reason"] == "regression_mishit" and exp_store.all() == []
 
 
+def test_sediment_converges_when_prior_active_experience_covers():
+    # 收敛守卫:已有 active 同类经验能在这些 findings 上点火 → 不重复入库(替代删掉的 pattern_id 去重)。
+    # (正常流水线里 FALLTHROUGH 本就没经验点火;这条守卫防批量重派生/竞态下的重复插入。)
+    result = _result("a9", "true_positive", [Finding("k.rc4"), Finding("k.hv")])
+    llm = _llm({"decisive_finding_ids": ["k.rc4", "k.hv"], "rule": {"and": [{"exists": "k.rc4"}, {"exists": "k.hv"}]}})
+    exp_store, case_store = InMemoryExperienceStore(), InMemoryCaseStore()
+    prior = _threat(["k.rc4", "k.hv"], {"and": [{"exists": "k.rc4"}, {"exists": "k.hv"}]})
+    exp_store.add(prior)
+    exp, rep = sediment(llm, _Skill(), result, exp_store, case_store)
+    assert exp is None and rep["reason"] == "converged" and rep["covered_by"] == prior.exp_id
+    assert len(exp_store.active_for_skill("k")) == 1              # 没新增
+    assert exp_store.get(prior.exp_id).hit_count == 1            # 复用记一次命中
+
+
+def test_sediment_no_converge_across_kind():
+    # 不同 kind 不算覆盖(威胁经验点火 ≠ 误报可复用)→ 照常入库
+    result = _result("a10", "false_positive", [Finding("k.rc4"), Finding("k.hv")])
+    llm = _llm({"decisive_finding_ids": ["k.rc4", "k.hv"]})
+    exp_store, case_store = InMemoryExperienceStore(), InMemoryCaseStore()
+    exp_store.add(_threat(["k.rc4", "k.hv"], {"and": [{"exists": "k.rc4"}, {"exists": "k.hv"}]}))  # 威胁 prior
+    exp, rep = sediment(llm, _Skill(), result, exp_store, case_store)
+    assert exp is not None and exp.kind == "benign_fp"           # 误报照常沉淀,不被威胁 prior 收敛
+
+
 def test_sediment_skips_suspicious():
     result = _result("a3", "suspicious", [Finding("k.rc4")])
     result.verdict.lean = "unknown"
