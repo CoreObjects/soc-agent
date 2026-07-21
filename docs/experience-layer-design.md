@@ -73,6 +73,21 @@
   - 安全阀=置信阈值 + 现成 NEVER-TOUCH（DC/CA/krbtgt/传感器提议时已降级 escalate）。
 - **台账不需加新节点**:`(:Verdict)-[:LED_TO]->(:ResponsePlan{status})-[:STEP]->(:Disposition{status})` 的 **status 就是"是否处置/是否审核"的记录**（proposed=待处置/待审、approved=审过、executed=已处置、rolled_back=已回退）。"处置过没"=看 plan status;"研判过没"=有无 CONCLUDED 边。
 
+## 6.5 研判台账图模型（2026-07-21 完善，真机 e2e-threat 25/25 验通）
+整条链在图里一次查回，含复用溯源：
+```
+LLM 研判:  (:Alert)-[:CONCLUDED{method:'llm', at,confidence,summary,rationale}]->(:Verdict)
+                                                     -[:LED_TO]->(:ResponsePlan)-[:STEP]->(:Disposition)-[:ON]->实体
+           (:Alert)-[:HAS_FINDING]->(:Finding{finding_key=uid#fid, finding_id,attrs(json),polarity,evidence_ref})  # 取证入图
+复用(AUTO): (:Alert2)-[:CONCLUDED{method:'reuse'}]->(旧 Verdict)   # 直接指向源判例 Verdict,下游完全复用(不新建/不写)
+           (:Alert2)-[:HAS_FINDING]->(:Finding …)                 # 只写自己的取证
+```
+- **取证入图**:findings 作 `:Finding` 挂 Alert(分析层,永久;prune 不碰);之前只在 openGauss cases,链缺这节。
+- **真复用**:经验记 `origin_verdict_id`(distill 从 `result.verdict.verdict_id` 存);复用告警 CONCLUDED 直接指向旧 Verdict、`method='reuse'`(coalesce 保护源判例 llm 标记不被降级)、下游处置完全复用。`origin_verdict_id` 空(旧经验)→ 优雅退回新建。
+- **展示**:从复用告警一条 Cypher 查回 源告警 + 两边取证 + 处置(e2e 实证 origin/a2取证/a1取证/处置 全查回)。
+- **ResponsePlan+Disposition 未合并**(概念上是处置的语义+执行两面、可合;但真合=重构审批/执行/回退状态机,非必须,按用户决定不改)。
+- 落点:`graph/client.py`(build_write_statements 复用分支 + `_finding_stmts` + Finding 约束)、`models.py`(InvestigationResult.reuse_verdict_id)、`cli.py`(_reuse_* 带 origin_verdict_id)、`experience/{store,opengauss,distill}.py`(origin_verdict_id round-trip)、`reset_pristine`(连带清 :Finding)。
+
 ## 7. 实现落点与现状（P1–P6 已建成、真机验通）
 - `soc_agent/forensics.py`:`Finding`/`Forensics`/`coerce`/`from_legacy`。
 - `soc_agent/experience/{dsl,fingerprint,matching,store,opengauss,cases,distill,exam,consult}.py`。
