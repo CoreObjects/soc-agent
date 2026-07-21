@@ -128,8 +128,45 @@ try:
         te2 = [e for e in pl.exp_store.by_kind("kerberoast", "threat")][0]
         check("威胁经验存了来源告警 VID(origin_case_id)", bool(te2.origin_case_id),
               "origin_case_id=%s" % te2.origin_case_id)
+        check("威胁经验存了源 Verdict id(origin_verdict_id,复用凭它指向旧 Verdict)", bool(te2.origin_verdict_id),
+              "origin_verdict_id=%s" % te2.origin_verdict_id)
         check("openGauss note 列可读(round-trip 不报错)", hasattr(te2, "note"),
               "note=%s" % (str(te2.note)[:40] if te2.note else None))
+
+        # ── Phase 1 真机:取证入图 —— A1 的 findings 作 :Finding 挂在 Alert 上 ──
+        nf = pl.graph.run_cypher(
+            "MATCH (:Alert {alert_uid:$u})-[:HAS_FINDING]->(f:Finding) RETURN count(f) AS n", u=threat_uid)[0]["n"]
+        check("Phase1:取证入图,A1 HAS_FINDING :Finding 节点", nf >= 1, "finding 节点=%d" % nf)
+
+        # ── Phase 2 真机:另一条同类告警 A2 复用 → CONCLUDED{method:'reuse'} 指向 A1 的同一个 Verdict(跨告警共享)──
+        others = [u for u in uids if u != threat_uid]
+        if not others:
+            check("Phase2:有第二条 jon.snow 告警可验跨告警复用", False, "候选里只有 1 条,补造样例再验")
+        else:
+            a2 = others[0]
+            r3, rep3, _ = run_pipeline(pl, a2, mode="recipe")
+            print("  · A2 %s: decision=%s reuse_verdict_id=%s" % (a2[:10], rep3.decision, r3.reuse_verdict_id))
+            check("Phase2:A2 复用命中 AUTO_TP", rep3.decision == "AUTO_TP", "decision=%s" % rep3.decision)
+            row = pl.graph.run_cypher(
+                "MATCH (a2:Alert {alert_uid:$a2})-[c:CONCLUDED]->(v:Verdict) "
+                "OPTIONAL MATCH (a1:Alert)-[:CONCLUDED {method:'llm'}]->(v) "
+                "RETURN c.method AS method, v.verdict_id AS vid, collect(DISTINCT a1.alert_uid) AS origins", a2=a2)
+            r = row[0] if row else {}
+            check("Phase2:A2 的 CONCLUDED.method='reuse'", r.get("method") == "reuse", "method=%s" % r.get("method"))
+            check("Phase2:A2 指向 A1(源判例)同一个 Verdict、能反查到源告警",
+                  threat_uid in (r.get("origins") or []), "vid=%s origins=%s" % (r.get("vid"), r.get("origins")))
+            # ★展示:从复用告警 A2 一条 Cypher 全查回 —— A2 自己的取证 + 源告警 A1 + A1 取证 + 处置
+            full = pl.graph.run_cypher(
+                "MATCH (a2:Alert {alert_uid:$a2})-[:CONCLUDED {method:'reuse'}]->(v:Verdict) "
+                "OPTIONAL MATCH (a2)-[:HAS_FINDING]->(f2:Finding) "
+                "OPTIONAL MATCH (a1:Alert)-[:CONCLUDED {method:'llm'}]->(v)-[:LED_TO]->(:ResponsePlan)-[:STEP]->(d:Disposition) "
+                "OPTIONAL MATCH (a1)-[:HAS_FINDING]->(f1:Finding) "
+                "RETURN head(collect(DISTINCT a1.alert_uid)) AS origin, count(DISTINCT f2) AS a2_find, "
+                "count(DISTINCT f1) AS a1_find, count(DISTINCT d) AS disp", a2=a2)[0]
+            check("Phase2:一条 Cypher 从复用告警查回 源告警+两边取证+处置",
+                  full.get("origin") == threat_uid and full.get("a2_find") >= 1 and full.get("disp") >= 1,
+                  "origin=%s a2取证=%s a1取证=%s 处置=%s"
+                  % (str(full.get("origin"))[:10], full.get("a2_find"), full.get("a1_find"), full.get("disp")))
 finally:
     pl.close()
 
