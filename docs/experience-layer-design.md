@@ -51,7 +51,9 @@
      →【研判】① 误报业务指纹命中 → 直接判 FP（复用剧本,终局）
               ② 威胁指纹命中 且 威胁规则命中 → 判 TP（复用剧本）
               ③ 其余（只中其一/都不中/误报命中但有威胁信号）→ 落 LLM 完整研判
-                 （把"命中/未命中了哪些指纹与规则"作为已知信息喂进 LLM）
+                 （把"命中了哪条指纹/规则 + 它蒸自哪条告警的原始台账"作为已知信息喂进 LLM;
+                   命中经验只存来源告警 VID(=origin_case_id),FALLTHROUGH 时按 VID 从图台账
+                   捞回原告警字段/Verdict 结论·理由/处置 —— 台账永久保存,永久可捞）
      →【处置】命中经验 → 复用已沉淀剧本模板（重绑实体）
               走完整研判 → Composer 现场组
      →（回流）完整研判的新案例 → 蒸馏 指纹+规则+剧本 → 经验库增厚（越用越宽）
@@ -79,13 +81,15 @@
 - **先行迁移 kerberoast + lsass 两 recipe 的 findings 词典**;其余 14 recipe 走 `from_legacy`（永远走 LLM、零 regression）,逐 skill 迁移即铺开。
 - 真机:误报 e2e 8/8、威胁 e2e 12/12（新研判机 9b）。
 
-## 8. ★已知偏差与待补（下一步要修）
-- **指纹越权 → 威胁收敛脆**:`fingerprint.py::_fid_matches` 不只看 finding ID,还逐个校验 **canon attr 值一致**（把 `spn_fanout.distinct_targets=7` 这种裸值钉进指纹）→ 换实例掉链 → 反复 FALLTHROUGH 重研判 + 膨胀。**修:回归 §3.3——指纹只做 finding-ID 加权重合度召回,去掉 canon attr 值比对;值/桶判断全归 DSL 规则**。
-- **收敛守卫缺失**:旧 `pattern_id` 去重键回退时删了、无替代 → 每次 FALLTHROUGH 过考试就插新行。**修:sediment 前先"已有 active 经验能否 fire 在这些 findings 上",能就不新增。**
-- **生命周期是死代码**:`set_status`/`bump_override` 定义了从没被调用,无再考试/归档/降级。**修:接上——0 命中归档、被推翻降级。**
-- **误报那半基本符合设计**（阈值 0.8、单门、占位符抽象）→ 稳。问题集中在威胁半。
+## 8. 偏差修复现状（2026-07-20 一轮修完 Fix 1–4a）
+- ✅ **指纹越权 → 威胁收敛脆**（`826381a`）:曾 `fingerprint.py::_fid_matches` 逐个校验 canon attr **值一致**（`spn_fanout.distinct_targets=7` 钉死）→ 换实例掉链。**已修:`match` 加 `recall_only`,`matching.fingerprint_hit` 让威胁指纹走纯 finding-ID 召回,值/桶判断全归 DSL 规则（§3.3）。误报半不动（仍比对 src_image 等白标记,守红线）。**
+- ✅ **命中信息喂 LLM 从"计数"→"哪条+为什么+原始台账"**（`348fbb1`+`f353768`):命中经验只存来源告警 VID（`origin_case_id`=alert_uid,已存,不加副本）;FALLTHROUGH 时 `cli._recall_hit_ledgers` 按 VID 用 `graph.recall_ledger` 从图台账捞回（★summary/rationale 在 CONCLUDED 边;`__no_op__` 单例过滤）,`consult.MatchReport.as_context` 逐条渲染。顺带补存被丢的 `note`（distill→Experience→openGauss,幂等 ALTER 迁旧表）。
+- ✅ **收敛守卫**（`530af05`）:`exam.sediment` 在 add 前查"已有 active 同类经验能否 fire 在这些 findings 上",能就不新增、只记一次命中（替代删掉的 `pattern_id` 去重;防批量重派生/竞态膨胀）。
+- ⏳ **生命周期只做了一半**:`bump_hit` 已接（AUTO 命中 + 收敛复用都 +1）。**未接:被人工推翻→`bump_override`+降级 `hint_only`、长期 0 命中→`archived`。** 卡点=处置计划(plan_id)与所复用经验(exp_id)之间无干净链接,且 `respond_cli` 走 Neo4j 图、经验库在 openGauss（跨库）;0 命中归档还需 age 策略。→ **留到 daemon 阶段一并设计（lifecycle 的自然归属）,见 §9。**
+- **误报那半基本符合设计**（阈值 0.8、单门、占位符抽象、值比对未动）→ 稳。
 
 ## 9. 下一步（本文之后单独立项）
 - **告警轮询 daemon**:轮询未研判告警（`NOT (a)-[:CONCLUDED]->()` + settle 窗）→ 逐条跑 `run_pipeline` → 台账+沉淀。单实例、串行（收敛修好后稳态几乎全 AUTO,冷启动量=模式数不是告警数）。毒告警死信、`--once/--selftest/常驻`。骨架照搬被删的那版、接到新 `run_pipeline`。
 - **并发**:vLLM 能并发（max-num-seqs 256）,客户端唯一阻塞=共享 psycopg2 连接（要连接池/每 worker 一连接）+ `ExperienceCache` 加锁。先串行、按需再上。
-- 顺序建议:① 修威胁收敛（§8）→ ② 真告警批量定量验复用（沉淀行数 vs AUTO 命中率）→ ③ daemon 串行版 → ④ 按需并发/放开处置。
+- **生命周期（§8 未接的那半）在此并入**:daemon 是周期性维护的自然归属 —— 需先给 plan↔exp 建干净链接（AUTO 复用时把 exp_id 落到台账/plan 属性,而非埋在 rationale 文本）,`respond_cli` reject/rollback 时按之 `bump_override`+跨库降级 `hint_only`;再加"created_at 够老且 0 命中→archived"的归档巡检。
+- 顺序:① 修威胁收敛（§8,✅ 已完成 Fix 1–4a）→ ② 真告警批量定量验复用（沉淀行数 vs AUTO 命中率、FALLTHROUGH 上下文非空）→ ③ daemon 串行版（并入生命周期链接）→ ④ 按需并发/放开处置。
