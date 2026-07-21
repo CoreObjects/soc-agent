@@ -109,7 +109,9 @@ def build_write_statements(alert_uid, result):
 #   d0=无处置 `Disposition{step_key:'__no_op__'}` 单例(直连 Verdict,无 ResponsePlan)→ shape 里过滤掉。
 _LEDGER_CYPHER = (
     "MATCH (a:Alert {alert_uid:$uid})-[c:CONCLUDED]->(v:Verdict) "
-    "WITH a, c, v ORDER BY c.at DESC LIMIT 1 "                      # 多次研判取最近一次
+    "WITH a, c, v LIMIT 1 "                                         # 取一条结论(生产中一告警一结论;
+    # ★台账 CONCLUDED 边当前无真实时间戳(investigated_at 从没被赋值)→ 无法可靠"取最近一次"。
+    #   daemon 阶段补台账时间戳(settle 窗 + 按龄归档都需要)后,这里再改回 ORDER BY 时间 DESC。
     "OPTIONAL MATCH (v)-[:LED_TO]->(:ResponsePlan)-[:STEP]->(d:Disposition) "
     "OPTIONAL MATCH (v)-[:LED_TO]->(d0:Disposition) "              # 无处置 __no_op__ 单例
     "RETURN a{.source,.sensor,.rule_id,.rule_description,.severity,.technique_ids} AS alert, "
