@@ -106,6 +106,25 @@ try:
             "MATCH (a:Alert {alert_uid:$u})-[:CONCLUDED]->(:Verdict)-[:LED_TO]->(:ResponsePlan)-[:STEP]->(d:Disposition) "
             "RETURN count(d) AS n", u=threat_uid)[0]["n"]
         check("台账写了处置计划(proposed,待 respond_cli 人审)", rp >= 1, "disposition 台账=%d" % rp)
+
+        # ── Fix 2 真机验证:按 VID(=命中经验 origin_case_id)从图台账捞回原始上下文 ──
+        # 证真 Cypher 对真 schema 生效(★summary/rationale 在 CONCLUDED 边;处置形状;__no_op__ 过滤)。
+        led = pl.graph.recall_ledger(threat_uid)
+        check("recall_ledger 按 VID 捞回台账", led is not None,
+              "keys=%s" % (sorted(led.keys()) if led else None))
+        if led:
+            check("台账含 Verdict 结论", led.get("verdict") == "true_positive",
+                  "verdict=%s" % led.get("verdict"))
+            check("台账含结论理由(★取自 CONCLUDED 边)", bool(led.get("summary") or led.get("rationale")),
+                  "summary=%s" % (str(led.get("summary"))[:60]))
+            check("台账含真处置(非 __no_op__)", bool(led.get("dispositions")),
+                  "disp=%s" % [d.get("action") for d in (led.get("dispositions") or [])])
+        # 证真 Experience 带来源 VID + note 列 round-trip(note 迁移列真机可读)
+        te2 = [e for e in pl.exp_store.by_kind("kerberoast", "threat")][0]
+        check("威胁经验存了来源告警 VID(origin_case_id)", bool(te2.origin_case_id),
+              "origin_case_id=%s" % te2.origin_case_id)
+        check("openGauss note 列可读(round-trip 不报错)", hasattr(te2, "note"),
+              "note=%s" % (str(te2.note)[:40] if te2.note else None))
 finally:
     pl.close()
 
