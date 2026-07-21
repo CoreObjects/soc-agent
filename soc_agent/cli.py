@@ -212,6 +212,30 @@ def _compose_dispositions(pl, result, forensics, skill, seed):
         result.playbook = [t.to_dict() for t in templates]
 
 
+def _recall_hit_ledgers(graph, report):
+    """FALLTHROUGH:对命中经验的来源告警(origin_case_id=VID),从图台账捞回原始上下文喂 LLM。
+
+    命中的指纹/规则只是"召回",大模型要独立研判 → 得看到"命中的这条经验当初是从哪条告警蒸的、
+    那次判成啥、为什么、怎么处置的"。台账永久保存,按 VID 永久可捞。捞不到/无该方法 → 优雅降级。
+    """
+    recall = getattr(graph, "recall_ledger", None)
+    if recall is None:
+        return {}
+    uids, out = [], {}
+    for e in (report.benign_fp_hits + report.threat_fp_hits + report.threat_rule_hits):
+        u = getattr(e, "origin_case_id", None)
+        if u and u not in uids:
+            uids.append(u)
+    for u in uids:
+        try:
+            led = recall(u)
+        except Exception:
+            led = None
+        if led:
+            out[u] = led
+    return out
+
+
 def run_pipeline(pl, alert_uid, mode="recipe"):
     """跑一条告警的完整流水线。返回 (result, report, picked)。"""
     node = pl.graph.get_alert(alert_uid)
@@ -229,6 +253,7 @@ def run_pipeline(pl, alert_uid, mode="recipe"):
         result, picked = _reuse_fp(pl, alert, forensics, report.chosen), "经验复用(AUTO_FP)"
         pl.exp_store.bump_hit(report.chosen.exp_id)
     else:                                                                       # FALLTHROUGH → LLM 研判
+        report.recalled = _recall_hit_ledgers(pl.graph, report)                # 命中经验来源告警的图台账 → 喂 LLM
         inv, picked = choose_investigator(skill, mode, pl.agent_inv, pl.recipe_inv)
         result = inv.investigate(alert, seed=seed, skill=skill, forensics=forensics, match_report=report)
         if result.verdict and result.verdict.verdict == "true_positive":

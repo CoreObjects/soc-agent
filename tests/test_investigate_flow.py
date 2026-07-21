@@ -30,15 +30,19 @@ class _Skill:
 
 
 class _Graph:
-    def __init__(self, node):
+    def __init__(self, node, ledgers=None):
         self.node = node
         self.written = []
+        self.ledgers = ledgers or {}          # uid → 台账 dict(供 recall_ledger 桩)
 
     def get_alert(self, uid):
         return self.node
 
     def seed(self, alert):
         return {}
+
+    def recall_ledger(self, uid):
+        return self.ledgers.get(uid)
 
     def write_result(self, uid, result):
         self.written.append((uid, result))
@@ -145,6 +149,28 @@ def test_fallthrough_llm_tp_composes_and_sediments():
     assert len(active) == 1 and active[0].kind == "threat"
     assert active[0].playbook == result.playbook
     assert pl.case_store.by_skill("kerberoast")                  # 案例快照进语料
+
+
+def test_fallthrough_recalls_hit_experience_ledger():
+    # FALLTHROUGH 且命中威胁指纹(规则不中)→ 用命中经验的 origin_case_id 从图台账捞回原始上下文喂 LLM
+    store = ExperienceCache(InMemoryExperienceStore())
+    exp = Experience(skill="kerberoast", kind="threat", verdict="true_positive",
+                     fingerprint=build_fingerprint(_FINDINGS, _BINDINGS),
+                     rule={"exists": "kerberoast.zzz"}, origin_case_id="a0")   # 规则要不存在的 finding
+    store.add(exp)
+    fp = InvestigationResult(alert_uid="a1", path="B", skill="kerberoast",
+                             verdict=Verdict("false_positive", confidence=0.9, rationale="核后误报", agent="q"))
+    llm = FakeLLMClient([LLMResponse(tool_calls=[ToolCall("1", DISTILL, {
+        "decisive_finding_ids": ["kerberoast.spn_fanout"]})])])
+    pl, inv = _pipeline(store, inv_result=fp, llm=llm)
+    ledger = {"alert_uid": "a0", "verdict": "true_positive", "summary": "历史:jon.snow roast 多个 SPN",
+              "dispositions": [{"action": "disable_account", "target": "jon.snow"}]}
+    pl.graph.ledgers = {"a0": ledger}
+    result, report, picked = run_pipeline(pl, "a1")
+    assert report.decision == "FALLTHROUGH"
+    assert report.threat_fp_hits and report.threat_fp_hits[0].origin_case_id == "a0"
+    assert report.recalled == {"a0": ledger}                          # ★捞回命中经验的原始台账
+    assert inv.calls[0]["match_report"].recalled == {"a0": ledger}    # ★喂给了 LLM
 
 
 def test_fallthrough_llm_fp_sediments_benign_no_compose():

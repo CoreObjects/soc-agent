@@ -24,6 +24,7 @@ class MatchReport:
     threat_rule_hits: list = field(default_factory=list)   # 威胁规则命中的经验
     threat_fires: list = field(default_factory=list)       # 点火(指纹∧规则)的威胁经验
     chosen: Optional[object] = None                        # AUTO_* 时复用其 verdict/剧本 的经验
+    recalled: dict = field(default_factory=dict)           # FALLTHROUGH:命中经验来源告警的图台账 {VID→ledger}
 
     def as_context(self) -> str:
         """FALLTHROUGH 时喂给 LLM 的"已知经验比对"上下文。"""

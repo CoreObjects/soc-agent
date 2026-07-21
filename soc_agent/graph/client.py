@@ -5,7 +5,8 @@
   write_result 走 execute_write,只写经验层(Verdict/Disposition)。
 neo4j 惰性导入(方法内),故 build_write_statements 等纯逻辑本机可测、不需装 neo4j。
 """
-__all__ = ["Neo4jGraph", "build_write_statements", "build_constraints"]
+__all__ = ["Neo4jGraph", "build_write_statements", "build_constraints",
+           "shape_ledger", "recall_ledger"]
 
 # 处置目标类型 → (实体 label, 匹配字段);:ON 绑真实体用。label/字段来自固定表,非用户输入 → 安全内插。
 # ★匹配字段取"处置目标值就是那个字段"的:sam(账号)/ip/process_guid/sha256(文件的图唯一键)/fqdn(域)。
@@ -102,6 +103,35 @@ def build_write_statements(alert_uid, result):
     return stmts
 
 
+# 按 alert_uid(命中经验的来源 VID)捞回台账「原始上下文」:原告警字段 + Verdict 结论/理由 + 处置。
+# ★台账永久保存(prune 只清 :Event + 高基数对象,不碰 Alert/Verdict/ResponsePlan/Disposition)→ 事后永久可捞。
+# ★summary/rationale/confidence 挂在 CONCLUDED 边(取 c. 不是 v.);d=经 ResponsePlan 的真处置,
+#   d0=无处置 `Disposition{step_key:'__no_op__'}` 单例(直连 Verdict,无 ResponsePlan)→ shape 里过滤掉。
+_LEDGER_CYPHER = (
+    "MATCH (a:Alert {alert_uid:$uid})-[c:CONCLUDED]->(v:Verdict) "
+    "WITH a, c, v ORDER BY c.at DESC LIMIT 1 "                      # 多次研判取最近一次
+    "OPTIONAL MATCH (v)-[:LED_TO]->(:ResponsePlan)-[:STEP]->(d:Disposition) "
+    "OPTIONAL MATCH (v)-[:LED_TO]->(d0:Disposition) "              # 无处置 __no_op__ 单例
+    "RETURN a{.source,.sensor,.rule_id,.rule_description,.severity,.technique_ids} AS alert, "
+    "  v.verdict AS verdict, c.summary AS summary, c.rationale AS rationale, c.confidence AS confidence, "
+    "  [x IN collect(DISTINCT d)+collect(DISTINCT d0) WHERE x IS NOT NULL | "
+    "     x{.action,.target,.target_kind,.status}] AS dispositions"
+)
+
+_NOOP_ACTIONS = (None, "", "none")
+
+
+def shape_ledger(rows):
+    """run_cypher 的行 → 干净台账 dict(过滤无处置 __no_op__ 单例)。空 → None。"""
+    if not rows:
+        return None
+    r = rows[0]
+    disps = [d for d in (r.get("dispositions") or []) if (d or {}).get("action") not in _NOOP_ACTIONS]
+    return {"alert": r.get("alert") or {}, "verdict": r.get("verdict"),
+            "summary": r.get("summary"), "rationale": r.get("rationale"),
+            "confidence": r.get("confidence"), "dispositions": disps}
+
+
 _SEED_CYPHER = (
     "MATCH (a:Alert {alert_uid:$u})<-[:TRIGGERED]-(e:Event) "
     "OPTIONAL MATCH (e)-[:BY]->(subj) "
@@ -133,6 +163,13 @@ class Neo4jGraph:
     def get_alert(self, alert_uid):
         rows = self.run_cypher("MATCH (a:Alert {alert_uid:$u}) RETURN a{.*} AS a", u=alert_uid)
         return rows[0]["a"] if rows else None
+
+    def recall_ledger(self, alert_uid):
+        """按 alert_uid 捞回该告警的台账原始上下文(供命中经验喂 LLM)。无 → None。"""
+        led = shape_ledger(self.run_cypher(_LEDGER_CYPHER, uid=alert_uid))
+        if led is not None:
+            led["alert_uid"] = alert_uid          # 回填 VID,自描述
+        return led
 
     def seed(self, alert):
         """骨架保底:反查触发事件 → 主语/宾语/次要实体。返回 {event, subject, related}。"""
