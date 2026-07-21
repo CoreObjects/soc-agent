@@ -1,12 +1,25 @@
-=== e2e-threat  2026-07-21 06:06Z ===
+=== e2e-threat  2026-07-21 06:33Z ===
+Received notification from DBMS server: <GqlStatusObject gql_status='01N52', status_description='warn: property key does not exist. The property `at` does not exist. Verify that the spelling is correct.', position=<SummaryInputPosition line=1, column=85, offset=84>, raw_classification='UNRECOGNIZED', classification=<NotificationClassification.UNRECOGNIZED: 'UNRECOGNIZED'>, raw_severity='WARNING', severity=<NotificationSeverity.WARNING: 'WARNING'>, diagnostic_record={'_classification': 'UNRECOGNIZED', '_severity': 'WARNING', '_position': {'offset': 84, 'line': 1, 'column': 85}, 'OPERATION': '', 'OPERATION_CODE': '0', 'CURRENT_SCHEMA': '/'}> for query: 'MATCH (a:Alert {alert_uid:$uid})-[c:CONCLUDED]->(v:Verdict) WITH a, c, v ORDER BY c.at DESC LIMIT 1 OPTIONAL MATCH (v)-[:LED_TO]->(:ResponsePlan)-[:STEP]->(d:Disposition) OPTIONAL MATCH (v)-[:LED_TO]->(d0:Disposition) RETURN a{.source,.sensor,.rule_id,.rule_description,.severity,.technique_ids} AS alert,   v.verdict AS verdict, c.summary AS summary, c.rationale AS rationale, c.confidence AS confidence,   [x IN collect(DISTINCT d)+collect(DISTINCT d0) WHERE x IS NOT NULL |      x{.action,.target,.target_kind,.status}] AS dispositions'
   [PASS] 经验库=openGauss(非内存降级) — store=OpenGaussExperienceStore
   [PASS] 找到请求者含 jon.snow 的未研判 kerberoast 告警 — 候选 5 [('jon.snow', 'NORTH'), ('jon.snow', 'NORTH'), ('jon.snow', 'NORTH'), ('jon.snow', 'NORTH'), ('jon.snow', 'NORTH')]
-  · pass1 74b48ee07c: decision=FALLTHROUGH verdict=true_positive dispositions=2 threat经验:0→0 LLM=4
-  · pass1 59a329ed4a: decision=FALLTHROUGH verdict=true_positive dispositions=2 threat经验:0→0 LLM=4
-  · pass1 ec0205804b: decision=FALLTHROUGH verdict=true_positive dispositions=2 threat经验:0→0 LLM=4
-  · pass1 609134eb68: decision=FALLTHROUGH verdict=true_positive dispositions=2 threat经验:0→0 LLM=4
-  · pass1 9491bbb235: decision=FALLTHROUGH verdict=true_positive dispositions=2 threat经验:0→0 LLM=4
-  [FAIL] 完整研判后蒸出威胁经验 — 候选都没判 TP(qwen 判 FP/suspicious?看上面 pass1 verdict)
+  · pass1 74b48ee07c: decision=FALLTHROUGH verdict=true_positive dispositions=2 threat经验:0→1 LLM=4
+  [PASS] pass1 判 TP 并蒸出威胁经验 — verdict=true_positive
+  [PASS] pass1 组了处置剧本(Composer 挑原语绑 attacker_account) — steps=2 actions=['escalate', 'escalate']
+  [PASS] 威胁经验带 DSL 规则 — rule={'and': [{'exists': 'kerberoast.rc4_requested'}, {'gte': ['kerberoast.
+  [PASS] 威胁经验带处置剧本模板 — steps=2
+  · pass2 74b48ee07c: decision=AUTO_TP path=A dispositions=2 LLM=1
+  [PASS] pass2 威胁双门命中 → AUTO_TP — decision=AUTO_TP
+  [PASS] pass2 走快路径 path=A — path=A
+  [PASS] pass2 复用剧本组出处置(proposed) — dispositions=2
+  [PASS] pass2 研判/处置 0 LLM(≤routing 1 次) — LLM=1
+  [PASS] 图台账出现 path=A 的 CONCLUDED — path=A 边=1
+  [PASS] 台账写了处置计划(proposed,待 respond_cli 人审) — disposition 台账=4
+  [PASS] recall_ledger 按 VID 捞回台账 — keys=['alert', 'alert_uid', 'confidence', 'dispositions', 'rationale', 'summary', 'verdict']
+  [PASS] 台账含 Verdict 结论 — verdict=true_positive
+  [PASS] 台账含结论理由(★取自 CONCLUDED 边) — summary=经验复用:威胁指纹∧规则双门命中
+  [PASS] 台账含真处置(非 __no_op__) — disp=['escalate', 'escalate']
+  [PASS] 威胁经验存了来源告警 VID(origin_case_id) — origin_case_id=74b48ee07c2bf59c1509bed372d1f453a8b639524cbc1c9bc562ae81fb040509
+  [PASS] openGauss note 列可读(round-trip 不报错) — note=普通用户请求 RC4 票据且存在多目标扇出行为，符合 Kerberoast 扫描
 
-=== E2E-THREAT: 2/3 通过 ★有失败,见上 ===
+=== E2E-THREAT: 18/18 通过  ===
 === done ===
