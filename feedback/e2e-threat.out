@@ -1,25 +1,32 @@
-=== e2e-threat  2026-07-21 07:41Z ===
+=== e2e-threat  2026-07-21 10:39Z ===
   [PASS] 经验库=openGauss(非内存降级) — store=OpenGaussExperienceStore
   [PASS] 找到请求者含 jon.snow 的未研判 kerberoast 告警 — 候选 5 [('jon.snow', 'NORTH'), ('jon.snow', 'NORTH'), ('jon.snow', 'NORTH'), ('jon.snow', 'NORTH'), ('jon.snow', 'NORTH')]
-  · pass1 74b48ee07c: decision=FALLTHROUGH verdict=true_positive dispositions=2 threat经验:0→1 LLM=4
+  · pass1 74b48ee07c: decision=FALLTHROUGH verdict=true_positive dispositions=3 threat经验:0→1 LLM=4
   [PASS] pass1 判 TP 并蒸出威胁经验 — verdict=true_positive
-  [PASS] pass1 组了处置剧本(Composer 挑原语绑 attacker_account) — steps=2 actions=['escalate', 'escalate']
-  [PASS] 威胁经验带 DSL 规则 — rule={'and': [{'exists': 'kerberoast.rc4_requested'}, {'gt': ['kerberoast.s
-  [PASS] 威胁经验带处置剧本模板 — steps=2
-  · pass2 74b48ee07c: decision=AUTO_TP path=A dispositions=2 LLM=1
+  [PASS] pass1 组了处置剧本(Composer 挑原语绑 attacker_account) — steps=3 actions=['escalate', 'escalate', 'escalate']
+  [PASS] 威胁经验带 DSL 规则 — rule={'and': [{'exists': 'kerberoast.rc4_requested'}, {'eq': ['kerberoast.s
+  [PASS] 威胁经验带处置剧本模板 — steps=3
+  · pass2 74b48ee07c: decision=AUTO_TP path=A dispositions=3 LLM=1
   [PASS] pass2 威胁双门命中 → AUTO_TP — decision=AUTO_TP
   [PASS] pass2 走快路径 path=A — path=A
-  [PASS] pass2 复用剧本组出处置(proposed) — dispositions=2
+  [PASS] pass2 复用剧本组出处置(proposed) — dispositions=3
   [PASS] pass2 研判/处置 0 LLM(≤routing 1 次) — LLM=1
   [PASS] 图台账出现 path=A 的 CONCLUDED — path=A 边=1
-  [PASS] 台账写了处置计划(proposed,待 respond_cli 人审) — disposition 台账=4
+  [PASS] 台账写了处置计划(proposed,待 respond_cli 人审) — disposition 台账=3
   [PASS] recall_ledger 按 VID 捞回台账 — keys=['alert', 'alert_uid', 'confidence', 'dispositions', 'rationale', 'summary', 'verdict']
   [PASS] 台账含 Verdict 结论 — verdict=true_positive
-  [PASS] 台账含结论理由(★取自 CONCLUDED 边) — summary=普通用户 jon.snow 对服务账号 sansa.stark 请求 RC4 加密票据，且存在短时多目标(SPAN 扇出
-  [PASS] 台账含真处置(非 __no_op__) — disp=['escalate', 'escalate']
-  [PASS] 台账 CONCLUDED 边有真实时间戳 c.at(非 null;无 Neo4j 属性缺失警告) — c.at=['2026-07-21T07:41:15.922Z', '2026-07-21T07:41:01.104Z']
+  [PASS] 台账含结论理由(★取自 CONCLUDED 边) — summary=普通用户 jon.snow 对服务账号 sansa.stark 请求 RC4 票据，且存在短时多目标扇出行为，符合 Ke
+  [PASS] 台账含真处置(非 __no_op__) — disp=['escalate', 'escalate', 'escalate']
+  [PASS] 台账 CONCLUDED 边有真实时间戳 c.at(非 null;无 Neo4j 属性缺失警告) — c.at=['2026-07-21T10:39:40.513Z']
   [PASS] 威胁经验存了来源告警 VID(origin_case_id) — origin_case_id=74b48ee07c2bf59c1509bed372d1f453a8b639524cbc1c9bc562ae81fb040509
-  [PASS] openGauss note 列可读(round-trip 不报错) — note=普通用户请求 RC4 票据且存在扇出行为（排除单票基线）
+  [PASS] 威胁经验存了源 Verdict id(origin_verdict_id,复用凭它指向旧 Verdict) — origin_verdict_id=e51c965f62b9442eb04bb487eb2327cb
+  [PASS] openGauss note 列可读(round-trip 不报错) — note=普通用户请求 RC4 票据且存在多目标扇出行为，确认为 Kerberoast 攻
+  [PASS] Phase1:取证入图,A1 HAS_FINDING :Finding 节点 — finding 节点=3
+  · A2 59a329ed4a: decision=AUTO_TP reuse_verdict_id=e51c965f62b9442eb04bb487eb2327cb
+  [PASS] Phase2:A2 复用命中 AUTO_TP — decision=AUTO_TP
+  [PASS] Phase2:A2 的 CONCLUDED.method='reuse' — method=reuse
+  [PASS] Phase2:A2 指向 A1(源判例)同一个 Verdict、能反查到源告警 — vid=e51c965f62b9442eb04bb487eb2327cb origins=['74b48ee07c2bf59c1509bed372d1f453a8b639524cbc1c9bc562ae81fb040509']
+  [PASS] Phase2:一条 Cypher 从复用告警查回 源告警+两边取证+处置 — origin=74b48ee07c a2取证=3 a1取证=3 处置=3
 
-=== E2E-THREAT: 19/19 通过  ===
+=== E2E-THREAT: 25/25 通过  ===
 === done ===
