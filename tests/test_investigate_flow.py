@@ -115,6 +115,20 @@ def test_auto_tp_reuses_experience_without_llm():
     assert pl.graph.written and pl.graph.written[0][1] is result  # 台账照写
 
 
+def test_auto_tp_reuse_carries_origin_verdict_id():
+    # 复用带上经验记住的源 Verdict id → 写台账时 CONCLUDED 指向旧 Verdict(不新建)
+    store = ExperienceCache(InMemoryExperienceStore())
+    exp = _threat_exp(playbook=[PrimitiveStepTemplate(
+        order=1, primitive="disable_account",
+        params={"sam": {"source": "entity_role", "role": "attacker_account"}}, risk="high").to_dict()])
+    exp.origin_verdict_id = "ORIGIN_V"
+    store.add(exp)
+    pl, inv = _pipeline(store)
+    result, report, picked = run_pipeline(pl, "a1")
+    assert report.decision == "AUTO_TP"
+    assert result.reuse_verdict_id == "ORIGIN_V"
+
+
 def test_auto_fp_suppresses_without_llm():
     store = ExperienceCache(InMemoryExperienceStore())
     store.add(Experience(skill="kerberoast", kind="benign_fp", verdict="false_positive",

@@ -61,6 +61,16 @@ def test_distill_no_toolcall_returns_none():
     assert distill(llm, _Skill(), _findings(), {}, v) is None
 
 
+def test_distill_stores_origin_verdict_id():
+    # 经验记住源 Verdict 的 id(复用时凭它把新告警的 CONCLUDED 指向旧 Verdict,而非新建)
+    v = Verdict(verdict="true_positive", confidence=0.9, rationale="r", agent="q")
+    exp = distill(_llm({"decisive_finding_ids": ["kerberoast.rc4_requested"],
+                        "rule": {"exists": "kerberoast.rc4_requested"}}),
+                  _Skill(), _findings(), {}, v)
+    assert exp.origin_verdict_id == v.verdict_id
+    assert exp.to_dict()["origin_verdict_id"] == v.verdict_id      # round-trip
+
+
 def test_distill_stores_note():
     # LLM 给的"本质"一句话要存下(供命中时喂 LLM 的上下文更有意义),不能丢
     llm = _llm({"decisive_finding_ids": ["kerberoast.rc4_requested"],

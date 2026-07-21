@@ -12,7 +12,7 @@ from .cases import Case, CaseStore
 from .store import EXP_STATUSES, Experience, ExperienceStore
 
 _EXP_COLS = ("exp_id, skill, kind, verdict, fingerprint, rule, playbook, status, "
-             "hit_count, override_count, origin_case_id, note, created_by, created_at")
+             "hit_count, override_count, origin_case_id, origin_verdict_id, note, created_by, created_at")
 
 
 def _connect(cfg):
@@ -29,9 +29,11 @@ def ddl(schema) -> list:
               verdict varchar(32) NOT NULL, fingerprint text, rule text, playbook text,
               status varchar(16) NOT NULL DEFAULT 'active', hit_count integer NOT NULL DEFAULT 0,
               override_count integer NOT NULL DEFAULT 0, origin_case_id varchar(64),
-              note text, created_by varchar(128), created_at timestamptz DEFAULT now())""",
-        # 迁移:已存在的旧表补 note 列(CREATE IF NOT EXISTS 不会改老表)。幂等。
+              origin_verdict_id varchar(64), note text,
+              created_by varchar(128), created_at timestamptz DEFAULT now())""",
+        # 迁移:已存在的旧表补列(CREATE IF NOT EXISTS 不会改老表)。幂等。
         f"ALTER TABLE {schema}.experience ADD COLUMN IF NOT EXISTS note text",
+        f"ALTER TABLE {schema}.experience ADD COLUMN IF NOT EXISTS origin_verdict_id varchar(64)",
         f"CREATE INDEX IF NOT EXISTS ix_exp_skill_status ON {schema}.experience(skill, status)",
         f"""CREATE TABLE IF NOT EXISTS {schema}.cases (
               case_id varchar(64) PRIMARY KEY, skill varchar(128) NOT NULL, alert_uid varchar(128) NOT NULL,
@@ -48,13 +50,13 @@ def ensure_schema(conn, schema) -> None:
 
 
 def _row_to_exp(row) -> Experience:
-    (exp_id, skill, kind, verdict, fp, rule, pb, status, hc, oc, ocid, note, cb, ca) = row
+    (exp_id, skill, kind, verdict, fp, rule, pb, status, hc, oc, ocid, ovid, note, cb, ca) = row
     return Experience(skill=skill, kind=kind, verdict=verdict,
                       fingerprint=json.loads(fp) if fp else {},
                       rule=json.loads(rule) if rule else None,
                       playbook=json.loads(pb) if pb else [],
                       status=status, hit_count=hc or 0, override_count=oc or 0,
-                      origin_case_id=ocid, note=note, created_by=cb,
+                      origin_case_id=ocid, origin_verdict_id=ovid, note=note, created_by=cb,
                       created_at=str(ca) if ca else None, exp_id=exp_id)
 
 
@@ -67,13 +69,14 @@ class OpenGaussExperienceStore(ExperienceStore):
         with self.conn.cursor() as cur:
             cur.execute(
                 f"INSERT INTO {self.t} (exp_id,skill,kind,verdict,fingerprint,rule,playbook,status,"
-                "hit_count,override_count,origin_case_id,note,created_by) "
-                "VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
+                "hit_count,override_count,origin_case_id,origin_verdict_id,note,created_by) "
+                "VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
                 (exp.exp_id, exp.skill, exp.kind, exp.verdict,
                  json.dumps(exp.fingerprint, ensure_ascii=False),
                  json.dumps(exp.rule, ensure_ascii=False) if exp.rule is not None else None,
                  json.dumps(exp.playbook, ensure_ascii=False),
-                 exp.status, exp.hit_count, exp.override_count, exp.origin_case_id, exp.note, exp.created_by))
+                 exp.status, exp.hit_count, exp.override_count, exp.origin_case_id,
+                 exp.origin_verdict_id, exp.note, exp.created_by))
         self.conn.commit()
         return exp.exp_id
 

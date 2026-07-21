@@ -56,6 +56,31 @@ def test_concluded_edge_stamps_server_time():
     assert "at" not in params["edge_props"]                        # 不再塞恒 null 的 investigated_at
 
 
+def test_llm_conclusion_marks_method_llm():
+    _c, params = build_write_statements("a1", _result([]))[0]
+    assert params["edge_props"]["method"] == "llm"
+
+
+def test_reuse_points_to_existing_verdict_no_new_node_no_downstream():
+    # 复用:CONCLUDED 指向旧 Verdict(源判例),method=reuse,不新建 Verdict、不覆盖其属性、下游处置完全复用(不写)
+    r = InvestigationResult(alert_uid="a2", path="A", skill="kerberoast",
+                            verdict=Verdict("true_positive", confidence=0.9, agent="q"),
+                            dispositions=[Disposition(action="disable_account", target="x", risk="high")],
+                            findings=[Finding("kerberoast.rc4_requested", {"enc": "0x17"})],
+                            reuse_verdict_id="ORIGIN_V")
+    stmts = build_write_statements("a2", r)
+    concl = [(c, p) for c, p in stmts if "CONCLUDED" in c]
+    assert len(concl) == 1
+    c, p = concl[0]
+    assert p["vkey"] == "ORIGIN_V"                                  # 指向源判例 verdict_id
+    assert "MATCH (a:Alert {alert_uid:$alert_uid}), (v:Verdict {verdict_id:$vkey})" in c
+    assert "MERGE (a)-[c:CONCLUDED]->(v) " in c                     # MERGE 边到已 MATCH 的 v(不 inline 新建)
+    assert "node_props" not in p                                   # 不写/覆盖 Verdict 节点属性
+    assert p["edge_props"]["method"] == "reuse"
+    assert not any(("ResponsePlan" in cc or "STEP" in cc or "__no_op__" in cc) for cc, _ in stmts)  # 下游不写
+    assert any("HAS_FINDING" in cc for cc, _ in stmts)             # 但复用告警自己的取证要写
+
+
 def test_response_plan_ledger_with_steps_and_on_entity():
     r = _result([Disposition(action="disable_account", target="jon.snow", risk="high",
                              rollback_handle={"inverse": "enable_account", "params": {"sam": "jon.snow"}})])

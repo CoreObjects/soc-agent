@@ -190,7 +190,8 @@ def _reuse_tp(pl, alert, forensics, chosen):
                 agent=pl.agent_name)
     return InvestigationResult(alert_uid=alert.alert_uid, path="A", verdict=v, dispositions=disps,
                                skill=chosen.skill, findings=list(forensics.findings),
-                               bindings=dict(forensics.bindings))
+                               bindings=dict(forensics.bindings),
+                               reuse_verdict_id=chosen.origin_verdict_id)   # 复用→CONCLUDED 指向源判例 Verdict
 
 
 def _reuse_fp(pl, alert, forensics, chosen):
@@ -201,7 +202,8 @@ def _reuse_fp(pl, alert, forensics, chosen):
                 agent=pl.agent_name)
     return InvestigationResult(alert_uid=alert.alert_uid, path="A", verdict=v, dispositions=[],
                                skill=chosen.skill, findings=list(forensics.findings),
-                               bindings=dict(forensics.bindings))
+                               bindings=dict(forensics.bindings),
+                               reuse_verdict_id=chosen.origin_verdict_id)   # 复用→CONCLUDED 指向源判例 Verdict
 
 
 def _compose_dispositions(pl, result, forensics, skill, seed):

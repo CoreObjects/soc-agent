@@ -38,6 +38,23 @@ def build_constraints():
     ]
 
 
+def _finding_stmts(alert_uid, result):
+    """★取证入图:每条 finding 作 (:Finding) 挂 Alert(分析层,永久;prune 不碰非 :Event/非高基数标签)。
+    key=alert_uid#finding_id(每告警每类发现唯一→重研判幂等);attrs 存 json 串(Neo4j 属性不能是嵌套 dict)。"""
+    out = []
+    for f in (result.findings or []):
+        fkey = f"{alert_uid}#{f.finding_id}"
+        out.append((
+            "MATCH (a:Alert {alert_uid:$alert_uid}) "
+            "MERGE (a)-[:HAS_FINDING]->(fn:Finding {finding_key:$fkey}) SET fn += $props "
+            "RETURN fn.finding_key AS id",
+            {"alert_uid": alert_uid, "fkey": fkey,
+             "props": {"finding_key": fkey, "finding_id": f.finding_id,
+                       "attrs": json.dumps(f.attrs, ensure_ascii=False),
+                       "polarity": f.polarity, "evidence_ref": f.evidence_ref, "skill": result.skill}}))
+    return out
+
+
 def build_write_statements(alert_uid, result):
     """研判结果 → [(cypher, params)]。无 verdict → []。
 
@@ -51,8 +68,20 @@ def build_write_statements(alert_uid, result):
     if result is None or result.verdict is None:
         return []
     v = result.verdict
+
+    if result.reuse_verdict_id:
+        # ★复用(AUTO):CONCLUDED 指向源判例的旧 Verdict —— 不新建、不覆盖其节点属性,下游处置完全复用(不写)。
+        #   仍写本告警自己的取证。method='reuse' 区分于 llm 真研判(展示/统计靠它)。
+        reuse = [(
+            "MATCH (a:Alert {alert_uid:$alert_uid}), (v:Verdict {verdict_id:$vkey}) "
+            "MERGE (a)-[c:CONCLUDED]->(v) SET c += $edge_props, c.at = coalesce(c.at, toString(datetime())) "
+            "RETURN v.verdict_id AS id",
+            {"alert_uid": alert_uid, "vkey": result.reuse_verdict_id,
+             "edge_props": {"path": result.path, "confidence": v.confidence, "method": "reuse"}})]
+        return reuse + _finding_stmts(alert_uid, result)
+
     node_props = {"verdict": v.verdict, "lean": v.lean, "agent": v.agent, "verdict_id": v.verdict_id}
-    edge_props = {"path": result.path, "confidence": v.confidence,
+    edge_props = {"path": result.path, "confidence": v.confidence, "method": "llm",
                   "summary": v.summary, "rationale": v.rationale,
                   "evidence_refs": list(v.evidence_refs), "missing_evidence": list(v.missing_evidence)}
 
@@ -106,19 +135,7 @@ def build_write_statements(alert_uid, result):
             "MERGE (v)-[:LED_TO]->(n) RETURN n.step_key AS id",
             {"alert_uid": alert_uid, "vkey": vkey}))
 
-    # ★取证入图:每条 finding 作 (:Finding) 挂 Alert(分析层,永久;prune 不碰非 :Event/非高基数标签)。
-    #   key=alert_uid#finding_id(每告警每类发现唯一→重研判幂等);attrs 存 json 串(Neo4j 属性不能是嵌套 dict)。
-    for f in (result.findings or []):
-        fkey = f"{alert_uid}#{f.finding_id}"
-        stmts.append((
-            "MATCH (a:Alert {alert_uid:$alert_uid}) "
-            "MERGE (a)-[:HAS_FINDING]->(fn:Finding {finding_key:$fkey}) SET fn += $props "
-            "RETURN fn.finding_key AS id",
-            {"alert_uid": alert_uid, "fkey": fkey,
-             "props": {"finding_key": fkey, "finding_id": f.finding_id,
-                       "attrs": json.dumps(f.attrs, ensure_ascii=False),
-                       "polarity": f.polarity, "evidence_ref": f.evidence_ref, "skill": result.skill}}))
-    return stmts
+    return stmts + _finding_stmts(alert_uid, result)
 
 
 # 按 alert_uid(命中经验的来源 VID)捞回台账「原始上下文」:原告警字段 + Verdict 结论/理由 + 处置。

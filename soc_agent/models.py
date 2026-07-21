@@ -170,3 +170,4 @@ class InvestigationResult:
     findings: list = field(default_factory=list)       # list[Finding] 取证规范发现(供经验匹配/沉淀/案例快照)
     bindings: dict = field(default_factory=dict)       # 实体角色→值(供指纹占位符抽象 + 处置重绑)
     playbook: list = field(default_factory=list)       # list[PrimitiveStepTemplate.to_dict()] 处置剧本模板(供沉淀)
+    reuse_verdict_id: Optional[str] = None             # 复用(AUTO):CONCLUDED 指向的旧 Verdict id;写台账时不新建 Verdict、下游完全复用

@@ -72,4 +72,4 @@ def distill(llm, skill, findings, bindings, verdict, agent_name=None, origin_cas
     fp = build_fingerprint(findings, bindings, subset_ids=subset)
     return Experience(skill=(skill.name if skill else "unknown"), kind=kind, verdict=verdict.verdict,
                       fingerprint=fp, rule=rule, playbook=[], created_by=agent_name,
-                      origin_case_id=origin_case_id, note=note)
+                      origin_case_id=origin_case_id, origin_verdict_id=verdict.verdict_id, note=note)

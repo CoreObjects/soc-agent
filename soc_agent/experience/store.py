@@ -31,6 +31,7 @@ class Experience:
     hit_count: int = 0
     override_count: int = 0
     origin_case_id: Optional[str] = None             # 来源告警 alert_uid(=VID,凭它从图台账捞原始上下文)
+    origin_verdict_id: Optional[str] = None          # 来源 Verdict 的 id(复用时把新告警 CONCLUDED 指向它,不新建)
     note: Optional[str] = None                        # qwen 蒸馏给的"本质"一句话(命中时喂 LLM 作参照)
     created_by: Optional[str] = None
     created_at: Optional[str] = None
@@ -46,8 +47,8 @@ class Experience:
         return {"exp_id": self.exp_id, "skill": self.skill, "kind": self.kind, "verdict": self.verdict,
                 "fingerprint": self.fingerprint, "rule": self.rule, "playbook": list(self.playbook),
                 "status": self.status, "hit_count": self.hit_count, "override_count": self.override_count,
-                "origin_case_id": self.origin_case_id, "note": self.note, "created_by": self.created_by,
-                "created_at": self.created_at}
+                "origin_case_id": self.origin_case_id, "origin_verdict_id": self.origin_verdict_id,
+                "note": self.note, "created_by": self.created_by, "created_at": self.created_at}
 
     @classmethod
     def from_dict(cls, d: dict) -> "Experience":
@@ -55,7 +56,8 @@ class Experience:
                    fingerprint=dict(d.get("fingerprint") or {}), rule=d.get("rule"),
                    playbook=list(d.get("playbook") or []), status=d.get("status", "active"),
                    hit_count=int(d.get("hit_count") or 0), override_count=int(d.get("override_count") or 0),
-                   origin_case_id=d.get("origin_case_id"), note=d.get("note"), created_by=d.get("created_by"),
+                   origin_case_id=d.get("origin_case_id"), origin_verdict_id=d.get("origin_verdict_id"),
+                   note=d.get("note"), created_by=d.get("created_by"),
                    created_at=d.get("created_at"), exp_id=d.get("exp_id") or uuid4().hex)
 
 
