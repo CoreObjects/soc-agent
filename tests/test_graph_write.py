@@ -3,13 +3,38 @@
 第三类经验(历史台账):per-alert `(:Alert)-[:CONCLUDED]->(:Verdict {verdict_id})`;
 处置台账 `Verdict-[:LED_TO]->ResponsePlan-[:STEP]->Disposition-[:ON]->实体`;无处置 → LED_TO 无处置单例闭环。
 """
+from soc_agent.forensics import Finding
 from soc_agent.graph.client import build_constraints, build_write_statements
 from soc_agent.models import Disposition, InvestigationResult, Verdict
 
 
-def _result(dispositions):
+def _result(dispositions, findings=None):
     v = Verdict(verdict="true_positive", confidence=0.9, rationale="r", agent="qwen32b-ft")
-    return InvestigationResult(alert_uid="a1", path="B", verdict=v, dispositions=dispositions)
+    return InvestigationResult(alert_uid="a1", path="B", verdict=v, dispositions=dispositions,
+                               skill="kerberoast", findings=findings or [])
+
+
+def test_writes_findings_as_nodes_on_alert():
+    # 取证入图:每条 finding → (:Alert)-[:HAS_FINDING]->(:Finding);key=alert_uid#finding_id 幂等
+    r = _result([], findings=[Finding("kerberoast.rc4_requested", {"enc": "0x17"},
+                                      evidence_ref="ev1", polarity="red")])
+    finds = [(c, p) for c, p in build_write_statements("a1", r) if "HAS_FINDING" in c]
+    assert len(finds) == 1
+    c, p = finds[0]
+    assert ":Finding" in c and "HAS_FINDING" in c and "Finding {finding_key:$fkey}" in c
+    assert p["fkey"] == "a1#kerberoast.rc4_requested"
+    assert p["props"]["finding_id"] == "kerberoast.rc4_requested"
+    assert p["props"]["polarity"] == "red" and p["props"]["evidence_ref"] == "ev1"
+    assert p["props"]["skill"] == "kerberoast"
+    assert '"enc": "0x17"' in p["props"]["attrs"]                # attrs 存 json 串(Neo4j 属性不能是嵌套 dict)
+
+
+def test_no_findings_no_has_finding_stmts():
+    assert [c for c, _ in build_write_statements("a1", _result([])) if "HAS_FINDING" in c] == []
+
+
+def test_finding_constraint_present():
+    assert "f.finding_key IS UNIQUE" in " ".join(build_constraints())
 
 
 def test_forks_by_verdict_id_with_edge_props():

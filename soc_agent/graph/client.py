@@ -5,6 +5,8 @@
   write_result 走 execute_write,只写经验层(Verdict/Disposition)。
 neo4j 惰性导入(方法内),故 build_write_statements 等纯逻辑本机可测、不需装 neo4j。
 """
+import json
+
 __all__ = ["Neo4jGraph", "build_write_statements", "build_constraints",
            "shape_ledger", "recall_ledger"]
 
@@ -32,6 +34,7 @@ def build_constraints():
         "CREATE CONSTRAINT verdict_id IF NOT EXISTS FOR (v:Verdict) REQUIRE v.verdict_id IS UNIQUE",
         "CREATE CONSTRAINT responseplan_id IF NOT EXISTS FOR (p:ResponsePlan) REQUIRE p.plan_id IS UNIQUE",
         "CREATE CONSTRAINT disposition_step_key IF NOT EXISTS FOR (d:Disposition) REQUIRE d.step_key IS UNIQUE",
+        "CREATE CONSTRAINT finding_key IF NOT EXISTS FOR (f:Finding) REQUIRE f.finding_key IS UNIQUE",
     ]
 
 
@@ -102,6 +105,19 @@ def build_write_statements(alert_uid, result):
             "ON CREATE SET n.action='none', n.primitive='none', n.status='none' "
             "MERGE (v)-[:LED_TO]->(n) RETURN n.step_key AS id",
             {"alert_uid": alert_uid, "vkey": vkey}))
+
+    # ★取证入图:每条 finding 作 (:Finding) 挂 Alert(分析层,永久;prune 不碰非 :Event/非高基数标签)。
+    #   key=alert_uid#finding_id(每告警每类发现唯一→重研判幂等);attrs 存 json 串(Neo4j 属性不能是嵌套 dict)。
+    for f in (result.findings or []):
+        fkey = f"{alert_uid}#{f.finding_id}"
+        stmts.append((
+            "MATCH (a:Alert {alert_uid:$alert_uid}) "
+            "MERGE (a)-[:HAS_FINDING]->(fn:Finding {finding_key:$fkey}) SET fn += $props "
+            "RETURN fn.finding_key AS id",
+            {"alert_uid": alert_uid, "fkey": fkey,
+             "props": {"finding_key": fkey, "finding_id": f.finding_id,
+                       "attrs": json.dumps(f.attrs, ensure_ascii=False),
+                       "polarity": f.polarity, "evidence_ref": f.evidence_ref, "skill": result.skill}}))
     return stmts
 
 

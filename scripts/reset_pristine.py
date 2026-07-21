@@ -24,7 +24,8 @@ cfg = Config.from_env(dotenv_path=os.path.join(_ROOT, ".env"))
 print("neo4j=%s  appliance=%s" % (cfg.neo4j_uri, cfg.response_url or "OFF"))
 
 # ---- 图:清研判台账,保留事实 ----
-_LEDGER = "n:Verdict OR n:Disposition OR n:ResponsePlan"
+# ★含 :Finding —— 取证结果是研判产物(挂在 Alert 上的分析层),reset 要连带清,否则残留脏取证。
+_LEDGER = "n:Verdict OR n:Disposition OR n:ResponsePlan OR n:Finding"
 graph = Neo4jGraph(cfg.neo4j_uri, cfg.neo4j_user, cfg.neo4j_password, cfg.neo4j_database)
 try:
     # ★对账硬拦:台账有【已执行】(未回退)处置 → range 真实态是脏的 → 中止,先恢复 range 再清图。
@@ -60,7 +61,7 @@ try:
     n_after = graph.run_cypher("MATCH (n) WHERE " + _LEDGER + " RETURN count(n) AS n")[0]["n"]
     alerts = graph.run_cypher("MATCH (a:Alert) RETURN count(a) AS n")[0]["n"]
     conc = graph.run_cypher("MATCH ()-[c:CONCLUDED]->() RETURN count(c) AS n")[0]["n"]
-    print("图台账:Verdict+Disposition+ResponsePlan %d → %d;残留 CONCLUDED 边=%d(应0);事实 Alert=%d(保留)"
+    print("图台账:Verdict+Disposition+ResponsePlan+Finding %d → %d;残留 CONCLUDED 边=%d(应0);事实 Alert=%d(保留)"
           % (n_before, n_after, conc, alerts))
 finally:
     graph.close()
