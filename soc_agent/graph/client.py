@@ -49,14 +49,16 @@ def build_write_statements(alert_uid, result):
         return []
     v = result.verdict
     node_props = {"verdict": v.verdict, "lean": v.lean, "agent": v.agent, "verdict_id": v.verdict_id}
-    edge_props = {"at": v.investigated_at, "path": result.path, "confidence": v.confidence,
+    edge_props = {"path": result.path, "confidence": v.confidence,
                   "summary": v.summary, "rationale": v.rationale,
                   "evidence_refs": list(v.evidence_refs), "missing_evidence": list(v.missing_evidence)}
 
     stmts = []
-    stmts.append((                      # per-alert 台账节点(按 verdict_id)
+    stmts.append((                      # per-alert 台账节点(按 verdict_id);c.at=研判时间(server 端 stamp,
+        # 幂等 coalesce 保首次)——审计台账的真实时间戳,daemon settle 窗 / 按龄归档 / recall 取原始结论都靠它。
         "MATCH (a:Alert {alert_uid:$alert_uid}) "
-        "MERGE (a)-[c:CONCLUDED]->(v:Verdict {verdict_id:$vkey}) SET v += $node_props, c += $edge_props "
+        "MERGE (a)-[c:CONCLUDED]->(v:Verdict {verdict_id:$vkey}) "
+        "SET v += $node_props, c += $edge_props, c.at = coalesce(c.at, toString(datetime())) "
         "RETURN v.verdict_id AS id",
         {"alert_uid": alert_uid, "vkey": v.verdict_id, "node_props": node_props, "edge_props": edge_props}))
     vmatch, vkey = "MATCH (a:Alert {alert_uid:$alert_uid})-[:CONCLUDED]->(v:Verdict {verdict_id:$vkey}) ", v.verdict_id
@@ -109,9 +111,8 @@ def build_write_statements(alert_uid, result):
 #   d0=无处置 `Disposition{step_key:'__no_op__'}` 单例(直连 Verdict,无 ResponsePlan)→ shape 里过滤掉。
 _LEDGER_CYPHER = (
     "MATCH (a:Alert {alert_uid:$uid})-[c:CONCLUDED]->(v:Verdict) "
-    "WITH a, c, v LIMIT 1 "                                         # 取一条结论(生产中一告警一结论;
-    # ★台账 CONCLUDED 边当前无真实时间戳(investigated_at 从没被赋值)→ 无法可靠"取最近一次"。
-    #   daemon 阶段补台账时间戳(settle 窗 + 按龄归档都需要)后,这里再改回 ORDER BY 时间 DESC。
+    "WITH a, c, v ORDER BY c.at ASC LIMIT 1 "                       # 取最早一次结论=蒸出该经验的那次研判
+    # (原始研判有真 rationale,比后续 AUTO 复用的"经验复用"摘要更有信息量);c.at 由写台账时 server 端 stamp。
     "OPTIONAL MATCH (v)-[:LED_TO]->(:ResponsePlan)-[:STEP]->(d:Disposition) "
     "OPTIONAL MATCH (v)-[:LED_TO]->(d0:Disposition) "              # 无处置 __no_op__ 单例
     "RETURN a{.source,.sensor,.rule_id,.rule_description,.severity,.technique_ids} AS alert, "

@@ -23,6 +23,14 @@ def test_forks_by_verdict_id_with_edge_props():
     assert params["edge_props"]["path"] == "B" and params["edge_props"]["confidence"] == 0.9
 
 
+def test_concluded_edge_stamps_server_time():
+    # 台账 CONCLUDED 边落真实时间戳(server 端 datetime,幂等 coalesce 保留首次)——
+    # investigated_at 从没被赋值(恒 null)不能用;审计/daemon settle 窗/按龄归档都需要它。
+    cypher, params = build_write_statements("a1", _result([]))[0]
+    assert "c.at = coalesce(c.at, toString(datetime()))" in cypher
+    assert "at" not in params["edge_props"]                        # 不再塞恒 null 的 investigated_at
+
+
 def test_response_plan_ledger_with_steps_and_on_entity():
     r = _result([Disposition(action="disable_account", target="jon.snow", risk="high",
                              rollback_handle={"inverse": "enable_account", "params": {"sam": "jon.snow"}})])
