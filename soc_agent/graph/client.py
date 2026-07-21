@@ -74,10 +74,14 @@ def build_write_statements(alert_uid, result):
         #   仍写本告警自己的取证。method='reuse' 区分于 llm 真研判(展示/统计靠它)。
         reuse = [(
             "MATCH (a:Alert {alert_uid:$alert_uid}), (v:Verdict {verdict_id:$vkey}) "
-            "MERGE (a)-[c:CONCLUDED]->(v) SET c += $edge_props, c.at = coalesce(c.at, toString(datetime())) "
+            "MERGE (a)-[c:CONCLUDED]->(v) "
+            # ★method 用 coalesce 保首次:源判例自己(已 method='llm')重研判时不被降级成 reuse,
+            #   否则反查'哪条 llm 研判生成了这个 Verdict'就断了。真·新复用边则落 'reuse'。
+            "SET c += $edge_props, c.method = coalesce(c.method, 'reuse'), "
+            "    c.at = coalesce(c.at, toString(datetime())) "
             "RETURN v.verdict_id AS id",
             {"alert_uid": alert_uid, "vkey": result.reuse_verdict_id,
-             "edge_props": {"path": result.path, "confidence": v.confidence, "method": "reuse"}})]
+             "edge_props": {"path": result.path, "confidence": v.confidence}})]
         return reuse + _finding_stmts(alert_uid, result)
 
     node_props = {"verdict": v.verdict, "lean": v.lean, "agent": v.agent, "verdict_id": v.verdict_id}

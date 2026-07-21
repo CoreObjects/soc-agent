@@ -76,7 +76,8 @@ def test_reuse_points_to_existing_verdict_no_new_node_no_downstream():
     assert "MATCH (a:Alert {alert_uid:$alert_uid}), (v:Verdict {verdict_id:$vkey})" in c
     assert "MERGE (a)-[c:CONCLUDED]->(v) " in c                     # MERGE 边到已 MATCH 的 v(不 inline 新建)
     assert "node_props" not in p                                   # 不写/覆盖 Verdict 节点属性
-    assert p["edge_props"]["method"] == "reuse"
+    assert "c.method = coalesce(c.method, 'reuse')" in c           # method 保首次:不把源判例 llm 降级成 reuse
+    assert "method" not in p["edge_props"]
     assert not any(("ResponsePlan" in cc or "STEP" in cc or "__no_op__" in cc) for cc, _ in stmts)  # 下游不写
     assert any("HAS_FINDING" in cc for cc, _ in stmts)             # 但复用告警自己的取证要写
 
