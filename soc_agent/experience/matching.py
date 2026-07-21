@@ -14,9 +14,15 @@ THREAT_FP_THRESHOLD = 1.0    # 威胁指纹:严(且还得过规则)
 
 
 def fingerprint_hit(exp, findings):
-    """(hit, score, matched_ids);威胁阈值严、误报阈值宽。"""
-    thr = THREAT_FP_THRESHOLD if exp.kind == "threat" else BENIGN_THRESHOLD
-    return fp_match(exp.fingerprint or {}, findings, thr)
+    """(hit, score, matched_ids)。
+
+    威胁指纹:阈值严 + **纯召回**(只看 finding 类型在场,值判断归规则 —— §3.3 分工铁律,
+    换实例/换数值仍召回,避免钉死裸值导致收敛脆)。
+    误报指纹:阈值宽 + 决定性 attr 值也比对(src_image 等白标记承重,防攻击伪装成良性)。
+    """
+    threat = exp.kind == "threat"
+    thr = THREAT_FP_THRESHOLD if threat else BENIGN_THRESHOLD
+    return fp_match(exp.fingerprint or {}, findings, thr, recall_only=threat)
 
 
 def rule_hit(exp, findings):

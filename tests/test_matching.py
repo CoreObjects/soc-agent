@@ -42,3 +42,21 @@ def test_threat_fp_strict_benign_loose():
 def test_rule_hit_none_rule_is_false():
     exp = _benign(build_fingerprint([Finding("k.a")], {}))
     assert rule_hit(exp, [Finding("k.a")]) == (False, [])
+
+
+def test_threat_fingerprint_recalls_across_instances():
+    # 威胁指纹只召回(finding 类型),不钉死数值:换实例(7 张票→12 张票)仍召回;值判断归规则。
+    fp = build_fingerprint([Finding("kerb.rc4_requested", {"enc": "0x17"}),
+                            Finding("kerb.spn_fanout", {"distinct_targets": 7})], {})
+    exp = _threat(fp, {"exists": "kerb.rc4_requested"})
+    other = [Finding("kerb.rc4_requested", {"enc": "0x17"}),
+             Finding("kerb.spn_fanout", {"distinct_targets": 12})]     # 换实例:12 张票
+    assert fingerprint_hit(exp, other)[0] is True                      # 纯召回:finding 类型齐 → 召回
+
+
+def test_benign_fingerprint_still_value_gated():
+    # 误报半不动:良性指纹的决定性 attr 值仍比对(src_image),换成攻击进程不误命中(守红线)。
+    benign = _benign(build_fingerprint([Finding("lsass.lsass_accessed", {"src_image": "wazuh-agent.exe"})],
+                                       {"source_process": "wazuh-agent.exe"}))
+    evil = [Finding("lsass.lsass_accessed", {"src_image": "mimikatz.exe"})]
+    assert fingerprint_hit(benign, evil)[0] is False                   # 良性仍靠值区分,未回归

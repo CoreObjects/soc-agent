@@ -87,13 +87,21 @@ def _fid_matches(canon_attrs, cur_list) -> bool:
     return any(all(_attr_ok(cv, k, ca) for k, cv in canon_attrs.items()) for ca in cur_list)
 
 
-def match(fp, findings, threshold=1.0):
-    """指纹 vs 当前 findings。返回 (hit, score, matched_ids)。score = 命中权重 / 总权重。"""
+def match(fp, findings, threshold=1.0, recall_only=False):
+    """指纹 vs 当前 findings。返回 (hit, score, matched_ids)。score = 命中权重 / 总权重。
+
+    recall_only=True:纯召回,只看 finding-ID 是否在场(不比对 canon attr 值)。值/桶/阈值的
+    精确判断交给 DSL 规则(§3.3 指纹只召回、规则才验证)。威胁指纹走这条(换实例=换数值仍召回)。
+    recall_only=False:决定性 attr 值也需一致(占位符=通配)。误报指纹走这条(src_image 等白标记承重)。
+    """
     idx = _by_id(findings)
     ids = fp.get("finding_ids") or []
     canon = fp.get("canon") or {}
     weights = fp.get("weights") or {}
     total = sum(float(weights.get(fid, 1.0)) for fid in ids) or 1.0
-    matched = [fid for fid in ids if _fid_matches(canon.get(fid) or {}, idx.get(fid))]
+    if recall_only:
+        matched = [fid for fid in ids if idx.get(fid)]
+    else:
+        matched = [fid for fid in ids if _fid_matches(canon.get(fid) or {}, idx.get(fid))]
     score = sum(float(weights.get(fid, 1.0)) for fid in matched) / total
     return (score >= threshold and bool(matched)), score, matched
