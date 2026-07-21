@@ -1,0 +1,34 @@
+=== batch-measure  2026-07-21 07:50Z ===
+# 批量定量验:20 条未研判告警(到达序回放,tech=T1558.003)  起始沉淀行=0
+
+  [  1] T1558.003        FALLTHROUGH  LLM=3  沉淀行=1  累计AUTO率=0%
+  [  2] T1558.003        AUTO_FP      LLM=1  沉淀行=1  累计AUTO率=50%
+  [  3] T1558.003        AUTO_FP      LLM=1  沉淀行=1  累计AUTO率=67%
+  [  4] T1558.003        AUTO_FP      LLM=1  沉淀行=1  累计AUTO率=75%
+  [  5] T1558.003        AUTO_FP      LLM=1  沉淀行=1  累计AUTO率=80%
+  [  6] T1558.003        AUTO_FP      LLM=1  沉淀行=1  累计AUTO率=83%
+  [  7] T1558.003        FALLTHROUGH  LLM=4  沉淀行=1  累计AUTO率=71%
+  [  8] T1558.003        FALLTHROUGH  LLM=4  沉淀行=2  累计AUTO率=62%
+  [  9] T1558.003        AUTO_TP      LLM=1  沉淀行=2  累计AUTO率=67%
+  [ 10] T1558.003        AUTO_TP      LLM=1  沉淀行=2  累计AUTO率=70%
+  [ 11] T1558.003        AUTO_TP      LLM=1  沉淀行=2  累计AUTO率=73%
+  [ 12] T1558.003        AUTO_TP      LLM=1  沉淀行=2  累计AUTO率=75%
+  [ 13] T1558.003        AUTO_TP      LLM=1  沉淀行=2  累计AUTO率=77%
+  [ 14] T1558.003        FALLTHROUGH  LLM=3  沉淀行=2  累计AUTO率=71%
+  [ 15] T1558.003        FALLTHROUGH  LLM=3  沉淀行=2  累计AUTO率=67%
+  [ 16] T1558.003        FALLTHROUGH  LLM=3  沉淀行=2  累计AUTO率=62%
+  [ 17] T1558.003        FALLTHROUGH  LLM=3  沉淀行=2  累计AUTO率=59%
+  [ 18] T1558.003        FALLTHROUGH  LLM=3  沉淀行=2  累计AUTO率=56%
+  [ 19] T1558.003        FALLTHROUGH  LLM=3  沉淀行=2  累计AUTO率=53%
+  [ 20] T1558.003        FALLTHROUGH  LLM=3  沉淀行=2  累计AUTO率=50%
+
+=== 汇总 ===
+总告警 20 | 研判(FALLTHROUGH) 10 | 复用(AUTO_TP 5 + AUTO_FP 5 = 10) | AUTO命中率 50%
+沉淀经验行数 2(= 学到的模式数;收敛比 R/N=0.10,越小越省)
+LLM 调用:实际 42 | 全研判基线 64(=20×3.2) | 节省 34%
+
+各技战术(总/研判/复用):
+  T1558.003        共20   研判10   复用10   AUTO率50%
+
+# done
+=== done ===
