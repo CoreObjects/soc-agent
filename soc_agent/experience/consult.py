@@ -8,12 +8,39 @@ D2(用户定稿):
 
 威胁优先于误报(都命中时判 AUTO_TP,安全)。
 """
+import json
 from dataclasses import dataclass, field
 from typing import Optional
 
 from .matching import experience_fires, fingerprint_hit, rule_hit
 
 __all__ = ["MatchReport", "consult"]
+
+
+def _render_hit(label, e, recalled) -> str:
+    """一条命中经验 → 可读行:命中的 finding 类型 + 本质 note + 规则 + 来源告警的图台账原始上下文。"""
+    fids = (e.fingerprint or {}).get("finding_ids") or []
+    parts = [f"{label}(命中 finding 类型 {fids})"]
+    note = getattr(e, "note", None)
+    if note:
+        parts.append(f"本质「{note}」")
+    if e.kind == "threat" and e.rule:
+        parts.append(f"规则 {json.dumps(e.rule, ensure_ascii=False)}")
+    led = (recalled or {}).get(getattr(e, "origin_case_id", None))
+    if led:
+        a = led.get("alert") or {}
+        seg = f"该经验蒸自告警 {led.get('alert_uid')}"
+        if a.get("rule_description"):
+            seg += f"(原规则={a['rule_description']})"
+        if led.get("verdict"):
+            seg += f",当初判 {led['verdict']}"
+        if led.get("summary"):
+            seg += f",理由:{led['summary']}"
+        disps = led.get("dispositions") or []
+        if disps:
+            seg += ",处置:" + "、".join(f"{d.get('action')}→{d.get('target')}" for d in disps)
+        parts.append(seg)
+    return ";".join(parts)
 
 
 @dataclass
@@ -27,18 +54,23 @@ class MatchReport:
     recalled: dict = field(default_factory=dict)           # FALLTHROUGH:命中经验来源告警的图台账 {VID→ledger}
 
     def as_context(self) -> str:
-        """FALLTHROUGH 时喂给 LLM 的"已知经验比对"上下文。"""
-        parts = []
-        if self.benign_fp_hits:
-            parts.append(f"命中 {len(self.benign_fp_hits)} 条误报业务指纹(历史判良性的业务模式)")
-        if self.threat_fp_hits:
-            parts.append(f"命中 {len(self.threat_fp_hits)} 条威胁指纹")
-        if self.threat_rule_hits:
-            parts.append(f"命中 {len(self.threat_rule_hits)} 条威胁规则")
-        if not parts:
+        """FALLTHROUGH 时喂给 LLM 的"已知经验比对"上下文。
+
+        不只报计数——逐条给出命中的是哪条经验(finding 类型 + 本质 + 规则)+ 它蒸自哪条告警、
+        那次判成啥、为什么、怎么处置的(图台账原始上下文,self.recalled)。命中即召回、非定性,
+        大模型据此独立研判。
+        """
+        lines = []
+        for e in self.benign_fp_hits:
+            lines.append(_render_hit("误报业务指纹", e, self.recalled))
+        for e in self.threat_fp_hits:
+            lines.append(_render_hit("威胁指纹(但威胁规则未命中)", e, self.recalled))
+        for e in self.threat_rule_hits:
+            lines.append(_render_hit("威胁规则(但威胁指纹未召回)", e, self.recalled))
+        if not lines:
             return "已知经验比对:无历史经验命中,据证据从头研判。"
-        return ("已知经验比对:" + ";".join(parts)
-                + " —— 但未达自动处置的双门/无冲突条件,请你据证据独立研判(经验仅作参照)。")
+        return ("已知经验比对(命中经验仅作参照,未达自动处置的双门/无冲突条件,请据证据独立研判):"
+                + "".join("\n- " + ln for ln in lines))
 
 
 def _best(exps):

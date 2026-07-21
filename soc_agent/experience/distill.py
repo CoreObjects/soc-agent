@@ -68,7 +68,8 @@ def distill(llm, skill, findings, bindings, verdict, agent_name=None, origin_cas
         return None
     subset = [fid for fid in (args.get("decisive_finding_ids") or []) if fid in finding_ids] or finding_ids
     rule = args.get("rule") if kind == "threat" else None
+    note = args.get("note") or None
     fp = build_fingerprint(findings, bindings, subset_ids=subset)
     return Experience(skill=(skill.name if skill else "unknown"), kind=kind, verdict=verdict.verdict,
                       fingerprint=fp, rule=rule, playbook=[], created_by=agent_name,
-                      origin_case_id=origin_case_id)
+                      origin_case_id=origin_case_id, note=note)

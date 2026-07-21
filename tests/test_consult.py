@@ -61,6 +61,28 @@ def test_empty_store_fallthrough():
     assert r.as_context()                                                # 有可读上下文串(即便无命中)
 
 
+def test_as_context_renders_hit_experience_and_ledger():
+    # FALLTHROUGH 喂 LLM 的上下文要含:命中哪条(finding 类型)+ 本质 note + 原始台账(summary/处置/VID),
+    # 不再只是"命中 N 条"计数。
+    exp = _threat(["k.rc4", "k.hv"], {"exists": "k.rc4"}, origin_case_id="a0")
+    exp.note = "RC4 取票+高价值目标"
+    rep = MatchReport("FALLTHROUGH", threat_fp_hits=[exp],
+                      recalled={"a0": {"alert_uid": "a0", "verdict": "true_positive",
+                                       "summary": "jon.snow roast 多个 SPN",
+                                       "alert": {"rule_description": "Kerberoasting"},
+                                       "dispositions": [{"action": "disable_account", "target": "jon.snow"}]}})
+    ctx = rep.as_context()
+    assert "k.rc4" in ctx and "k.hv" in ctx                 # 命中的 finding 类型
+    assert "RC4 取票+高价值目标" in ctx                       # 本质 note
+    assert "jon.snow roast 多个 SPN" in ctx                  # 原始台账 summary
+    assert "disable_account" in ctx                          # 原始处置
+    assert "a0" in ctx                                       # 来源 VID
+
+
+def test_as_context_no_hits_still_readable():
+    assert MatchReport("FALLTHROUGH").as_context()           # 无命中也有可读串
+
+
 def test_best_picks_most_specific():
     broad = _threat(["k.rc4"], {"exists": "k.rc4"})
     specific = _threat(["k.rc4", "k.hv", "k.fan"],

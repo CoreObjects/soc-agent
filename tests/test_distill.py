@@ -59,3 +59,14 @@ def test_distill_no_toolcall_returns_none():
     llm = FakeLLMClient([LLMResponse(content="没调工具")])
     v = Verdict(verdict="true_positive", confidence=0.9, rationale="r", agent="q")
     assert distill(llm, _Skill(), _findings(), {}, v) is None
+
+
+def test_distill_stores_note():
+    # LLM 给的"本质"一句话要存下(供命中时喂 LLM 的上下文更有意义),不能丢
+    llm = _llm({"decisive_finding_ids": ["kerberoast.rc4_requested"],
+                "rule": {"exists": "kerberoast.rc4_requested"},
+                "note": "普通域用户 RC4 取票攻击本质"})
+    v = Verdict(verdict="true_positive", confidence=0.9, rationale="r", agent="q")
+    exp = distill(llm, _Skill(), _findings(), {}, v)
+    assert exp.note == "普通域用户 RC4 取票攻击本质"
+    assert exp.to_dict()["note"] == "普通域用户 RC4 取票攻击本质"      # round-trip
