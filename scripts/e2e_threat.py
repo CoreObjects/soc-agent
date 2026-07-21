@@ -119,6 +119,11 @@ try:
                   "summary=%s" % (str(led.get("summary"))[:60]))
             check("台账含真处置(非 __no_op__)", bool(led.get("dispositions")),
                   "disp=%s" % [d.get("action") for d in (led.get("dispositions") or [])])
+        # Fix #2 真机验证:台账 CONCLUDED 边现在落了真实研判时间戳 c.at(此前 investigated_at 恒 null)
+        ats = [r["at"] for r in pl.graph.run_cypher(
+            "MATCH (:Alert {alert_uid:$u})-[c:CONCLUDED]->(:Verdict) RETURN c.at AS at", u=threat_uid)]
+        check("台账 CONCLUDED 边有真实时间戳 c.at(非 null;无 Neo4j 属性缺失警告)",
+              bool(ats) and all(a for a in ats), "c.at=%s" % ats)
         # 证真 Experience 带来源 VID + note 列 round-trip(note 迁移列真机可读)
         te2 = [e for e in pl.exp_store.by_kind("kerberoast", "threat")][0]
         check("威胁经验存了来源告警 VID(origin_case_id)", bool(te2.origin_case_id),
