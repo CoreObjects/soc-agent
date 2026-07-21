@@ -1,6 +1,8 @@
-=== reset-to-pristine(图台账+openGauss规则双清)2026-07-21 08:01Z ===
+=== reset-to-pristine(图台账+openGauss规则双清)2026-07-21 10:39Z ===
+Received notification from DBMS server: <GqlStatusObject gql_status='01N50', status_description='warn: label does not exist. The label `Finding` does not exist. Verify that the spelling is correct.', position=<SummaryInputPosition line=1, column=67, offset=66>, raw_classification='UNRECOGNIZED', classification=<NotificationClassification.UNRECOGNIZED: 'UNRECOGNIZED'>, raw_severity='WARNING', severity=<NotificationSeverity.WARNING: 'WARNING'>, diagnostic_record={'_classification': 'UNRECOGNIZED', '_severity': 'WARNING', '_position': {'offset': 66, 'line': 1, 'column': 67}, 'OPERATION': '', 'OPERATION_CODE': '0', 'CURRENT_SCHEMA': '/'}> for query: 'MATCH (n) WHERE n:Verdict OR n:Disposition OR n:ResponsePlan OR n:Finding RETURN count(n) AS n'
+Received notification from DBMS server: <GqlStatusObject gql_status='01N50', status_description='warn: label does not exist. The label `Finding` does not exist. Verify that the spelling is correct.', position=<SummaryInputPosition line=1, column=67, offset=66>, raw_classification='UNRECOGNIZED', classification=<NotificationClassification.UNRECOGNIZED: 'UNRECOGNIZED'>, raw_severity='WARNING', severity=<NotificationSeverity.WARNING: 'WARNING'>, diagnostic_record={'_classification': 'UNRECOGNIZED', '_severity': 'WARNING', '_position': {'offset': 66, 'line': 1, 'column': 67}, 'OPERATION': '', 'OPERATION_CODE': '0', 'CURRENT_SCHEMA': '/'}> for query: 'MATCH (n) WHERE n:Verdict OR n:Disposition OR n:ResponsePlan OR n:Finding RETURN count(n) AS n'
 neo4j=bolt://10.185.93.0:7687  appliance=http://10.185.93.0:8765
-图台账:Verdict+Disposition+ResponsePlan 48 → 0;残留 CONCLUDED 边=0(应0);事实 Alert=91319(保留)
+图台账:Verdict+Disposition+ResponsePlan+Finding 42 → 0;残留 CONCLUDED 边=0(应0);事实 Alert=92409(保留)
 openGauss 经验库:experience 2 → 0;cases 20 → 0
 PRISTINE OK:图台账已清(靶场态经 appliance /reset 复原)+ openGauss 经验库已清,恢复'只有事实、零研判'最初态
 === done ===
