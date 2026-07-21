@@ -1,18 +1,12 @@
-=== e2e-threat  2026-07-17 09:35Z ===
+=== e2e-threat  2026-07-21 06:06Z ===
   [PASS] 经验库=openGauss(非内存降级) — store=OpenGaussExperienceStore
   [PASS] 找到请求者含 jon.snow 的未研判 kerberoast 告警 — 候选 5 [('jon.snow', 'NORTH'), ('jon.snow', 'NORTH'), ('jon.snow', 'NORTH'), ('jon.snow', 'NORTH'), ('jon.snow', 'NORTH')]
-  · pass1 74b48ee07c: decision=FALLTHROUGH verdict=true_positive dispositions=2 threat经验:0→1 LLM=4
-  [PASS] pass1 判 TP 并蒸出威胁经验 — verdict=true_positive
-  [PASS] pass1 组了处置剧本(Composer 挑原语绑 attacker_account) — steps=2 actions=['escalate', 'escalate']
-  [PASS] 威胁经验带 DSL 规则 — rule={'and': [{'exists': 'kerberoast.rc4_requested'}, {'eq': ['kerberoast.s
-  [PASS] 威胁经验带处置剧本模板 — steps=2
-  · pass2 74b48ee07c: decision=AUTO_TP path=A dispositions=2 LLM=1
-  [PASS] pass2 威胁双门命中 → AUTO_TP — decision=AUTO_TP
-  [PASS] pass2 走快路径 path=A — path=A
-  [PASS] pass2 复用剧本组出处置(proposed) — dispositions=2
-  [PASS] pass2 研判/处置 0 LLM(≤routing 1 次) — LLM=1
-  [PASS] 图台账出现 path=A 的 CONCLUDED — path=A 边=1
-  [PASS] 台账写了处置计划(proposed,待 respond_cli 人审) — disposition 台账=4
+  · pass1 74b48ee07c: decision=FALLTHROUGH verdict=true_positive dispositions=2 threat经验:0→0 LLM=4
+  · pass1 59a329ed4a: decision=FALLTHROUGH verdict=true_positive dispositions=2 threat经验:0→0 LLM=4
+  · pass1 ec0205804b: decision=FALLTHROUGH verdict=true_positive dispositions=2 threat经验:0→0 LLM=4
+  · pass1 609134eb68: decision=FALLTHROUGH verdict=true_positive dispositions=2 threat经验:0→0 LLM=4
+  · pass1 9491bbb235: decision=FALLTHROUGH verdict=true_positive dispositions=2 threat经验:0→0 LLM=4
+  [FAIL] 完整研判后蒸出威胁经验 — 候选都没判 TP(qwen 判 FP/suspicious?看上面 pass1 verdict)
 
-=== E2E-THREAT: 12/12 通过  ===
+=== E2E-THREAT: 2/3 通过 ★有失败,见上 ===
 === done ===
