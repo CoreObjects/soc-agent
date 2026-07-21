@@ -1,4 +1,4 @@
-=== e2e-experience  2026-07-17 08:32Z ===
+=== e2e-experience  2026-07-21 06:06Z ===
   [PASS] 经验库=openGauss(非内存降级) — store=OpenGaussExperienceStore
   [PASS] 图里有未研判 kerberoast 告警 — 候选 8 条
   · pass1 489cc44e06: decision=FALLTHROUGH verdict=false_positive LLM=3 exp:0→1
