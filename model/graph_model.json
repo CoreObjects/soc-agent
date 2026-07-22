@@ -10,7 +10,7 @@
     "v1.0 (2026-07-01): 首个锁定版(每类事件一 label)。"
   ],
   "principles": [
-    "① 无损:凡进图的事件,每次 occurrence 全字段保留(在事件节点上),不聚合掉、不砍字段、不 offload 到 ES",
+    "① 无损(设计意图;实现现状诚实标注):每次 occurrence 独立成节点、不聚合、不 offload ES;★现状——事件节点当前只留取证相关标量(每类一个 leaf 子集),字段级为有损投影、非全字段,事件级 raw 全文待补;告警层已无损:(:Alert).raw 存整条原始告警,agent 不回 ES 即拿全告警",
     "② Agent 只从图取证,绝不回 ES —— 图必须自足",
     "③ 用图去取证,不是取证完再灌图 —— 事实层是取证输入,不是结论回填库(经验层是唯一例外:研判产出叠加在告警之后)",
     "④ 入图门槛(与无损是两件事):事件须【能解析成实体】且【对取证有用】才入;噪声/解析不进/无用的不入,绝不强行拿节点装",
@@ -116,7 +116,7 @@
   },
   "alert_layer": {
     "nodes": [
-      {"name": "Alert", "keys": ["alert_uid"], "props": ["alert_uid", "source", "sensor", "rule_id", "rule_description", "severity", "technique_ids", "time", "ingest_time", "raw_ref"], "note": "探测器判出的告警(Wazuh soc-hids-alert-* / WAF);key=alert_uid;technique_ids=原始快照,权威以 INDICATES 边为准;精简,不直接挂实体"},
+      {"name": "Alert", "keys": ["alert_uid"], "props": ["alert_uid", "source", "sensor", "rule_id", "rule_description", "severity", "technique_ids", "time", "ingest_time", "raw_ref", "raw"], "note": "探测器判出的告警(Wazuh soc-hids-alert-* / WAF);key=alert_uid;technique_ids=原始快照,权威以 INDICATES 边为准;raw=整条原始告警 JSON(无损,agent 路由/研判直接读,不回 ES);精简,不直接挂实体"},
       {"name": "Technique", "keys": ["attack_id"], "props": ["attack_id", "tactic"]}
     ],
     "edges": [
@@ -144,7 +144,7 @@
     "event_type": ["event_code", "verb"]
   },
   "investigation_flow": "告警 →(反查 TRIGGERED)触发事件 →(BY/谓语/次要边)涉及实体 →(聚合关系边)pivot 相关实体/事件 →(事件按 time)还原时序/攻击链 →(实体一跳)看历史 Verdict/Disposition 经验 →(研判后)写回 Verdict/Disposition。全程只在图里,不碰 ES。",
-  "retention_note": "事件节点≈入图事件数(无损物理下限),靠 30 天留存窗口扛(窗口内无损);聚合边一对实体一条不随频次涨;身份实体 + 经验层(Verdict/Disposition)长期保留。",
+  "retention_note": "事件节点≈入图事件数(此处'无损'=条数不聚合,非字段级;字段级现为 leaf 有损投影),靠 30 天留存窗口扛;聚合边一对实体一条不随频次涨;身份实体 + 经验层(Verdict/Disposition)长期保留。",
   "alert_coverage": [
     {"alert": "Kerberoast", "path": "Event(4769,enc=RC4) -BY→Account(请求者) -REQUESTED→Account/Service(SPN) -FROM→IP -ON_HOST→DC;聚合边 请求者-REQUESTED→服务", "ok": true},
     {"alert": "凭据转储(LSASS)", "path": "Event(Sysmon-10,granted_access 高+call_trace) -BY→Process(源) -ACCESSED→Process(lsass) -ON_HOST→Host;聚合边 源-ACCESSED→lsass", "ok": true},

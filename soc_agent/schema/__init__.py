@@ -129,7 +129,7 @@ def build_schema(model: dict) -> str:
     header = (
         f"# v3 知识图谱 Schema (version {ver})\n"
         "只用下面列出的 label / 键 / 谓语 / 边;别自创。写 Cypher 时严格照此。\n"
-        "两层事实: 事件节点(:Event,无损细节) + 聚合关系边(结构/路径)。"
+        "两层事实: 事件节点(:Event,取证标量) + 聚合关系边(结构/路径)。告警原文见 :Alert.raw。"
     )
     sections = [
         header,

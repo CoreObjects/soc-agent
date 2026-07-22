@@ -184,6 +184,58 @@ def test_skill_router_picks_skill_by_description(tmp_path):
     assert llm.calls[0]["tool_choice"] == "required"
 
 
+def test_skill_router_feeds_raw_alert_to_llm(tmp_path):
+    # ★路由据原始告警内容选 skill:原始告警必须喂进路由提示(没有它选不对 skill)
+    _kerberoast_skill(tmp_path)
+    reg = SkillRegistry(tmp_path)
+    llm = FakeLLMClient([LLMResponse(tool_calls=[ToolCall("c1", "select_skill", {"name": "kerberoast"})])])
+    from soc_agent.orchestrator import SkillRouter
+    alert = Alert.from_node({"alert_uid": "a1", "technique_ids": ["T1558.003"],
+                             "rule_description": "Kerberoasting", "raw": '{"RAWMARKER_ROUTE": "orig alert"}'})
+    SkillRouter(llm=llm, registry=reg).route(alert)
+    assert "RAWMARKER_ROUTE" in llm.calls[0]["messages"][1]["content"]   # 原始告警喂进路由 user 提示
+
+
+def test_agent_investigator_user_prompt_includes_raw(tmp_path):
+    # ★auto 研判也要拿到整段原始告警(大模型整段读)
+    graph = FakeGraph(rows=[{"x": 1}])
+    llm = FakeLLMClient([
+        LLMResponse(tool_calls=[ToolCall("c1", "run_cypher", {"query": "MATCH (n) RETURN n"})]),
+        LLMResponse(tool_calls=[ToolCall("c2", "finalize_verdict",
+                    {"verdict": "benign", "confidence": 0.5, "rationale": "x"})]),
+    ])
+    _kerberoast_skill(tmp_path)
+    reg = SkillRegistry(tmp_path)
+    inv = AgentInvestigator(llm=llm, toolbox=default_toolbox(graph), schema="S", registry=reg, agent_name="q")
+    alert = Alert.from_node({"alert_uid": "a1", "technique_ids": ["T1558.003"], "raw": '{"RAWMARKER_AGENT": 1}'})
+    inv.investigate(alert, seed={}, skill=reg.by_name("kerberoast"))
+    assert "RAWMARKER_AGENT" in llm.calls[0]["messages"][1]["content"]   # user 提示含原始告警
+
+
+def test_recipe_investigator_includes_raw_alert(tmp_path):
+    # ★recipe 研判也要拿到整段原始告警
+    _kerberoast_skill_with_recipe(tmp_path, {"x": 1})
+    reg = SkillRegistry(tmp_path)
+    llm = FakeLLMClient([LLMResponse(tool_calls=[ToolCall("c1", "finalize_verdict",
+          {"verdict": "benign", "confidence": 0.5, "rationale": "x"})])])
+    inv = RecipeInvestigator(llm=llm, graph=FakeGraph(), schema="S", registry=reg, agent_name="q")
+    alert = Alert.from_node({"alert_uid": "a1", "technique_ids": ["T1558.003"], "raw": '{"RAWMARKER_RECIPE": 2}'})
+    inv.investigate(alert, seed={}, skill=reg.by_name("kerberoast"))
+    assert "RAWMARKER_RECIPE" in llm.calls[0]["messages"][1]["content"]  # user 证据含原始告警
+
+
+def test_investigators_tolerate_missing_raw(tmp_path):
+    # 旧告警未回填 raw(None)→ 三处都不崩,优雅退回
+    _kerberoast_skill_with_recipe(tmp_path, {"x": 1})
+    reg = SkillRegistry(tmp_path)
+    llm = FakeLLMClient([LLMResponse(tool_calls=[ToolCall("c1", "finalize_verdict",
+          {"verdict": "benign", "confidence": 0.5, "rationale": "x"})])])
+    inv = RecipeInvestigator(llm=llm, graph=FakeGraph(), schema="S", registry=reg, agent_name="q")
+    alert = Alert.from_node({"alert_uid": "a1", "technique_ids": ["T1558.003"]})   # 无 raw
+    r = inv.investigate(alert, seed={}, skill=reg.by_name("kerberoast"))
+    assert r.verdict.verdict == "benign"
+
+
 def test_skill_router_none_falls_back_to_generic_layer(tmp_path):
     _kerberoast_skill(tmp_path)                                       # identity 具体 skill
     # 一个 identity 层通用兜底

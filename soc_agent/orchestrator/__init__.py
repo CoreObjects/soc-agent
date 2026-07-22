@@ -61,11 +61,13 @@ class SkillRouter:
         ev = (seed or {}).get("event") if isinstance(seed, dict) else None    # 触发它的底层遥测事件(标准、可移植)
         system = ("你是 SOC 告警分派器。据【告警描述 + 触发它的底层事件】选**最匹配的一个**研判 skill;"
                   "拿不准就选对应大类的 generic_* 兜底;都明显不像选 none。\n\n## 可用 skills\n" + catalog)
-        user = "告警:\n" + json.dumps({
+        info = {"原始告警(原文)": alert.raw} if alert.raw else {}   # ★据原始告警内容选 skill(没它选不对)
+        info.update({
             "rule_description": alert.rule_description, "source": alert.source,
             "sensor": alert.sensor, "severity": alert.severity,
             "触发它的底层事件": ev,
-        }, ensure_ascii=False, indent=2, default=str)
+        })
+        user = "告警:\n" + json.dumps(info, ensure_ascii=False, indent=2, default=str)
         spec = [{"type": "function", "function": {
             "name": "select_skill",
             "description": "选出最匹配这条告警的研判 skill(拿不准选 generic_*、都不像选 none)",
@@ -138,6 +140,8 @@ class AgentInvestigator:
             },
             "seed(触发事件+涉及实体)": seed or {},
         }
+        if alert.raw:                                       # ★整段原始告警喂给 LLM(整段读,不逐字段)
+            payload["原始告警(原文)"] = alert.raw
         if match_report is not None:
             payload["经验比对(已知)"] = match_report.as_context()
         return "待研判告警:\n" + json.dumps(payload, ensure_ascii=False, indent=2)
@@ -279,10 +283,13 @@ class RecipeInvestigator:
         for name, res in evidence.items():
             trace.append({"tool": "recipe_step", "step": name,
                           "rows": len(res) if isinstance(res, list) else 1})
+        alert_frame = {"alert": {"alert_uid": alert.alert_uid, "rule_id": alert.rule_id,
+                                 "technique_ids": alert.technique_ids, "time": alert.time},
+                       "证据": evidence}
+        if alert.raw:                                       # ★整段原始告警喂给 LLM
+            alert_frame["原始告警(原文)"] = alert.raw
         user = "待研判告警 + 已备齐证据:\n" + json.dumps(
-            {"alert": {"alert_uid": alert.alert_uid, "rule_id": alert.rule_id,
-                       "technique_ids": alert.technique_ids, "time": alert.time},
-             "证据": evidence}, ensure_ascii=False, indent=2, default=str)
+            alert_frame, ensure_ascii=False, indent=2, default=str)
         resp = self.llm.chat(
             [{"role": "system", "content": self._prompt(skill)},
              {"role": "user", "content": user}],

@@ -27,6 +27,16 @@ def test_alert_primary_technique_none_when_empty():
     assert a.technique_ids == []
 
 
+def test_alert_carries_raw_from_node():
+    # 原始告警从入口即带上(路由/研判全程可读),不是等取证才去捞
+    a = Alert.from_node({"alert_uid": "x", "raw": '{"transaction": {"request": {"body": "id=1"}}}'})
+    assert a.raw == '{"transaction": {"request": {"body": "id=1"}}}'
+
+
+def test_alert_raw_defaults_none_when_absent():
+    assert Alert.from_node({"alert_uid": "x"}).raw is None
+
+
 def test_verdict_valid_and_props():
     v = Verdict(verdict="true_positive", confidence=0.9, summary="s", rationale="r",
                 evidence_refs=["e1"], agent="qwen32b-ft")

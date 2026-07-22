@@ -40,6 +40,7 @@ class Alert:
     technique_ids: list = field(default_factory=list)
     time: Optional[str] = None
     raw_ref: Optional[str] = None
+    raw: Optional[str] = None           # 整条原始告警 JSON(入图存在 :Alert.raw);入口即带,供路由/全部研判整段读
 
     @classmethod
     def from_node(cls, node: dict) -> "Alert":
@@ -53,6 +54,7 @@ class Alert:
             technique_ids=list(node.get("technique_ids") or []),
             time=node.get("time"),
             raw_ref=node.get("raw_ref"),
+            raw=node.get("raw"),
         )
 
     @property
