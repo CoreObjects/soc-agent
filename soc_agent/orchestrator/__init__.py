@@ -179,12 +179,13 @@ class AgentInvestigator:
     def investigate(self, alert: Alert, seed=None, skill=None, forensics=None, match_report=None) -> InvestigationResult:
         # skill 由 SkillRouter(LLM 按 description)预选后传入,不在此程序 match technique
         # forensics 忽略(agent 自主取证);match_report 作已知信息注入 prompt
+        up = self._user_prompt(alert, seed, match_report)
         messages = [
             {"role": "system", "content": self._system_prompt(skill)},
-            {"role": "user", "content": self._user_prompt(alert, seed, match_report)},
+            {"role": "user", "content": up},
         ]
         specs = self.toolbox.specs()
-        trace = []
+        trace = [{"tool": "llm_input", "content": up}]   # 记录喂给大模型的 user prompt 原文
         queries_done = 0
         finalize_nudges = 0
         for _ in range(self.max_iterations):
@@ -290,6 +291,7 @@ class RecipeInvestigator:
             alert_frame["原始告警(原文)"] = alert.raw
         user = "待研判告警 + 已备齐证据:\n" + json.dumps(
             alert_frame, ensure_ascii=False, indent=2, default=str)
+        trace.append({"tool": "llm_input", "content": user})   # 记录喂给大模型的 user prompt 原文(自测/审计可见)
         resp = self.llm.chat(
             [{"role": "system", "content": self._prompt(skill)},
              {"role": "user", "content": user}],

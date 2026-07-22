@@ -93,6 +93,8 @@ def render_trace(result) -> str:
             lines.append(f"     q: {q[:240]}")
         elif tool == "recipe_step":
             lines.append(f"[{i}] recipe取证「{step.get('step')}」→ {step.get('rows')} 行")
+        elif tool == "llm_input":
+            lines.append(f"[{i}] ▶ 喂大模型的 user prompt({len(step.get('content') or '')} 字符;全文见 §③)")
         elif tool == "no_tool_call":
             lines.append(f"[{i}] ⚠ 未调工具,只吐文本: {(step.get('content') or '')[:240]}")
         elif tool == "finalize_too_early":

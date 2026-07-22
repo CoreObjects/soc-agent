@@ -126,20 +126,17 @@ def main():
             skill = router.route(alert, seed)                          # ★LLM 按 description+触发事件 选 skill
             inv, picked = choose_investigator(skill, mode, agent_inv, recipe_inv)
 
-            forensics = collect_forensics(graph, alert, seed, skill)   # ★取证:打印全内容给人看 + 复用进研判(不重跑)
-            print("\n### ③ 取证结果(recipe 证据 —— 这就是喂给 LLM 的证据原文;auto 模式无 recipe,见 §④ 留痕的 run_cypher)")
-            ev = dict(forensics.context)
-            if forensics.findings:
-                ev["结构化发现(findings)"] = [f.to_dict() for f in forensics.findings]
-            if forensics.blind_spots:
-                ev["_图盲区"] = forensics.blind_spots
-            print(_dump(ev) if ev else "(空:该 skill 无 recipe,取证在 §④ auto 留痕里)")
-
-            print(f"\n### ④ 研判   [skill] {skill.name if skill else '(none)'}   [模式] {picked}")
+            forensics = collect_forensics(graph, alert, seed, skill)   # 取证(复用进研判,不重跑)
             try:
                 result = inv.investigate(alert, seed=seed, skill=skill, forensics=forensics)
                 if write:
                     graph.write_result(uid, result)
+                prompt = next((s.get("content") for s in (result.trace or [])
+                               if s.get("tool") == "llm_input"), None)
+                print(f"\n### ③ 喂给大模型的原文  [skill] {skill.name if skill else '(none)'}  [模式] {picked}")
+                print("(实际 user prompt —— 取证证据 + 原始告警原文;下面就是模型看到的全部)")
+                print(_mask_ips(prompt) if prompt else "(无:该路径未走 LLM)")
+                print("\n### ④ 研判(留痕 + 结果)")
                 print(_mask_ips(render_trace(result)))
                 print()
                 print(_mask_ips(render_result(result)))
