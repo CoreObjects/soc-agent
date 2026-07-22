@@ -75,7 +75,7 @@ def main():
     root = Path(__file__).resolve().parents[1]
     cfg = Config.from_env(dotenv_path=str(root / ".env"))
 
-    from soc_agent.cli import build, choose_investigator, render_result, render_trace
+    from soc_agent.cli import build, choose_investigator, render_result, render_trace, collect_forensics
     graph, router, agent_inv, recipe_inv = build(cfg)
     try:
         if only_uid:                                        # 指定单条
@@ -125,9 +125,19 @@ def main():
 
             skill = router.route(alert, seed)                          # ★LLM 按 description+触发事件 选 skill
             inv, picked = choose_investigator(skill, mode, agent_inv, recipe_inv)
-            print(f"\n### ③ 研判   [skill] {skill.name if skill else '(none)'}   [模式] {picked}")
+
+            forensics = collect_forensics(graph, alert, seed, skill)   # ★取证:打印全内容给人看 + 复用进研判(不重跑)
+            print("\n### ③ 取证结果(recipe 证据 —— 这就是喂给 LLM 的证据原文;auto 模式无 recipe,见 §④ 留痕的 run_cypher)")
+            ev = dict(forensics.context)
+            if forensics.findings:
+                ev["结构化发现(findings)"] = [f.to_dict() for f in forensics.findings]
+            if forensics.blind_spots:
+                ev["_图盲区"] = forensics.blind_spots
+            print(_dump(ev) if ev else "(空:该 skill 无 recipe,取证在 §④ auto 留痕里)")
+
+            print(f"\n### ④ 研判   [skill] {skill.name if skill else '(none)'}   [模式] {picked}")
             try:
-                result = inv.investigate(alert, seed=seed, skill=skill)
+                result = inv.investigate(alert, seed=seed, skill=skill, forensics=forensics)
                 if write:
                     graph.write_result(uid, result)
                 print(_mask_ips(render_trace(result)))
