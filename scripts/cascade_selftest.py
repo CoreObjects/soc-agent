@@ -47,7 +47,7 @@ def main():
         print(f"# 浅层 cascade selftest  取样={order}  待判 {len(picks)} 条  "
               f"(只跑浅层、不写台账;IP 打码)\n")
 
-        n_term = n_esc = 0
+        n_fp = n_tp = n_esc = 0
         terms = []
         for i, (tech, cnt, uid) in enumerate(picks, 1):
             try:
@@ -56,24 +56,27 @@ def main():
                 print(f"[{i}] {str(tech):16} uid={uid}  !! 异常:{_mask(e)[:200]}")
                 continue
             sh, route = r["shallow"], r["route"]
-            n_term += route == "terminal_fp"
-            n_esc += route != "terminal_fp"
+            n_fp += route == "terminal_fp"
+            n_tp += route == "terminal_tp"
+            n_esc += route == "escalate"
             fd = "+floor" if r["force_deep"] else ""
             print(f"[{i}] {str(tech):16} 该类{cnt:>6}  uid={uid}")
             print(f"     浅层: needs_deep={sh.get('needs_deep')} verdict={sh.get('verdict')} "
                   f"conf={sh.get('confidence')}  → 路由={route}{fd}")
             print(f"     理由: {_mask(sh.get('rationale'))[:240]}")
-            if route == "terminal_fp":
+            if route in ("terminal_fp", "terminal_tp"):
                 node = pl.graph.get_alert(uid) or {}
-                terms.append((uid, tech, node.get("rule_description")))
+                terms.append((uid, tech, route, node.get("rule_description")))
 
-        tot = n_term + n_esc
-        rate = (n_esc / tot * 100) if tot else 0
-        print(f"\n# 汇总: 共{tot}  终局FP={n_term}  升级={n_esc}  deferral(升级率)={rate:.0f}%")
+        tot = n_fp + n_tp + n_esc
+        term = n_fp + n_tp
+        print(f"\n# 汇总: 共{tot}  浅层终局={term}(FP={n_fp} TP={n_tp})  升级={n_esc}  "
+              f"降噪率(终局占比)={term / tot * 100 if tot else 0:.0f}%  "
+              f"升级率={n_esc / tot * 100 if tot else 0:.0f}%")
         if terms:
-            print("\n# 浅层判 FP 的(★眼验召回:这些该不该被浅层终局判良性?有真攻击=漏判):")
-            for uid, tech, rd in terms:
-                print(f"  - {str(tech):16} {uid}  {_mask(rd)[:120]}")
+            print("\n# 浅层终局的(★眼验:FP 该不该判良性 / TP 该不该判威胁;判错=收紧提示词):")
+            for uid, tech, route, rd in terms:
+                print(f"  - [{route:11}] {str(tech):16} {uid}  {_mask(rd)[:110]}")
     finally:
         pl.close()
     print("\n# selftest 完成")

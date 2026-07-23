@@ -25,12 +25,13 @@ FB="feedback/cascade-gate.out"
     echo "  用 $BASE ($("$BASE" --version 2>&1)) 建 .venv312"
     "$BASE" -m venv .venv312 || { echo "  [FAIL] 建 .venv312 失败"; exit 1; }
   fi
-  echo "== 装 soc-agent + openjiuwen(★ARM 昇腾轮子风险点:pyoxigraph[Rust] / grpcio[C++,pymilvus])=="
-  if "$PY312" -c "import openjiuwen, soc_agent" >/dev/null 2>&1; then
-    echo "  openjiuwen + soc_agent 已在 .venv312 → 跳过安装(重跑只验测试)"
+  echo "== 装 soc-agent[dev,og] + openjiuwen(★ARM 轮子风险:pyoxigraph[Rust]/grpcio[C++]/psycopg2)=="
+  # og extra = psycopg2(深度层经由 cascade 在 .venv312 里跑时,经验层要连 openGauss)
+  if "$PY312" -c "import openjiuwen, soc_agent, psycopg2" >/dev/null 2>&1; then
+    echo "  openjiuwen + soc_agent + psycopg2 已在 .venv312 → 跳过安装(重跑只验测试)"
   else
     "$PY312" -m pip install -q -U pip 2>&1 | tail -2
-    "$PY312" -m pip install -e ".[dev]" openjiuwen 2>&1 | tail -25
+    "$PY312" -m pip install -e ".[dev,og]" openjiuwen 2>&1 | tail -25
   fi
   echo "== 导入检查 =="
   "$PY312" -c "import openjiuwen; from openjiuwen.core.workflow import Workflow, LLMComponent, BranchRouter, WorkflowComponent; from openjiuwen.core.runner.runner import Runner; print('  [OK] openjiuwen', getattr(openjiuwen,'__version__','?'), '导入通过')" \

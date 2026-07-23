@@ -76,6 +76,7 @@ def build_cascade_workflow(graph, run_deep, sink, *, llm_base=None, llm_model=No
     flow.add_workflow_comp("deep", deep, inputs_schema={"alert_uid": "${start.alert_uid}"})
     flow.add_workflow_comp("terminal", terminal, inputs_schema={
         "alert_uid": "${start.alert_uid}",
+        "verdict": "${shallow.verdict}",
         "confidence": "${shallow.confidence}",
         "rationale": "${shallow.rationale}"})
 

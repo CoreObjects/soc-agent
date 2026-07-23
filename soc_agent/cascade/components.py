@@ -14,7 +14,7 @@ from openjiuwen.core.context_engine import ModelContext
 from openjiuwen.core.workflow.components import Session
 
 from ..experience.consult import MatchReport
-from ..models import InvestigationResult, Verdict
+from ..models import VERDICTS, InvestigationResult, Verdict
 
 __all__ = ["ShallowTerminalComponent", "DeepInvestigationComponent", "CaptureComponent",
            "shallow_report"]
@@ -28,7 +28,7 @@ def shallow_report() -> MatchReport:
 
 
 class ShallowTerminalComponent(WorkflowComponent):
-    """浅层判"明显良性"→ 终局 false_positive。写台账;不 snapshot、不 sediment。"""
+    """浅层直判终局(放松后:TP 或 FP,取浅层给的 verdict)。写台账;不 snapshot、不 sediment。"""
 
     def __init__(self, graph, sink: dict, agent_name=None):
         super().__init__()
@@ -38,10 +38,13 @@ class ShallowTerminalComponent(WorkflowComponent):
 
     async def invoke(self, inputs: Input, session: Session, context: ModelContext) -> Output:
         alert_uid = inputs.get("alert_uid")
+        verdict = inputs.get("verdict") or "false_positive"
+        if verdict not in VERDICTS:                       # suspicious 本该升级不到这;非法值兜底 FP
+            verdict = "false_positive"
         v = Verdict(
-            verdict="false_positive",
+            verdict=verdict,
             confidence=float(inputs.get("confidence") or 0.0),
-            summary=inputs.get("summary") or "浅层直判:告警自证良性,无需深度取证",
+            summary=f"浅层直判(未升级,{verdict})",
             rationale=inputs.get("rationale") or "",
             agent=self._agent_name,
         )

@@ -79,6 +79,9 @@ def run_shallow(pl, alert_uid, shallow_comp=None):
 
     asyncio.run(_go())
     shallow = sink.get("shallow") or {}
-    route = "escalate" if (bool(shallow.get("needs_deep")) or fd) else "terminal_fp"
+    if bool(shallow.get("needs_deep")) or fd:
+        route = "escalate"
+    else:
+        route = "terminal_tp" if shallow.get("verdict") == "true_positive" else "terminal_fp"
     return {"alert_uid": alert_uid, "technique": alert.primary_technique,
             "force_deep": fd, "shallow": shallow, "route": route}

@@ -21,14 +21,13 @@ class _FakeGraph:
 class _FakeShallow(WorkflowComponent):
     """假浅层:直接吐结构化结论,免真 LLM。"""
 
-    def __init__(self, needs_deep):
+    def __init__(self, needs_deep, verdict=None):
         super().__init__()
         self._nd = needs_deep
+        self._v = verdict or ("suspicious" if needs_deep else "false_positive")
 
     async def invoke(self, inputs, session, context):
-        return {"needs_deep": self._nd,
-                "verdict": "suspicious" if self._nd else "false_positive",
-                "confidence": 0.8, "rationale": "test"}
+        return {"needs_deep": self._nd, "verdict": self._v, "confidence": 0.8, "rationale": "test"}
 
 
 def _run(needs_deep, force_deep):
@@ -114,6 +113,14 @@ def test_run_shallow_route_escalate_on_needs_deep():
     from soc_agent.cascade.run import run_shallow
     pl = _FakePL({"alert_uid": "a1", "technique_ids": ["T1190"]})
     assert run_shallow(pl, "a1", shallow_comp=_FakeShallow(True))["route"] == "escalate"
+
+
+def test_run_shallow_route_terminal_tp():
+    # 放松后:浅层可直接下 TP(不升级)
+    from soc_agent.cascade.run import run_shallow
+    pl = _FakePL({"alert_uid": "a1", "technique_ids": ["T1190"]})
+    r = run_shallow(pl, "a1", shallow_comp=_FakeShallow(False, verdict="true_positive"))
+    assert r["route"] == "terminal_tp"
 
 
 def test_run_shallow_route_escalate_on_floor():

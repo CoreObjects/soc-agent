@@ -42,6 +42,17 @@ def test_shallow_terminal_writes_fp_and_fills_sink():
     assert out["path"] == "S"
 
 
+def test_shallow_terminal_writes_given_verdict_tp():
+    # 放松后:终局组件写浅层给的 verdict(不再写死 FP)
+    g = _FakeGraph()
+    comp = ShallowTerminalComponent(g, {}, agent_name="qwenX")
+    asyncio.run(comp.invoke(
+        {"alert_uid": "a1", "verdict": "true_positive", "confidence": 0.9, "rationale": "明确 SQLi"},
+        None, None))
+    _, result = g.written[0]
+    assert result.verdict.verdict == "true_positive"
+
+
 def test_deep_component_calls_run_deep_and_fills_sink():
     calls = []
     sentinel_result = type("R", (), {"path": "B", "verdict": None})()
