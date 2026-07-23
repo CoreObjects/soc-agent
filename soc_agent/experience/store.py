@@ -15,7 +15,7 @@ from uuid import uuid4
 __all__ = ["Experience", "ExperienceStore", "InMemoryExperienceStore", "ExperienceCache",
            "EXP_KINDS", "EXP_STATUSES"]
 
-EXP_KINDS = {"benign_fp", "threat"}
+EXP_KINDS = {"benign_fp", "threat", "payload"}   # payload=浅层从 payload 蒸的签名规则(rule 列存 match_spec)
 EXP_STATUSES = {"active", "hint_only", "archived"}
 
 

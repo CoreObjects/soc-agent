@@ -9,6 +9,7 @@ import os
 from ..models import Alert
 from .build import build_cascade_agent, build_shallow_probe
 from .floor import force_deep
+from .signature import PayloadCase, sig_consult, sig_sediment
 
 __all__ = ["run_cascade", "run_shallow", "alert_view"]
 
@@ -56,19 +57,29 @@ def run_cascade(pl, alert_uid, mode="recipe"):
     return sink["result"], sink["report"], sink["picked"]
 
 
-def run_shallow(pl, alert_uid, shallow_comp=None):
-    """只跑浅层分诊(不升级、不写台账)。返回 {alert_uid, technique, force_deep, shallow, route}。
-    route: escalate(needs_deep 或 force_deep)/ terminal_fp(浅层判良性终局)。供 selftest 量 deferral。"""
+def run_shallow(pl, alert_uid, shallow_comp=None, sig_store=None, sig_corpus=None):
+    """只跑浅层分诊(不升级、不写台账)。返回 {alert_uid, technique, force_deep, shallow, route, reused}。
+    route: escalate / terminal_tp / terminal_fp / reuse_tp / reuse_fp(签名库命中,零 qwen)。
+    传 sig_store(+sig_corpus 列表)则:先查签名库命中即复用;未命中判完从 payload 蒸规则入库+记语料。"""
     from ..cli import AlertNotFound                       # 懒导入,避 cli<->cascade 循环
     from openjiuwen.core.workflow import create_workflow_session
 
-    _ensure_workflow_timeout(getattr(pl, "llm_timeout", 600))    # 单次浅层 qwen 调用,够
     node = pl.graph.get_alert(alert_uid)
     if node is None:
         raise AlertNotFound(f"图里没有 alert_uid={alert_uid} 的 :Alert")
     alert = Alert.from_node(node)
     fd = force_deep(alert, pl.policy)
 
+    # ★签名库前置:命中即零 qwen 复用
+    hit = sig_consult(sig_store, alert)
+    if hit is not None:
+        sig_store.bump_hit(hit.exp_id)
+        route = "reuse_tp" if hit.verdict == "true_positive" else "reuse_fp"
+        return {"alert_uid": alert_uid, "technique": alert.primary_technique, "force_deep": fd, "reused": True,
+                "shallow": {"needs_deep": False, "verdict": hit.verdict, "confidence": None,
+                            "rationale": f"签名库复用 {hit.exp_id[:8]}"}, "route": route}
+
+    _ensure_workflow_timeout(getattr(pl, "llm_timeout", 600))    # 单次浅层 qwen 调用,够
     sink = {}
 
     async def _go():
@@ -83,5 +94,27 @@ def run_shallow(pl, alert_uid, shallow_comp=None):
         route = "escalate"
     else:
         route = "terminal_tp" if shallow.get("verdict") == "true_positive" else "terminal_fp"
+
+    # ★浅层终局(TP/FP)→ 从 payload 蒸签名规则入库 + 记语料(供反例回归)
+    if sig_store is not None and route in ("terminal_tp", "terminal_fp"):
+        _sig_learn(pl, sig_store, sig_corpus, alert, shallow)
+
     return {"alert_uid": alert_uid, "technique": alert.primary_technique,
-            "force_deep": fd, "shallow": shallow, "route": route}
+            "force_deep": fd, "shallow": shallow, "route": route, "reused": False}
+
+
+def _sig_learn(pl, sig_store, sig_corpus, alert, shallow):
+    """浅层终局 → 蒸签名规则(过考试门)入库 + 追加浅层语料。"""
+    from ..models import InvestigationResult, Verdict
+    verdict = shallow.get("verdict")
+    if verdict not in ("true_positive", "false_positive"):
+        return
+    v = Verdict(verdict=verdict, confidence=float(shallow.get("confidence") or 0.0),
+                rationale=shallow.get("rationale") or "", agent=pl.agent_name)
+    res = InvestigationResult(alert_uid=alert.alert_uid, path="S", verdict=v, skill=None)
+    sig_sediment(pl.llm, sig_store, sig_corpus, alert, res, agent_name=pl.agent_name)
+    if sig_corpus is not None:
+        sig_corpus.append(PayloadCase(
+            alert_uid=alert.alert_uid, source=alert.source, raw=alert.raw, verdict=verdict,
+            rule_description=alert.rule_description, rule_id=alert.rule_id,
+            severity=alert.severity, technique_ids=alert.technique_ids))
