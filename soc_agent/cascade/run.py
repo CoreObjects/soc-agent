@@ -49,7 +49,7 @@ def run_cascade(pl, alert_uid, mode="recipe"):
     agent = build_cascade_agent(
         pl.graph, lambda uid: run_pipeline(pl, uid, mode), sink,
         llm_base=pl.llm_base, llm_model=pl.llm_model, llm_key=pl.llm_key,
-        agent_name=pl.agent_name)
+        llm_timeout=getattr(pl, "llm_timeout", 600), agent_name=pl.agent_name)
 
     asyncio.run(Runner.run_agent(agent, {
         "alert_view": alert_view(alert), "alert_uid": alert_uid, "force_deep": bool(fd)}))
@@ -73,7 +73,8 @@ def run_shallow(pl, alert_uid, shallow_comp=None):
 
     async def _go():
         flow = build_shallow_probe(sink, llm_base=pl.llm_base, llm_model=pl.llm_model,
-                                   llm_key=pl.llm_key, shallow_comp=shallow_comp)
+                                   llm_key=pl.llm_key, llm_timeout=getattr(pl, "llm_timeout", 600),
+                                   shallow_comp=shallow_comp)
         await flow.invoke({"alert_view": alert_view(alert)}, create_workflow_session())
 
     asyncio.run(_go())

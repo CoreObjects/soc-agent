@@ -26,11 +26,13 @@ __all__ = ["build_cascade_workflow", "build_cascade_agent", "build_shallow_probe
 _ESCALATE_COND = "${shallow.needs_deep} == true || ${start.force_deep} == true"
 
 
-def _shallow_component(llm_base, llm_model, llm_key):
+def _shallow_component(llm_base, llm_model, llm_key, llm_timeout=600):
     cfg = LLMCompConfig(
         model_client_config=ModelClientConfig(
             client_provider="OpenAI", api_key=(llm_key or "EMPTY"),
-            api_base=llm_base, verify_ssl=False),
+            api_base=llm_base, verify_ssl=False,
+            # ★qwen 在昇腾单次 2-3 分钟:openJiuwen LLM 请求超时默认才 60s + 3 retry ≈ 4min 全废
+            timeout=float(llm_timeout), max_retries=1),
         model_config=ModelRequestConfig(model=llm_model),
         template_content=[
             {"role": "system", "content": SHALLOW_PROMPT},
@@ -43,7 +45,7 @@ def _shallow_component(llm_base, llm_model, llm_key):
 
 
 def build_cascade_workflow(graph, run_deep, sink, *, llm_base=None, llm_model=None,
-                           llm_key=None, agent_name=None, shallow_comp=None):
+                           llm_key=None, llm_timeout=600, agent_name=None, shallow_comp=None):
     flow = Workflow(card=WorkflowCard(
         id="soc_cascade", name="soc_cascade", version="1.0",
         description="SOC 告警浅度分诊 + 判不动升级深度研判",
@@ -53,7 +55,7 @@ def build_cascade_workflow(graph, run_deep, sink, *, llm_base=None, llm_model=No
             "force_deep": {"type": "boolean"},
         }, "required": ["alert_view", "alert_uid"]}))
 
-    shallow = shallow_comp or _shallow_component(llm_base, llm_model, llm_key)
+    shallow = shallow_comp or _shallow_component(llm_base, llm_model, llm_key, llm_timeout)
     deep = DeepInvestigationComponent(run_deep, sink)
     terminal = ShallowTerminalComponent(graph, sink, agent_name=agent_name)
 
@@ -81,7 +83,8 @@ def build_cascade_workflow(graph, run_deep, sink, *, llm_base=None, llm_model=No
     return flow
 
 
-def build_shallow_probe(sink, *, llm_base=None, llm_model=None, llm_key=None, shallow_comp=None):
+def build_shallow_probe(sink, *, llm_base=None, llm_model=None, llm_key=None,
+                        llm_timeout=600, shallow_comp=None):
     """只跑浅层分诊、把决策抓进 sink['shallow'] 的探针图(Start→shallow→capture→End)。
     ★不分叉、不升级、不写台账 —— 供 selftest 量 deferral / 眼验召回,可反复跑不污染。"""
     flow = Workflow(card=WorkflowCard(
@@ -89,7 +92,7 @@ def build_shallow_probe(sink, *, llm_base=None, llm_model=None, llm_key=None, sh
         description="只跑浅层分诊、抓决策(量 deferral)",
         input_params={"type": "object", "properties": {"alert_view": {"type": "string"}},
                       "required": ["alert_view"]}))
-    shallow = shallow_comp or _shallow_component(llm_base, llm_model, llm_key)
+    shallow = shallow_comp or _shallow_component(llm_base, llm_model, llm_key, llm_timeout)
     flow.set_start_comp("start", Start(), inputs_schema={"alert_view": "${alert_view}"})
     flow.add_workflow_comp("shallow", shallow, inputs_schema={"alert_view": "${start.alert_view}"})
     flow.add_connection("start", "shallow")
@@ -103,9 +106,10 @@ def build_shallow_probe(sink, *, llm_base=None, llm_model=None, llm_key=None, sh
 
 
 def build_cascade_agent(graph, run_deep, sink, *, llm_base=None, llm_model=None,
-                        llm_key=None, agent_name=None, shallow_comp=None):
+                        llm_key=None, llm_timeout=600, agent_name=None, shallow_comp=None):
     flow = build_cascade_workflow(graph, run_deep, sink, llm_base=llm_base, llm_model=llm_model,
-                                  llm_key=llm_key, agent_name=agent_name, shallow_comp=shallow_comp)
+                                  llm_key=llm_key, llm_timeout=llm_timeout, agent_name=agent_name,
+                                  shallow_comp=shallow_comp)
     agent = WorkflowAgent(WorkflowAgentConfig(
         id="soc_cascade_agent", version="0.1.0", description="SOC 浅度分诊 cascade"))
     agent.add_workflows([flow])
