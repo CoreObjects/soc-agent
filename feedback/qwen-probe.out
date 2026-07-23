@@ -1,0 +1,20 @@
+=== qwen-probe 2026-07-23 08:03Z ===
+# qwen_shallow_probe  base=http://localhost:8002/v1  model=qwen3.5-9b  timeout=600
+
+===== A 关思维 + response_format=json_object =====
+  2s  finish=stop
+  reasoning_content: (无/未分离)
+  content(前700): '{\n  "needs_deep": true,\n  "verdict": "unknown"\n}'
+
+===== B 关思维 + 无 response_format =====
+  1s  finish=stop
+  reasoning_content: (无/未分离)
+  content(前700): '{\n  "needs_deep": true,\n  "verdict": "unknown"\n}'
+
+===== C 开思维(=openJiuwen 现状)+ json_object =====
+  3s  finish=stop
+  reasoning_content: (无/未分离)
+  content(前700): '{\n  "source": "waf",\n  "rule_description": "WAF: SQL injection attempt on /login",\n  "severity": 5,\n  "technique_ids": ["T1190"]\n}'
+
+# done
+=== done ===
