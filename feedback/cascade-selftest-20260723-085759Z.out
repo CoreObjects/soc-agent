@@ -1,0 +1,45 @@
+=== cascade-selftest 2026-07-23 08:57Z ===
+[warn] openGauss 不可用,经验层降级内存(本次不持久):No module named 'psycopg2'
+# 浅层 cascade selftest  取样=recent  待判 12 条  (只跑浅层、不写台账;IP 打码)
+
+[1] T1021.001        该类 46205  uid=a2984cbdb256f93b52fbd2a0769d76072274f2173a144ac5c12f85146b8e84ce
+     浅层: needs_deep=True verdict=suspicious conf=0.95  → 路由=escalate
+     理由: Logon Type 3 indicates a network logon (e.g., RDP, SMB), and the raw data lacks source IP/workstation details, making it impossible to distinguish between legitimate admin activity and lateral movement without further context.
+[2] T1105            该类 39833  uid=aafbcbed84121f1ae98a19827cf5828b1f786dd8e84a79d077b1c4f7384ff1ed
+     浅层: needs_deep=True verdict=suspicious conf=0.95  → 路由=escalate+floor
+     理由: 虽然文件名包含'PolicyTest'暗示可能是PowerShell脚本策略测试，但无法仅凭此确认是系统自检还是攻击者利用合法进程投递恶意脚本，必须结合主机上下文深度研判。
+[3] T1003.006        该类 12791  uid=e0d083f18160244c61c51cc86c7538055022c25bc28d512d9319919f10431c12
+     浅层: needs_deep=True verdict=suspicious conf=0.95  → 路由=escalate+floor
+     理由: Alert indicates DCSync activity by a domain service account; without host context to confirm if this is a legitimate replication task or a credential theft attempt, it must be escalated.
+[4] T1003.001        该类  2391  uid=5a00e337cb9b5dad6e1734ae6db5cc5a1568fae292ad52e63b99a7711d2a1d6e
+     浅层: needs_deep=True verdict=suspicious conf=0.95  → 路由=escalate+floor
+     理由: 虽然访问进程是合法的 Wazuh Agent，但 LSASS 内存访问（T1003.001）是典型的凭证窃取技术，且调用堆栈显示其通过 syscollector 模块执行，无法仅凭此单条日志排除其被恶意利用或配置不当的风险，必须结合主机行为深度研判。
+[5] T1140            该类   195  uid=a0da2b4b7fa09f1a66819ac0dde2ce39b51139516ce7913b4a5dadf38d6116bb
+     浅层: needs_deep=True verdict=suspicious conf=0.95  → 路由=escalate+floor
+     理由: Alert triggered by PowerShell Base64 decoding within a complex Ansible module wrapper; while likely legitimate infrastructure automation, the obfuscation technique requires host context to confirm benign intent and rule out malicious payloa
+[6] T1059.001        该类   183  uid=bb05ad88f71ffb5e3e367269e938d3b2ccb87b4849cd74c09f1b23a284326b06
+     浅层: needs_deep=True verdict=suspicious conf=0.95  → 路由=escalate+floor
+     理由: PowerShell spawning a child process with base64 encoded commands is a high-risk indicator of command and control or script execution; without seeing the decoded command content or parent process context, it cannot be definitively classified
+[7] T1558.003        该类   174  uid=4bf6a0e18f476d6e06f1abb42c4fd3678cd953ee882b46932c80fdb14d902535
+     浅层: needs_deep=True verdict=suspicious conf=0.95  → 路由=escalate+floor
+     理由: 检测到针对 RC4(0x17) 加密服务的 Kerberoast 请求，这是典型的凭证窃取攻击特征，必须升级深度研判以确认是否为恶意行为。
+[8] T1059            该类   126  uid=cc254e6282018ffddb70227acf12e4bd27f8a4c4e295306e95cbe2fbefaebf19
+     浅层: needs_deep=True verdict=suspicious conf=0.95  → 路由=escalate+floor
+     理由: 虽然文件名包含'PolicyTest'且由SYSTEM用户运行，但PowerShell在Temp目录创建脚本是典型的C2或持久化行为特征，无法仅凭此单条日志排除恶意利用，必须结合主机上下文深度研判。
+[9] (none)           该类   100  uid=05313449906b1f6710b349c71b6e624ba8117961f8f3de164e7f701aca1d2f8d
+     浅层: needs_deep=True verdict=suspicious conf=0.95  → 路由=escalate+floor
+     理由: DCOM permission denial errors involving a 'vagrant' user and 'Unavailable SID' indicate potential configuration issues or compromised accounts, requiring host-level verification to rule out active misuse.
+[10] T1098            该类    22  uid=2abe65b1d54dbc8522fc450a08c1aca87fd880bfbe1b94022676bb9afe6dfa12
+     浅层: needs_deep=True verdict=suspicious conf=0.95  → 路由=escalate+floor
+     理由: User account deletion is a high-severity event that could indicate malicious activity or a critical misconfiguration; without context on the subject user's role or the target account's purpose, it cannot be definitively classified as a fals
+[11] T1649            该类    12  uid=dd7d94516e41107bdfe9dc8ace775febd60837de5829417d83339727f60830a6
+     浅层: needs_deep=True verdict=suspicious conf=0.9  → 路由=escalate+floor
+     理由: ADCS 证书颁发请求虽由内置账户发起，但缺乏上下文无法排除内部威胁或凭证泄露导致的恶意证书生成，必须深度研判。
+[12] T1071.001        该类     6  uid=2364db352a00b36916dc674df95d0b4e43c98b47a654e2ea9090549e7e820306
+     浅层: needs_deep=True verdict=suspicious conf=0.95  → 路由=escalate
+     理由: PowerShell 向 x.x.x.1:9200 (Elasticsearch 端口) 发起出站连接，虽目标名为'goad'疑似蜜罐，但缺乏上下文无法排除真实 C2 通信或数据泄露风险，需深度研判。
+
+# 汇总: 共12  终局FP=0  升级=12  deferral(升级率)=100%
+
+# selftest 完成
+=== done 2026-07-23 08:58Z ===
