@@ -89,7 +89,7 @@ def main():
         if rules:
             print(f"\n# 蒸出的签名规则 {len(rules)} 条(★眼验规则本身:键在通用字段?没过拟合?):")
             for e in rules:
-                print(f"  - [{e.verdict:14}] hit={e.hit_count}  {_mask(json.dumps(e.rule, ensure_ascii=False))[:200]}")
+                print(f"  - [{e.verdict:14}] hit={e.hit_count}  {_mask(json.dumps(e.rule, ensure_ascii=False))}")
     finally:
         pl.close()
     print("\n# selftest 完成")
