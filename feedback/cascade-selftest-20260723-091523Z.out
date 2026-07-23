@@ -1,0 +1,364 @@
+=== cascade-selftest 2026-07-23 09:15Z ===
+[warn] openGauss 不可用,经验层降级内存(本次不持久):No module named 'psycopg2'
+# 浅层 cascade selftest  取样=first  待判 116 条  (只跑浅层、不写台账;IP 打码)
+
+[1] T1021.001        该类 46205  uid=4d82458bf4a564141e5e98cfb5de82f8d44b7a10f8e8bb1cfccb03a573aeca19
+     浅层: needs_deep=True verdict=suspicious conf=0.95  → 路由=escalate
+     理由: Remote logon (Type 3) via Kerberos from a specific IP triggers lateral movement rules; without host context or session correlation, it cannot be definitively classified as benign.
+[2] T1021.001        该类 46205  uid=d43609dba720bc7dcbdf3cb1d06396f43af642e888ff11e4cbe6c6a21ec796b5
+     浅层: needs_deep=True verdict=suspicious conf=0.95  → 路由=escalate
+     理由: Alert indicates a successful remote logon (Type 3) via Kerberos for a specific user; without host context or login sequence, this could be legitimate admin activity or lateral movement, requiring deep analysis to distinguish.
+[3] T1021.001        该类 46205  uid=672d5b677f8cef1cead16f64c4a5bfb103312ef40a06aad668a65b30f0bf705c
+     浅层: needs_deep=True verdict=suspicious conf=0.95  → 路由=escalate
+     理由: Remote logon (Type 3) from a non-standard source IP (x.x.x.1, typical VM network) to a domain account triggers lateral movement risk; without host context or session correlation, benign status cannot be confirmed.
+[4] T1021.001        该类 46205  uid=0445df54e68c3e9e5dd45b90b67d132d7313b0fbabb0d00b85ec2c07d86a61fe
+     浅层: needs_deep=True verdict=suspicious conf=0.95  → 路由=escalate
+     理由: Alert indicates a remote logon (Type 3) by user 'robb.stark' but lacks source IP, workstation name, or process context, making it impossible to distinguish between legitimate remote work and lateral movement without further investigation.
+[5] T1021.001        该类 46205  uid=a2e0fa61210640bcbab7cf1ad6ed6ea5d983e396de831b618deb56b7c97024b1
+     浅层: needs_deep=True verdict=suspicious conf=0.95  → 路由=escalate
+     理由: Logon Type 3 (Network) by 'vagrant' is a high-risk indicator for lateral movement or compromised VM templates; without host context to confirm it is a known internal automation, it must be escalated.
+[6] T1021.001        该类 46205  uid=50976718e82600ce1683b939e9040a04f7365acd4bf1bebe0fbf2fc6f4fa0f0e
+     浅层: needs_deep=True verdict=suspicious conf=0.95  → 路由=escalate
+     理由: Logon Type 3 (Network) for user 'vagrant' via svchost.exe indicates potential lateral movement or credential abuse; without host context to confirm this is a known internal automation script, it must be escalated.
+[7] T1021.001        该类 46205  uid=cb44febae16f41502c558d3880e3410fb8a8da4684f3cf385547c43cb26e838d
+     浅层: needs_deep=True verdict=suspicious conf=0.95  → 路由=escalate
+     理由: Logon type 3 (network) by user 'vagrant' triggers lateral movement alerts; without host context to confirm this is a known VM provisioning workflow, it must be escalated to rule out unauthorized access.
+[8] T1021.001        该类 46205  uid=673f95f788d650d142a51a5e7eb65232ef331cc70afade7b569de6ba2b3060a6
+     浅层: needs_deep=True verdict=suspicious conf=0.95  → 路由=escalate
+     理由: Logon Type 3 (Network) by 'vagrant' via svchost.exe is a high-risk pattern often associated with automated lateral movement or compromised VMs; without host context to confirm it is a known internal management tool, it must be escalated.
+[9] T1021.001        该类 46205  uid=2b1a4b9dbf5b4665b51ba595cc49f2428abba5e9a3dc2a42a7a4484f97ed6169
+     浅层: needs_deep=True verdict=suspicious conf=0.95  → 路由=escalate
+     理由: Logon Type 3 (Network) by 'vagrant' indicates remote access; without host context to confirm this is a known VM provisioning workflow, it must be treated as potential lateral movement.
+[10] T1021.001        该类 46205  uid=e36b8ff6b0faf3dc52cefe3a8b99db355295b888e8744ce2a0ef95dcbf8e6a32
+     浅层: needs_deep=True verdict=suspicious conf=0.95  → 路由=escalate
+     理由: Remote RDP logon (Type 3) by 'vagrant' from a different subnet (x.x.x.22) to a domain-joined host indicates potential lateral movement or unauthorized access; without host context or session chain, this cannot be definitively ruled as benig
+[11] T1105            该类 39833  uid=7ad45027cd10959a26aa61fe344a8b2f3ed5c87d131380b459580cfe02b6b451
+     浅层: needs_deep=True verdict=suspicious conf=0.9  → 路由=escalate
+     理由: 文件名包含 '__PSScriptPolicyTest' 是 PowerShell 脚本块策略测试的常见特征，但此类测试文件常被攻击者利用以绕过检测或作为恶意载荷的一部分，且缺乏上下文确认其确为良性运维操作，故需深度研判。
+[12] T1105            该类 39833  uid=61778309dff5f19fffc53eb93f9ecd7a877949f2b9f4c050dccbfcddb26db3bd
+     浅层: needs_deep=True verdict=suspicious conf=0.95  → 路由=escalate
+     理由: 文件名包含 '__PSScriptPolicyTest' 疑似规避特征，且规则触发于恶意软件常用目录，无法仅凭此单条日志排除真实攻击或确认其为脚本策略测试。
+[13] T1105            该类 39833  uid=4fba66727e494fa5d65e7b5520575e3482b466d99e78928bd8d052897d523df8
+     浅层: needs_deep=True verdict=suspicious conf=0.95  → 路由=escalate
+     理由: 文件名包含 '__PSScriptPolicyTest' 虽看似微软脚本策略测试，但无法排除攻击者利用此命名伪装恶意脚本，且缺乏上下文确认是否为真实系统自检，必须深度研判。
+[14] T1105            该类 39833  uid=4c775136d80dea4d78a9ae1c356639cb1331a74a1d1a12849d507e8abacc3001
+     浅层: needs_deep=True verdict=suspicious conf=0.9  → 路由=escalate
+     理由: 文件名包含 '__PSScriptPolicyTest' 疑似规避特征，且规则命中 T1105 工具传输，仅凭文件落地无法排除恶意脚本执行风险，需深度研判。
+[15] T1105            该类 39833  uid=8a2c4c2880c61d833a1699d29e5f0a7c24638bcb7f83f3872558f2d05dc66089
+     浅层: needs_deep=True verdict=suspicious conf=0.95  → 路由=escalate
+     理由: 虽然进程是合法的 csc.exe，但它在 Temp 目录下生成了 DLL 文件，且规则明确标记为'恶意软件常用文件夹'，无法仅凭此条日志排除编译恶意载荷或持久化脚本的可能性。
+[16] T1105            该类 39833  uid=9e60c8294e2fb48c9522715303d80ab8bd1af5c54bee3a9e06fd92f171a7e3c6
+     浅层: needs_deep=True verdict=suspicious conf=0.95  → 路由=escalate
+     理由: Sysmon 检测到 PowerShell 在 Temp 目录下生成 DLL 文件，属于典型恶意载荷投递特征，需深度研判确认是否为合法业务或真实攻击。
+[17] T1105            该类 39833  uid=1e8efb6dcb8aefc79979b28cd7408f63ce4b3b479d87d9b12d7fd1ab99afb047
+     浅层: needs_deep=True verdict=suspicious conf=0.95  → 路由=escalate
+     理由: Sysmon 检测到 PowerShell 在 Temp 目录下创建可执行文件，虽可能是脚本生成器，但缺乏上下文无法排除恶意载荷落地，必须深度研判。
+[18] T1105            该类 39833  uid=a778af597d3fe50acae6687d8402fdbdce05575461db5b061b835de0a90b7234
+     浅层: needs_deep=True verdict=suspicious conf=0.95  → 路由=escalate
+     理由: 文件名包含 '__PSScriptPolicyTest' 疑似规避特征，且规则触发多次，无法仅凭此条日志确认为良性，需深度研判确认是否为真实攻击或误报。
+[19] T1105            该类 39833  uid=851bec29658a137d53cc7390770f3810135b49b8f3625276fd59dffda2fb7f43
+     浅层: needs_deep=True verdict=suspicious conf=0.95  → 路由=escalate
+     理由: 文件名包含 '__PSScriptPolicyTest' 虽暗示 PowerShell 策略测试，但无法排除攻击者利用此命名伪装恶意脚本，且缺乏上下文确认是否为已知良性运维操作，必须升级深度研判。
+[20] T1105            该类 39833  uid=84c97dbfad6956fae4d90f6142b3c5a3b4087f5686cb77b8f02092af7455d957
+     浅层: needs_deep=True verdict=suspicious conf=0.95  → 路由=escalate
+     理由: PowerShell 在 Temp 目录下生成 DLL 是典型的恶意软件投放或 C2 组件部署特征，无法仅凭此单条日志确认为良性业务。
+[21] T1003.006        该类 12791  uid=6c7fa255a575d90f7c9937e48db9fc4feeac6709e974c424b32320965fc03ca9
+     浅层: needs_deep=True verdict=suspicious conf=0.95  → 路由=escalate+floor
+     理由: Alert indicates DCSync activity by a domain service account (MEEREEN$); while potentially legitimate for replication, lack of context regarding expected replication patterns or specific object access makes it impossible to definitively rule
+[22] T1003.006        该类 12791  uid=b2099fef897370a95e3281af9eb0c945f59e1a65167d34818d36dff161d156ef
+     浅层: needs_deep=True verdict=suspicious conf=0.9  → 路由=escalate+floor
+     理由: DCSync 是典型的凭证窃取技术，虽由域控制器账户触发，但无法仅凭此单条日志确认是否为授权运维或真实攻击，必须结合主机进程链和登录序列研判。
+[23] T1003.006        该类 12791  uid=a0882a3386503952e0a58e12e8f75aacca3c445e9025625d3eda80c17216eeed
+     浅层: needs_deep=True verdict=suspicious conf=0.95  → 路由=escalate+floor
+     理由: Alert indicates DCSync activity by a machine account (MEEREEN$) with high severity; without host context to verify if this is a legitimate domain controller replication or a compromised machine account, it cannot be safely classified as a f
+[24] T1003.006        该类 12791  uid=e324f308faf659d50d341a6262a98b3ad913b7a856121f5a4a75ca88146140a0
+     浅层: needs_deep=True verdict=suspicious conf=0.95  → 路由=escalate+floor
+     理由: DCSync 是典型的凭证窃取技术，虽名为'Possible'且主体为$符号计算机账户，但缺乏上下文确认是否为合法的域控制器复制操作，必须深度研判以排除真实攻击。
+[25] T1003.006        该类 12791  uid=bcc01ee77c5cf778e7b4734dd19fda5875653adcf1373d7504f345ac99cdcc3e
+     浅层: needs_deep=True verdict=suspicious conf=0.95  → 路由=escalate+floor
+     理由: DCSync (T1003.006) 是典型的凭证窃取技术，仅凭目录复制权限访问日志无法区分是恶意攻击还是合法的域管理员运维操作，必须结合主机行为、进程链及登录序列进行深度研判。
+[26] T1003.006        该类 12791  uid=166655d569361bc0750a809a0e9621bf446a8dbcc8e343ee2c3e9b3d4a847056
+     浅层: needs_deep=True verdict=suspicious conf=0.95  → 路由=escalate+floor
+     理由: Alert indicates DCSync activity by a machine account (KINGSLANDING$); while machine accounts can be legitimate, this specific credential access technique requires host-level context (process chain, destination IP, timing) to confirm if it i
+[27] T1003.006        该类 12791  uid=c612faa5e91767db391240c0f9e6b17caa8c01ec05998f4c63f7267a33b268b6
+     浅层: needs_deep=True verdict=suspicious conf=0.95  → 路由=escalate+floor
+     理由: DCSync (T1003.006) 是典型的凭证窃取技术，仅凭目录复制权限访问日志无法区分是恶意攻击还是合法的域管理员/备份操作，必须结合主机进程链、登录序列及业务上下文进行深度研判。
+[28] T1003.006        该类 12791  uid=02e0d61d112740ca9c83a6d31e3f122fa7c05f1534d0ec41d74b531e9868daa1
+     浅层: needs_deep=True verdict=suspicious conf=0.9  → 路由=escalate+floor
+     理由: 虽然主体是域控制器 KINGSLANDING$，但仅凭此条日志无法确认该访问是合法的目录复制操作还是被提权的恶意 DCSync 攻击，必须结合主机进程链和登录序列进行深度研判。
+[29] T1003.006        该类 12791  uid=c68af5b98db9351460ebaadbbca37e5a6e007f8031873d5331b9cbd8352b609d
+     浅层: needs_deep=True verdict=suspicious conf=0.95  → 路由=escalate+floor
+     理由: Alert indicates DCSync activity (credential dumping) by a domain controller account; without host logs to confirm if this is legitimate replication or malicious credential theft, it must be escalated.
+[30] T1003.006        该类 12791  uid=b24e17e40ab8eb960d2a1da458d86d6d1a0387590f75f66faa884c4d2909b8e7
+     浅层: needs_deep=True verdict=suspicious conf=0.9  → 路由=escalate+floor
+     理由: Alert indicates DCSync activity by a machine account (KINGSLANDING$) with SID S-1-5-18; while machine accounts can legitimately replicate, this specific high-severity credential access technique requires deep analysis of the replication con
+2026-07-23 17:17:35 | common | default_trace_id | WARNING | Ignoring undefined fields for GraphEvent: error_msg
+2026-07-23 17:17:35 | common | default_trace_id | WARNING | Ignoring undefined fields for GraphEvent: error_msg
+[31] T1003.001        uid=e75f9c60910dd7b6968f390a239c0e794231a442c4f4efa42cd97d6163a295c4  !! 异常:[101004] component llm_execution process error, reason: component llm_config is invalid, reason: Json parse error
+[32] T1003.001        该类  2391  uid=e8dc9956e22e98f9d13a374c5a86c2b3c3edd7067f33f9f3b29c9b4de324c90b
+     浅层: needs_deep=True verdict=suspicious conf=0.95  → 路由=escalate+floor
+     理由: 虽然进程是合法的 Wazuh Agent，但 LSASS 内存访问（T1003.001）是典型的凭证窃取技术，且调用堆栈显示其通过 syscollector 模块访问，需深度研判确认是否为合规的资产发现行为或恶意利用。
+[33] T1003.001        该类  2391  uid=757183a24af061b2777ad963a5fa11527d23028b7dc4abf6407cfb1e7a49e249
+     浅层: needs_deep=True verdict=suspicious conf=0.95  → 路由=escalate+floor
+     理由: Wazuh agent accessing LSASS is a known false positive for credential dumping detection, but without host context to confirm it's a legitimate agent function, it must be escalated to rule out malicious impersonation or compromised agent.
+[34] T1003.001        该类  2391  uid=feee3b592325a1ad0380dde155148e6320e4fe65acbefd379bdd0ca1f0ce1abd
+     浅层: needs_deep=True verdict=suspicious conf=0.95  → 路由=escalate+floor
+     理由: 虽然进程是 Defender，但 LSASS 访问是真实攻击特征，需深度研判确认是否为误报或真实入侵。
+[35] T1003.001        该类  2391  uid=67b9c2ee51ce9fe425c08dc99cf636ea5954bd66226f5c308db4e44438828e80
+     浅层: needs_deep=True verdict=suspicious conf=0.95  → 路由=escalate+floor
+     理由: 虽然访问进程是合法的 Wazuh 组件，但 LSASS 内存访问（T1003.001）是典型的凭证窃取技术，且调用堆栈显示其通过 syscollector 模块进行，需深度研判确认是否为合规的资产发现行为或恶意利用。
+[36] T1003.001        该类  2391  uid=84677f3aa973ba6565f8c108a099329346f5b8ddead27d10a704e6cddabdaddb
+     浅层: needs_deep=False verdict=false_positive conf=0.98  → 路由=escalate+floor
+     理由: Access to LSASS by wazuh-agent.exe is a known, legitimate behavior for security agents performing host inventory and compliance checks.
+[37] T1003.001        该类  2391  uid=455f2709670408035a5dc6db5ca88b19ae3aff106bf5f769d35cbcc370847927
+     浅层: needs_deep=True verdict=suspicious conf=0.95  → 路由=escalate+floor
+     理由: Wazuh agent accessing LSASS with full access rights (0x1fffff) is a known false positive for credential dumping detection, but without host context to confirm it is a legitimate agent function, it must be escalated to rule out malicious imp
+[38] T1003.001        该类  2391  uid=0d26992485a96803c3051ec91fa7293b3aa1953af057ad8d848ccff945e0b785
+     浅层: needs_deep=True verdict=suspicious conf=0.95  → 路由=escalate+floor
+     理由: 虽然进程是 Defender，但 LSASS 访问规则无法区分是正常扫描还是恶意利用，必须结合主机行为确认是否为误报。
+2026-07-23 17:18:08 | common | default_trace_id | WARNING | Ignoring undefined fields for GraphEvent: error_msg
+2026-07-23 17:18:08 | common | default_trace_id | WARNING | Ignoring undefined fields for GraphEvent: error_msg
+[39] T1003.001        uid=47157eada26beabd71816ed0534cdd99173bf249868b05464129d9248fe41b8e  !! 异常:[101004] component llm_execution process error, reason: component llm_config is invalid, reason: Json parse error
+[40] T1003.001        该类  2391  uid=d809144268c1b0c4bbf63fcd2b9c604125a3df536ccdad4972f549cf6c3e8898
+     浅层: needs_deep=True verdict=suspicious conf=0.95  → 路由=escalate+floor
+     理由: 虽然访问者是 Wazuh 代理，但 LSASS 访问可能涉及配置错误、版本兼容性或潜在的提权攻击，仅凭此单条日志无法排除真实威胁，需结合主机上下文深度研判。
+[41] T1140            该类   195  uid=22e453526d020b52e0425162462e58a4236080809e0e2e03f6ac4b756691133e
+     浅层: needs_deep=True verdict=suspicious conf=0.95  → 路由=escalate
+     理由: Alert indicates execution of a custom PowerShell wrapper (Ansible exec_wrapper) that decodes Base64 payloads; without host context to verify if this is a legitimate Ansible task or a malicious obfuscation attempt, it must be escalated.
+[42] T1140            该类   195  uid=3f2155975094363af7d93a3ce7a60742cec22397aff9727f6797d015f6fe6ae8
+     浅层: needs_deep=True verdict=suspicious conf=0.95  → 路由=escalate
+     理由: Alert indicates PowerShell script using Base64 decoding (T1140), which is a common evasion technique; without context on the script's purpose or source, it cannot be definitively classified as benign.
+[43] T1140            该类   195  uid=15e7e1b8d17efb3ad1affc7c326c2072f597d726ed39a4883a912d1c8db68224
+     浅层: needs_deep=False verdict=false_positive conf=0.98  → 路由=terminal_fp
+     理由: The script content is clearly identified as Ansible's win_copy module (copyright headers, variable names like _ansible_check_mode, _copy_mode), which legitimately uses Base64 decoding for handling filenames with special characters.
+[44] T1140            该类   195  uid=3bab5e90174f8250b517d4fb94b82ad94762e44f8e88902baa1ab87bc1cb0c31
+     浅层: needs_deep=True verdict=suspicious conf=0.95  → 路由=escalate
+     理由: Alert triggered by Ansible exec_wrapper using Base64 decoding, which is a standard but obfuscated execution pattern; without host context to confirm legitimate Ansible usage, it must be escalated to rule out malicious payload execution.
+[45] T1140            该类   195  uid=b89d314237df8b7bf600c6df9d5411e31339ff9772060d02a6a9ee6c8e6d3993
+     浅层: needs_deep=True verdict=suspicious conf=0.95  → 路由=escalate
+     理由: Alert indicates PowerShell executing a dynamic module loader using Base64 decoding, a common technique for obfuscating malicious payloads; without inspecting the decoded module code or execution context, benign intent cannot be confirmed.
+[46] T1140            该类   195  uid=a2769f7468f0107108c2e911c9c27036ca13efe57fabb804b7feac188804d399
+     浅层: needs_deep=True verdict=suspicious conf=0.95  → 路由=escalate
+     理由: Alert triggers on a PowerShell wrapper script (Ansible exec_wrapper) that decodes Base64 payloads; without seeing the decoded payload content or execution context, it is impossible to confirm if this is legitimate automation or a malicious 
+[47] T1140            该类   195  uid=9665bf436cec6c4dcf8540a48c2f8146f533f019b5e42cb8c7bb644e891dbeb5
+     浅层: needs_deep=True verdict=suspicious conf=0.95  → 路由=escalate
+     理由: Alert indicates PowerShell executing a custom module loader using Base64 decoding, a common technique for obfuscating malicious payloads; without inspecting the decoded module content or execution context, it cannot be confirmed as benign.
+[48] T1140            该类   195  uid=d51f141e48bbddc4a5c36108c21e1678ff696a84d02982bb8a52fbceea565df4
+     浅层: needs_deep=True verdict=suspicious conf=0.95  → 路由=escalate
+     理由: Alert indicates execution of a PowerShell wrapper script (Ansible exec_wrapper) which decodes Base64 payloads; without host context to verify if this is a legitimate Ansible task or a malicious obfuscation attempt, it must be escalated.
+[49] T1140            该类   195  uid=3c4863e30cd8e2b3d26510fee246222e53fc1a2b0b0a12d50f3c34c7d8aeb8ef
+     浅层: needs_deep=True verdict=suspicious conf=0.95  → 路由=escalate
+     理由: 脚本包含典型的 Ansible 模块加载逻辑并使用 Base64 解码，虽可能是自动化运维，但缺乏上下文确认，必须深度研判以排除恶意载荷。
+[50] T1140            该类   195  uid=3c627950424c624c115eb02ce4e22aff31358f0bb0b52fed1953c214b4057df2
+     浅层: needs_deep=True verdict=suspicious conf=0.95  → 路由=escalate
+     理由: Alert triggers on a PowerShell wrapper script (Ansible exec_wrapper) that decodes Base64 payloads; without seeing the decoded payload content or execution context, it is impossible to confirm if this is legitimate automation or a malicious 
+[51] T1059.001        该类   183  uid=246bb4e5e3bb37c9c83029cd23f83134c9013b4491c17fd6577368d272c03b47
+     浅层: needs_deep=True verdict=suspicious conf=0.95  → 路由=escalate
+     理由: PowerShell 执行 Base64 编码命令是典型的攻击载荷特征，且无法仅凭此日志解码或确认其具体业务目的，必须升级深度研判。
+[52] T1059.001        该类   183  uid=c823a263bad9ccf54896adee2ddc5690eb5e680e7ed47e6e9ad4c9a7a5903cee
+     浅层: needs_deep=True verdict=suspicious conf=0.95  → 路由=escalate
+     理由: PowerShell 执行 Base64 编码命令是典型的攻击载荷特征，且无法仅凭此日志解码或确认其具体业务目的，必须升级深度研判。
+[53] T1059.001        该类   183  uid=d26bcc4d7c6956db7e657a0912381c8f02603e0925c03826ce9491d7b4006628
+     浅层: needs_deep=True verdict=suspicious conf=0.95  → 路由=escalate
+     理由: PowerShell encoded command execution is a high-risk indicator often used for obfuscation; without inspecting the decoded command content or parent process context, it cannot be definitively classified as benign.
+[54] T1059.001        该类   183  uid=31d980922d3f50277b62a243f8588f0a793b0ebe3c3b76403310235ec74f8ef6
+     浅层: needs_deep=True verdict=suspicious conf=0.95  → 路由=escalate
+     理由: PowerShell 执行 Base64 编码命令是典型的攻击载荷特征，且无法仅凭此单条日志解码或确认其具体业务目的，必须升级深度研判。
+[55] T1059.001        该类   183  uid=2414b70a51a339270a7b7c68d39e588a8f2e75a4d258fcfccd1a5f2e25705b8d
+     浅层: needs_deep=True verdict=suspicious conf=0.95  → 路由=escalate
+     理由: PowerShell 嵌套调用并执行 Base64 编码命令是典型的攻击载荷特征，且当前信息不足以确认其具体业务目的，必须升级深度研判。
+[56] T1059.001        该类   183  uid=93f72c173f165991b1d353b88fe26babaffa1b86dac92e2df929ff6b72049484
+     浅层: needs_deep=True verdict=suspicious conf=0.95  → 路由=escalate
+     理由: PowerShell encoded command execution is a high-risk indicator often used for obfuscation; without seeing the decoded command or host context, it cannot be definitively classified as benign.
+[57] T1059.001        该类   183  uid=c238c27ee8dd8525a07d1dc116e0f1f8329a0ea8ad2159bdf7c98af4a3c111a8
+     浅层: needs_deep=True verdict=suspicious conf=0.95  → 路由=escalate
+     理由: EncodedCommand 是 PowerShell 攻击的常见特征，且无法仅凭此日志解码或确认命令内容，必须升级深度研判以分析实际执行意图。
+[58] T1059.001        该类   183  uid=c94d886729c9dfe8c9d106e16b16b15f48be02d5158d275f1db14e31330b5092
+     浅层: needs_deep=True verdict=suspicious conf=0.95  → 路由=escalate
+     理由: PowerShell encoded command execution is a high-risk indicator that requires decoding and analyzing the actual command payload to distinguish between legitimate automation and malicious activity.
+[59] T1059.001        该类   183  uid=89e6745c0bdca267592193597ed9f4486302d59066c63f32e7764cb676277267
+     浅层: needs_deep=True verdict=suspicious conf=0.95  → 路由=escalate
+     理由: PowerShell 执行 Base64 编码命令是典型的攻击载荷特征，且当前信息不足以确认是否为合法的运维脚本，必须升级深度研判。
+[60] T1059.001        该类   183  uid=76cf3fb8049f8234dc608f2eebb63565ee68d392e9a21c63e66ecee7e67cec7e
+     浅层: needs_deep=True verdict=suspicious conf=0.95  → 路由=escalate
+     理由: PowerShell spawning a child process with an encoded command is a high-risk indicator of command-and-control or script execution; without decoding the payload or seeing the resulting process chain, it cannot be definitively classified as ben
+[61] T1558.003        该类   174  uid=489cc44e063bdac63f9dcf39dc87e8f99e1908e30a438afe970ebd2c11796624
+     浅层: needs_deep=True verdict=suspicious conf=0.95  → 路由=escalate+floor
+     理由: Alert indicates RC4(0x17) ticket request, a high-risk indicator for Kerberoasting; without host context to confirm if the service is legitimate or compromised, it must be escalated.
+[62] T1558.003        该类   174  uid=8cb0e34cac59fa3a9c12cda0b8ec89716610f975b77dfb170342f52c079a66aa
+     浅层: needs_deep=True verdict=suspicious conf=0.95  → 路由=escalate+floor
+     理由: Alert indicates RC4(0x17) encryption usage for a service ticket, which is a strong indicator of Kerberoasting attempts, and requires deep analysis to confirm if it is a legitimate legacy service or an attack.
+[63] T1558.003        该类   174  uid=22939eaaa05d82983c0b11bb5f0e535b10def46457d3e75f56f3afa926df6697
+     浅层: needs_deep=True verdict=suspicious conf=0.95  → 路由=escalate+floor
+     理由: 检测到针对 RC4(0x17) 加密类型的 Kerberos TGS 请求，这是 Kerberoasting 攻击的典型特征，需深度研判确认是否为恶意凭证窃取。
+[64] T1558.003        该类   174  uid=2e8b72e11f4748bcc0cbb4ef1c8e5cef6628d4b72663de0db6e564c68d273420
+     浅层: needs_deep=True verdict=suspicious conf=0.95  → 路由=escalate+floor
+     理由: Alert indicates RC4(0x17) encryption usage for Kerberos TGS request, a high-risk indicator of potential credential harvesting, requiring deep analysis to confirm malicious intent versus legacy service behavior.
+[65] T1558.003        该类   174  uid=51742b77e845dacfbd04fff348d0a32a1584d67717f1103fad07acb1ef376f12
+     浅层: needs_deep=True verdict=suspicious conf=0.95  → 路由=escalate+floor
+     理由: Kerberoast 攻击利用 RC4 加密票据窃取密码哈希，需深度研判确认是否为恶意扫描或真实凭证窃取。
+[66] T1558.003        该类   174  uid=e3f9e42bdee9491d9c93eeb508d7dd7daea2dcfa19bc510869013830c5458ab2
+     浅层: needs_deep=True verdict=suspicious conf=0.95  → 路由=escalate+floor
+     理由: Alert indicates RC4(0x17) encryption usage for a service ticket, which is a high-risk indicator for Kerberoasting attacks; without host context to confirm if this is a known legacy service or a compromised account, it must be escalated.
+[67] T1558.003        该类   174  uid=43abbce06dd381ca346174eca9d5a4ad3ad9dc8fa8d44b7b0b7cb86b88409b2c
+     浅层: needs_deep=True verdict=suspicious conf=0.95  → 路由=escalate+floor
+     理由: Kerberoast (T1558.003) 是明确的凭证窃取攻击技术，RC4 加密类型表明目标账户可能配置了弱密码，仅凭此告警无法排除攻击意图，必须升级研判。
+[68] T1558.003        该类   174  uid=6ec302bc135c970e6803c30918d7adf52efb145f35df542419094bdf1b71c563
+     浅层: needs_deep=True verdict=suspicious conf=0.95  → 路由=escalate+floor
+     理由: Kerberoast 请求使用 RC4(0x17) 加密属于高危特征，且无法仅凭此日志确认是否为授权运维或自动化脚本行为，必须结合主机进程链和登录序列进行深度研判。
+[69] T1558.003        该类   174  uid=2c087f186c7ee9a8ba787b4a61a2cb3d8df4d71c6220503b365949a93092b82f
+     浅层: needs_deep=True verdict=suspicious conf=0.95  → 路由=escalate+floor
+     理由: Alert indicates RC4(0x17) encryption usage for Kerberoast, a high-risk credential theft technique requiring host-side verification of service account status and process chains.
+[70] T1558.003        该类   174  uid=a2063126565b2be8b096d047b0118a9456082f2a8b9da49d350134b89c1c1879
+     浅层: needs_deep=True verdict=suspicious conf=0.95  → 路由=escalate+floor
+     理由: Kerberoast 攻击利用 RC4 加密请求服务票据，需深度研判确认是否为攻击者行为或正常业务。
+[71] T1059            该类   126  uid=31c54e656e4be947e0aef4ba57c492736c4dd938169eced41bbcede729541a98
+     浅层: needs_deep=True verdict=suspicious conf=0.95  → 路由=escalate
+     理由: PowerShell 以 SYSTEM 权限在 Temp 目录创建脚本文件是典型的恶意载荷投递或 C2 初始化行为，无法仅凭此单条日志确认为良性。
+[72] T1059            该类   126  uid=8fef231d3d3a0c0eb4e5dcd51d241c3d70c7ed83eeca6a025fc6179ad1b9c6ec
+     浅层: needs_deep=True verdict=suspicious conf=0.95  → 路由=escalate
+     理由: PowerShell 以 SYSTEM 权限在 Temp 目录创建脚本文件是典型的恶意载荷投递或 C2 建立行为，无法仅凭此单条日志确认为良性。
+[73] T1059            该类   126  uid=c65707446cd70db04845319ca8e90b678190e1bc92d8557d44f7e931b69463ee
+     浅层: needs_deep=True verdict=suspicious conf=0.95  → 路由=escalate
+     理由: PowerShell 以 SYSTEM 权限在 Temp 目录创建脚本文件是典型的后渗透行为或恶意载荷投递特征，无法仅凭文件名判定为良性，必须结合主机上下文深度研判。
+[74] T1059            该类   126  uid=a59ca1af607f2d5343552ee4c3a437e648933750fe4036432189ae1c363925ae
+     浅层: needs_deep=True verdict=suspicious conf=0.95  → 路由=escalate
+     理由: 虽然文件名包含'PolicyTest'暗示可能是PowerShell脚本策略测试，但仅凭文件名无法排除攻击者利用此命名伪装恶意脚本下载或执行的可能性，且涉及SYSTEM权限和T1105/T1059技术，必须深度研判确认上下文。
+[75] T1059            该类   126  uid=97e817557277bb489f6bd2ab7194d8ecf37e5f3139a7b34775ea199eaf5c9764
+     浅层: needs_deep=True verdict=suspicious conf=0.95  → 路由=escalate
+     理由: 虽然文件名包含'PolicyTest'暗示可能是PowerShell脚本块策略测试，但仅凭单条文件创建告警无法排除攻击者利用合法进程进行恶意脚本部署或混淆的可能性，必须结合主机行为、进程链及登录序列进行深度研判。
+[76] T1059            该类   126  uid=4490a3c43d01e32853e508b8054156620ff7fb0f3cd9a6364a312f3f579bb341
+     浅层: needs_deep=True verdict=suspicious conf=0.95  → 路由=escalate
+     理由: 虽然文件名包含'PolicyTest'暗示可能是PowerShell脚本执行策略测试，但Sysmon规则ID 11无法区分是管理员手动测试还是攻击者利用合法进程进行恶意脚本部署，且该规则常作为攻击链中的工具转移(T1105)和解释器执行(T1059)指标，缺乏上下文无法确认为良性。
+[77] T1059            该类   126  uid=90e5bde1f7fa4cc8ef6682882d18d0082722edf8d180b33cf03f61c040c8bb14
+     浅层: needs_deep=True verdict=suspicious conf=0.95  → 路由=escalate
+     理由: 虽然文件名包含'PolicyTest'暗示可能是PowerShell脚本策略测试，但仅凭文件名无法排除攻击者利用此命名混淆恶意脚本下载或执行的可能性，必须结合主机上下文（如进程父链、网络活动、文件哈希）进行深度研判。
+[78] T1059            该类   126  uid=2801f2170fa736fb85e5c4de33ae2676ba4c7d3348ac4b8ead56150d89af9702
+     浅层: needs_deep=True verdict=suspicious conf=0.95  → 路由=escalate
+     理由: 虽然文件名包含'PolicyTest'暗示可能是PowerShell脚本块策略测试，但仅凭文件名无法排除攻击者利用此命名伪装恶意脚本下载或执行的可能性，且涉及T1105/T1059高危技术，必须深度研判确认上下文。
+[79] T1059            该类   126  uid=b5237134a1926c033bf5509bd1a6749c4eb4e96fe5d45f6f8a033521fb523280
+     浅层: needs_deep=True verdict=suspicious conf=0.95  → 路由=escalate
+     理由: 虽然文件名包含'PolicyTest'暗示可能是PowerShell脚本策略测试，但仅凭文件名无法排除攻击者利用此命名混淆恶意脚本下载或执行的可能性，且涉及SYSTEM权限和T1105/T1059技术，必须结合主机上下文确认。
+[80] T1059            该类   126  uid=5c3f8968d141900e6ca4ee51e799832484cefad5007be710c6e11ace5334c5e2
+     浅层: needs_deep=True verdict=suspicious conf=0.95  → 路由=escalate
+     理由: 虽然文件名包含'PolicyTest'暗示可能是PowerShell脚本块策略测试，但攻击者常利用此类命名混淆视听，且Sysmon仅记录文件创建，无法确认脚本内容是否安全，必须深度研判。
+[81] (none)           该类   100  uid=6049acfd7bc465c61fb01ac257cc78725aca001cdb092ad7124344f09cd44805
+     浅层: needs_deep=True verdict=suspicious conf=0.95  → 路由=escalate
+     理由: 告警内容为 Wazuh 代理自身进程崩溃，虽大概率是软件缺陷，但无法排除攻击者利用崩溃进行提权或绕过防护的可能性，且缺乏上下文确认是否为偶发故障，需深度研判。
+[82] (none)           该类   100  uid=0880c2c9bb6fb75a9dff48dd74a579b17ebcbd98fa1aefee3cec36d3c782c604
+     浅层: needs_deep=False verdict=false_positive conf=0.95  → 路由=terminal_fp
+     理由: 告警内容为证书申请因主题名称无效或过长导致的本地系统错误，属于正常的业务配置或操作失败，无攻击特征。
+[83] (none)           该类   100  uid=20e893e458488f31eb5a969591c7b64cfb04ce2539e48be3fc6c5a68d281248e
+     浅层: needs_deep=False verdict=false_positive conf=0.95  → 路由=terminal_fp
+     理由: 告警内容为证书申请因缺少邮箱字段导致的明确业务错误，属于已知无害的系统配置问题。
+[84] (none)           该类   100  uid=ecd024f65ce11c07650d41280c532f43d84173c57750f8f8c9df6bb58b0dd693
+     浅层: needs_deep=False verdict=false_positive conf=0.95  → 路由=terminal_fp
+     理由: 告警内容为证书申请因主题名称无效或过长导致的本地系统错误，属于正常的业务配置或操作失败，无攻击特征。
+[85] (none)           该类   100  uid=c2c4d38b41978c1f625319b37190d411ab977b22944cfc979d283b3716274945
+     浅层: needs_deep=False verdict=false_positive conf=0.95  → 路由=terminal_fp
+     理由: 告警内容为证书注册失败，明确提示缺少必需的电子邮件地址，属于配置错误导致的良性业务失败，非攻击行为。
+[86] (none)           该类   100  uid=bbc65950c2c995d489cfadf8f132b8c3ec1ea025e2684ba1b9386631696f77c4
+     浅层: needs_deep=True verdict=suspicious conf=0.9  → 路由=escalate
+     理由: User 'vagrant' (common test account) modified audit policy to hide 'Directory Service Access' failures, a classic technique to cover tracks after potential compromise; requires host analysis to verify context.
+[87] (none)           该类   100  uid=e8d67294661a20d581bd46ab4a819a30de36f623dbcb3493a2c654f92337393f
+     浅层: needs_deep=True verdict=suspicious conf=0.95  → 路由=escalate
+     理由: 审计策略变更（特别是添加失败审计）是攻击者隐藏踪迹或扩大权限的典型行为，无法仅凭此单条日志确认为良性。
+[88] (none)           该类   100  uid=42c4185f0d853043764147f2db84b4f207bda1001ea5a1acbb97430b0e92894f
+     浅层: needs_deep=True verdict=suspicious conf=0.9  → 路由=escalate
+     理由: Windows 审计策略变更（特别是添加失败审计）是攻击者隐藏痕迹或准备后续攻击的常见行为，且涉及特权账户 vagrant，无法仅凭此条日志确认为良性。
+[89] (none)           该类   100  uid=151a3d4cfef6f0a901d43e499f564e567536517bdba64cd814559996a2fa8670
+     浅层: needs_deep=True verdict=suspicious conf=0.9  → 路由=escalate
+     理由: 告警仅表明.NET性能库加载失败，未提供攻击上下文或明确良性证据，需深度研判排除利用可能。
+[90] (none)           该类   100  uid=b2db149615e574b94a789a23732f6c85b8a2634ef66fa76dfa6bb7f19406b16a
+     浅层: needs_deep=True verdict=suspicious conf=0.95  → 路由=escalate
+     理由: Application DLL loading failure (Error 126) could indicate legitimate software issues or malicious tampering; without host context, it cannot be definitively classified as benign.
+[91] T1098            该类    22  uid=5490bef1f7aedf818a4855a0a756932aee1fd3e14c27ebf61bff8003ac1f0526
+     浅层: needs_deep=True verdict=suspicious conf=0.9  → 路由=escalate
+     理由: User account creation/enabling is a high-risk activity requiring host context to verify if it was authorized by an admin or part of an attacker's persistence attempt.
+[92] T1098            该类    22  uid=3a615487734a79bd55e2aa254849e679f45c13824ae59b8fb0135ce867a56681
+     浅层: needs_deep=True verdict=suspicious conf=0.95  → 路由=escalate
+     理由: User account modification (Event 4738) is a high-severity indicator of potential persistence or privilege escalation; without seeing the subject account's context or the specific attribute changes, it cannot be definitively classified as be
+[93] T1098            该类    22  uid=9cc454ff520b632f14e35160ac31d4279c340ce7e4f7eade31447f17e1aa08fa
+     浅层: needs_deep=True verdict=suspicious conf=0.95  → 路由=escalate
+     理由: User account control (UAC) value was modified from 0x11 to 0x10, which disables the 'Account Enabled' flag; this is a critical privilege escalation or persistence technique requiring host-level verification to rule out authorized admin acti
+[94] T1098            该类    22  uid=da66129ecedde5eb1c13f7147a7ebd109e4c77db14adfc0acc0dfa9924aeb86c
+     浅层: needs_deep=True verdict=suspicious conf=0.95  → 路由=escalate
+     理由: User account 'soc-test-roaster' was enabled by 'vagrant'; without context on whether this is a scheduled maintenance task or an attacker enabling a backdoor, it must be escalated.
+[95] T1098            该类    22  uid=fd3b8262aa8a8947485c02c4ddac78cb6cd3ee45f9a6906269d979bf439b3152
+     浅层: needs_deep=True verdict=suspicious conf=0.95  → 路由=escalate
+     理由: 账户被禁用是攻击者清除痕迹或阻止访问的典型行为，且涉及特权账户操作，无法仅凭此单条日志确认为良性运维。
+[96] T1098            该类    22  uid=3aedeac6fd9da6aaf3a52b765850314bbe5e8c294287351d4c0c83b8e8923e39
+     浅层: needs_deep=True verdict=suspicious conf=0.95  → 路由=escalate
+     理由: User 'vagrant' (common attacker/test account) modified 'soc-test-roaster' account's UAC and parameters; without host context to confirm authorized admin activity, this must be escalated.
+[97] T1098            该类    22  uid=1d4d5c877b5388ed50f12f5a9ddba781e4bcfd59b804d08bdb2bcf6ca91f10bf
+     浅层: needs_deep=True verdict=suspicious conf=0.95  → 路由=escalate
+     理由: User account 'soc-test-roaster' was enabled by 'vagrant'; without context on whether this is a scheduled maintenance task or an attacker restoring access, it must be escalated.
+[98] T1098            该类    22  uid=afa9e4293f56ea74c0984cfe0613292db6852adbb6271fee0cf9a947790d3e2f
+     浅层: needs_deep=True verdict=suspicious conf=0.95  → 路由=escalate
+     理由: User account modification (UAC change) is a critical persistence technique (T1098); without host context to verify authorized admin activity, it must be escalated.
+[99] T1098            该类    22  uid=e87c2ba0daf30a2e0352568693df41b4cedab5c7d1d18a34b646d8e0bb4c0b5e
+     浅层: needs_deep=True verdict=suspicious conf=0.95  → 路由=escalate
+     理由: User account modification (T1098) is a high-severity persistence technique; without context on the subject user's role and the specific attribute changes, this cannot be definitively classified as benign.
+[100] T1098            该类    22  uid=7fe5be4144bd97959969ff3e8a4951963c3107e5109c462202857557485fc9a0
+     浅层: needs_deep=True verdict=suspicious conf=0.95  → 路由=escalate
+     理由: User account modification (T1098) is a high-severity indicator of persistence or privilege escalation; without host context to confirm authorized admin activity, it must be escalated.
+[101] T1649            该类    12  uid=0a4f05a36e53604d2e430d0a3bd09c0bd4ca4f6bd1ad69c946fe77c2dc526edd
+     浅层: needs_deep=True verdict=suspicious conf=0.9  → 路由=escalate
+     理由: ADCS 证书请求虽可能由合法运维触发，但缺乏上下文无法排除内部威胁或凭证窃取风险，必须深度研判。
+[102] T1649            该类    12  uid=de0c916555081db3311289600dcaa08c2870139eac1a9d6a79035260125e3003
+     浅层: needs_deep=True verdict=suspicious conf=0.9  → 路由=escalate
+     理由: ADCS 证书请求虽可能为正常业务，但缺乏上下文无法排除内部威胁或证书滥用风险，需深度研判。
+[103] T1649            该类    12  uid=b63795ed92e5f0762bae13a3a335e5bf23be38d14fd343c37db53ae4bd5b80f7
+     浅层: needs_deep=True verdict=suspicious conf=0.9  → 路由=escalate
+     理由: ADCS 证书请求可能用于 ESC 滥用，需结合主机上下文（如请求者身份、证书用途、后续行为）确认是否为合法运维或攻击。
+[104] T1649            该类    12  uid=7c42aceea223d7c0b7925550976013f54a61c6eba708d1e34fdf7df81676e30a
+     浅层: needs_deep=True verdict=suspicious conf=0.95  → 路由=escalate
+     理由: ADCS 证书请求/签发告警涉及凭证访问技术 (T1649)，虽请求者名为 vagrant 且属性含开发环境域名，但缺乏上下文无法排除内部威胁或凭证泄露风险，必须深度研判。
+[105] T1649            该类    12  uid=bb335696aea2a6abb93eacdc97dbb964a2cbde46289b94904edc13529e0ee5b1
+     浅层: needs_deep=True verdict=suspicious conf=0.9  → 路由=escalate
+     理由: ADCS 证书请求虽可能为正常业务，但缺乏上下文无法排除 ESC 滥用风险，需深度研判确认请求者身份及用途。
+[106] T1649            该类    12  uid=ce4e1e9fc0fb75b933da04b9e91c09d28b177f293a30ef8c336c4a8cb641e2b7
+     浅层: needs_deep=True verdict=suspicious conf=0.9  → 路由=escalate
+     理由: 虽然请求者显示为内置'Users'组且包含'vagrant'（常见测试用户），但规则触发且涉及高严重性的证书颁发，必须通过深度研判确认是否为内部测试、自动化运维或真实的凭证窃取攻击。
+[107] T1649            该类    12  uid=8cb63a520032ad3423eee78d7af251ba54dd355e6780c22a3345362541dbf616
+     浅层: needs_deep=True verdict=suspicious conf=0.9  → 路由=escalate
+     理由: ADCS 证书请求虽可能为正常业务，但缺乏上下文无法排除内部威胁或凭证滥用风险，需深度研判确认请求者身份及意图。
+[108] T1649            该类    12  uid=68a0490507f41d8fddacf002cc929588da8129659ec3bcc6390df129d27bb86a
+     浅层: needs_deep=True verdict=suspicious conf=0.9  → 路由=escalate
+     理由: ADCS 证书请求虽可能为正常业务，但缺乏上下文无法排除凭证窃取或伪造认证证书的攻击意图，需深度研判。
+[109] T1649            该类    12  uid=29e814c43ae6c492e158ee905fbeb3f9c566ee732c825c4ec3201e42b69a3a19
+     浅层: needs_deep=True verdict=suspicious conf=0.9  → 路由=escalate
+     理由: Alert indicates a certificate request from 'vagrant' user with specific attributes; without host context to verify if this is a known dev/test account or legitimate automation, it cannot be definitively ruled as benign.
+[110] T1649            该类    12  uid=4b993fffbdc7dd2e47afecf89f14a0cbd8cf186b9f983c1e86bd6a0a764a2610
+     浅层: needs_deep=True verdict=suspicious conf=0.9  → 路由=escalate
+     理由: ADCS 证书签发告警虽请求者名为 vagrant，但无法仅凭此日志确认是否为授权运维或测试，必须结合主机上下文排除真实凭证窃取风险。
+[111] T1071.001        该类     6  uid=3b135eb0a9a48a1a3971756caf566738bd1f18f3a4f7c984551bb56506ff325c
+     浅层: needs_deep=True verdict=suspicious conf=0.95  → 路由=escalate
+     理由: PowerShell 向 9200 端口（Elasticsearch）发起出站连接，极可能为 C2 通信或数据外传，无法仅凭此单条日志确认为良性。
+[112] T1071.001        该类     6  uid=f3ade00128de2f28ce12dac39d6515e3753ef395534808a4c7d64ef4ae6e9926
+     浅层: needs_deep=True verdict=suspicious conf=0.95  → 路由=escalate
+     理由: PowerShell 向 x.x.x.1:9200 (Elasticsearch 端口) 发起出站连接，虽为内网 IP 但缺乏明确业务上下文，无法排除 C2 通信或数据外传风险。
+[113] T1071.001        该类     6  uid=486a6345861a93e94f5a54ed054633949b47afb69690b7fdef6b38e09dad5c3e
+     浅层: needs_deep=True verdict=suspicious conf=0.95  → 路由=escalate
+     理由: PowerShell 向 9200 端口（Elasticsearch）发起出站连接，极可能为 C2 通信或数据外传，无法仅凭此条日志确认为良性。
+[114] T1071.001        该类     6  uid=2ccee5cd92fdc08479a2ad8870fc1e6cb6e92e09f98d23d725697f215bc791f1
+     浅层: needs_deep=True verdict=suspicious conf=0.95  → 路由=escalate
+     理由: PowerShell 向 9200 端口（Elasticsearch）发起出站连接，虽可能是运维或测试，但缺乏上下文确认，存在 C2 或数据渗出风险，需深度研判。
+[115] T1071.001        该类     6  uid=b43495063a860f1565bbd9c7205bebde98cdbc652e0674da17dc6696523212bc
+     浅层: needs_deep=True verdict=suspicious conf=0.95  → 路由=escalate
+     理由: PowerShell 向 x.x.x.1:9200 (Elasticsearch 端口) 发起出站连接，虽目标名为'goad'疑似蜜罐，但缺乏上下文无法排除真实 C2 通信或数据泄露风险，需深度研判。
+[116] T1071.001        该类     6  uid=2364db352a00b36916dc674df95d0b4e43c98b47a654e2ea9090549e7e820306
+     浅层: needs_deep=True verdict=suspicious conf=0.95  → 路由=escalate
+     理由: PowerShell 向 x.x.x.1:9200 (Elasticsearch 端口) 发起出站连接，虽目标名为'goad'疑似蜜罐，但缺乏上下文无法排除真实 C2 通信或数据泄露风险，需深度研判。
+
+# 汇总: 共114  终局FP=5  升级=109  deferral(升级率)=96%
+
+# 浅层判 FP 的(★眼验召回:这些该不该被浅层终局判良性?有真攻击=漏判):
+  - T1140            15e7e1b8d17efb3ad1affc7c326c2072f597d726ed39a4883a912d1c8db68224  Powershell script may be using Base64 decoding method
+  - (none)           0880c2c9bb6fb75a9dff48dd74a579b17ebcbd98fa1aefee3cec36d3c782c604  Windows application error event.
+  - (none)           20e893e458488f31eb5a969591c7b64cfb04ce2539e48be3fc6c5a68d281248e  Windows application error event.
+  - (none)           ecd024f65ce11c07650d41280c532f43d84173c57750f8f8c9df6bb58b0dd693  Windows application error event.
+  - (none)           c2c4d38b41978c1f625319b37190d411ab977b22944cfc979d283b3716274945  Windows application error event.
+
+# selftest 完成
+=== done 2026-07-23 09:23Z ===
