@@ -27,7 +27,7 @@ from .skills_runtime import SkillRegistry
 from .tools import default_toolbox
 
 __all__ = ["investigate_alert", "render_result", "render_trace", "AlertNotFound", "main",
-           "Pipeline", "build_pipeline", "run_pipeline", "collect_forensics"]
+           "Pipeline", "build_pipeline", "run_pipeline", "run_investigation", "collect_forensics"]
 
 _REPO_ROOT = Path(__file__).resolve().parents[1]
 
@@ -153,6 +153,10 @@ class Pipeline:
     exp_store: object          # ExperienceCache(包 openGauss 或 InMemory)
     case_store: object         # CaseStore
     agent_name: str
+    cascade_enabled: bool = False       # 浅度研判 cascade(openJiuwen)总开关
+    llm_base: str = ""                  # 浅层 LLMComponent 接的 OpenAI 兼容端点(=qwen vLLM)
+    llm_model: str = ""
+    llm_key: str = ""
 
     def close(self):
         self.graph.close()
@@ -178,7 +182,9 @@ def build_pipeline(config: Config) -> "Pipeline":
     exp_store, case_store = _open_stores(config)
     return Pipeline(graph=graph, router=router, agent_inv=agent_inv, recipe_inv=recipe_inv,
                     composer=composer, llm=agent_inv.llm, policy=agent_inv.policy, iface=iface,
-                    exp_store=exp_store, case_store=case_store, agent_name=config.llm_model)
+                    exp_store=exp_store, case_store=case_store, agent_name=config.llm_model,
+                    cascade_enabled=config.cascade_enabled, llm_base=config.llm_api_base,
+                    llm_model=config.llm_model, llm_key=config.llm_api_key)
 
 
 def _reuse_tp(pl, alert, forensics, chosen):
@@ -270,6 +276,15 @@ def run_pipeline(pl, alert_uid, mode="recipe"):
     return result, report, picked
 
 
+def run_investigation(pl, alert_uid, mode="recipe"):
+    """研判一条:cascade 开→浅度分诊(openJiuwen)判不动才深度;关→现状深度 run_pipeline。
+    返回 (result, report, picked)。★cascade 关时不 import openjiuwen(懒导入),3.10 深度-only 照跑。"""
+    if getattr(pl, "cascade_enabled", False):
+        from .cascade.run import run_cascade
+        return run_cascade(pl, alert_uid, mode)
+    return run_pipeline(pl, alert_uid, mode)
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(description="研判单条告警(慢通道)")
     ap.add_argument("alert_uid", help="要研判的 :Alert 的 alert_uid")
@@ -282,7 +297,7 @@ def main(argv=None):
     config = Config.from_env(dotenv_path=args.dotenv)
     pl = build_pipeline(config)
     try:
-        result, report, picked = run_pipeline(pl, args.alert_uid, mode=args.mode)
+        result, report, picked = run_investigation(pl, args.alert_uid, mode=args.mode)
         print(f"[skill] {result.skill or '(none)'}  [决策] {report.decision}  [模式] {picked}")
     finally:
         pl.close()

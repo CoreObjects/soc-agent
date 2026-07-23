@@ -65,3 +65,15 @@ def test_config_opengauss_enabled_when_host_set():
                                "OG_PASSWORD": "pw", "OG_PORT": "5432", "OG_SCHEMA": "soc"})
     assert cfg.og_enabled is True
     assert (cfg.og_host, cfg.og_port, cfg.og_database, cfg.og_user) == ("127.0.0.1", 5432, "soc", "soc")
+
+
+def test_config_cascade_disabled_by_default():
+    # 浅度研判 cascade 默认关(关掉=现状深度-only,不引 openjiuwen,3.10 也能跑)
+    cfg = Config.from_env(env={"NEO4J_URI": "bolt://s1:7687"})
+    assert cfg.cascade_enabled is False
+
+
+def test_config_cascade_enabled_from_env():
+    assert Config.from_env(env={"SOC_CASCADE_ENABLED": "1"}).cascade_enabled is True
+    assert Config.from_env(env={"SOC_CASCADE_ENABLED": "true"}).cascade_enabled is True
+    assert Config.from_env(env={"SOC_CASCADE_ENABLED": "0"}).cascade_enabled is False

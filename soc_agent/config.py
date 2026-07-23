@@ -52,6 +52,8 @@ class Config:
     og_user: str
     og_password: str
     og_schema: str
+    # 浅度研判 cascade(openJiuwen)总开关;默认关=现状深度-only,不引 openjiuwen(3.10 可跑)
+    cascade_enabled: bool = False
 
     @property
     def appliance_enabled(self) -> bool:
@@ -91,4 +93,6 @@ class Config:
             og_user=g("OG_USER", "soc"),
             og_password=g("OG_PASSWORD", ""),
             og_schema=g("OG_SCHEMA", "soc"),
+            cascade_enabled=str(g("SOC_CASCADE_ENABLED", "")).strip().lower()
+            in ("1", "true", "yes", "on"),
         )
