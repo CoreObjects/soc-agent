@@ -31,9 +31,13 @@ def _shallow_component(llm_base, llm_model, llm_key, llm_timeout=600):
         model_client_config=ModelClientConfig(
             client_provider="OpenAI", api_key=(llm_key or "EMPTY"),
             api_base=llm_base, verify_ssl=False,
-            # ★qwen 在昇腾单次 2-3 分钟:openJiuwen LLM 请求超时默认才 60s + 3 retry ≈ 4min 全废
+            # ★qwen 慢:openJiuwen LLM 请求超时默认才 60s + 3 retry ≈ 4min 全废
             timeout=float(llm_timeout), max_retries=1),
-        model_config=ModelRequestConfig(model=llm_model),
+        # ★关 qwen3 思维链:开着会吐 <think>/回显输入,污染 JSON→openJiuwen json.loads 崩(它不像 QwenClient 默认关);
+        #   base_model_client 会把 model_config 的额外字段 dump 进请求 → extra_body 透传到 vLLM。低温更稳。
+        model_config=ModelRequestConfig(
+            model=llm_model, temperature=0.1,
+            extra_body={"chat_template_kwargs": {"enable_thinking": False}}),
         template_content=[
             {"role": "system", "content": SHALLOW_PROMPT},
             {"role": "user", "content": "{{alert_view}}"},

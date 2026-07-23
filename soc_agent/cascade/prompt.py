@@ -30,5 +30,6 @@ SHALLOW_OUTPUT_SCHEMA = {
         "confidence": {"type": "number", "description": "对判定的置信 0~1"},
         "rationale": {"type": "string", "description": "一句话依据"},
     },
-    "required": ["needs_deep", "verdict", "confidence", "rationale"],
+    # 只硬要 needs_deep(路由靠它);其余给了更好、缺了不崩(小模型偶尔省字段,别让 schema 校验挂掉)
+    "required": ["needs_deep"],
 }
