@@ -1,0 +1,45 @@
+=== cascade-selftest 2026-07-23 06:55Z ===
+[warn] openGauss 不可用,经验层降级内存(本次不持久):No module named 'psycopg2'
+# 浅层 cascade selftest  取样=recent  待判 12 条  (只跑浅层、不写台账;IP 打码)
+
+2026-07-23 15:00:06 | common | default_trace_id | WARNING | Ignoring undefined fields for GraphEvent: error_msg
+2026-07-23 15:00:06 | common | default_trace_id | WARNING | Ignoring undefined fields for GraphEvent: error_msg
+[1] T1021.001        uid=a2984cbdb256f93b52fbd2a0769d76072274f2173a144ac5c12f85146b8e84ce  !! 异常:[101003] component llm_invoke call failed, reason: invoke llm failed
+2026-07-23 15:04:09 | common | default_trace_id | WARNING | Ignoring undefined fields for GraphEvent: error_msg
+2026-07-23 15:04:09 | common | default_trace_id | WARNING | Ignoring undefined fields for GraphEvent: error_msg
+[2] T1105            uid=aafbcbed84121f1ae98a19827cf5828b1f786dd8e84a79d077b1c4f7384ff1ed  !! 异常:[101003] component llm_invoke call failed, reason: invoke llm failed
+2026-07-23 15:08:12 | common | default_trace_id | WARNING | Ignoring undefined fields for GraphEvent: error_msg
+2026-07-23 15:08:12 | common | default_trace_id | WARNING | Ignoring undefined fields for GraphEvent: error_msg
+[3] T1003.006        uid=e0d083f18160244c61c51cc86c7538055022c25bc28d512d9319919f10431c12  !! 异常:[101003] component llm_invoke call failed, reason: invoke llm failed
+2026-07-23 15:12:16 | common | default_trace_id | WARNING | Ignoring undefined fields for GraphEvent: error_msg
+2026-07-23 15:12:16 | common | default_trace_id | WARNING | Ignoring undefined fields for GraphEvent: error_msg
+[4] T1003.001        uid=5a00e337cb9b5dad6e1734ae6db5cc5a1568fae292ad52e63b99a7711d2a1d6e  !! 异常:[101003] component llm_invoke call failed, reason: invoke llm failed
+2026-07-23 15:16:19 | common | default_trace_id | WARNING | Ignoring undefined fields for GraphEvent: error_msg
+2026-07-23 15:16:19 | common | default_trace_id | WARNING | Ignoring undefined fields for GraphEvent: error_msg
+[5] T1140            uid=a0da2b4b7fa09f1a66819ac0dde2ce39b51139516ce7913b4a5dadf38d6116bb  !! 异常:[101003] component llm_invoke call failed, reason: invoke llm failed
+2026-07-23 15:20:23 | common | default_trace_id | WARNING | Ignoring undefined fields for GraphEvent: error_msg
+2026-07-23 15:20:23 | common | default_trace_id | WARNING | Ignoring undefined fields for GraphEvent: error_msg
+[6] T1059.001        uid=bb05ad88f71ffb5e3e367269e938d3b2ccb87b4849cd74c09f1b23a284326b06  !! 异常:[101003] component llm_invoke call failed, reason: invoke llm failed
+2026-07-23 15:24:26 | common | default_trace_id | WARNING | Ignoring undefined fields for GraphEvent: error_msg
+2026-07-23 15:24:26 | common | default_trace_id | WARNING | Ignoring undefined fields for GraphEvent: error_msg
+[7] T1558.003        uid=4bf6a0e18f476d6e06f1abb42c4fd3678cd953ee882b46932c80fdb14d902535  !! 异常:[101003] component llm_invoke call failed, reason: invoke llm failed
+2026-07-23 15:28:29 | common | default_trace_id | WARNING | Ignoring undefined fields for GraphEvent: error_msg
+2026-07-23 15:28:29 | common | default_trace_id | WARNING | Ignoring undefined fields for GraphEvent: error_msg
+[8] T1059            uid=cc254e6282018ffddb70227acf12e4bd27f8a4c4e295306e95cbe2fbefaebf19  !! 异常:[101003] component llm_invoke call failed, reason: invoke llm failed
+2026-07-23 15:32:32 | common | default_trace_id | WARNING | Ignoring undefined fields for GraphEvent: error_msg
+2026-07-23 15:32:32 | common | default_trace_id | WARNING | Ignoring undefined fields for GraphEvent: error_msg
+[9] (none)           uid=05313449906b1f6710b349c71b6e624ba8117961f8f3de164e7f701aca1d2f8d  !! 异常:[101003] component llm_invoke call failed, reason: invoke llm failed
+2026-07-23 15:36:36 | common | default_trace_id | WARNING | Ignoring undefined fields for GraphEvent: error_msg
+2026-07-23 15:36:36 | common | default_trace_id | WARNING | Ignoring undefined fields for GraphEvent: error_msg
+[10] T1098            uid=2abe65b1d54dbc8522fc450a08c1aca87fd880bfbe1b94022676bb9afe6dfa12  !! 异常:[101003] component llm_invoke call failed, reason: invoke llm failed
+2026-07-23 15:40:39 | common | default_trace_id | WARNING | Ignoring undefined fields for GraphEvent: error_msg
+2026-07-23 15:40:39 | common | default_trace_id | WARNING | Ignoring undefined fields for GraphEvent: error_msg
+[11] T1649            uid=dd7d94516e41107bdfe9dc8ace775febd60837de5829417d83339727f60830a6  !! 异常:[101003] component llm_invoke call failed, reason: invoke llm failed
+2026-07-23 15:44:42 | common | default_trace_id | WARNING | Ignoring undefined fields for GraphEvent: error_msg
+2026-07-23 15:44:42 | common | default_trace_id | WARNING | Ignoring undefined fields for GraphEvent: error_msg
+[12] T1071.001        uid=2364db352a00b36916dc674df95d0b4e43c98b47a654e2ea9090549e7e820306  !! 异常:[101003] component llm_invoke call failed, reason: invoke llm failed
+
+# 汇总: 共0  终局FP=0  升级=0  deferral(升级率)=0%
+
+# selftest 完成
+=== done 2026-07-23 07:44Z ===
