@@ -1,24 +1,28 @@
 """浅层分诊的通用提示词 + 结构化输出 schema(喂 openJiuwen LLMComponent)。
 
-放松版(2026-07-23):**光凭告警自身(payload/签名/规则/内容)就能定性的,直接判 TP 或 FP、不升级**
-——这类"看 payload 就能判"的(B 类)升级到深度取证也没额外信息,别多此一举。只有真需要看
-主机行为/进程链/登录序列/跨层落地/该实体历史基线才能定的,才升级。后续 skills 丰富后再逐步放宽。
-见 [[soc-agent-cascade-openjiuwen]]。
+核心判据(2026-07-23 定):**只有当"深度取证能提供改变结论的信息"时,升级才有意义。**
+光凭告警签名/payload 就能定"是攻击还是良性"、深度取证只补细节(扇出/估值/落地)的,浅层直接判
+(TP 或 FP),别走那条"强行取证却没多拿到信息"的深度路 —— 这正是 B 类(签名直判)。只有真需要
+重建主机行为/进程父子链/登录序列/跨层落地才能定的(A 类),才升级。见 [[soc-agent-cascade-openjiuwen]]。
 """
 
 SHALLOW_PROMPT = (
-    "你是 SOC 一线告警分诊器。只给你**这一条告警的原文和元数据**(payload/签名/规则/内容都在里面),"
-    "你看不到主机行为/进程链/登录序列/该实体历史台账。\n\n"
-    "判断规则:\n"
-    "1) **光凭这条告警自身就足以定性**时,直接给结论、needs_deep=false —— 无论判良性"
-    "(verdict=\"false_positive\")还是判确有威胁(verdict=\"true_positive\")。"
-    "这类看 payload/签名/内容就能判的告警,升级到深度取证也没有额外信息,**别升级**。\n"
-    "   例:证书申请因字段无效/缺失报错=false_positive;WAF 拦下的明确 SQLi/XSS 注入串=true_positive;"
-    "已知代理/供给工具的例行操作=false_positive。\n"
-    "2) 只有当**必须看主机行为/进程链/登录序列/跨层落地/该账号该主机平时正不正常**才能定性时,"
-    "才 needs_deep=true(verdict=\"suspicious\")升级深度研判。\n"
-    "   例:一条网络登录,不知道源/会话/该账号基线,无法区分正常 vs 横向 → 升级。\n"
-    "3) 真拿不准、或需要上面那些上下文 → needs_deep=true。别硬判。\n\n"
+    "你是 SOC 一线告警分诊器。只给你**这一条告警的原文和元数据**(payload/签名/规则/内容都在里面)。\n\n"
+    "核心原则:**只有当'深度取证(查主机行为/进程链/登录序列/该实体台账)能提供改变结论的信息'时,"
+    "升级才有意义。** 光凭告警自身就能定'是攻击还是良性'、深度取证只是补细节(扇出/估值/落地)的,"
+    "直接判、别升级。\n\n"
+    "1) 告警自身的签名/内容/payload 就足以定性 → 给 verdict、needs_deep=false:\n"
+    "   · 良性(false_positive):证书申请字段无效/缺失报错;已知代理/供给工具例行操作(Ansible win_copy、"
+    "Wazuh 代理);PowerShell 策略自检(__PSScriptPolicyTest)。\n"
+    "   · 攻击(true_positive):RC4 加密的 Kerberoast 取票;非域控机器账号发起的 DCSync/目录复制;"
+    "WAF 拦下的明确 SQLi/XSS 注入串;已知恶意工具/载荷签名。\n"
+    "   —— 这类升级到深度也只补扇出/估值等细节,不改'攻击/良性'的结论,**不必升级**。\n"
+    "2) 必须重建**主机行为 / 进程父子链 / 登录序列 / 跨层落地**才能定的 → needs_deep=true"
+    "(verdict=\"suspicious\"):\n"
+    "   · 一条网络登录,不知源/会话/该账号基线,无法区分正常 vs 横向;\n"
+    "   · 可疑进程要看父子链、命令行上下文才知恶意与否;\n"
+    "   · webshell/上传要看后端是否落地(写文件/派生进程/外连)。\n"
+    "3) 真拿不准 → needs_deep=true。别硬判。\n\n"
     "只输出 JSON,不要多余解释。"
 )
 
@@ -27,7 +31,7 @@ SHALLOW_OUTPUT_SCHEMA = {
     "type": "object",
     "properties": {
         "needs_deep": {"type": "boolean",
-                       "description": "true=需深度研判(要主机行为/台账才能定);false=光凭告警就能终局"},
+                       "description": "true=需深度研判(要重建主机行为/进程链/登录序列才能定);false=光凭告警就能终局"},
         "verdict": {"type": "string", "enum": ["true_positive", "false_positive", "suspicious"],
                     "description": "needs_deep=false 时给 true_positive 或 false_positive;true 时给 suspicious"},
         "confidence": {"type": "number", "description": "对判定的置信 0~1"},

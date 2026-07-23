@@ -123,11 +123,12 @@ def test_run_shallow_route_terminal_tp():
     assert r["route"] == "terminal_tp"
 
 
-def test_run_shallow_route_escalate_on_floor():
+def test_run_shallow_no_floor_override():
+    # floor 已退成空:高危技战术不再强制升级,升/不升全看浅层 LLM
     from soc_agent.cascade.run import run_shallow
-    pl = _FakePL({"alert_uid": "a1", "technique_ids": ["T1003.006"]})   # 高危 → force_deep
+    pl = _FakePL({"alert_uid": "a1", "technique_ids": ["T1003.006"]})
     r = run_shallow(pl, "a1", shallow_comp=_FakeShallow(False))
-    assert r["route"] == "escalate" and r["force_deep"] is True
+    assert r["force_deep"] is False and r["route"] == "terminal_fp"
 
 
 def test_agent_runner_path_fills_sink():
