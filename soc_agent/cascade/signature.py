@@ -17,7 +17,8 @@ from typing import Optional
 from ..experience.store import Experience
 
 __all__ = ["payload_match", "match_ctx", "OPS", "PayloadCase", "sig_consult",
-           "distill_signature", "sig_sediment", "SIGNATURE_DISTILL_PROMPT"]
+           "distill_signature", "sig_sediment", "SIGNATURE_DISTILL_PROMPT",
+           "payload_case_of", "InMemoryPayloadCaseStore"]
 
 OPS = ("eq", "in", "basename_eq", "contains", "gt", "gte", "lt", "lte")
 _NUM_OPS = {"gt", "gte", "lt", "lte"}
@@ -113,6 +114,32 @@ class PayloadCase:
     rule_id: Optional[str] = None
     severity: object = None
     technique_ids: Optional[list] = None
+
+
+def payload_case_of(alert, verdict) -> PayloadCase:
+    """从 alert + 浅层 verdict 造一条语料(payload_match 能直接匹配它)。"""
+    return PayloadCase(alert_uid=alert.alert_uid, source=getattr(alert, "source", None),
+                       raw=getattr(alert, "raw", None), verdict=verdict,
+                       rule_description=getattr(alert, "rule_description", None),
+                       rule_id=getattr(alert, "rule_id", None), severity=getattr(alert, "severity", None),
+                       technique_ids=getattr(alert, "technique_ids", None))
+
+
+class InMemoryPayloadCaseStore:
+    """浅层判例语料库(内存版:selftest / 未配 openGauss 降级)。按 source 分区取反例。"""
+
+    def __init__(self):
+        self._cases = []
+
+    def add(self, case) -> None:
+        self._cases.append(case)
+
+    def for_source(self, source):
+        s = source or "shallow"
+        return [c for c in self._cases if (getattr(c, "source", None) or "shallow") == s]
+
+    def all(self):
+        return list(self._cases)
 
 
 SIGNATURE_DISTILL_PROMPT = (

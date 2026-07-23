@@ -158,6 +158,7 @@ class Pipeline:
     llm_model: str = ""
     llm_key: str = ""
     llm_timeout: int = 600              # 单次 LLM 超时(秒);同时用来抬 openJiuwen 工作流执行超时(默认才 60,qwen 慢会超)
+    payload_corpus: object = None       # 浅层判例语料库(payload 签名反例回归);openGauss 或内存
 
     def close(self):
         self.graph.close()
@@ -168,11 +169,12 @@ def _open_stores(config):
     if config.og_enabled:
         try:
             from .experience.opengauss import open_stores
-            exp, case = open_stores(config)
-            return ExperienceCache(exp), case
+            exp, case, pcorpus = open_stores(config)
+            return ExperienceCache(exp), case, pcorpus
         except Exception as e:                      # 连不上/缺 psycopg2 → 降级,不影响慢研判
             print(f"[warn] openGauss 不可用,经验层降级内存(本次不持久):{str(e)[:120]}")
-    return ExperienceCache(InMemoryExperienceStore()), InMemoryCaseStore()
+    from .cascade.signature import InMemoryPayloadCaseStore
+    return ExperienceCache(InMemoryExperienceStore()), InMemoryCaseStore(), InMemoryPayloadCaseStore()
 
 
 def build_pipeline(config: Config) -> "Pipeline":
@@ -180,13 +182,13 @@ def build_pipeline(config: Config) -> "Pipeline":
     graph, router, agent_inv, recipe_inv = build(config)
     iface = default_interface()
     composer = Composer(agent_inv.llm, iface=iface, agent_name=config.llm_model)
-    exp_store, case_store = _open_stores(config)
+    exp_store, case_store, payload_corpus = _open_stores(config)
     return Pipeline(graph=graph, router=router, agent_inv=agent_inv, recipe_inv=recipe_inv,
                     composer=composer, llm=agent_inv.llm, policy=agent_inv.policy, iface=iface,
                     exp_store=exp_store, case_store=case_store, agent_name=config.llm_model,
                     cascade_enabled=config.cascade_enabled, llm_base=config.llm_api_base,
                     llm_model=config.llm_model, llm_key=config.llm_api_key,
-                    llm_timeout=config.llm_timeout)
+                    llm_timeout=config.llm_timeout, payload_corpus=payload_corpus)
 
 
 def _reuse_tp(pl, alert, forensics, chosen):

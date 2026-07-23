@@ -26,6 +26,9 @@ def _mask(s):
 
 def main():
     argv = sys.argv[1:]
+    persist = "--persist" in argv                  # --persist:签名库/语料用 openGauss(跨轮持久,验越用越省)
+    if persist:
+        argv.remove("--persist")
     order = "recent"
     if "--order" in argv:
         i = argv.index("--order"); order = argv[i + 1]; del argv[i:i + 2]
@@ -48,9 +51,14 @@ def main():
         print(f"# 浅层 cascade selftest  取样={order}  待判 {len(picks)} 条  "
               f"(只跑浅层、不写台账;IP 打码)\n")
 
-        from soc_agent.experience.store import InMemoryExperienceStore
-        sig_store = InMemoryExperienceStore()          # 进程内签名库:边判边蒸边复用,看越用越省
-        sig_corpus = []
+        if persist:                                    # 跨轮持久:用 pl 的 openGauss(需 psycopg2+OG)→ 跑两遍看第二遍近零 qwen
+            sig_store, sig_corpus = pl.exp_store, pl.payload_corpus
+            print(f"# --persist:签名库/语料用持久存储({type(sig_store).__name__}/{type(sig_corpus).__name__})\n")
+        else:
+            from soc_agent.experience.store import InMemoryExperienceStore
+            from soc_agent.cascade.signature import InMemoryPayloadCaseStore
+            sig_store = InMemoryExperienceStore()      # 进程内签名库:边判边蒸边复用,看越用越省
+            sig_corpus = InMemoryPayloadCaseStore()    # 进程内语料:反例回归
         n_fp = n_tp = n_esc = n_reuse = 0
         terms = []
         for i, (tech, cnt, uid) in enumerate(picks, 1):

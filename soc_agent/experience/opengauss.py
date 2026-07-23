@@ -5,6 +5,7 @@ psycopg2 惰性 import(dev 机不装也能 import 本模块跑其余单测)。�
 调用方(build)捕获后降级 InMemory(经验层=永远走 LLM,零 regression)。不赌 ON CONFLICT 方言。
 """
 import json
+from types import SimpleNamespace
 from uuid import uuid4
 
 from ..forensics import Finding
@@ -39,6 +40,12 @@ def ddl(schema) -> list:
               case_id varchar(64) PRIMARY KEY, skill varchar(128) NOT NULL, alert_uid varchar(128) NOT NULL,
               verdict varchar(32) NOT NULL, findings text, created_at timestamptz DEFAULT now())""",
         f"CREATE INDEX IF NOT EXISTS ix_cases_skill ON {schema}.cases(skill)",
+        # 浅层判例语料(payload 签名反例回归用);source 作分区键
+        f"""CREATE TABLE IF NOT EXISTS {schema}.payload_cases (
+              case_id varchar(64) PRIMARY KEY, source varchar(128), alert_uid varchar(128) NOT NULL,
+              verdict varchar(32) NOT NULL, raw text, rule_description text, rule_id varchar(128),
+              severity varchar(64), technique_ids text, created_at timestamptz DEFAULT now())""",
+        f"CREATE INDEX IF NOT EXISTS ix_pcases_source ON {schema}.payload_cases(source)",
     ]
 
 
@@ -140,11 +147,43 @@ class OpenGaussCaseStore(CaseStore):
         return out
 
 
+class OpenGaussPayloadCaseStore:
+    """浅层判例语料(openGauss);for_source 取某源全部判例(sig_sediment 内部再筛反例 verdict)。
+    返回 duck-typed 行(payload_match/sig_sediment 只按属性读)——不 import cascade,避免层反依赖。"""
+
+    def __init__(self, conn, schema):
+        self.conn = conn
+        self.t = f"{schema}.payload_cases"
+
+    def add(self, case) -> None:
+        tids = getattr(case, "technique_ids", None) or []
+        sev = getattr(case, "severity", None)
+        with self.conn.cursor() as cur:
+            cur.execute(
+                f"INSERT INTO {self.t} (case_id,source,alert_uid,verdict,raw,rule_description,"
+                "rule_id,severity,technique_ids) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)",
+                (uuid4().hex, (getattr(case, "source", None) or "shallow"), case.alert_uid, case.verdict,
+                 getattr(case, "raw", None), getattr(case, "rule_description", None),
+                 getattr(case, "rule_id", None), (str(sev) if sev is not None else None),
+                 json.dumps(tids, ensure_ascii=False)))
+        self.conn.commit()
+
+    def for_source(self, source) -> list:
+        with self.conn.cursor() as cur:
+            cur.execute(f"SELECT alert_uid,source,verdict,raw,rule_description,rule_id,severity,"
+                        f"technique_ids FROM {self.t} WHERE source=%s", (source or "shallow",))
+            rows = cur.fetchall()
+        return [SimpleNamespace(alert_uid=uid, source=src, verdict=vd, raw=raw, rule_description=rd,
+                                rule_id=rid, severity=sev, technique_ids=json.loads(tj) if tj else [])
+                for (uid, src, vd, raw, rd, rid, sev, tj) in rows]
+
+
 def open_stores(cfg):
-    """连接 openGauss + 建表,返回 (ExperienceStore, CaseStore)。失败抛异常 → 调用方降级 InMemory。"""
+    """连接 openGauss + 建表,返回 (ExperienceStore, CaseStore, PayloadCaseStore)。失败抛异常 → 降级 InMemory。"""
     conn = _connect(cfg)
     ensure_schema(conn, cfg.og_schema)
-    return OpenGaussExperienceStore(conn, cfg.og_schema), OpenGaussCaseStore(conn, cfg.og_schema)
+    return (OpenGaussExperienceStore(conn, cfg.og_schema), OpenGaussCaseStore(conn, cfg.og_schema),
+            OpenGaussPayloadCaseStore(conn, cfg.og_schema))
 
 
 def wipe(cfg):
@@ -159,6 +198,7 @@ def wipe(cfg):
         nc = cur.fetchone()[0]
         cur.execute(f"DELETE FROM {s}.experience")
         cur.execute(f"DELETE FROM {s}.cases")
+        cur.execute(f"DELETE FROM {s}.payload_cases")
     conn.commit()
     conn.close()
     return ne, nc

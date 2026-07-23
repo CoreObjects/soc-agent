@@ -148,3 +148,35 @@ def test_agent_runner_path_fills_sink():
     asyncio.run(_go())
     assert calls == ["a1"]
     assert sink["picked"] == "深度研判"
+
+
+def test_run_cascade_sig_reuse_skips_agent():
+    """production:签名库命中 → 复用 verdict、写台账、返回,不跑 openJiuwen agent(零 qwen)。"""
+    import json as _json
+    from soc_agent.cascade.run import run_cascade
+    from soc_agent.experience.store import Experience, InMemoryExperienceStore
+
+    store = InMemoryExperienceStore()
+    store.add(Experience(skill="wazuh", kind="payload", verdict="false_positive", fingerprint={},
+                         rule={"conditions": [{"path": "data.win.eventdata.sourceImage",
+                                               "op": "basename_eq", "value": "wazuh-agent.exe"}]},
+                         origin_verdict_id="v0"))
+    raw = _json.dumps({"data": {"win": {"eventdata": {"sourceImage": "C:/x/wazuh-agent.exe"}}}})
+    node = {"alert_uid": "a1", "source": "wazuh", "raw": raw}
+    written = []
+
+    class _G:
+        def get_alert(self, uid):
+            return node
+
+        def write_result(self, uid, result):
+            written.append((uid, result))
+
+    pl = type("PL", (), {"exp_store": store, "graph": _G(), "policy": {}, "agent_name": "x",
+                         "llm_base": None, "llm_model": None, "llm_key": None, "llm_timeout": 600,
+                         "payload_corpus": None})()
+    result, report, picked = run_cascade(pl, "a1")
+    assert result.verdict.verdict == "false_positive" and result.path == "S"
+    assert report.decision == "SIG_REUSE"
+    assert len(written) == 1                       # 写了台账
+    assert store.get(store.all()[0].exp_id).hit_count == 1   # bump 了命中

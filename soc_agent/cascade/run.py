@@ -9,7 +9,7 @@ import os
 from ..models import Alert
 from .build import build_cascade_agent, build_shallow_probe
 from .floor import force_deep
-from .signature import PayloadCase, sig_consult, sig_sediment
+from .signature import payload_case_of, sig_consult, sig_sediment
 
 __all__ = ["run_cascade", "run_shallow", "alert_view"]
 
@@ -34,18 +34,32 @@ def alert_view(alert) -> str:
 
 
 def run_cascade(pl, alert_uid, mode="recipe"):
-    """浅判→判不动升级深度。返回 (result, report, picked)。"""
+    """签名库前置(命中零 qwen 复用)→ 浅判 → 判不动升级深度 → 浅层终局蒸签名。返回 (result, report, picked)。"""
     from ..cli import AlertNotFound, run_pipeline        # 懒导入,避 cli<->cascade 循环
+    from ..experience.consult import MatchReport
+    from ..models import InvestigationResult, Verdict
     from openjiuwen.core.runner.runner import Runner
 
-    # 工作流要包住深度研判(可能多轮 LLM,很久)→ 抬得比单次 LLM 超时大得多
-    _ensure_workflow_timeout(max(1800, getattr(pl, "llm_timeout", 600) * 3))
     node = pl.graph.get_alert(alert_uid)
     if node is None:
         raise AlertNotFound(f"图里没有 alert_uid={alert_uid} 的 :Alert")
     alert = Alert.from_node(node)
-    fd = force_deep(alert, pl.policy)
 
+    # ★签名库前置:命中即复用 verdict、写台账、返回 —— 零 qwen、不跑 openJiuwen
+    sig_store = getattr(pl, "exp_store", None)
+    hit = sig_consult(sig_store, alert)
+    if hit is not None:
+        sig_store.bump_hit(hit.exp_id)
+        v = Verdict(verdict=hit.verdict, confidence=0.9, summary="签名库复用",
+                    rationale=f"签名库复用 payload 规则 {hit.exp_id[:8]}(kind=payload)", agent=pl.agent_name)
+        result = InvestigationResult(alert_uid=alert_uid, path="S", verdict=v, skill=None,
+                                     reuse_verdict_id=hit.origin_verdict_id)
+        pl.graph.write_result(alert_uid, result)
+        return result, MatchReport(decision="SIG_REUSE"), "签名库复用(零qwen)"
+
+    fd = force_deep(alert, pl.policy)
+    # 工作流要包住深度研判(可能多轮 LLM,很久)→ 抬得比单次 LLM 超时大得多
+    _ensure_workflow_timeout(max(1800, getattr(pl, "llm_timeout", 600) * 3))
     sink = {}
     agent = build_cascade_agent(
         pl.graph, lambda uid: run_pipeline(pl, uid, mode), sink,
@@ -54,7 +68,12 @@ def run_cascade(pl, alert_uid, mode="recipe"):
 
     asyncio.run(Runner.run_agent(agent, {
         "alert_view": alert_view(alert), "alert_uid": alert_uid, "force_deep": bool(fd)}))
-    return sink["result"], sink["report"], sink["picked"]
+    result, report, picked = sink["result"], sink["report"], sink["picked"]
+
+    # ★浅层终局(path="S",没升级深度)→ 从 payload 蒸签名规则入库 + 记语料
+    if sig_store is not None and getattr(result, "path", None) == "S":
+        _sig_learn(pl, sig_store, getattr(pl, "payload_corpus", None), alert, result)
+    return result, report, picked
 
 
 def run_shallow(pl, alert_uid, shallow_comp=None, sig_store=None, sig_corpus=None):
@@ -97,24 +116,22 @@ def run_shallow(pl, alert_uid, shallow_comp=None, sig_store=None, sig_corpus=Non
 
     # ★浅层终局(TP/FP)→ 从 payload 蒸签名规则入库 + 记语料(供反例回归)
     if sig_store is not None and route in ("terminal_tp", "terminal_fp"):
-        _sig_learn(pl, sig_store, sig_corpus, alert, shallow)
+        from ..models import InvestigationResult, Verdict
+        v = Verdict(verdict=shallow.get("verdict"), confidence=float(shallow.get("confidence") or 0.0),
+                    rationale=shallow.get("rationale") or "", agent=pl.agent_name)
+        _sig_learn(pl, sig_store, sig_corpus, alert,
+                   InvestigationResult(alert_uid=alert_uid, path="S", verdict=v, skill=None))
 
     return {"alert_uid": alert_uid, "technique": alert.primary_technique,
             "force_deep": fd, "shallow": shallow, "route": route, "reused": False}
 
 
-def _sig_learn(pl, sig_store, sig_corpus, alert, shallow):
-    """浅层终局 → 蒸签名规则(过考试门)入库 + 追加浅层语料。"""
-    from ..models import InvestigationResult, Verdict
-    verdict = shallow.get("verdict")
-    if verdict not in ("true_positive", "false_positive"):
+def _sig_learn(pl, sig_store, sig_corpus, alert, result):
+    """浅层终局 → 蒸签名规则(过考试门:回放+反例回归)入库 + 追加浅层语料。"""
+    v = getattr(result, "verdict", None)
+    if v is None or v.verdict not in ("true_positive", "false_positive"):
         return
-    v = Verdict(verdict=verdict, confidence=float(shallow.get("confidence") or 0.0),
-                rationale=shallow.get("rationale") or "", agent=pl.agent_name)
-    res = InvestigationResult(alert_uid=alert.alert_uid, path="S", verdict=v, skill=None)
-    sig_sediment(pl.llm, sig_store, sig_corpus, alert, res, agent_name=pl.agent_name)
+    opposite = sig_corpus.for_source(getattr(alert, "source", None)) if sig_corpus is not None else []
+    sig_sediment(pl.llm, sig_store, opposite, alert, result, agent_name=pl.agent_name)
     if sig_corpus is not None:
-        sig_corpus.append(PayloadCase(
-            alert_uid=alert.alert_uid, source=alert.source, raw=alert.raw, verdict=verdict,
-            rule_description=alert.rule_description, rule_id=alert.rule_id,
-            severity=alert.severity, technique_ids=alert.technique_ids))
+        sig_corpus.add(payload_case_of(alert, v.verdict))
