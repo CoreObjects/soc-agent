@@ -77,6 +77,7 @@ class _FakePL:
     def __init__(self, node):
         self.policy = {"protected_hosts": [], "protected_accounts": []}
         self.llm_base = self.llm_model = self.llm_key = None
+        self.llm_timeout = 600
 
         class _G:
             def get_alert(self, uid):
@@ -98,12 +99,15 @@ def test_shallow_probe_captures_decision():
 
 
 def test_run_shallow_route_terminal_fp():
+    import os
     from soc_agent.cascade.run import run_shallow
     pl = _FakePL({"alert_uid": "a1", "technique_ids": ["T1190"]})
     r = run_shallow(pl, "a1", shallow_comp=_FakeShallow(False))
     assert r["route"] == "terminal_fp"
     assert r["shallow"]["needs_deep"] is False
     assert r["force_deep"] is False
+    # 抬过了 openJiuwen 工作流超时(默认 60 会掐断慢 qwen)
+    assert os.environ.get("WORKFLOW_EXECUTE_TIMEOUT")
 
 
 def test_run_shallow_route_escalate_on_needs_deep():

@@ -4,12 +4,19 @@
 """
 import asyncio
 import json
+import os
 
 from ..models import Alert
 from .build import build_cascade_agent, build_shallow_probe
 from .floor import force_deep
 
 __all__ = ["run_cascade", "run_shallow", "alert_view"]
+
+
+def _ensure_workflow_timeout(seconds):
+    """抬 openJiuwen 工作流执行超时:它默认才 60s(session 从 OS env WORKFLOW_EXECUTE_TIMEOUT 读),
+    qwen 在昇腾单次调用常 >60s 会被 workflow 层掐断(报 100101)。用户已设 OS env 则尊重其值。"""
+    os.environ.setdefault("WORKFLOW_EXECUTE_TIMEOUT", str(int(seconds)))
 
 
 def alert_view(alert) -> str:
@@ -30,6 +37,8 @@ def run_cascade(pl, alert_uid, mode="recipe"):
     from ..cli import AlertNotFound, run_pipeline        # 懒导入,避 cli<->cascade 循环
     from openjiuwen.core.runner.runner import Runner
 
+    # 工作流要包住深度研判(可能多轮 LLM,很久)→ 抬得比单次 LLM 超时大得多
+    _ensure_workflow_timeout(max(1800, getattr(pl, "llm_timeout", 600) * 3))
     node = pl.graph.get_alert(alert_uid)
     if node is None:
         raise AlertNotFound(f"图里没有 alert_uid={alert_uid} 的 :Alert")
@@ -53,6 +62,7 @@ def run_shallow(pl, alert_uid, shallow_comp=None):
     from ..cli import AlertNotFound                       # 懒导入,避 cli<->cascade 循环
     from openjiuwen.core.workflow import create_workflow_session
 
+    _ensure_workflow_timeout(getattr(pl, "llm_timeout", 600))    # 单次浅层 qwen 调用,够
     node = pl.graph.get_alert(alert_uid)
     if node is None:
         raise AlertNotFound(f"图里没有 alert_uid={alert_uid} 的 :Alert")

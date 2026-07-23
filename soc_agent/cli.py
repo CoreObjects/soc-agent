@@ -157,6 +157,7 @@ class Pipeline:
     llm_base: str = ""                  # 浅层 LLMComponent 接的 OpenAI 兼容端点(=qwen vLLM)
     llm_model: str = ""
     llm_key: str = ""
+    llm_timeout: int = 600              # 单次 LLM 超时(秒);同时用来抬 openJiuwen 工作流执行超时(默认才 60,qwen 慢会超)
 
     def close(self):
         self.graph.close()
@@ -184,7 +185,8 @@ def build_pipeline(config: Config) -> "Pipeline":
                     composer=composer, llm=agent_inv.llm, policy=agent_inv.policy, iface=iface,
                     exp_store=exp_store, case_store=case_store, agent_name=config.llm_model,
                     cascade_enabled=config.cascade_enabled, llm_base=config.llm_api_base,
-                    llm_model=config.llm_model, llm_key=config.llm_api_key)
+                    llm_model=config.llm_model, llm_key=config.llm_api_key,
+                    llm_timeout=config.llm_timeout)
 
 
 def _reuse_tp(pl, alert, forensics, chosen):
