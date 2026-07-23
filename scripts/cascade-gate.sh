@@ -26,15 +26,22 @@ FB="feedback/cascade-gate.out"
     "$BASE" -m venv .venv312 || { echo "  [FAIL] 建 .venv312 失败"; exit 1; }
   fi
   echo "== 装 soc-agent + openjiuwen(★ARM 昇腾轮子风险点:pyoxigraph[Rust] / grpcio[C++,pymilvus])=="
-  "$PY312" -m pip install -q -U pip 2>&1 | tail -2
-  "$PY312" -m pip install -e ".[dev]" openjiuwen 2>&1 | tail -25
+  if "$PY312" -c "import openjiuwen, soc_agent" >/dev/null 2>&1; then
+    echo "  openjiuwen + soc_agent 已在 .venv312 → 跳过安装(重跑只验测试)"
+  else
+    "$PY312" -m pip install -q -U pip 2>&1 | tail -2
+    "$PY312" -m pip install -e ".[dev]" openjiuwen 2>&1 | tail -25
+  fi
   echo "== 导入检查 =="
   "$PY312" -c "import openjiuwen; from openjiuwen.core.workflow import Workflow, LLMComponent, BranchRouter, WorkflowComponent; from openjiuwen.core.runner.runner import Runner; print('  [OK] openjiuwen', getattr(openjiuwen,'__version__','?'), '导入通过')" \
     || { echo "  [FAIL] openjiuwen 导入失败 —— 见上安装日志(多半 ARM 无轮子)"; exit 1; }
   echo "== cascade 单测(验 floor/浅层图/分叉 在昇腾跑得通;不需 .env)=="
-  PYTHONUTF8=1 "$PY312" -m pytest tests/test_cascade_floor.py tests/test_cascade_components.py \
-      tests/test_cascade_build.py tests/test_cascade_dispatch.py -q -p no:cacheprovider 2>&1 \
-    | grep -vE "\| INFO \||Registered parser|event_id" | tail -15
+  # 捕获到变量 → 拿真 rc + 保住"N passed"汇总行(旧版 tail 把它切没了);-W 压掉 openjiuwen 弃用告警噪声
+  CG_OUT=$(PYTHONUTF8=1 "$PY312" -m pytest tests/test_cascade_floor.py tests/test_cascade_components.py \
+      tests/test_cascade_build.py tests/test_cascade_dispatch.py -p no:cacheprovider -q \
+      -W ignore::DeprecationWarning 2>&1); CG_RC=$?
+  echo "$CG_OUT" | grep -viE "\| INFO \||Registered parser|event_id|^\s*$" | tail -8
+  echo "  [pytest rc=$CG_RC]  (0=全绿;非0见上)"
   echo "=== done ==="
 } 2>&1 | tee "$FB"
 
