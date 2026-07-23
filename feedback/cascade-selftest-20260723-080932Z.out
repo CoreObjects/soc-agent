@@ -1,0 +1,12 @@
+=== cascade-selftest 2026-07-23 08:09Z ===
+[warn] openGauss 不可用,经验层降级内存(本次不持久):No module named 'psycopg2'
+# 浅层 cascade selftest  取样=recent  待判 1 条  (只跑浅层、不写台账;IP 打码)
+
+[1] T1021.001        该类 46205  uid=a2984cbdb256f93b52fbd2a0769d76072274f2173a144ac5c12f85146b8e84ce
+     浅层: needs_deep=True verdict=suspicious conf=0.95  → 路由=escalate
+     理由: Logon Type 3 indicates a network logon (e.g., RDP, SMB), and the raw data lacks source IP/workstation details, making it impossible to distinguish between legitimate admin activity and lateral movement without further context.
+
+# 汇总: 共1  终局FP=0  升级=1  deferral(升级率)=100%
+
+# selftest 完成
+=== done 2026-07-23 08:09Z ===
