@@ -6,10 +6,10 @@ import asyncio
 import json
 
 from ..models import Alert
-from .build import build_cascade_agent
+from .build import build_cascade_agent, build_shallow_probe
 from .floor import force_deep
 
-__all__ = ["run_cascade", "alert_view"]
+__all__ = ["run_cascade", "run_shallow", "alert_view"]
 
 
 def alert_view(alert) -> str:
@@ -45,3 +45,29 @@ def run_cascade(pl, alert_uid, mode="recipe"):
     asyncio.run(Runner.run_agent(agent, {
         "alert_view": alert_view(alert), "alert_uid": alert_uid, "force_deep": bool(fd)}))
     return sink["result"], sink["report"], sink["picked"]
+
+
+def run_shallow(pl, alert_uid, shallow_comp=None):
+    """只跑浅层分诊(不升级、不写台账)。返回 {alert_uid, technique, force_deep, shallow, route}。
+    route: escalate(needs_deep 或 force_deep)/ terminal_fp(浅层判良性终局)。供 selftest 量 deferral。"""
+    from ..cli import AlertNotFound                       # 懒导入,避 cli<->cascade 循环
+    from openjiuwen.core.workflow import create_workflow_session
+
+    node = pl.graph.get_alert(alert_uid)
+    if node is None:
+        raise AlertNotFound(f"图里没有 alert_uid={alert_uid} 的 :Alert")
+    alert = Alert.from_node(node)
+    fd = force_deep(alert, pl.policy)
+
+    sink = {}
+
+    async def _go():
+        flow = build_shallow_probe(sink, llm_base=pl.llm_base, llm_model=pl.llm_model,
+                                   llm_key=pl.llm_key, shallow_comp=shallow_comp)
+        await flow.invoke({"alert_view": alert_view(alert)}, create_workflow_session())
+
+    asyncio.run(_go())
+    shallow = sink.get("shallow") or {}
+    route = "escalate" if (bool(shallow.get("needs_deep")) or fd) else "terminal_fp"
+    return {"alert_uid": alert_uid, "technique": alert.primary_technique,
+            "force_deep": fd, "shallow": shallow, "route": route}

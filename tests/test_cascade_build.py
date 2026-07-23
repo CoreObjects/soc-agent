@@ -73,6 +73,52 @@ def test_force_deep_overrides_benign():
     assert sink["picked"] == "深度研判"
 
 
+class _FakePL:
+    def __init__(self, node):
+        self.policy = {"protected_hosts": [], "protected_accounts": []}
+        self.llm_base = self.llm_model = self.llm_key = None
+
+        class _G:
+            def get_alert(self, uid):
+                return node
+        self.graph = _G()
+
+
+def test_shallow_probe_captures_decision():
+    from soc_agent.cascade.build import build_shallow_probe
+    sink = {}
+
+    async def _go():
+        flow = build_shallow_probe(sink, shallow_comp=_FakeShallow(True))
+        await flow.invoke({"alert_view": "{}"}, create_workflow_session())
+
+    asyncio.run(_go())
+    assert sink["shallow"]["needs_deep"] is True
+    assert sink["shallow"]["verdict"] == "suspicious"
+
+
+def test_run_shallow_route_terminal_fp():
+    from soc_agent.cascade.run import run_shallow
+    pl = _FakePL({"alert_uid": "a1", "technique_ids": ["T1190"]})
+    r = run_shallow(pl, "a1", shallow_comp=_FakeShallow(False))
+    assert r["route"] == "terminal_fp"
+    assert r["shallow"]["needs_deep"] is False
+    assert r["force_deep"] is False
+
+
+def test_run_shallow_route_escalate_on_needs_deep():
+    from soc_agent.cascade.run import run_shallow
+    pl = _FakePL({"alert_uid": "a1", "technique_ids": ["T1190"]})
+    assert run_shallow(pl, "a1", shallow_comp=_FakeShallow(True))["route"] == "escalate"
+
+
+def test_run_shallow_route_escalate_on_floor():
+    from soc_agent.cascade.run import run_shallow
+    pl = _FakePL({"alert_uid": "a1", "technique_ids": ["T1003.006"]})   # 高危 → force_deep
+    r = run_shallow(pl, "a1", shallow_comp=_FakeShallow(False))
+    assert r["route"] == "escalate" and r["force_deep"] is True
+
+
 def test_agent_runner_path_fills_sink():
     """run_cascade 实际走 WorkflowAgent + Runner.run_agent —— 验这条路也能填 sink。"""
     g = _FakeGraph()

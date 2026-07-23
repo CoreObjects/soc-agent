@@ -18,10 +18,10 @@ from openjiuwen.core.workflow import (
     WorkflowCard,
 )
 
-from .components import DeepInvestigationComponent, ShallowTerminalComponent
+from .components import CaptureComponent, DeepInvestigationComponent, ShallowTerminalComponent
 from .prompt import SHALLOW_OUTPUT_SCHEMA, SHALLOW_PROMPT
 
-__all__ = ["build_cascade_workflow", "build_cascade_agent"]
+__all__ = ["build_cascade_workflow", "build_cascade_agent", "build_shallow_probe"]
 
 _ESCALATE_COND = "${shallow.needs_deep} == true || ${start.force_deep} == true"
 
@@ -78,6 +78,27 @@ def build_cascade_workflow(graph, run_deep, sink, *, llm_base=None, llm_model=No
                       inputs_schema={"deep_path": "${deep.path}", "term_path": "${terminal.path}"})
     flow.add_connection("deep", "end")
     flow.add_connection("terminal", "end")
+    return flow
+
+
+def build_shallow_probe(sink, *, llm_base=None, llm_model=None, llm_key=None, shallow_comp=None):
+    """只跑浅层分诊、把决策抓进 sink['shallow'] 的探针图(Start→shallow→capture→End)。
+    ★不分叉、不升级、不写台账 —— 供 selftest 量 deferral / 眼验召回,可反复跑不污染。"""
+    flow = Workflow(card=WorkflowCard(
+        id="soc_shallow_probe", name="soc_shallow_probe", version="1.0",
+        description="只跑浅层分诊、抓决策(量 deferral)",
+        input_params={"type": "object", "properties": {"alert_view": {"type": "string"}},
+                      "required": ["alert_view"]}))
+    shallow = shallow_comp or _shallow_component(llm_base, llm_model, llm_key)
+    flow.set_start_comp("start", Start(), inputs_schema={"alert_view": "${alert_view}"})
+    flow.add_workflow_comp("shallow", shallow, inputs_schema={"alert_view": "${start.alert_view}"})
+    flow.add_connection("start", "shallow")
+    flow.add_workflow_comp("capture", CaptureComponent(sink), inputs_schema={
+        "needs_deep": "${shallow.needs_deep}", "verdict": "${shallow.verdict}",
+        "confidence": "${shallow.confidence}", "rationale": "${shallow.rationale}"})
+    flow.add_connection("shallow", "capture")
+    flow.set_end_comp("end", End({"responseTemplate": "{{ok}}"}), inputs_schema={"ok": "${capture.ok}"})
+    flow.add_connection("capture", "end")
     return flow
 
 

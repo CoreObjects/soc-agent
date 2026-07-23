@@ -16,7 +16,8 @@ from openjiuwen.core.workflow.components import Session
 from ..experience.consult import MatchReport
 from ..models import InvestigationResult, Verdict
 
-__all__ = ["ShallowTerminalComponent", "DeepInvestigationComponent", "shallow_report"]
+__all__ = ["ShallowTerminalComponent", "DeepInvestigationComponent", "CaptureComponent",
+           "shallow_report"]
 
 SHALLOW_DECISION = "SHALLOW_TERMINAL"
 
@@ -50,6 +51,18 @@ class ShallowTerminalComponent(WorkflowComponent):
         self._sink["report"] = shallow_report()
         self._sink["picked"] = "浅层直判(未升级)"
         return {"path": "S", "verdict": v.verdict, "alert_uid": alert_uid}
+
+
+class CaptureComponent(WorkflowComponent):
+    """把上游(浅层)输出原样抓进 sink['shallow'],供 run_shallow 取回。★仅测量用,不写台账。"""
+
+    def __init__(self, sink: dict):
+        super().__init__()
+        self._sink = sink
+
+    async def invoke(self, inputs: Input, session: Session, context: ModelContext) -> Output:
+        self._sink["shallow"] = dict(inputs)
+        return {"ok": True}
 
 
 class DeepInvestigationComponent(WorkflowComponent):
