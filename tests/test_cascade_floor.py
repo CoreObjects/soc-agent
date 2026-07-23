@@ -23,27 +23,17 @@ def test_kerberos_technique_forces_deep():
     assert force_deep(a, None) is True
 
 
-def test_normal_technique_no_asset_does_not_force():
+def test_normal_technique_does_not_force():
     a = _alert(technique_ids=["T1190"], rule_description="SQLi attempt on /login")
     assert force_deep(a, {"protected_hosts": ["dc01"], "protected_accounts": []}) is False
 
 
-def test_protected_host_in_text_forces_deep():
+def test_protected_host_in_text_no_longer_forces():
+    # ★已去掉"文本涉及受保护主机"触发(全 AD 靶场里会对几乎所有告警触发,盖死浅层降噪)
     a = _alert(technique_ids=["T1059"], raw='{"host":"dc01.corp.local","cmd":"whoami"}')
-    assert force_deep(a, {"protected_hosts": ["dc01"], "protected_accounts": []}) is True
-
-
-def test_protected_host_substring_no_false_positive():
-    # adc01 不应被 dc01 命中(子串 bug 防回归,和 disposition._host_matches 一致的纪律)
-    a = _alert(technique_ids=["T1059"], raw='{"host":"adc01","cmd":"whoami"}')
     assert force_deep(a, {"protected_hosts": ["dc01"], "protected_accounts": []}) is False
 
 
-def test_protected_host_given_as_fqdn_matches_bare_label():
-    a = _alert(technique_ids=["T1059"], raw='{"host":"dc01"}')
-    assert force_deep(a, {"protected_hosts": ["dc01.corp.local"], "protected_accounts": []}) is True
-
-
-def test_no_technique_no_asset_is_false():
+def test_no_technique_is_false():
     a = _alert(technique_ids=[], rule_description="benign scheduled login")
     assert force_deep(a, {"protected_hosts": ["dc01"], "protected_accounts": []}) is False
