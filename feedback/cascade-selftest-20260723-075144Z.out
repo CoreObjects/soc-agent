@@ -1,0 +1,12 @@
+=== cascade-selftest 2026-07-23 07:51Z ===
+[warn] openGauss 不可用,经验层降级内存(本次不持久):No module named 'psycopg2'
+# 浅层 cascade selftest  取样=recent  待判 1 条  (只跑浅层、不写台账;IP 打码)
+
+2026-07-23 15:53:07 | common | default_trace_id | WARNING | Ignoring undefined fields for GraphEvent: error_msg
+2026-07-23 15:53:07 | common | default_trace_id | WARNING | Ignoring undefined fields for GraphEvent: error_msg
+[1] T1021.001        uid=a2984cbdb256f93b52fbd2a0769d76072274f2173a144ac5c12f85146b8e84ce  !! 异常:[101004] component llm_execution process error, reason: component llm_config is invalid, reason: Json parse error
+
+# 汇总: 共0  终局FP=0  升级=0  deferral(升级率)=0%
+
+# selftest 完成
+=== done 2026-07-23 07:53Z ===
