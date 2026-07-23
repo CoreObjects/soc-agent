@@ -1,0 +1,52 @@
+=== cascade-selftest 2026-07-23 11:44Z ===
+[warn] openGauss 不可用,经验层降级内存(本次不持久):No module named 'psycopg2'
+# 浅层 cascade selftest  取样=recent  待判 12 条  (只跑浅层、不写台账;IP 打码)
+
+[1] T1021.001        该类 46205  uid=a2984cbdb256f93b52fbd2a0769d76072274f2173a144ac5c12f85146b8e84ce
+     浅层: needs_deep=True verdict=suspicious conf=0.6  → 路由=escalate
+     理由: 告警仅显示 Type 3 网络登录且源地址/会话信息缺失，无法区分是正常远程运维还是攻击者横向移动，必须重建登录序列和主机行为链以定性。
+[2] T1105            该类 39833  uid=aafbcbed84121f1ae98a19827cf5828b1f786dd8e84a79d077b1c4f7384ff1ed
+     浅层: needs_deep=False verdict=false_positive conf=0.98  → 路由=terminal_fp
+     理由: 文件名__PSScriptPolicyTest_是PowerShell策略自检的标准特征，属于已知良性行为。
+[3] T1003.006        该类 12791  uid=e0d083f18160244c61c51cc86c7538055022c25bc28d512d9319919f10431c12
+     浅层: needs_deep=True verdict=suspicious conf=0.6  → 路由=escalate
+     理由: DCSync 告警虽指向已知服务账号，但需验证该账号是否拥有目录复制权限、操作来源是否为预期管理主机及是否存在异常登录序列，否则无法排除误报或横向移动风险。
+[4] T1003.001        该类  2391  uid=5a00e337cb9b5dad6e1734ae6db5cc5a1568fae292ad52e63b99a7711d2a1d6e
+     浅层: needs_deep=False verdict=false_positive conf=0.98  → 路由=terminal_fp
+     理由: Source process is the legitimate Wazuh agent (wazuh-agent.exe) accessing LSASS for its standard inventory function (sysinfo/syscollector), which is a known benign behavior.
+[5] T1140            该类   195  uid=a0da2b4b7fa09f1a66819ac0dde2ce39b51139516ce7913b4a5dadf38d6116bb
+     浅层: needs_deep=True verdict=suspicious conf=0.85  → 路由=escalate
+     理由: 告警内容虽显示 Ansible 模块加载逻辑（含 Base64 解码），但缺乏父进程上下文、执行者身份及具体业务场景，无法排除被篡改或误报风险。
+[6] T1059.001        该类   183  uid=bb05ad88f71ffb5e3e367269e938d3b2ccb87b4849cd74c09f1b23a284326b06
+     浅层: needs_deep=True verdict=suspicious conf=0.6  → 路由=escalate
+     理由: 告警仅显示 PowerShell 执行了 Base64 编码命令，缺乏父子进程链上下文、登录序列及该账号基线，无法区分是恶意载荷还是正常运维脚本。
+[7] T1558.003        该类   174  uid=4bf6a0e18f476d6e06f1abb42c4fd3678cd953ee882b46932c80fdb14d902535
+     浅层: needs_deep=False verdict=true_positive conf=0.95  → 路由=terminal_tp
+     理由: 告警明确显示 RC4(0x17) 加密的 Kerberoast 请求，这是已知的高风险攻击特征，无需深度取证即可定性。
+[8] T1059            该类   126  uid=cc254e6282018ffddb70227acf12e4bd27f8a4c4e295306e95cbe2fbefaebf19
+     浅层: needs_deep=False verdict=false_positive conf=1.0  → 路由=terminal_fp
+     理由: 文件名__PSScriptPolicyTest_是PowerShell策略自检的标准命名，且由SYSTEM用户执行，确认为良性系统行为。
+[9] (none)           该类   100  uid=05313449906b1f6710b349c71b6e624ba8117961f8f3de164e7f701aca1d2f8d
+     浅层: needs_deep=False verdict=false_positive conf=0.95  → 路由=terminal_fp
+     理由: DCOM 10016 错误是经典的 Windows 配置问题，且用户名为'vagrant'（开发/测试常用），本地激活失败无法直接证明攻击意图。
+[10] T1098            该类    22  uid=2abe65b1d54dbc8522fc450a08c1aca87fd880bfbe1b94022676bb9afe6dfa12
+     浅层: needs_deep=True verdict=suspicious conf=0.6  → 路由=escalate
+     理由: User 'vagrant' deleted 'soc-test-roaster' account; while 'vagrant' is often a benign dev account, the deletion of a specific 'roaster' account could indicate credential harvesting cleanup or malicious account removal, requiring verification
+[11] T1649            该类    12  uid=dd7d94516e41107bdfe9dc8ace775febd60837de5829417d83339727f60830a6
+     浅层: needs_deep=True verdict=suspicious conf=0.6  → 路由=escalate
+     理由: 告警仅显示证书请求被批准，无法区分是正常运维（如vagrant账号）还是攻击者利用ESC漏洞提权，必须核查请求者账号基线、登录序列及证书用途落地行为。
+[12] T1071.001        该类     6  uid=2364db352a00b36916dc674df95d0b4e43c98b47a654e2ea9090549e7e820306
+     浅层: needs_deep=True verdict=suspicious conf=0.6  → 路由=escalate
+     理由: PowerShell 向 9200 端口 (Elasticsearch) 外连虽常见于运维，但缺乏父子进程链、登录序列及该主机基线，无法排除恶意 C2 或横向移动风险。
+
+# 汇总: 共12  浅层终局=5(FP=4 TP=1)  升级=7  降噪率(终局占比)=42%  升级率=58%
+
+# 浅层终局的(★眼验:FP 该不该判良性 / TP 该不该判威胁;判错=收紧提示词):
+  - [terminal_fp] T1105            aafbcbed84121f1ae98a19827cf5828b1f786dd8e84a79d077b1c4f7384ff1ed  Executable file dropped in folder commonly used by malware
+  - [terminal_fp] T1003.001        5a00e337cb9b5dad6e1734ae6db5cc5a1568fae292ad52e63b99a7711d2a1d6e  Credential dumping via LSASS access by C:\\Program Files (x86)\\ossec-agent\\wazuh-agent.exe (granted 0x1410)
+  - [terminal_tp] T1558.003        4bf6a0e18f476d6e06f1abb42c4fd3678cd953ee882b46932c80fdb14d902535  Kerberoast: RC4(0x17) TGS request for service NORTH.SEVENKINGDOMS.LOCAL
+  - [terminal_fp] T1059            cc254e6282018ffddb70227acf12e4bd27f8a4c4e295306e95cbe2fbefaebf19  C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe created a new scripting file under Windows Temp
+  - [terminal_fp] (none)           05313449906b1f6710b349c71b6e624ba8117961f8f3de164e7f701aca1d2f8d  Multiple System error events
+
+# selftest 完成
+=== done 2026-07-23 11:45Z ===
