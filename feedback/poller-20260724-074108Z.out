@@ -1,0 +1,60 @@
+=== poller  2026-07-24 07:41Z   args: --once --max 20 ===
+# 处置模式=manual(manual=只生成待处置不执行 / auto=自动执行)  appliance=on  cascade=on
+# poller 启动  并发=2 批=50 轮询间隔=10.0s 毒告警上限=3 模式=recipe
+Received notification from DBMS server: <GqlStatusObject gql_status='01N52', status_description='warn: property key does not exist. The property `poller_skip` does not exist. Verify that the spelling is correct.', position=<SummaryInputPosition line=1, column=63, offset=62>, raw_classification='UNRECOGNIZED', classification=<NotificationClassification.UNRECOGNIZED: 'UNRECOGNIZED'>, raw_severity='WARNING', severity=<NotificationSeverity.WARNING: 'WARNING'>, diagnostic_record={'_classification': 'UNRECOGNIZED', '_severity': 'WARNING', '_position': {'offset': 62, 'line': 1, 'column': 63}, 'OPERATION': '', 'OPERATION_CODE': '0', 'CURRENT_SCHEMA': '/'}> for query: 'MATCH (a:Alert) WHERE NOT (a)-[:CONCLUDED]->() AND coalesce(a.poller_skip,false)=false RETURN a.alert_uid AS uid ORDER BY coalesce(a.arrival_ms,0) ASC LIMIT $batch'
+Received notification from DBMS server: <GqlStatusObject gql_status='01N52', status_description='warn: property key does not exist. The property `poller_skip` does not exist. Verify that the spelling is correct.', position=<SummaryInputPosition line=1, column=63, offset=62>, raw_classification='UNRECOGNIZED', classification=<NotificationClassification.UNRECOGNIZED: 'UNRECOGNIZED'>, raw_severity='WARNING', severity=<NotificationSeverity.WARNING: 'WARNING'>, diagnostic_record={'_classification': 'UNRECOGNIZED', '_severity': 'WARNING', '_position': {'offset': 62, 'line': 1, 'column': 63}, 'OPERATION': '', 'OPERATION_CODE': '0', 'CURRENT_SCHEMA': '/'}> for query: 'MATCH (a:Alert) WHERE NOT (a)-[:CONCLUDED]->() AND coalesce(a.poller_skip,false)=false RETURN count(a) AS n'
+# 取批 50 条(积压 101919);research 中…
+  [err] 研判 bee510affa4f3abdce900ab6107eebe6fa838de774ca2ba46510bc2bb16cfb4f 失败:There is no current event loop in thread 'ThreadPoolExecutor-0_1'.
+  [err] 研判 a29c26edcab725c0af2b6b7cbbb4571560e116f315c2f1c49c2edf2b4a408e96 失败:There is no current event loop in thread 'ThreadPoolExecutor-0_0'.
+  [err] 研判 e75f9c60910dd7b6968f390a239c0e794231a442c4f4efa42cd97d6163a295c4 失败:There is no current event loop in thread 'ThreadPoolExecutor-0_1'.
+  [err] 研判 e8dc9956e22e98f9d13a374c5a86c2b3c3edd7067f33f9f3b29c9b4de324c90b 失败:There is no current event loop in thread 'ThreadPoolExecutor-0_0'.
+  [err] 研判 7ad45027cd10959a26aa61fe344a8b2f3ed5c87d131380b459580cfe02b6b451 失败:There is no current event loop in thread 'ThreadPoolExecutor-0_0'.
+  [err] 研判 22e453526d020b52e0425162462e58a4236080809e0e2e03f6ac4b756691133e 失败:There is no current event loop in thread 'ThreadPoolExecutor-0_1'.
+  [err] 研判 3f2155975094363af7d93a3ce7a60742cec22397aff9727f6797d015f6fe6ae8 失败:There is no current event loop in thread 'ThreadPoolExecutor-0_1'.
+  [err] 研判 246bb4e5e3bb37c9c83029cd23f83134c9013b4491c17fd6577368d272c03b47 失败:There is no current event loop in thread 'ThreadPoolExecutor-0_0'.
+  [err] 研判 61778309dff5f19fffc53eb93f9ecd7a877949f2b9f4c050dccbfcddb26db3bd 失败:There is no current event loop in thread 'ThreadPoolExecutor-0_1'.
+  [err] 研判 15e7e1b8d17efb3ad1affc7c326c2072f597d726ed39a4883a912d1c8db68224 失败:There is no current event loop in thread 'ThreadPoolExecutor-0_0'.
+  [err] 研判 3bab5e90174f8250b517d4fb94b82ad94762e44f8e88902baa1ab87bc1cb0c31 失败:There is no current event loop in thread 'ThreadPoolExecutor-0_1'.
+  [err] 研判 4c775136d80dea4d78a9ae1c356639cb1331a74a1d1a12849d507e8abacc3001 失败:There is no current event loop in thread 'ThreadPoolExecutor-0_0'.
+  [err] 研判 c823a263bad9ccf54896adee2ddc5690eb5e680e7ed47e6e9ad4c9a7a5903cee 失败:There is no current event loop in thread 'ThreadPoolExecutor-0_1'.
+  [err] 研判 4fba66727e494fa5d65e7b5520575e3482b466d99e78928bd8d052897d523df8 失败:There is no current event loop in thread 'ThreadPoolExecutor-0_0'.
+  [err] 研判 9e60c8294e2fb48c9522715303d80ab8bd1af5c54bee3a9e06fd92f171a7e3c6 失败:There is no current event loop in thread 'ThreadPoolExecutor-0_0'.
+  [err] 研判 b89d314237df8b7bf600c6df9d5411e31339ff9772060d02a6a9ee6c8e6d3993 失败:There is no current event loop in thread 'ThreadPoolExecutor-0_1'.
+  [err] 研判 1e8efb6dcb8aefc79979b28cd7408f63ce4b3b479d87d9b12d7fd1ab99afb047 失败:There is no current event loop in thread 'ThreadPoolExecutor-0_1'.
+  [err] 研判 8a2c4c2880c61d833a1699d29e5f0a7c24638bcb7f83f3872558f2d05dc66089 失败:There is no current event loop in thread 'ThreadPoolExecutor-0_0'.
+  [err] 研判 a2769f7468f0107108c2e911c9c27036ca13efe57fabb804b7feac188804d399 失败:There is no current event loop in thread 'ThreadPoolExecutor-0_1'.
+  [err] 研判 a778af597d3fe50acae6687d8402fdbdce05575461db5b061b835de0a90b7234 失败:There is no current event loop in thread 'ThreadPoolExecutor-0_0'.
+  [err] 研判 d26bcc4d7c6956db7e657a0912381c8f02603e0925c03826ce9491d7b4006628 失败:There is no current event loop in thread 'ThreadPoolExecutor-0_1'.
+  [err] 研判 851bec29658a137d53cc7390770f3810135b49b8f3625276fd59dffda2fb7f43 失败:There is no current event loop in thread 'ThreadPoolExecutor-0_0'.
+  [err] 研判 9665bf436cec6c4dcf8540a48c2f8146f533f019b5e42cb8c7bb644e891dbeb5 失败:There is no current event loop in thread 'ThreadPoolExecutor-0_1'.
+  [err] 研判 84c97dbfad6956fae4d90f6142b3c5a3b4087f5686cb77b8f02092af7455d957 失败:There is no current event loop in thread 'ThreadPoolExecutor-0_0'.
+  [err] 研判 b73e836b258c0625f5228cf9f6a22782f3c2fda1707f65e8f4b4250698ae5b3e 失败:There is no current event loop in thread 'ThreadPoolExecutor-0_0'.
+  [err] 研判 fb1ecbb80d7f40f4e660ee55d22fb1f37bd65f4c1208128610db452f54a6a4e8 失败:There is no current event loop in thread 'ThreadPoolExecutor-0_1'.
+  [err] 研判 31d980922d3f50277b62a243f8588f0a793b0ebe3c3b76403310235ec74f8ef6 失败:There is no current event loop in thread 'ThreadPoolExecutor-0_1'.
+  [err] 研判 d51f141e48bbddc4a5c36108c21e1678ff696a84d02982bb8a52fbceea565df4 失败:There is no current event loop in thread 'ThreadPoolExecutor-0_0'.
+  [err] 研判 4555a10f95af1d75a74bd1e6bc730ca1a831a06b9b28f3d3a7b6de666b7985e2 失败:There is no current event loop in thread 'ThreadPoolExecutor-0_0'.
+  [err] 研判 c2618cb44983a611e30754ed5b562165029344a294188a9b9c056e37476988eb 失败:There is no current event loop in thread 'ThreadPoolExecutor-0_1'.
+  [err] 研判 5d7652e8fecbd7c55febf39a08f783beb65a6e55e309f45d2ff3a6f996e0fee7 失败:There is no current event loop in thread 'ThreadPoolExecutor-0_1'.
+  [err] 研判 c7ef53688e266b41a4612d795513b6ef95b58421b8bf0cff89b3e50fb78ebba4 失败:There is no current event loop in thread 'ThreadPoolExecutor-0_0'.
+  [err] 研判 2414b70a51a339270a7b7c68d39e588a8f2e75a4d258fcfccd1a5f2e25705b8d 失败:There is no current event loop in thread 'ThreadPoolExecutor-0_0'.
+  [err] 研判 7d004886abd3e3d56fe7f59e1ca12df904f854947ed93d0713f1a6d7fc0b3ff5 失败:There is no current event loop in thread 'ThreadPoolExecutor-0_1'.
+  [err] 研判 3c4863e30cd8e2b3d26510fee246222e53fc1a2b0b0a12d50f3c34c7d8aeb8ef 失败:There is no current event loop in thread 'ThreadPoolExecutor-0_1'.
+  [err] 研判 a55106f5ea0517b7463ce42fcb357ace676c7bd6a76d4eb9c9443a7127451780 失败:There is no current event loop in thread 'ThreadPoolExecutor-0_0'.
+  [err] 研判 feee3b592325a1ad0380dde155148e6320e4fe65acbefd379bdd0ca1f0ce1abd 失败:There is no current event loop in thread 'ThreadPoolExecutor-0_0'.
+  [err] 研判 757183a24af061b2777ad963a5fa11527d23028b7dc4abf6407cfb1e7a49e249 失败:There is no current event loop in thread 'ThreadPoolExecutor-0_1'.
+  [err] 研判 84677f3aa973ba6565f8c108a099329346f5b8ddead27d10a704e6cddabdaddb 失败:There is no current event loop in thread 'ThreadPoolExecutor-0_1'.
+  [err] 研判 67b9c2ee51ce9fe425c08dc99cf636ea5954bd66226f5c308db4e44438828e80 失败:There is no current event loop in thread 'ThreadPoolExecutor-0_0'.
+  [err] 研判 0d26992485a96803c3051ec91fa7293b3aa1953af057ad8d848ccff945e0b785 失败:There is no current event loop in thread 'ThreadPoolExecutor-0_0'.
+  [err] 研判 455f2709670408035a5dc6db5ca88b19ae3aff106bf5f769d35cbcc370847927 失败:There is no current event loop in thread 'ThreadPoolExecutor-0_1'.
+  [err] 研判 b844985db38826e2f661ffe3cd51a3a8940c1fd4f66a5578d9fc8ebc66092b54 失败:There is no current event loop in thread 'ThreadPoolExecutor-0_1'.
+  [err] 研判 6049acfd7bc465c61fb01ac257cc78725aca001cdb092ad7124344f09cd44805 失败:There is no current event loop in thread 'ThreadPoolExecutor-0_0'.
+  [err] 研判 47157eada26beabd71816ed0534cdd99173bf249868b05464129d9248fe41b8e 失败:There is no current event loop in thread 'ThreadPoolExecutor-0_0'.
+  [err] 研判 d809144268c1b0c4bbf63fcd2b9c604125a3df536ccdad4972f549cf6c3e8898 失败:There is no current event loop in thread 'ThreadPoolExecutor-0_1'.
+  [err] 研判 0cc04bcee892e538442cd23943a081921ccd119643b947a65ac05658a903008c 失败:There is no current event loop in thread 'ThreadPoolExecutor-0_1'.
+  [err] 研判 29a112f3d17f20bc363c97ab2b60fb1347c39463d2b6db08ee71f055dfce7ecc 失败:There is no current event loop in thread 'ThreadPoolExecutor-0_0'.
+  [err] 研判 09c0f0a1d0db0ceaf517e153659f9a41d2055d5421d97e26095512cd5a363a49 失败:There is no current event loop in thread 'ThreadPoolExecutor-0_0'.
+  [err] 研判 a0d37c275efcf10d03cb7a062d108672fdf64e838f5be29eb418a6641340de92 失败:There is no current event loop in thread 'ThreadPoolExecutor-0_1'.
+# 达 max_alerts=20,停
+# poller 退出  累计 已判 0 失败 50 跳过 0
+# 汇总:已判 0  失败 50  跳过(毒告警)=0
+=== done  2026-07-24 07:41Z ===
