@@ -39,7 +39,7 @@ try:
     fx = collect_forensics(g, alert, seed, skill)
     print("=== findings(取证结果)===")
     for f in fx.findings:
-        print("  -", f.finding_id, ":", j(f.data, 200))
+        print("  -", f.finding_id, ":", j(f.attrs, 200))
     print("\n=== forensics 证据(★看有没有'跨域信任/TRUSTS')===")
     for k, v in (fx.context or {}).items():
         print(f"  [{k}] {j(v, 260)}")
