@@ -1,4 +1,4 @@
-=== dump-autofp  2026-07-24 09:20Z  uid=8cb0e34cac59fa3a ===
+=== dump-autofp  2026-07-24 09:23Z  uid=8cb0e34cac59fa3a ===
 rule_description: Kerberoast: RC4(0x17) TGS request for service NORTH.SEVENKINGDOMS.LOCAL
 raw: "{\"@timestamp\": \"2026-07-06T13:12:11.448Z\", \"timestamp\": \"2026-07-06T13:12:10.528+0000\", \"manager\": {\"name\": \"e5bb7343f06d\"}, \"log_source\": \"wazuh\", \"host\": {\"name\": \"f8e24743dcc1\"}, \"location\": \"EventChannel\", \"log\": {\"offset\": 34976884, \"file\": {\"path\": \"/logs/wazuh/alerts.json\"}}, \"decoder\": {\"name\": \"windows_eventchannel\"}, \"log_type\": \"hids_alert\", \"agent\": {\"version\": \"7.17.22\", \"id\": \"003\", \"name\": \"kingslanding\", \"ip\": \"x.x.x.10\", \"hostname\": \"f8e24743dcc1\", \"ephemeral_id\": \"d5d271ec-e831-42dd-9d03-45d8ccd7a05b\", \"type\": \"filebeat\"}, \"input\": {\"type\": \"log\"}, \"ecs\": {\"version\": \"1.12.0\"}, \"id\" 
 
@@ -7,7 +7,30 @@ seed(触发事件+实体): {"event": {"ticket_options": "0x40810000", "ingest_ti
 路由 skill: kerberoast 
 
 === findings(取证结果)===
-Traceback (most recent call last):
-  File "<stdin>", line 28, in <module>
-AttributeError: 'Finding' object has no attribute 'data'
+  - kerberoast.rc4_requested : {"enc_type": "0x17"}
+  - kerberoast.requester_is_machine : {"sam": "kingslanding$"}
+  - kerberoast.domain_trust_present : {"trusts": ["north.sevenkingdoms.local", "essos.local"]}
+  - kerberoast.spn_fanout : {"distinct_targets": 4, "total_4769": 1028, "bucket": "low"}
+
+=== forensics 证据(★看有没有'跨域信任/TRUSTS')===
+  [请求与目标] {"req_sam": "kingslanding$", "req_domain": "SEVENKINGDOMS", "req_type": null, "req_privileged": false, "tgt_sam": "north.sevenkingdoms.local", "tgt_domain": "SEVENKINGDOMS", "enc_type": "0x17", "ticket_options": "0x40810000"}
+  [目标估值] {"privileged": false, "spn": null, "groups": []}
+  [请求者enc基线] [{"enc": "0x12", "n": 955}, {"enc": "0x17", "n": 73}]
+  [跨域信任FP豁免判定] {"req_is_machine": true, "same_domain": true, "req_domain": "SEVENKINGDOMS", "tgt_domain": "SEVENKINGDOMS", "_note": "NetBIOS 名(如 NORTH)与 FQDN(如 north.sevenkingdoms.local)是同一个域,勿当两个域。跨域信任 FP 豁免机器账号引荐票;不豁免普通用户对服务账号的扇出取票。", "req_domain_fqdn": "sevenkingdoms.loca
+  [SPN扇出] {"distinct_targets": 4, "total_4769": 1028}
+
+=== consult 决策 ===
+decision: AUTO_FP
+benign_fp 命中: [(['kerberoast.domain_trust_present', 'kerberoast.requester_is_machine'], '机器账号在信任域内的 RC4 取票属于正常业务行为，应排除在 Kerberoast 威胁之外。')]
+threat_fp 命中: []
+threat_rule 命中: []
+
+★被复用的经验(chosen):
+  kind/verdict: benign_fp false_positive
+  fingerprint(finding_ids): ['kerberoast.domain_trust_present', 'kerberoast.requester_is_machine']
+  rule: null
+  note: 机器账号在信任域内的 RC4 取票属于正常业务行为，应排除在 Kerberoast 威胁之外。
+  蒸自告警 origin_case_id: 489cc44e063bdac63f9dcf39dc87e8f99e1908e30a438afe970ebd2c11796624
+  ↳ 源告警 rule: Kerberoast: RC4(0x17) TGS request for service SEVENKINGDOMS.LOCAL
+  ↳ 源告警 raw: "{\"@timestamp\": \"2026-07-06T12:32:05.036Z\", \"log\": {\"offset\": 29168453, \"file\": {\"path\": \"/logs/wazuh/alerts.json\"}}, \"agent\": {\"id\": \"005\", \"name\": \"winterfell\", \"ip\": \"x.x.x.11\", \"version\": \"7.17.22\", \"hostname\": \"f8e24743dcc1\", \"ephemeral_id\": \"d5d271ec-e831-42dd-9d03-45d8ccd7a05b\", \"type\": \"filebeat\"}, \"data\": {\"win\": {\"eventdata\": {\"serviceSi
 === done ===
