@@ -38,8 +38,9 @@ from soc_agent.experience.store import Experience
 from soc_agent.experience.cases import Case
 from soc_agent.forensics import Finding
 try:
-    exp_store, case_store = open_stores(cfg)       # 连接 + 建表(schema/experience/cases)
-    print("  [OK] 连接 + 建表(%s.experience / %s.cases)" % (cfg.og_schema, cfg.og_schema))
+    exp_store, case_store, corpus = open_stores(cfg)   # 连接 + 建表(experience/cases/payload_cases)
+    print("  [OK] 连接 + 建表(%s.experience / %s.cases / %s.payload_cases)"
+          % (cfg.og_schema, cfg.og_schema, cfg.og_schema))
     e = Experience(skill="__probe__", kind="threat", verdict="true_positive",
                    fingerprint={"finding_ids": ["x"]}, rule={"exists": "x"},
                    playbook=[{"order": 1, "primitive": "disable_account"}])
