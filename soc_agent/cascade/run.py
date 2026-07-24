@@ -5,6 +5,7 @@
 import asyncio
 import json
 import os
+import threading
 
 from ..models import Alert
 from .build import build_cascade_agent, build_shallow_probe
@@ -12,6 +13,22 @@ from .floor import force_deep
 from .signature import payload_case_of, sig_consult, sig_sediment
 
 __all__ = ["run_cascade", "run_shallow", "alert_view"]
+
+_loop_tls = threading.local()
+
+
+def _run_coro(coro):
+    """在当前线程的持久事件循环上跑协程。
+
+    ★poller 多 worker 线程:`asyncio.run` 每次新建/销毁 loop,而 openJiuwen 内部同步调 get_event_loop
+    在**非主线程**会报 'There is no current event loop in thread'。这里给每线程建并 set 一个持久 loop 复用,
+    保证同步 get_event_loop 也能拿到。主线程(cli.main)同样适用。"""
+    loop = getattr(_loop_tls, "loop", None)
+    if loop is None or loop.is_closed():
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        _loop_tls.loop = loop
+    return loop.run_until_complete(coro)
 
 
 def _ensure_workflow_timeout(seconds):
@@ -69,7 +86,7 @@ def run_cascade(pl, alert_uid, mode="recipe"):
         llm_base=pl.llm_base, llm_model=pl.llm_model, llm_key=pl.llm_key,
         llm_timeout=getattr(pl, "llm_timeout", 600), agent_name=pl.agent_name)
 
-    asyncio.run(Runner.run_agent(agent, {
+    _run_coro(Runner.run_agent(agent, {
         "alert_view": alert_view(alert), "alert_uid": alert_uid, "force_deep": bool(fd)}))
     result, report, picked = sink["result"], sink["report"], sink["picked"]
 
@@ -114,7 +131,7 @@ def run_shallow(pl, alert_uid, shallow_comp=None, sig_store=None, sig_corpus=Non
                                    shallow_comp=shallow_comp)
         await flow.invoke({"alert_view": alert_view(alert)}, create_workflow_session())
 
-    asyncio.run(_go())
+    _run_coro(_go())
     shallow = sink.get("shallow") or {}
     # 决策 A:只 false_positive 终局;needs_deep / force_deep / 非 FP(TP/suspicious)一律升级
     if bool(shallow.get("needs_deep")) or fd or shallow.get("verdict") != "false_positive":

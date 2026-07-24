@@ -14,12 +14,15 @@ class _FakeGraph:
 
     def run_cypher(self, cypher, **params):
         self.calls.append((cypher, params))
-        if "SET a += $props" in cypher:
-            self.setted[params["uid"]] = params["props"]
-            return []
         if "count(a)" in cypher:
             return [{"n": len(self._rows)}]
         return [dict(r) for r in self._rows]
+
+    def run_write(self, cypher, **params):        # 毒告警 SET 走写事务
+        self.calls.append((cypher, params))
+        if "SET a += $props" in cypher:
+            self.setted[params["uid"]] = params["props"]
+        return []
 
     def get_alert(self, uid):
         return dict(self._node)

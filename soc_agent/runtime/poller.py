@@ -77,7 +77,7 @@ class Poller:
     def _mark_poison(self, uid) -> None:
         node = self.pl.graph.get_alert(uid) or {}
         props = poison_props(node.get("poller_retries"), self.retry_cap)
-        self.pl.graph.run_cypher(
+        self.pl.graph.run_write(          # ★SET 是写:必须走写事务(run_cypher 是读模式,会被 Neo4j 拒)
             "MATCH (a:Alert {alert_uid:$uid}) SET a += $props", uid=uid, props=props)
         if props.get("poller_skip"):
             self.stats["skipped"] += 1
