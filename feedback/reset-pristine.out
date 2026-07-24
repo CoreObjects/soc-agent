@@ -1,6 +1,6 @@
-=== reset-to-pristine(图台账+openGauss规则双清)2026-07-24 07:41Z ===
+=== reset-to-pristine(图台账+openGauss规则双清)2026-07-24 08:43Z ===
 neo4j=bolt://10.185.93.0:7687  appliance=http://10.185.93.0:8765
-图台账:Verdict+Disposition+ResponsePlan+Finding 22 → 0;残留 CONCLUDED 边=0(应0);事实 Alert=101919(保留)
-openGauss 经验库:experience 10 → 0;cases 13 → 0
+图台账:Verdict+Disposition+ResponsePlan+Finding 146 → 0;残留 CONCLUDED 边=0(应0);事实 Alert=101919(保留)
+openGauss 经验库:experience 6 → 0;cases 21 → 0
 PRISTINE OK:图台账已清(靶场态经 appliance /reset 复原)+ openGauss 经验库已清,恢复'只有事实、零研判'最初态
 === done ===
