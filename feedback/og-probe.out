@@ -1,20 +1,9 @@
-=== og-probe  2026-07-24 01:34Z ===
+=== og-probe  2026-07-24 01:43Z ===
 Traceback (most recent call last):
   File "<stdin>", line 21, in <module>
-  File "/home/soc/soc-agent/soc_agent/experience/opengauss.py", line 188, in open_stores
-    conn = _connect(cfg)
-           ^^^^^^^^^^^^^
-  File "/home/soc/soc-agent/soc_agent/experience/opengauss.py", line 21, in _connect
-    conn = psycopg2.connect(host=cfg.og_host, port=cfg.og_port, dbname=cfg.og_database,
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/soc/soc-agent/.venv/lib64/python3.11/site-packages/psycopg2/__init__.py", line 122, in connect
-    conn = _connect(dsn, connection_factory=connection_factory, **kwasync)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-psycopg2.OperationalError: connection to server at "127.0.0.1", port 5432 failed: timeout expired
-
+ValueError: too many values to unpack (expected 2)
   og_enabled=True host=127.0.0.1 port=5432 db=soc user=soc_agent schema=soc
   [OK] psycopg2 可用:2.9.12 (dt dec pq3 ext lo64)
-  [FAIL] OperationalError: connection to server at "127.0.0.1", port 5432 failed: timeout expired
-
+  [FAIL] ValueError: too many values to unpack (expected 2)
   ↳ 若是认证方式(SHA256/md5)或权限(public 被拒→用自建 schema)问题,把这段报错发我调。
 === done ===
