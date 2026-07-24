@@ -11,7 +11,7 @@ mkdir -p feedback
 FB="feedback/verify-disposition.out"
 {
   echo "=== verify-disposition  $(date -u '+%F %H:%MZ' 2>/dev/null || true) ==="
-  PYTHONUTF8=1 SOC_CASCADE_ENABLED=1 "$PY" - <<'PYEOF'
+  SOC_VERIFY_UID="${1:-}" PYTHONUTF8=1 SOC_CASCADE_ENABLED=1 "$PY" - <<'PYEOF'
 import os, sys
 sys.path.insert(0, os.getcwd())
 from soc_agent.config import Config
@@ -23,7 +23,18 @@ TECHS = ["T1003.006", "T1649", "T1558.003", "T1003.001"]   # dcsync / ADCS-ESC /
 BUDGET = 8
 try:
     tp_uid = None
-    for t in TECHS:
+    target = os.environ.get("SOC_VERIFY_UID") or ""
+    if target.strip():                       # 指定 uid:只研判这一条(拿已知真攻击验)
+        uid = target.strip()
+        result, report, picked = run_investigation(pl, uid, mode="recipe")
+        v = result.verdict.verdict if result.verdict else None
+        print(f"  [指定] {uid[:20]} → verdict={v}  path={result.path}  decision={report.decision}")
+        if v == "true_positive":
+            tp_uid = uid
+        else:
+            print(f"\n指定的 {uid[:16]} 深度判成 {v}(非 TP)—— 若你确信它是真攻击=深度召回该查。")
+            sys.exit(0)
+    for t in ([] if target.strip() else TECHS):
         rows = g.run_cypher("MATCH (a:Alert) WHERE $t IN coalesce(a.technique_ids,[]) "
                             "AND NOT (a)-[:CONCLUDED]->() RETURN a.alert_uid AS uid LIMIT 4", t=t)
         for r in rows:
