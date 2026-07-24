@@ -1,0 +1,20 @@
+=== ledger-stats  2026-07-24 08:38Z ===
+已研判(CONCLUDED)总数:183
+
+verdict × path 分布(S=浅层终局 / A=经验复用 / B=深度LLM):
+  false_positive   path=S    151
+  false_positive   path=B    20
+  suspicious       path=S    9
+  true_positive    path=S    2
+  suspicious       path=B    1
+
+处置 Disposition 状态(排除 __no_op__ 占位;★manual 应全 proposed=待处置):
+  (无真处置步骤)
+
+ResponsePlan 状态:
+
+TP 抽样(≤5 条,含处置步骤+状态):
+
+  bee510affa4f3abd  plan=None  steps=[{'action': None, 'target': None, 'status': None}]
+  246bb4e5e3bb37c9  plan=None  steps=[{'action': None, 'target': None, 'status': None}]
+=== done ===
