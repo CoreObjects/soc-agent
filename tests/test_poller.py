@@ -104,3 +104,51 @@ def test_run_processes_batch_then_exits_on_stop():
     p = Poller(_pl(g), interval=0.01, concurrency=1, process_fn=proc)
     p.run()                                         # 不能挂;处理 a1 后 stop → 退出
     assert done == ["a1"]
+
+
+class _DrainGraph:
+    """第一次取批返回 rows,之后空(模拟存量消化完)。"""
+    def __init__(self, rows):
+        self._rows = list(rows)
+
+    def run_cypher(self, cypher, **params):
+        if "count(a)" in cypher:
+            return [{"n": len(self._rows)}]
+        r, self._rows = self._rows, []
+        return r
+
+    def get_alert(self, uid):
+        return {}
+
+
+def test_run_once_drains_then_exits():
+    g = _DrainGraph([{"uid": "a1"}, {"uid": "a2"}])
+    done = []
+    p = Poller(_pl(g), concurrency=1, once=True, process_fn=lambda pl, uid, mode: done.append(uid))
+    p.run()                                         # once:消化完存量即退,不轮询
+    assert done == ["a1", "a2"]
+
+
+class _InfGraph:
+    """无限供给、尊重 batch limit —— 验 max_alerts 会停。"""
+    def __init__(self):
+        self.i = 0
+
+    def run_cypher(self, cypher, **params):
+        if "count(a)" in cypher:
+            return [{"n": 999}]
+        n = params.get("batch", 1)
+        rows = [{"uid": f"a{self.i + j}"} for j in range(n)]
+        self.i += n
+        return rows
+
+    def get_alert(self, uid):
+        return {}
+
+
+def test_run_stops_at_max_alerts():
+    done = []
+    p = Poller(_pl(_InfGraph()), concurrency=1, batch=2, max_alerts=3,
+               process_fn=lambda pl, uid, mode: done.append(uid))
+    p.run()                                         # 不能挂;达 max(批边界)即停
+    assert 3 <= len(done) <= 4                      # batch=2:第二批后累计 4≥3 停

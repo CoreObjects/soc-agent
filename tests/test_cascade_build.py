@@ -30,7 +30,7 @@ class _FakeShallow(WorkflowComponent):
         return {"needs_deep": self._nd, "verdict": self._v, "confidence": 0.8, "rationale": "test"}
 
 
-def _run(needs_deep, force_deep):
+def _run(needs_deep, force_deep, verdict=None):
     g = _FakeGraph()
     sink = {}
     calls = []
@@ -42,7 +42,7 @@ def _run(needs_deep, force_deep):
 
     async def _go():
         # session 必须在运行中的事件循环内创建(openJiuwen 内部用 get_event_loop)
-        flow = build_cascade_workflow(g, run_deep, sink, shallow_comp=_FakeShallow(needs_deep))
+        flow = build_cascade_workflow(g, run_deep, sink, shallow_comp=_FakeShallow(needs_deep, verdict))
         await flow.invoke(
             {"alert_view": "{}", "alert_uid": "a1", "force_deep": force_deep},
             create_workflow_session())
@@ -69,6 +69,21 @@ def test_route_deep_when_needs_deep():
 def test_force_deep_overrides_benign():
     g, sink, calls = _run(needs_deep=False, force_deep=True)
     assert calls == ["a1"]                              # 硬底线强制升级
+    assert sink["picked"] == "深度研判"
+
+
+def test_route_deep_when_shallow_tp():
+    # ★决策 A:浅层判 true_positive(needs_deep=False)→ BranchRouter 仍升级深度(不终局)
+    g, sink, calls = _run(needs_deep=False, force_deep=False, verdict="true_positive")
+    assert calls == ["a1"]                              # TP 升级了
+    assert sink["picked"] == "深度研判"
+    assert g.written == []                              # TP 没被当终局写台账
+
+
+def test_route_deep_when_shallow_suspicious():
+    # ★决策 A:suspicious 也升级(不终局)
+    g, sink, calls = _run(needs_deep=False, force_deep=False, verdict="suspicious")
+    assert calls == ["a1"]
     assert sink["picked"] == "深度研判"
 
 
@@ -115,12 +130,28 @@ def test_run_shallow_route_escalate_on_needs_deep():
     assert run_shallow(pl, "a1", shallow_comp=_FakeShallow(True))["route"] == "escalate"
 
 
-def test_run_shallow_route_terminal_tp():
-    # 放松后:浅层可直接下 TP(不升级)
+def test_run_shallow_tp_escalates_decision_a():
+    # ★决策 A:浅层判 TP 不再终局,一律升级深度
     from soc_agent.cascade.run import run_shallow
     pl = _FakePL({"alert_uid": "a1", "technique_ids": ["T1190"]})
     r = run_shallow(pl, "a1", shallow_comp=_FakeShallow(False, verdict="true_positive"))
-    assert r["route"] == "terminal_tp"
+    assert r["route"] == "escalate"
+
+
+def test_run_shallow_sig_tp_hit_escalates():
+    # ★决策 A:命中 TP 签名 → 升级深度(不短路复用),但仍 bump 命中计数
+    import json as _json
+    from soc_agent.cascade.run import run_shallow
+    from soc_agent.experience.store import Experience, InMemoryExperienceStore
+    store = InMemoryExperienceStore()
+    store.add(Experience(skill="wazuh", kind="payload", verdict="true_positive", fingerprint={},
+                         rule={"conditions": [{"path": "data.win.system.eventID", "op": "eq", "value": "4769"}]},
+                         origin_verdict_id="v0"))
+    raw = _json.dumps({"data": {"win": {"system": {"eventID": "4769"}}}})
+    pl = _FakePL({"alert_uid": "a1", "source": "wazuh", "raw": raw, "technique_ids": ["T1558.003"]})
+    r = run_shallow(pl, "a1", sig_store=store)
+    assert r["route"] == "escalate" and r["reused"] is False
+    assert store.get(store.all()[0].exp_id).hit_count == 1
 
 
 def test_run_shallow_no_floor_override():

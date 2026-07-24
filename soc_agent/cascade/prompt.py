@@ -4,6 +4,10 @@
 光凭告警签名/payload 就能定"是攻击还是良性"、深度取证只补细节(扇出/估值/落地)的,浅层直接判
 (TP 或 FP),别走那条"强行取证却没多拿到信息"的深度路 —— 这正是 B 类(签名直判)。只有真需要
 重建主机行为/进程父子链/登录序列/跨层落地才能定的(A 类),才升级。见 [[soc-agent-cascade-openjiuwen]]。
+
+★决策 A(2026-07-24):浅层**只终局 false_positive**;判 true_positive / suspicious 的**一律由系统升级深度**
+(TP 要完整取证 + 精准处置目标)。模型照常给 verdict/needs_deep,TP 的升级由 BranchRouter/run_cascade 兜底,
+不靠模型自觉 —— 所以下面 LLM 文案不变(仍让模型对签名清晰的攻击自信判 TP),升级是系统策略、对模型透明。
 """
 
 SHALLOW_PROMPT = (

@@ -16,9 +16,17 @@ CAS+lease 领取(防两个 runner 双执行)、跑 ansible、回写 step 结果 
 """
 
 __all__ = [
-    "q_list_plans", "q_plan_steps", "q_approve", "q_reject", "q_request_rollback",
-    "q_claim", "q_record_step", "q_finish_plan", "q_rollbackable_steps", "q_mark_step_rolled_back",
+    "q_list_plans", "q_alert_proposed_plans", "q_plan_steps", "q_approve", "q_reject",
+    "q_request_rollback", "q_claim", "q_record_step", "q_finish_plan",
+    "q_rollbackable_steps", "q_mark_step_rolled_back",
 ]
+
+
+def q_alert_proposed_plans(alert_uid):
+    """某告警(plan_id=alert_uid)新写的待批 proposed 计划 —— auto 模式据此自动 approve/执行。"""
+    return (
+        "MATCH (p:ResponsePlan {plan_id:$uid}) WHERE p.status='proposed' RETURN p.plan_id AS plan_id",
+        {"uid": alert_uid})
 
 
 def q_list_plans(status):

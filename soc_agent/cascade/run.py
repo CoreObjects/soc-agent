@@ -45,19 +45,22 @@ def run_cascade(pl, alert_uid, mode="recipe"):
         raise AlertNotFound(f"图里没有 alert_uid={alert_uid} 的 :Alert")
     alert = Alert.from_node(node)
 
-    # ★签名库前置:命中即复用 verdict、写台账、返回 —— 零 qwen、不跑 openJiuwen
+    # ★签名库前置(决策 A):只对 **false_positive** 直接复用短路(零 qwen);命中 TP 签名 → 不短路、强制升级深度
     sig_store = getattr(pl, "exp_store", None)
     hit = sig_consult(sig_store, alert)
-    if hit is not None:
+    if hit is not None and hit.verdict == "false_positive":
         sig_store.bump_hit(hit.exp_id)
-        v = Verdict(verdict=hit.verdict, confidence=0.9, summary="签名库复用",
+        v = Verdict(verdict="false_positive", confidence=0.9, summary="签名库复用",
                     rationale=f"签名库复用 payload 规则 {hit.exp_id[:8]}(kind=payload)", agent=pl.agent_name)
         result = InvestigationResult(alert_uid=alert_uid, path="S", verdict=v, skill=None,
                                      reuse_verdict_id=hit.origin_verdict_id)
         pl.graph.write_result(alert_uid, result)
         return result, MatchReport(decision="SIG_REUSE"), "签名库复用(零qwen)"
 
-    fd = force_deep(alert, pl.policy)
+    tp_sig = hit is not None and hit.verdict == "true_positive"
+    if tp_sig:
+        sig_store.bump_hit(hit.exp_id)                       # TP 签名命中也记一次(观测),但走深度
+    fd = force_deep(alert, pl.policy) or tp_sig              # ★决策 A:TP 签名命中 → 强制升级深度(跳过浅层 LLM)
     # 工作流要包住深度研判(可能多轮 LLM,很久)→ 抬得比单次 LLM 超时大得多
     _ensure_workflow_timeout(max(1800, getattr(pl, "llm_timeout", 600) * 3))
     sink = {}
@@ -89,14 +92,18 @@ def run_shallow(pl, alert_uid, shallow_comp=None, sig_store=None, sig_corpus=Non
     alert = Alert.from_node(node)
     fd = force_deep(alert, pl.policy)
 
-    # ★签名库前置:命中即零 qwen 复用
+    # ★签名库前置(决策 A):只 FP 直接复用短路;命中 TP 签名 → 升级深度(不短路、不跑浅层 LLM)
     hit = sig_consult(sig_store, alert)
-    if hit is not None:
+    if hit is not None and hit.verdict == "false_positive":
         sig_store.bump_hit(hit.exp_id)
-        route = "reuse_tp" if hit.verdict == "true_positive" else "reuse_fp"
         return {"alert_uid": alert_uid, "technique": alert.primary_technique, "force_deep": fd, "reused": True,
-                "shallow": {"needs_deep": False, "verdict": hit.verdict, "confidence": None,
-                            "rationale": f"签名库复用 {hit.exp_id[:8]}"}, "route": route}
+                "shallow": {"needs_deep": False, "verdict": "false_positive", "confidence": None,
+                            "rationale": f"签名库复用 {hit.exp_id[:8]}"}, "route": "reuse_fp"}
+    if hit is not None and hit.verdict == "true_positive":
+        sig_store.bump_hit(hit.exp_id)
+        return {"alert_uid": alert_uid, "technique": alert.primary_technique, "force_deep": fd, "reused": False,
+                "shallow": {"needs_deep": True, "verdict": "true_positive", "confidence": None,
+                            "rationale": f"TP 签名命中 {hit.exp_id[:8]} → 决策A 升级深度"}, "route": "escalate"}
 
     _ensure_workflow_timeout(getattr(pl, "llm_timeout", 600))    # 单次浅层 qwen 调用,够
     sink = {}
@@ -109,13 +116,14 @@ def run_shallow(pl, alert_uid, shallow_comp=None, sig_store=None, sig_corpus=Non
 
     asyncio.run(_go())
     shallow = sink.get("shallow") or {}
-    if bool(shallow.get("needs_deep")) or fd:
+    # 决策 A:只 false_positive 终局;needs_deep / force_deep / 非 FP(TP/suspicious)一律升级
+    if bool(shallow.get("needs_deep")) or fd or shallow.get("verdict") != "false_positive":
         route = "escalate"
     else:
-        route = "terminal_tp" if shallow.get("verdict") == "true_positive" else "terminal_fp"
+        route = "terminal_fp"
 
-    # ★浅层终局(TP/FP)→ 从 payload 蒸签名规则入库 + 记语料(供反例回归)
-    if sig_store is not None and route in ("terminal_tp", "terminal_fp"):
+    # ★浅层终局(只 FP)→ 从 payload 蒸签名规则入库 + 记语料(供反例回归)
+    if sig_store is not None and route == "terminal_fp":
         from ..models import InvestigationResult, Verdict
         v = Verdict(verdict=shallow.get("verdict"), confidence=float(shallow.get("confidence") or 0.0),
                     rationale=shallow.get("rationale") or "", agent=pl.agent_name)

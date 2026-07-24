@@ -23,7 +23,10 @@ from .prompt import SHALLOW_OUTPUT_SCHEMA, SHALLOW_PROMPT
 
 __all__ = ["build_cascade_workflow", "build_cascade_agent", "build_shallow_probe"]
 
-_ESCALATE_COND = "${shallow.needs_deep} == true || ${start.force_deep} == true"
+# 决策 A:浅层只终局 false_positive;TP/suspicious 一律升级深度(TP 要完整取证+精准处置目标)。
+# ★字符串量用单引号(openJiuwen 会把裸 true 改写成 True,'true_positive' 加引号被保护、不被改坏)。
+_ESCALATE_COND = ("${shallow.needs_deep} == true || ${start.force_deep} == true "
+                  "|| ${shallow.verdict} == 'true_positive' || ${shallow.verdict} == 'suspicious'")
 
 
 def _shallow_component(llm_base, llm_model, llm_key, llm_timeout=600):

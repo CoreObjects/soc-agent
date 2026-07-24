@@ -48,7 +48,7 @@ def _default_process(pl, uid, mode):
 
 class Poller:
     def __init__(self, pl, *, interval=10.0, concurrency=2, batch=50, retry_cap=3,
-                 process_fn=None, mode="recipe", logger=None):
+                 process_fn=None, mode="recipe", logger=None, max_alerts=None, once=False):
         self.pl = pl
         self.interval = float(interval)
         self.concurrency = int(concurrency)
@@ -57,8 +57,13 @@ class Poller:
         self._process = process_fn or _default_process   # callable(pl, uid, mode)
         self.mode = mode
         self._log = logger or (lambda msg: print(msg, flush=True))
+        self.max_alerts = max_alerts        # 处理满这么多条就停(小样本验证用);None=不限
+        self.once = bool(once)              # True=队列排空即退(消化完存量就停),不常驻轮询
         self._stop = threading.Event()
         self.stats = {"done": 0, "failed": 0, "skipped": 0}
+
+    def _reached_max(self) -> bool:
+        return self.max_alerts is not None and (self.stats["done"] + self.stats["failed"]) >= self.max_alerts
 
     # ---- I/O 小件(mock graph 可测)----
     def fetch_batch(self) -> list:
@@ -114,14 +119,18 @@ class Poller:
             while not self._stop.is_set():
                 uids = self.fetch_batch()
                 if not uids:
-                    backlog = 0
                     self._log(f"# 队列排空(已判 {self.stats['done']} 失败 {self.stats['failed']} "
-                              f"跳过 {self.stats['skipped']}),{self.interval}s 后再轮询")
+                              f"跳过 {self.stats['skipped']})")
+                    if self.once:                    # once:消化完存量即退,不常驻轮询
+                        break
                     if self._stop.wait(self.interval):   # sleep,可被 stop 立即打断
                         break
                     continue
                 self._log(f"# 取批 {len(uids)} 条(积压 {self.backlog_count()});research 中…")
                 for f in [pool.submit(self.process_one, u) for u in uids]:
                     f.result()                      # process_one 自己吞异常,这里不会抛
+                if self._reached_max():              # 小样本验证:处理满 max_alerts 就停
+                    self._log(f"# 达 max_alerts={self.max_alerts},停")
+                    break
         self._log(f"# poller 退出  累计 已判 {self.stats['done']} 失败 {self.stats['failed']} "
                   f"跳过 {self.stats['skipped']}")
