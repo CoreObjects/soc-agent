@@ -1,0 +1,31 @@
+=== pytest (.venv312)  2026-07-24 07:20Z ===
+........................................................................ [ 83%]
+..............                                                           [100%]
+=============================== warnings summary ===============================
+.venv312/lib64/python3.11/site-packages/openjiuwen/core/common/clients/connector_pool.py:17
+  /home/soc/soc-agent/.venv312/lib64/python3.11/site-packages/openjiuwen/core/common/clients/connector_pool.py:17: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.13/migration/
+    class ConnectorPoolConfig(BaseModel):
+
+.venv312/lib64/python3.11/site-packages/openjiuwen/core/common/clients/http_client.py:21
+  /home/soc/soc-agent/.venv312/lib64/python3.11/site-packages/openjiuwen/core/common/clients/http_client.py:21: PydanticDeprecatedSince20: Support for class-based `config` is deprecated, use ConfigDict instead. Deprecated in Pydantic V2.0 to be removed in V3.0. See Pydantic V2 Migration Guide at https://errors.pydantic.dev/2.13/migration/
+    class SessionConfig(BaseModel):
+
+tests/test_cascade_build.py::test_agent_runner_path_fills_sink
+  /home/soc/soc-agent/soc_agent/cascade/build.py:121: DeprecationWarning: AgentConfig is deprecated and will be removed in the future. Please use AgentCard + ReActAgentConfig instead.
+    agent = WorkflowAgent(WorkflowAgentConfig(
+
+tests/test_cascade_build.py::test_agent_runner_path_fills_sink
+tests/test_cascade_build.py::test_agent_runner_path_fills_sink
+  /home/soc/soc-agent/.venv312/lib64/python3.11/site-packages/pydantic/main.py:263: DeprecationWarning: WorkflowSchema is deprecated and will be removed in the future. Please use WorkflowCard instead.
+    validated_self = self.__pydantic_validator__.validate_python(data, self_instance=self)
+
+tests/test_cascade_build.py::test_agent_runner_path_fills_sink
+  /home/soc/soc-agent/.venv312/lib64/python3.11/site-packages/pydantic/main.py:263: DeprecationWarning: DefaultResponse is deprecated and will be removed in the future. Please use new config classes instead.
+    validated_self = self.__pydantic_validator__.validate_python(data, self_instance=self)
+
+tests/test_cascade_build.py::test_agent_runner_path_fills_sink
+  /home/soc/soc-agent/.venv312/lib64/python3.11/site-packages/openjiuwen/core/single_agent/legacy/agent.py:516: DeprecationWarning: BaseAgent is deprecated and will be removed in the future. Please use openjiuwen.core.single_agent.agent.BaseAgent instead.
+    super().__init__(agent_config)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=== done ===
