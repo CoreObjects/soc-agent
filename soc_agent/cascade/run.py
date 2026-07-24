@@ -17,18 +17,30 @@ __all__ = ["run_cascade", "run_shallow", "alert_view"]
 _loop_tls = threading.local()
 
 
-def _run_coro(coro):
-    """在当前线程的持久事件循环上跑协程。
+def _ensure_thread_loop():
+    """给当前线程建并 set 一个持久事件循环(idempotent)。
 
-    ★poller 多 worker 线程:`asyncio.run` 每次新建/销毁 loop,而 openJiuwen 内部同步调 get_event_loop
-    在**非主线程**会报 'There is no current event loop in thread'。这里给每线程建并 set 一个持久 loop 复用,
-    保证同步 get_event_loop 也能拿到。主线程(cli.main)同样适用。"""
+    ★必须在 openJiuwen 同步构建(build_cascade_agent 等)**之前**调用:poller 的非主 worker 线程若未
+    set_event_loop,openJiuwen 内部同步调 get_event_loop 会报 'There is no current event loop in thread'
+    (build 发生在 _run_coro 之外,只在 _run_coro 里 set 太晚)。主线程(cli.main)同样适用。"""
     loop = getattr(_loop_tls, "loop", None)
-    if loop is None or loop.is_closed():
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        _loop_tls.loop = loop
-    return loop.run_until_complete(coro)
+    if loop is not None and not loop.is_closed():
+        return loop
+    try:                                # 复用线程已 set 的 loop(如 poller worker 初始化时 set 的)
+        existing = asyncio.get_event_loop()
+        if existing is not None and not existing.is_closed():
+            _loop_tls.loop = existing
+            return existing
+    except RuntimeError:
+        pass
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    _loop_tls.loop = loop
+    return loop
+
+
+def _run_coro(coro):
+    return _ensure_thread_loop().run_until_complete(coro)
 
 
 def _ensure_workflow_timeout(seconds):
@@ -80,6 +92,7 @@ def run_cascade(pl, alert_uid, mode="recipe"):
     fd = force_deep(alert, pl.policy) or tp_sig              # ★决策 A:TP 签名命中 → 强制升级深度(跳过浅层 LLM)
     # 工作流要包住深度研判(可能多轮 LLM,很久)→ 抬得比单次 LLM 超时大得多
     _ensure_workflow_timeout(max(1800, getattr(pl, "llm_timeout", 600) * 3))
+    _ensure_thread_loop()               # ★build_cascade_agent 之前就 set 好 loop(poller worker 线程必需)
     sink = {}
     agent = build_cascade_agent(
         pl.graph, lambda uid: run_pipeline(pl, uid, mode), sink,
