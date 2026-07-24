@@ -1,0 +1,22 @@
+=== poller  2026-07-24 08:05Z   args: --once --max 20 ===
+# 处置模式=manual(manual=只生成待处置不执行 / auto=自动执行)  appliance=on  cascade=on
+# poller 启动  并发=2 批=50 轮询间隔=10.0s 毒告警上限=3 模式=recipe
+Received notification from DBMS server: <GqlStatusObject gql_status='01N52', status_description='warn: property key does not exist. The property `poller_skip` does not exist. Verify that the spelling is correct.', position=<SummaryInputPosition line=1, column=63, offset=62>, raw_classification='UNRECOGNIZED', classification=<NotificationClassification.UNRECOGNIZED: 'UNRECOGNIZED'>, raw_severity='WARNING', severity=<NotificationSeverity.WARNING: 'WARNING'>, diagnostic_record={'_classification': 'UNRECOGNIZED', '_severity': 'WARNING', '_position': {'offset': 62, 'line': 1, 'column': 63}, 'OPERATION': '', 'OPERATION_CODE': '0', 'CURRENT_SCHEMA': '/'}> for query: 'MATCH (a:Alert) WHERE NOT (a)-[:CONCLUDED]->() AND coalesce(a.poller_skip,false)=false RETURN a.alert_uid AS uid ORDER BY coalesce(a.arrival_ms,0) ASC LIMIT $batch'
+Received notification from DBMS server: <GqlStatusObject gql_status='01N52', status_description='warn: property key does not exist. The property `poller_skip` does not exist. Verify that the spelling is correct.', position=<SummaryInputPosition line=1, column=63, offset=62>, raw_classification='UNRECOGNIZED', classification=<NotificationClassification.UNRECOGNIZED: 'UNRECOGNIZED'>, raw_severity='WARNING', severity=<NotificationSeverity.WARNING: 'WARNING'>, diagnostic_record={'_classification': 'UNRECOGNIZED', '_severity': 'WARNING', '_position': {'offset': 62, 'line': 1, 'column': 63}, 'OPERATION': '', 'OPERATION_CODE': '0', 'CURRENT_SCHEMA': '/'}> for query: 'MATCH (a:Alert) WHERE NOT (a)-[:CONCLUDED]->() AND coalesce(a.poller_skip,false)=false RETURN count(a) AS n'
+# 取批 50 条(积压 101873);research 中…
+  [skip] 15e7e1b8d17efb3ad1affc7c326c2072f597d726ed39a4883a912d1c8db68224 连续失败 3 次 → 标 poller_skip,不再重捞
+  [err] 研判 15e7e1b8d17efb3ad1affc7c326c2072f597d726ed39a4883a912d1c8db68224 失败:cascade 工作流未产出结果(sink keys=[], force_deep=False)
+  [skip] 246bb4e5e3bb37c9c83029cd23f83134c9013b4491c17fd6577368d272c03b47 连续失败 3 次 → 标 poller_skip,不再重捞
+  [err] 研判 246bb4e5e3bb37c9c83029cd23f83134c9013b4491c17fd6577368d272c03b47 失败:cascade 工作流未产出结果(sink keys=[], force_deep=False)
+  [err] 研判 b5e0cf82bb47cc176f1719375925206807db75806e04fb25bb0b6aa915debb84 失败:cascade 工作流未产出结果(sink keys=[], force_deep=False)
+  [skip] 9665bf436cec6c4dcf8540a48c2f8146f533f019b5e42cb8c7bb644e891dbeb5 连续失败 3 次 → 标 poller_skip,不再重捞
+  [err] 研判 9665bf436cec6c4dcf8540a48c2f8146f533f019b5e42cb8c7bb644e891dbeb5 失败:cascade 工作流未产出结果(sink keys=[], force_deep=False)
+  [err] 研判 a9256031ad8ca33de262dc9b77f37bd7eead123521ac5860c07c0944eaf32154 失败:cascade 工作流未产出结果(sink keys=[], force_deep=False)
+  [err] 研判 9170bdc85fafe710f761152d0ffbaf9bdb79f4329ad96f3575e6fc542c0007e0 失败:cascade 工作流未产出结果(sink keys=[], force_deep=False)
+  [err] 研判 14543759653b25f9fee1fcea2312ec7eed82b7d16073d9fccf9f989e31a2797a 失败:cascade 工作流未产出结果(sink keys=[], force_deep=False)
+  [err] 研判 174c49ca5201da8b5e24e62c50131cfeadf9a40aa713b4a1268e3777128eca04 失败:cascade 工作流未产出结果(sink keys=[], force_deep=False)
+  [err] 研判 5f8359dfd7de0b590c121ed23493ccc5a9b6803597d9541bd58bdd7aa41294d7 失败:cascade 工作流未产出结果(sink keys=[], force_deep=False)
+  [err] 研判 ed516a9b491d2f71886cb1239cda8b775368923a825bff442cc2fef7999c408c 失败:cascade 工作流未产出结果(sink keys=[], force_deep=False)
+  [err] 研判 9b39f777478ca305f4b70d7c2012acdc0009cc74c58b4dbb0bc139f47745a806 失败:cascade 工作流未产出结果(sink keys=[], force_deep=False)
+  [err] 研判 08ce3ab856e12cae9bf5597a5d93c1673b64a5a5ccba91ca8f024def7cb69c4a 失败:cascade 工作流未产出结果(sink keys=[], force_deep=False)
+  [err] 研判 e964ce4ab2a262643c59b627b7e16ea1
