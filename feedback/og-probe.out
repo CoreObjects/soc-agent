@@ -1,9 +1,8 @@
-=== og-probe  2026-07-24 01:43Z ===
-Traceback (most recent call last):
-  File "<stdin>", line 21, in <module>
-ValueError: too many values to unpack (expected 2)
+=== og-probe  2026-07-24 01:49Z ===
   og_enabled=True host=127.0.0.1 port=5432 db=soc user=soc_agent schema=soc
   [OK] psycopg2 可用:2.9.12 (dt dec pq3 ext lo64)
-  [FAIL] ValueError: too many values to unpack (expected 2)
-  ↳ 若是认证方式(SHA256/md5)或权限(public 被拒→用自建 schema)问题,把这段报错发我调。
+  [OK] 连接 + 建表(soc.experience / soc.cases / soc.payload_cases)
+  [PASS] 经验读写往返(rule/fingerprint 无损):True
+  [PASS] 案例读写往返(findings 无损):True
+  [DONE] 探针行已清理。openGauss 驱动 + schema + 读写全通 → Phase 6 可直接用。
 === done ===
