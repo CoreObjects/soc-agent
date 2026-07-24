@@ -1,0 +1,77 @@
+=== cascade-selftest 2026-07-24 03:45Z ===
+# 浅层 cascade selftest  取样=recent  待判 15 条  (★--deep: escalate 真接 run_pipeline(取证+consult+命中经验,写台账!);IP 打码)
+
+Received notification from DBMS server: <GqlStatusObject gql_status='01N52', status_description='warn: property key does not exist. The property `count` does not exist. Verify that the spelling is correct.', position=<SummaryInputPosition line=1, column=84, offset=83>, raw_classification='UNRECOGNIZED', classification=<NotificationClassification.UNRECOGNIZED: 'UNRECOGNIZED'>, raw_severity='WARNING', severity=<NotificationSeverity.WARNING: 'WARNING'>, diagnostic_record={'_classification': 'UNRECOGNIZED', '_severity': 'WARNING', '_position': {'offset': 83, 'line': 1, 'column': 84}, 'OPERATION': '', 'OPERATION_CODE': '0', 'CURRENT_SCHEMA': '/'}> for query: 'MATCH (acc:Account {sam:$s})-[r:AUTHENTICATED_TO]->(h:Host {hostname:$h}) RETURN r.count AS count, r.first_seen AS first_seen, r.last_seen AS last_seen'
+[1] T1021.001        该类 46205  uid=a2984cbdb256f93b52fbd2a0769d76072274f2173a144ac5c12f85146b8e84ce
+     浅层: needs_deep=True verdict=suspicious conf=0.6  → 路由=escalate
+     理由: 告警仅显示 Type 3 网络登录且源地址/会话信息缺失，无法区分是正常远程运维还是攻击者横向移动，必须重建登录序列和主机行为链以定性。
+     深度: 真升级→run_pipeline  decision=FALLTHROUGH path=B verdict=suspicious  深度LLM=2
+Received notification from DBMS server: <GqlStatusObject gql_status='01N52', status_description='warn: property key does not exist. The property `count` does not exist. Verify that the spelling is correct.', position=<SummaryInputPosition line=1, column=84, offset=83>, raw_classification='UNRECOGNIZED', classification=<NotificationClassification.UNRECOGNIZED: 'UNRECOGNIZED'>, raw_severity='WARNING', severity=<NotificationSeverity.WARNING: 'WARNING'>, diagnostic_record={'_classification': 'UNRECOGNIZED', '_severity': 'WARNING', '_position': {'offset': 83, 'line': 1, 'column': 84}, 'OPERATION': '', 'OPERATION_CODE': '0', 'CURRENT_SCHEMA': '/'}> for query: 'MATCH (acc:Account {sam:$s})-[r:AUTHENTICATED_TO]->(h:Host {hostname:$h}) RETURN r.count AS count, r.first_seen AS first_seen, r.last_seen AS last_seen'
+[2] T1021.001        该类 46205  uid=0ea9d47ce0f824c4a23370f6ebd34f285c9960fa2b226226f51a7764738eee58
+     浅层: needs_deep=True verdict=suspicious conf=0.6  → 路由=escalate
+     理由: 告警仅显示 Type 3 网络登录且源地址/会话信息缺失，无法区分是正常远程运维还是攻击者横向移动，必须重建登录序列和主机行为链以定性。
+     深度: 真升级→run_pipeline  decision=FALLTHROUGH path=B verdict=suspicious  深度LLM=2
+Received notification from DBMS server: <GqlStatusObject gql_status='01N52', status_description='warn: property key does not exist. The property `count` does not exist. Verify that the spelling is correct.', position=<SummaryInputPosition line=1, column=84, offset=83>, raw_classification='UNRECOGNIZED', classification=<NotificationClassification.UNRECOGNIZED: 'UNRECOGNIZED'>, raw_severity='WARNING', severity=<NotificationSeverity.WARNING: 'WARNING'>, diagnostic_record={'_classification': 'UNRECOGNIZED', '_severity': 'WARNING', '_position': {'offset': 83, 'line': 1, 'column': 84}, 'OPERATION': '', 'OPERATION_CODE': '0', 'CURRENT_SCHEMA': '/'}> for query: 'MATCH (acc:Account {sam:$s})-[r:AUTHENTICATED_TO]->(h:Host {hostname:$h}) RETURN r.count AS count, r.first_seen AS first_seen, r.last_seen AS last_seen'
+[3] T1021.001        该类 46205  uid=33cae3e2bf09ff73927de4c83e0caa0a23ddc637f34e3d2d414ea01e649bc494
+     浅层: needs_deep=True verdict=suspicious conf=0.6  → 路由=escalate
+     理由: Logon Type 3 (Network) from a specific IP requires correlating with the user's baseline, session duration, and subsequent process activity to distinguish between legitimate remote work and lateral movement.
+     深度: 真升级→run_pipeline  decision=FALLTHROUGH path=B verdict=suspicious  深度LLM=2
+Received notification from DBMS server: <GqlStatusObject gql_status='01N52', status_description='warn: property key does not exist. The property `count` does not exist. Verify that the spelling is correct.', position=<SummaryInputPosition line=1, column=84, offset=83>, raw_classification='UNRECOGNIZED', classification=<NotificationClassification.UNRECOGNIZED: 'UNRECOGNIZED'>, raw_severity='WARNING', severity=<NotificationSeverity.WARNING: 'WARNING'>, diagnostic_record={'_classification': 'UNRECOGNIZED', '_severity': 'WARNING', '_position': {'offset': 83, 'line': 1, 'column': 84}, 'OPERATION': '', 'OPERATION_CODE': '0', 'CURRENT_SCHEMA': '/'}> for query: 'MATCH (acc:Account {sam:$s})-[r:AUTHENTICATED_TO]->(h:Host {hostname:$h}) RETURN r.count AS count, r.first_seen AS first_seen, r.last_seen AS last_seen'
+[4] T1021.001        该类 46205  uid=7a81ea4509bad57bf1deec4005a2d33f413cd4a42c636818d09b7afada8ac091
+     浅层: needs_deep=True verdict=suspicious conf=0.6  → 路由=escalate
+     理由: Logon Type 3 (Network) from a specific IP (x.x.x.1) requires reconstructing the session chain and verifying the user's baseline to distinguish between legitimate remote administration and lateral movement.
+     深度: 真升级→run_pipeline  decision=FALLTHROUGH path=B verdict=suspicious  深度LLM=2
+Received notification from DBMS server: <GqlStatusObject gql_status='01N52', status_description='warn: property key does not exist. The property `count` does not exist. Verify that the spelling is correct.', position=<SummaryInputPosition line=1, column=84, offset=83>, raw_classification='UNRECOGNIZED', classification=<NotificationClassification.UNRECOGNIZED: 'UNRECOGNIZED'>, raw_severity='WARNING', severity=<NotificationSeverity.WARNING: 'WARNING'>, diagnostic_record={'_classification': 'UNRECOGNIZED', '_severity': 'WARNING', '_position': {'offset': 83, 'line': 1, 'column': 84}, 'OPERATION': '', 'OPERATION_CODE': '0', 'CURRENT_SCHEMA': '/'}> for query: 'MATCH (acc:Account {sam:$s})-[r:AUTHENTICATED_TO]->(h:Host {hostname:$h}) RETURN r.count AS count, r.first_seen AS first_seen, r.last_seen AS last_seen'
+[5] T1021.001        该类 46205  uid=97f34ae5531ea33a081790daae6367bb77d911e15941f35a5fd63494003127ca
+     浅层: needs_deep=True verdict=suspicious conf=0.6  → 路由=escalate
+     理由: Logon Type 3 (Network) 结合 T1021.001 技术标识存在横向移动风险，但仅凭单条日志无法区分是正常远程运维还是攻击者利用，必须重建登录序列和主机行为以确认上下文。
+     深度: 真升级→run_pipeline  decision=FALLTHROUGH path=B verdict=suspicious  深度LLM=2
+[6] T1105            该类 39833  uid=aafbcbed84121f1ae98a19827cf5828b1f786dd8e84a79d077b1c4f7384ff1ed
+     浅层: needs_deep=False verdict=false_positive conf=0.98  → 路由=terminal_fp
+     理由: 文件名__PSScriptPolicyTest_是PowerShell策略自检的标准特征，属于已知良性行为。
+[7] T1105            该类 39833  uid=63e1013909189c24c3e960287ff97e7d8a4d3a830c7640a13d2b88a918a5dfb8
+     浅层: needs_deep=False verdict=false_positive conf=0.98  → 路由=terminal_fp
+     理由: Payload filename '__PSScriptPolicyTest_...' and parent process 'powershell.exe' explicitly indicate a benign PowerShell policy self-check operation.
+[8] T1105            该类 39833  uid=800ff57ccd96d34b6508077bf4412e47590d9cacf617dcb76ae4dd994825d920
+     浅层: needs_deep=False verdict=false_positive conf=None  → 路由=reuse_fp  ♻零qwen
+     理由: 签名库复用 98126585
+[9] T1105            该类 39833  uid=6da0a6bca88e9a73ec14e9d1be4caae1584ce26d349a09d0bb8d02f47e52f9ba
+     浅层: needs_deep=False verdict=false_positive conf=None  → 路由=reuse_fp  ♻零qwen
+     理由: 签名库复用 98126585
+[10] T1105            该类 39833  uid=33b93c5a3e1267b0cfcf6601f2166d15d96a4aadd7687ae40bf4f8ca76c8a028
+     浅层: needs_deep=False verdict=false_positive conf=None  → 路由=reuse_fp  ♻零qwen
+     理由: 签名库复用 98126585
+[11] T1003.006        该类 12791  uid=e0d083f18160244c61c51cc86c7538055022c25bc28d512d9319919f10431c12
+     浅层: needs_deep=True verdict=suspicious conf=0.6  → 路由=escalate
+     理由: DCSync 告警虽指向已知服务账号，但需验证该账号是否拥有目录复制权限、操作来源是否为预期管理主机及是否存在异常登录序列，否则无法排除误报或横向移动风险。
+     深度: 真升级→run_pipeline  decision=FALLTHROUGH path=B verdict=false_positive  深度LLM=2
+[12] T1003.006        该类 12791  uid=8b1e6aa64c1a482a37298fc6fb16abaa8152819416be42c03ead2d847af3949c
+     浅层: needs_deep=True verdict=suspicious conf=0.6  → 路由=escalate
+     理由: 告警显示非域控主机(winterfell)上的机器账号(KINGSLANDING$)发起了DCSync操作，虽机器账号通常无此权限，但无法仅凭此日志确认是否为被提权的恶意进程或配置错误，需重建进程链和登录序列以定性。
+     深度: 真升级→run_pipeline  decision=FALLTHROUGH path=B verdict=false_positive  深度LLM=2
+[13] T1003.006        该类 12791  uid=dbb9d6a0b431b96ba5cf45a882c48159034c0ca6c0521c436f52cb3e2074666a
+     浅层: needs_deep=True verdict=suspicious conf=0.6  → 路由=escalate
+     理由: 告警显示 KINGSLANDING$ 账号发起 DCSync，但无法仅凭此判断该账号是否拥有合法的目录复制权限或是否为被提权的恶意账号，需核查该账号的组策略配置、登录序列及进程上下文。
+     深度: 真升级→run_pipeline  decision=FALLTHROUGH path=B verdict=false_positive  深度LLM=2
+[14] T1003.006        该类 12791  uid=605579215f63bb5abcf3ffa2ac384899a05ef10a4682940e0c30b785ac1e521b
+     浅层: needs_deep=True verdict=suspicious conf=0.6  → 路由=escalate
+     理由: 告警显示 KINGSLANDING$ 发起 DCSync，但无法仅凭此条日志确认该账号是否拥有合法的目录复制权限或是否存在异常登录序列，需重建主机行为与登录上下文以定性。
+     深度: 真升级→run_pipeline  decision=FALLTHROUGH path=B verdict=false_positive  深度LLM=2
+[15] T1003.006        该类 12791  uid=8689852ed667a676728b223e0069dbb55e6ec730b4d15be59fe5d84953d01f85
+     浅层: needs_deep=True verdict=suspicious conf=0.6  → 路由=escalate
+     理由: 告警显示 KINGSLANDING$ 发起 DCSync，但无法仅凭此条日志确认该账号是否拥有合法的目录复制权限或是否为被提权的攻击者，需核查账号基线、登录序列及进程链。
+     深度: 真升级→run_pipeline  decision=FALLTHROUGH path=B verdict=false_positive  深度LLM=2
+
+# 汇总: 共15  浅层终局=5(FP=5 TP=0)  升级=10  降噪率=33%
+# ★越用越省: 浅层 LLM 判定=12/15  签名库复用(零 qwen)=3  库规则=1 条 (蒸馏另计 ~库规则数 次 qwen,一次性)
+# ★深度链(真升级): escalate 真跑 run_pipeline=10 条  命中 findings 经验(path=A/AUTO_*)=0  深度 LLM 合计=20 次 (同类第二条起若命中经验,深度 LLM 应骤降)
+
+# 浅层新判终局的(★眼验:FP 该不该判良性 / TP 该不该判威胁;判错=收紧):
+  - [terminal_fp] T1105            aafbcbed84121f1ae98a19827cf5828b1f786dd8e84a79d077b1c4f7384ff1ed  Executable file dropped in folder commonly used by malware
+  - [terminal_fp] T1105            63e1013909189c24c3e960287ff97e7d8a4d3a830c7640a13d2b88a918a5dfb8  Executable file dropped in folder commonly used by malware
+
+# 蒸出的签名规则 1 条(★眼验规则本身:键在通用字段?没过拟合?):
+  - [false_positive] hit=3  {"conditions": [{"path": "data.win.eventdata.image", "op": "basename_eq", "value": "powershell.exe"}, {"path": "data.win.eventdata.targetFilename", "op": "contains", "value": "PSScriptPolicyTest"}], "verdict": "false_positive", "note": "PowerShell 进程生成的包含 PSScriptPolicyTest 特征的文件为良性策略自检"}
+
+# selftest 完成
+=== done 2026-07-24 03:51Z ===
