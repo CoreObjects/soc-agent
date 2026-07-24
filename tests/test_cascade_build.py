@@ -211,3 +211,43 @@ def test_run_cascade_sig_reuse_skips_agent():
     assert report.decision == "SIG_REUSE"
     assert len(written) == 1                       # 写了台账
     assert store.get(store.all()[0].exp_id).hit_count == 1   # bump 了命中
+
+
+def _cascade_pl(node, written):
+    class _G:
+        def get_alert(self, uid):
+            return node
+
+        def write_result(self, uid, result):
+            written.append((uid, result))
+
+    return type("PL", (), {"exp_store": None, "graph": _G(), "policy": {}, "agent_name": "x",
+                           "llm_base": None, "llm_model": None, "llm_key": None, "llm_timeout": 600,
+                           "payload_corpus": None})()
+
+
+def test_run_cascade_shallow_fp_terminates(monkeypatch):
+    """浅层判 FP → 终局写台账(path=S),不升级深度。openJiuwen 浅层被 mock,不打真端点。"""
+    from soc_agent.cascade import run as runmod
+    written = []
+    pl = _cascade_pl({"alert_uid": "a1", "source": "wazuh", "raw": "{}"}, written)
+    monkeypatch.setattr(runmod, "_shallow_decision",
+                        lambda pl, alert: {"needs_deep": False, "verdict": "false_positive",
+                                           "confidence": 0.9, "rationale": "benign"})
+    result, report, picked = runmod.run_cascade(pl, "a1")
+    assert result.path == "S" and result.verdict.verdict == "false_positive"
+    assert report.decision == "SHALLOW_TERMINAL" and len(written) == 1
+
+
+def test_run_cascade_escalates_to_deep(monkeypatch):
+    """★决策 A:浅层非 FP(suspicious/TP/needs_deep)→ 直接跑 run_pipeline(不经 openJiuwen 单例)。"""
+    from soc_agent.cascade import run as runmod
+    import soc_agent.cli as cli
+    pl = _cascade_pl({"alert_uid": "a1", "source": "wazuh", "raw": "{}"}, [])
+    monkeypatch.setattr(runmod, "_shallow_decision",
+                        lambda pl, alert: {"needs_deep": True, "verdict": "suspicious"})
+    called = []
+    monkeypatch.setattr(cli, "run_pipeline",
+                        lambda pl, uid, mode="recipe": (called.append(uid), ("R", "REP", "深度研判"))[1])
+    result, report, picked = runmod.run_cascade(pl, "a1")
+    assert called == ["a1"] and picked == "深度研判"      # 升级走了 run_pipeline

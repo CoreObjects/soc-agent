@@ -6,15 +6,23 @@ import asyncio
 import json
 import os
 import threading
+from concurrent.futures import ThreadPoolExecutor
+
+from openjiuwen.core.workflow import create_workflow_session
 
 from ..models import Alert
-from .build import build_cascade_agent, build_shallow_probe
+from .build import build_shallow_probe
 from .floor import force_deep
 from .signature import payload_case_of, sig_consult, sig_sediment
 
 __all__ = ["run_cascade", "run_shallow", "alert_view"]
 
 _loop_tls = threading.local()
+
+# openJiuwen 专用单线程执行器:Runner 是进程级单例、异步态绑定单一 event loop,多 worker 线程并发调用会踩坏它
+# (sink 空/挂死)→ 所有浅层 openJiuwen 调用丢到这一个线程/loop 上串行跑。深度是纯 Python,在 worker 线程并行。
+_OJW_EXECUTOR = None
+_OJW_LOCK = threading.Lock()
 
 
 def _ensure_thread_loop():
@@ -62,19 +70,51 @@ def alert_view(alert) -> str:
     }, ensure_ascii=False, default=str)
 
 
+def _ojw_executor():
+    """openJiuwen 专用单线程执行器(lazy 建;进程退出 atexit 自动收)。"""
+    global _OJW_EXECUTOR
+    if _OJW_EXECUTOR is None:
+        with _OJW_LOCK:
+            if _OJW_EXECUTOR is None:
+                _OJW_EXECUTOR = ThreadPoolExecutor(max_workers=1, thread_name_prefix="ojw-shallow")
+    return _OJW_EXECUTOR
+
+
+def _shallow_decision(pl, alert) -> dict:
+    """在专用单线程/单 loop 上跑浅层 openJiuwen 探针,返回 {needs_deep, verdict, confidence, rationale}。
+    ★所有浅层调用都在这一个线程串行 → 规避 openJiuwen(Runner 单例 + loop 绑定)非线程安全。"""
+    def _task():
+        _ensure_workflow_timeout(getattr(pl, "llm_timeout", 600))
+
+        async def _go():
+            sink = {}
+            flow = build_shallow_probe(sink, llm_base=pl.llm_base, llm_model=pl.llm_model,
+                                       llm_key=pl.llm_key, llm_timeout=getattr(pl, "llm_timeout", 600))
+            await flow.invoke({"alert_view": alert_view(alert)}, create_workflow_session())
+            return sink.get("shallow") or {}
+
+        return _run_coro(_go())
+
+    return _ojw_executor().submit(_task).result()
+
+
 def run_cascade(pl, alert_uid, mode="recipe"):
-    """签名库前置(命中零 qwen 复用)→ 浅判 → 判不动升级深度 → 浅层终局蒸签名。返回 (result, report, picked)。"""
+    """签名库前置(FP 零 qwen 复用)→ 浅层分诊(openJiuwen 专用单线程串行)→ 决策A(只 FP 终局,余升级)
+    → 升级直接跑深度 run_pipeline(worker 线程并行)。返回 (result, report, picked)。
+
+    ★浅层为何单线程:openJiuwen 的 Runner 是**进程级单例**、异步态绑定单一 event loop —— poller 多 worker
+    线程并发调用会踩坏它(sink 空/挂死)。故 openJiuwen 只在 _ojw_executor 那一个线程/loop 上串行;
+    深度是纯 Python(图/qwen/OG,per-worker 连接),在 worker 线程**并行**。"""
     from ..cli import AlertNotFound, run_pipeline        # 懒导入,避 cli<->cascade 循环
     from ..experience.consult import MatchReport
     from ..models import InvestigationResult, Verdict
-    from openjiuwen.core.runner.runner import Runner
 
     node = pl.graph.get_alert(alert_uid)
     if node is None:
         raise AlertNotFound(f"图里没有 alert_uid={alert_uid} 的 :Alert")
     alert = Alert.from_node(node)
 
-    # ★签名库前置(决策 A):只对 **false_positive** 直接复用短路(零 qwen);命中 TP 签名 → 不短路、强制升级深度
+    # ★签名库前置(决策 A):只对 false_positive 直接复用短路(零 qwen);命中 TP 签名 → 不短路、强制升级深度
     sig_store = getattr(pl, "exp_store", None)
     hit = sig_consult(sig_store, alert)
     if hit is not None and hit.verdict == "false_positive":
@@ -89,26 +129,23 @@ def run_cascade(pl, alert_uid, mode="recipe"):
     tp_sig = hit is not None and hit.verdict == "true_positive"
     if tp_sig:
         sig_store.bump_hit(hit.exp_id)                       # TP 签名命中也记一次(观测),但走深度
-    fd = force_deep(alert, pl.policy) or tp_sig              # ★决策 A:TP 签名命中 → 强制升级深度(跳过浅层 LLM)
-    # 工作流要包住深度研判(可能多轮 LLM,很久)→ 抬得比单次 LLM 超时大得多
-    _ensure_workflow_timeout(max(1800, getattr(pl, "llm_timeout", 600) * 3))
-    _ensure_thread_loop()               # ★build_cascade_agent 之前就 set 好 loop(poller worker 线程必需)
-    sink = {}
-    agent = build_cascade_agent(
-        pl.graph, lambda uid: run_pipeline(pl, uid, mode), sink,
-        llm_base=pl.llm_base, llm_model=pl.llm_model, llm_key=pl.llm_key,
-        llm_timeout=getattr(pl, "llm_timeout", 600), agent_name=pl.agent_name)
 
-    _run_coro(Runner.run_agent(agent, {
-        "alert_view": alert_view(alert), "alert_uid": alert_uid, "force_deep": bool(fd)}))
-    if "result" not in sink:            # 诊断:工作流没跑到 terminal/deep 出口(sink 应有 shallow/result)
-        raise RuntimeError(f"cascade 工作流未产出结果(sink keys={sorted(sink.keys())}, force_deep={fd})")
-    result, report, picked = sink["result"], sink["report"], sink["picked"]
+    # ★浅层分诊(除非签名/floor 已强制升级)——决策 A:只终局 false_positive,其余(TP/suspicious/needs_deep)升级
+    if not (tp_sig or force_deep(alert, pl.policy)):
+        shallow = _shallow_decision(pl, alert)
+        if not shallow.get("needs_deep") and shallow.get("verdict") == "false_positive":
+            v = Verdict(verdict="false_positive", confidence=float(shallow.get("confidence") or 0.0),
+                        summary="浅层直判(未升级,false_positive)", rationale=shallow.get("rationale") or "",
+                        agent=pl.agent_name)
+            result = InvestigationResult(alert_uid=alert_uid, path="S", verdict=v, skill=None)
+            pl.graph.write_result(alert_uid, result)
+            if sig_store is not None:                        # 浅层 FP 终局 → 从 payload 蒸签名入库 + 记语料
+                _sig_learn(pl, sig_store, getattr(pl, "payload_corpus", None), alert, result)
+            return result, MatchReport(decision="SHALLOW_TERMINAL"), "浅层直判(未升级)"
+        # 非 FP → 落到下面升级深度
 
-    # ★浅层终局(path="S",没升级深度)→ 从 payload 蒸签名规则入库 + 记语料
-    if sig_store is not None and getattr(result, "path", None) == "S":
-        _sig_learn(pl, sig_store, getattr(pl, "payload_corpus", None), alert, result)
-    return result, report, picked
+    # ★升级深度:直接跑现有 run_pipeline(纯 Python,worker 线程并行;不经 openJiuwen)
+    return run_pipeline(pl, alert_uid, mode)
 
 
 def run_shallow(pl, alert_uid, shallow_comp=None, sig_store=None, sig_corpus=None):
