@@ -18,8 +18,13 @@ _EXP_COLS = ("exp_id, skill, kind, verdict, fingerprint, rule, playbook, status,
 
 def _connect(cfg):
     import psycopg2                       # 惰性:dev 机无 psycopg2 也能跑其余单测
-    return psycopg2.connect(host=cfg.og_host, port=cfg.og_port, dbname=cfg.og_database,
-                            user=cfg.og_user, password=cfg.og_password)
+    conn = psycopg2.connect(host=cfg.og_host, port=cfg.og_port, dbname=cfg.og_database,
+                            user=cfg.og_user, password=cfg.og_password, connect_timeout=10)
+    # ★任何查询/写入 15s 不返回就报错(psycopg2 默认无超时,遇锁/坏连接会无限挂)。经验读写本该毫秒级。
+    with conn.cursor() as cur:
+        cur.execute("SET statement_timeout = 15000")
+    conn.commit()
+    return conn
 
 
 def ddl(schema) -> list:
