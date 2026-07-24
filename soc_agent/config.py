@@ -54,6 +54,13 @@ class Config:
     og_schema: str
     # 浅度研判 cascade(openJiuwen)总开关;默认关=现状深度-only,不引 openjiuwen(3.10 可跑)
     cascade_enabled: bool = False
+    # 处置模式:manual=只生成处置指令(待处置)不执行、留人审(默认);auto=自动走执行通道(护栏对 DC/CA 仍留待处置)
+    response_mode: str = "manual"
+    # 告警轮询(poller):轮询间隔秒 / 并发 / 每批条数 / 毒告警连续失败上限
+    poller_interval: float = 10.0
+    poller_concurrency: int = 2
+    poller_batch: int = 50
+    poller_retry_cap: int = 3
 
     @property
     def appliance_enabled(self) -> bool:
@@ -95,4 +102,10 @@ class Config:
             og_schema=g("OG_SCHEMA", "soc"),
             cascade_enabled=str(g("SOC_CASCADE_ENABLED", "")).strip().lower()
             in ("1", "true", "yes", "on"),
+            response_mode=("auto" if str(g("SOC_RESPONSE_MODE", "manual")).strip().lower() == "auto"
+                           else "manual"),
+            poller_interval=float(g("POLLER_INTERVAL", "10")),
+            poller_concurrency=int(g("POLLER_CONCURRENCY", "2")),
+            poller_batch=int(g("POLLER_BATCH", "50")),
+            poller_retry_cap=int(g("POLLER_RETRY_CAP", "3")),
         )
