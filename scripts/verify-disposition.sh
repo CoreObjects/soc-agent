@@ -18,25 +18,43 @@ from soc_agent.config import Config
 from soc_agent.cli import build_pipeline, run_investigation
 pl = build_pipeline(Config.from_env(dotenv_path=".env"))
 g = pl.graph
+# 攻击类技战术:逐条走 poller 同款研判(run_investigation, cascade on),直到深度判出一个 TP;预算 8 条。
+TECHS = ["T1003.006", "T1649", "T1558.003", "T1003.001"]   # dcsync / ADCS-ESC / kerberoast / lsass-dump
+BUDGET = 8
 try:
-    rows = g.run_cypher("MATCH (a:Alert) WHERE 'T1558.003' IN coalesce(a.technique_ids,[]) "
-                        "AND NOT (a)-[:CONCLUDED]->() RETURN a.alert_uid AS uid LIMIT 1")
-    if not rows:
-        print("无未研判 kerberoast(T1558.003)告警 —— 换一条已知攻击类再试"); sys.exit(0)
-    uid = rows[0]["uid"]
-    print(f"研判 kerberoast 告警 {uid[:20]}(cascade on → run_cascade → 升级深度)…\n")
-    result, report, picked = run_investigation(pl, uid, mode="recipe")
-    v = result.verdict
-    print(f"结论:verdict={v.verdict if v else None}  path={result.path}  decision={report.decision}  picked={picked}")
+    tp_uid = None
+    for t in TECHS:
+        rows = g.run_cypher("MATCH (a:Alert) WHERE $t IN coalesce(a.technique_ids,[]) "
+                            "AND NOT (a)-[:CONCLUDED]->() RETURN a.alert_uid AS uid LIMIT 4", t=t)
+        for r in rows:
+            if BUDGET <= 0:
+                break
+            BUDGET -= 1
+            uid = r["uid"]
+            result, report, picked = run_investigation(pl, uid, mode="recipe")
+            v = result.verdict.verdict if result.verdict else None
+            print(f"  [{t:11}] {uid[:16]} → verdict={v}  path={result.path}")
+            if v == "true_positive":
+                tp_uid = uid
+                break
+        if tp_uid or BUDGET <= 0:
+            break
+
+    if not tp_uid:
+        print("\n预算内没碰到深度判 TP 的攻击告警(这批多为良性/存疑)。处置组装另由 e2e-full 验过;"
+              "或指定红队真实攻击 uid 再验。")
+        sys.exit(0)
+
+    print(f"\n★深度判 TP:{tp_uid[:20]} —— 查其处置台账:")
     dl = g.run_cypher(
         "MATCH (a:Alert {alert_uid:$u})-[:CONCLUDED]->(v:Verdict) "
         "OPTIONAL MATCH (v)-[:LED_TO]->(p:ResponsePlan)-[:STEP]->(d:Disposition) "
         "RETURN p.status AS plan, "
-        "collect({order:d.step_key, action:d.action, target:d.target, status:d.status}) AS steps", u=uid)
+        "collect({action:d.action, target:d.target, status:d.status}) AS steps", u=tp_uid)
     for r in dl:
         print(f"ResponsePlan.status = {r['plan']}   (★manual 应为 proposed=待处置)")
         steps = [s for s in r["steps"] if s.get("action")]
-        print("处置步骤:" + ("(无 —— 若判 TP 却无处置=组处置没触发,该查)" if not steps else ""))
+        print("处置步骤:" + ("(无 —— 判 TP 却无处置=组处置没触发,该查)" if not steps else ""))
         for s in steps:
             print(f"  - {s['action']} → {s['target']}   [status={s['status']}]")
 finally:
