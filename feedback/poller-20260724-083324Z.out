@@ -1,0 +1,8 @@
+=== poller  2026-07-24 08:33Z   args: --once --max 20 ===
+# 处置模式=manual(manual=只生成待处置不执行 / auto=自动执行)  appliance=on  cascade=on
+# poller 启动  并发=2 批=50 轮询间隔=10.0s 毒告警上限=3 模式=recipe
+# 取批 50 条(积压 101804);research 中…
+# 达 max_alerts=20,停
+# poller 退出  累计 已判 50 失败 0 跳过 0
+# 汇总:已判 50  失败 0  跳过(毒告警)=0
+=== done  2026-07-24 08:34Z ===
