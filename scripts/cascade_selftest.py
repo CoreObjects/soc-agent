@@ -29,6 +29,9 @@ def main():
     persist = "--persist" in argv                  # --persist:签名库/语料用 openGauss(跨轮持久,验越用越省)
     if persist:
         argv.remove("--persist")
+    deep = "--deep" in argv                         # --deep:needs_deep=True 时真接上 run_pipeline(取证→consult→命中经验)
+    if deep:                                        #         ★真跑深度=慢+写台账,只在小样本上验"整条链"
+        argv.remove("--deep")
     order = "recent"
     if "--order" in argv:
         i = argv.index("--order"); order = argv[i + 1]; del argv[i:i + 2]
@@ -39,8 +42,17 @@ def main():
 
     root = Path(__file__).resolve().parents[1]
     cfg = Config.from_env(dotenv_path=str(root / ".env"))
-    from soc_agent.cli import build_pipeline
+    from soc_agent.cli import build_pipeline, run_pipeline
     pl = build_pipeline(cfg)
+    _llm = {"n": 0}                                 # 深度 LLM 计数(浅层走 openJiuwen 自己的 client、不经 pl.llm)
+    if deep:
+        _orig_chat = pl.llm.chat
+
+        def _counting(*a, **k):
+            _llm["n"] += 1
+            return _orig_chat(*a, **k)
+
+        pl.llm.chat = _counting
     try:
         ob = f"WITH t, a ORDER BY {_ORDER[order]} " if _ORDER[order] else ""
         rows = pl.graph.run_cypher(
@@ -48,8 +60,9 @@ def main():
             + ob + "WITH t, count(a) AS n, collect(a.alert_uid)[0..$k] AS uids "
             "RETURN t AS tech, n, uids ORDER BY n DESC LIMIT $m", k=per, m=maxt)
         picks = [(r["tech"], r["n"], u) for r in rows for u in r["uids"]]
-        print(f"# 浅层 cascade selftest  取样={order}  待判 {len(picks)} 条  "
-              f"(只跑浅层、不写台账;IP 打码)\n")
+        _mode_note = ("★--deep: escalate 真接 run_pipeline(取证+consult+命中经验,写台账!)"
+                      if deep else "只跑浅层、不写台账")
+        print(f"# 浅层 cascade selftest  取样={order}  待判 {len(picks)} 条  ({_mode_note};IP 打码)\n")
 
         if persist:                                    # 跨轮持久:用 pl 的 openGauss(需 psycopg2+OG)→ 跑两遍看第二遍近零 qwen
             sig_store, sig_corpus = pl.exp_store, pl.payload_corpus
@@ -60,6 +73,7 @@ def main():
             sig_store = InMemoryExperienceStore()      # 进程内签名库:边判边蒸边复用,看越用越省
             sig_corpus = InMemoryPayloadCaseStore()    # 进程内语料:反例回归
         n_fp = n_tp = n_esc = n_reuse = 0
+        n_deep = n_deep_hit = n_deep_llm = 0           # --deep:真跑深度的条数 / 命中 findings 经验(path=A)/ 深度 LLM 合计
         terms = []
         for i, (tech, cnt, uid) in enumerate(picks, 1):
             try:
@@ -81,6 +95,18 @@ def main():
             if route in ("terminal_fp", "terminal_tp"):    # 新判的(非复用)才列出来眼验
                 node = pl.graph.get_alert(uid) or {}
                 terms.append((uid, tech, route, node.get("rule_description")))
+            if deep and route == "escalate":               # ★真接上深度:取证→consult→命中经验/落 LLM
+                before = _llm["n"]
+                try:
+                    dres, drep, _dp = run_pipeline(pl, uid, mode="recipe")
+                    dllm = _llm["n"] - before
+                    hit = drep.decision in ("AUTO_TP", "AUTO_FP")
+                    n_deep += 1; n_deep_hit += hit; n_deep_llm += dllm
+                    dv = dres.verdict.verdict if getattr(dres, "verdict", None) else None
+                    print(f"     深度: 真升级→run_pipeline  decision={drep.decision} path={dres.path} "
+                          f"verdict={dv}  深度LLM={dllm}{'  ♻命中findings经验' if hit else ''}")
+                except Exception as e:
+                    print(f"     深度: !! run_pipeline 异常:{_mask(e)[:160]}")
 
         tot = n_fp + n_tp + n_esc
         term = n_fp + n_tp
@@ -90,6 +116,10 @@ def main():
         rules = [e for e in sig_store.all() if getattr(e, "kind", None) == "payload"]
         print(f"# ★越用越省: 浅层 LLM 判定={tot - n_reuse}/{tot}  签名库复用(零 qwen)={n_reuse}  "
               f"库规则={len(rules)} 条 (蒸馏另计 ~库规则数 次 qwen,一次性)")
+        if deep:
+            print(f"# ★深度链(真升级): escalate 真跑 run_pipeline={n_deep} 条  "
+                  f"命中 findings 经验(path=A/AUTO_*)={n_deep_hit}  深度 LLM 合计={n_deep_llm} 次 "
+                  f"(同类第二条起若命中经验,深度 LLM 应骤降)")
         if terms:
             print("\n# 浅层新判终局的(★眼验:FP 该不该判良性 / TP 该不该判威胁;判错=收紧):")
             for uid, tech, route, rd in terms:
