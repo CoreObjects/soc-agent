@@ -101,6 +101,8 @@ def run_cascade(pl, alert_uid, mode="recipe"):
 
     _run_coro(Runner.run_agent(agent, {
         "alert_view": alert_view(alert), "alert_uid": alert_uid, "force_deep": bool(fd)}))
+    if "result" not in sink:            # 诊断:工作流没跑到 terminal/deep 出口(sink 应有 shallow/result)
+        raise RuntimeError(f"cascade 工作流未产出结果(sink keys={sorted(sink.keys())}, force_deep={fd})")
     result, report, picked = sink["result"], sink["report"], sink["picked"]
 
     # ★浅层终局(path="S",没升级深度)→ 从 payload 蒸签名规则入库 + 记语料
