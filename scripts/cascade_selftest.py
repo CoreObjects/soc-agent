@@ -86,14 +86,15 @@ def main():
         term = n_fp + n_tp
         print(f"\n# 汇总: 共{tot}  浅层终局={term}(FP={n_fp} TP={n_tp})  升级={n_esc}  "
               f"降噪率={term / tot * 100 if tot else 0:.0f}%")
+        # 只数 payload 规则(openGauss experience 表与深度经验层共用,别把历史非 payload 经验也数进来)
+        rules = [e for e in sig_store.all() if getattr(e, "kind", None) == "payload"]
         print(f"# ★越用越省: 浅层 LLM 判定={tot - n_reuse}/{tot}  签名库复用(零 qwen)={n_reuse}  "
-              f"库规则={len(sig_store.all())} 条 (蒸馏另计 ~库规则数 次 qwen,一次性)")
+              f"库规则={len(rules)} 条 (蒸馏另计 ~库规则数 次 qwen,一次性)")
         if terms:
             print("\n# 浅层新判终局的(★眼验:FP 该不该判良性 / TP 该不该判威胁;判错=收紧):")
             for uid, tech, route, rd in terms:
                 print(f"  - [{route:11}] {str(tech):16} {uid}  {_mask(rd)[:110]}")
         # 签名库(蒸出来的规则)也 dump 出来眼验:规则本身对不对、有没有过拟合
-        rules = [e for e in sig_store.all() if getattr(e, "kind", None) == "payload"]
         if rules:
             print(f"\n# 蒸出的签名规则 {len(rules)} 条(★眼验规则本身:键在通用字段?没过拟合?):")
             for e in rules:
