@@ -1,0 +1,13 @@
+=== dump-autofp  2026-07-24 09:20Z  uid=8cb0e34cac59fa3a ===
+rule_description: Kerberoast: RC4(0x17) TGS request for service NORTH.SEVENKINGDOMS.LOCAL
+raw: "{\"@timestamp\": \"2026-07-06T13:12:11.448Z\", \"timestamp\": \"2026-07-06T13:12:10.528+0000\", \"manager\": {\"name\": \"e5bb7343f06d\"}, \"log_source\": \"wazuh\", \"host\": {\"name\": \"f8e24743dcc1\"}, \"location\": \"EventChannel\", \"log\": {\"offset\": 34976884, \"file\": {\"path\": \"/logs/wazuh/alerts.json\"}}, \"decoder\": {\"name\": \"windows_eventchannel\"}, \"log_type\": \"hids_alert\", \"agent\": {\"version\": \"7.17.22\", \"id\": \"003\", \"name\": \"kingslanding\", \"ip\": \"x.x.x.10\", \"hostname\": \"f8e24743dcc1\", \"ephemeral_id\": \"d5d271ec-e831-42dd-9d03-45d8ccd7a05b\", \"type\": \"filebeat\"}, \"input\": {\"type\": \"log\"}, \"ecs\": {\"version\": \"1.12.0\"}, \"id\" 
+
+seed(触发事件+实体): {"event": {"ticket_options": "0x40810000", "ingest_time": 1783563252056, "stream": "winlogbeat-*", "event_code": "4769", "arrival_ms": 1783343530681, "sensor": "Security", "enc_type": "0x17", "raw_ref": "soc-hids-alert-2026.07.06:pfCON58B3gPM8FAeyYyi", "source": "winlogbeat", "event_time": "2026-07-06T13:12:09.625996600Z", "outcome": "success", "event_uid": "63c1c703510b6ebf15edb27739cfaf060e4713356f8659743d5239dd0a992438"}, "subject": {"_labels": ["Account"], "upn": "KINGSLANDING$@SEVENKINGDOMS.LOCAL", "first_seen": "2026-06-26T10:05:29.972Z", "last_seen": "2026-07-22T09:10:03.898498400Z", "domain": "SEVENKINGDOMS", "sam": "kingslanding$", "sid": "S-1-5-18"}, "related": [{"node": {"_labels": ["Account"], "first_seen": "2026-06-26T10:43:47.118Z", "last_seen": "2026-07-22T08:12:12.079740400Z", "domain": "SEVENKINGDOMS", "sam": "north.sevenkingdoms.local", "sid": "S-1-5-21-3669086071-63869 
+
+路由 skill: kerberoast 
+
+=== findings(取证结果)===
+Traceback (most recent call last):
+  File "<stdin>", line 28, in <module>
+AttributeError: 'Finding' object has no attribute 'data'
+=== done ===
