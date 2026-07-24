@@ -1,4 +1,4 @@
-=== og-probe  2026-07-24 01:25Z ===
+=== og-probe  2026-07-24 01:34Z ===
 Traceback (most recent call last):
   File "<stdin>", line 21, in <module>
   File "/home/soc/soc-agent/soc_agent/experience/opengauss.py", line 188, in open_stores
