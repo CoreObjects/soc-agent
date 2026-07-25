@@ -1,4 +1,4 @@
-=== reset-to-pristine(图台账+openGauss规则双清)2026-07-25 04:05Z ===
+=== reset-to-pristine(图台账+openGauss规则双清)2026-07-25 04:06Z ===
 neo4j=bolt://10.185.93.0:7687  appliance=http://10.185.93.0:8765
 图台账:Verdict+Disposition+ResponsePlan+Finding 0 → 0;残留 CONCLUDED 边=0(应0);事实 Alert=101919(保留)
 清 poller 运行态:毒告警停放 0 → 0(poller_skip/poller_retries 已清,全部告警重新可捞)
