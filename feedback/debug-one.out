@@ -1,0 +1,182 @@
+=== debug-one  2026-07-25 02:20Z ===
+Traceback (most recent call last):
+  File "/home/soc/soc-agent/.venv312/lib64/python3.11/site-packages/httpx/_transports/default.py", line 101, in map_httpcore_exceptions
+    yield
+  File "/home/soc/soc-agent/.venv312/lib64/python3.11/site-packages/httpx/_transports/default.py", line 250, in handle_request
+    resp = self._pool.handle_request(req)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/soc/soc-agent/.venv312/lib64/python3.11/site-packages/httpcore/_sync/connection_pool.py", line 256, in handle_request
+    raise exc from None
+  File "/home/soc/soc-agent/.venv312/lib64/python3.11/site-packages/httpcore/_sync/connection_pool.py", line 236, in handle_request
+    response = connection.handle_request(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/soc/soc-agent/.venv312/lib64/python3.11/site-packages/httpcore/_sync/connection.py", line 101, in handle_request
+    raise exc
+  File "/home/soc/soc-agent/.venv312/lib64/python3.11/site-packages/httpcore/_sync/connection.py", line 78, in handle_request
+    stream = self._connect(request)
+             ^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/soc/soc-agent/.venv312/lib64/python3.11/site-packages/httpcore/_sync/connection.py", line 124, in _connect
+    stream = self._network_backend.connect_tcp(**kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/soc/soc-agent/.venv312/lib64/python3.11/site-packages/httpcore/_backends/sync.py", line 207, in connect_tcp
+    with map_exceptions(exc_map):
+  File "/usr/lib64/python3.11/contextlib.py", line 155, in __exit__
+    self.gen.throw(typ, value, traceback)
+  File "/home/soc/soc-agent/.venv312/lib64/python3.11/site-packages/httpcore/_exceptions.py", line 14, in map_exceptions
+    raise to_exc(exc) from exc
+httpcore.ConnectError: [Errno 111] Connection refused
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/soc/soc-agent/.venv312/lib64/python3.11/site-packages/openai/_base_client.py", line 1065, in request
+    response = self._send_request(
+               ^^^^^^^^^^^^^^^^^^^
+  File "/home/soc/soc-agent/.venv312/lib64/python3.11/site-packages/openai/_client.py", line 483, in _send_request
+    response = self._send_with_auth_retry(request, stream=stream, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/soc/soc-agent/.venv312/lib64/python3.11/site-packages/openai/_client.py", line 461, in _send_with_auth_retry
+    response = super()._send_request(request, stream=stream, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/soc/soc-agent/.venv312/lib64/python3.11/site-packages/openai/_base_client.py", line 990, in _send_request
+    return self._client.send(request, stream=stream, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/soc/soc-agent/.venv312/lib64/python3.11/site-packages/httpx/_client.py", line 914, in send
+    response = self._send_handling_auth(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/soc/soc-agent/.venv312/lib64/python3.11/site-packages/httpx/_client.py", line 942, in _send_handling_auth
+    response = self._send_handling_redirects(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/soc/soc-agent/.venv312/lib64/python3.11/site-packages/httpx/_client.py", line 979, in _send_handling_redirects
+    response = self._send_single_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/soc/soc-agent/.venv312/lib64/python3.11/site-packages/httpx/_client.py", line 1014, in _send_single_request
+    response = transport.handle_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/soc/soc-agent/.venv312/lib64/python3.11/site-packages/httpx/_transports/default.py", line 249, in handle_request
+    with map_httpcore_exceptions():
+  File "/usr/lib64/python3.11/contextlib.py", line 155, in __exit__
+    self.gen.throw(typ, value, traceback)
+  File "/home/soc/soc-agent/.venv312/lib64/python3.11/site-packages/httpx/_transports/default.py", line 118, in map_httpcore_exceptions
+    raise mapped_exc(message) from exc
+httpx.ConnectError: [Errno 111] Connection refused
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "<stdin>", line 20, in <module>
+  File "/home/soc/soc-agent/soc_agent/cascade/run.py", line 50, in shallow_triage
+    resp = llm.chat(
+           ^^^^^^^^^
+  File "/home/soc/soc-agent/soc_agent/llm/qwen.py", line 59, in chat
+    resp = self._client.chat.completions.create(**kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/soc/soc-agent/.venv312/lib64/python3.11/site-packages/openai/_utils/_utils.py", line 298, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/soc/soc-agent/.venv312/lib64/python3.11/site-packages/openai/resources/chat/completions/completions.py", line 1281, in create
+    return self._post(
+           ^^^^^^^^^^^
+  File "/home/soc/soc-agent/.venv312/lib64/python3.11/site-packages/openai/_base_client.py", line 1360, in post
+    return cast(ResponseT, self.request(cast_to, opts, stream=stream, stream_cls=stream_cls))
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/soc/soc-agent/.venv312/lib64/python3.11/site-packages/openai/_base_client.py", line 1100, in request
+    raise APIConnectionError(request=request) from err
+openai.APIConnectionError: Connection error.
+Traceback (most recent call last):
+  File "/home/soc/soc-agent/.venv312/lib64/python3.11/site-packages/httpx/_transports/default.py", line 101, in map_httpcore_exceptions
+    yield
+  File "/home/soc/soc-agent/.venv312/lib64/python3.11/site-packages/httpx/_transports/default.py", line 250, in handle_request
+    resp = self._pool.handle_request(req)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/soc/soc-agent/.venv312/lib64/python3.11/site-packages/httpcore/_sync/connection_pool.py", line 256, in handle_request
+    raise exc from None
+  File "/home/soc/soc-agent/.venv312/lib64/python3.11/site-packages/httpcore/_sync/connection_pool.py", line 236, in handle_request
+    response = connection.handle_request(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/soc/soc-agent/.venv312/lib64/python3.11/site-packages/httpcore/_sync/connection.py", line 101, in handle_request
+    raise exc
+  File "/home/soc/soc-agent/.venv312/lib64/python3.11/site-packages/httpcore/_sync/connection.py", line 78, in handle_request
+    stream = self._connect(request)
+             ^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/soc/soc-agent/.venv312/lib64/python3.11/site-packages/httpcore/_sync/connection.py", line 124, in _connect
+    stream = self._network_backend.connect_tcp(**kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/soc/soc-agent/.venv312/lib64/python3.11/site-packages/httpcore/_backends/sync.py", line 207, in connect_tcp
+    with map_exceptions(exc_map):
+  File "/usr/lib64/python3.11/contextlib.py", line 155, in __exit__
+    self.gen.throw(typ, value, traceback)
+  File "/home/soc/soc-agent/.venv312/lib64/python3.11/site-packages/httpcore/_exceptions.py", line 14, in map_exceptions
+    raise to_exc(exc) from exc
+httpcore.ConnectError: [Errno 111] Connection refused
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/soc/soc-agent/.venv312/lib64/python3.11/site-packages/openai/_base_client.py", line 1065, in request
+    response = self._send_request(
+               ^^^^^^^^^^^^^^^^^^^
+  File "/home/soc/soc-agent/.venv312/lib64/python3.11/site-packages/openai/_client.py", line 483, in _send_request
+    response = self._send_with_auth_retry(request, stream=stream, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/soc/soc-agent/.venv312/lib64/python3.11/site-packages/openai/_client.py", line 461, in _send_with_auth_retry
+    response = super()._send_request(request, stream=stream, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/soc/soc-agent/.venv312/lib64/python3.11/site-packages/openai/_base_client.py", line 990, in _send_request
+    return self._client.send(request, stream=stream, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/soc/soc-agent/.venv312/lib64/python3.11/site-packages/httpx/_client.py", line 914, in send
+    response = self._send_handling_auth(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/soc/soc-agent/.venv312/lib64/python3.11/site-packages/httpx/_client.py", line 942, in _send_handling_auth
+    response = self._send_handling_redirects(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/soc/soc-agent/.venv312/lib64/python3.11/site-packages/httpx/_client.py", line 979, in _send_handling_redirects
+    response = self._send_single_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/soc/soc-agent/.venv312/lib64/python3.11/site-packages/httpx/_client.py", line 1014, in _send_single_request
+    response = transport.handle_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/soc/soc-agent/.venv312/lib64/python3.11/site-packages/httpx/_transports/default.py", line 249, in handle_request
+    with map_httpcore_exceptions():
+  File "/usr/lib64/python3.11/contextlib.py", line 155, in __exit__
+    self.gen.throw(typ, value, traceback)
+  File "/home/soc/soc-agent/.venv312/lib64/python3.11/site-packages/httpx/_transports/default.py", line 118, in map_httpcore_exceptions
+    raise mapped_exc(message) from exc
+httpx.ConnectError: [Errno 111] Connection refused
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "<stdin>", line 28, in <module>
+  File "/home/soc/soc-agent/soc_agent/cli.py", line 288, in run_investigation
+    return run_cascade(pl, alert_uid, mode)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/soc/soc-agent/soc_agent/cascade/run.py", line 94, in run_cascade
+    shallow = shallow_triage(pl.llm, alert)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/soc/soc-agent/soc_agent/cascade/run.py", line 50, in shallow_triage
+    resp = llm.chat(
+           ^^^^^^^^^
+  File "/home/soc/soc-agent/soc_agent/llm/qwen.py", line 59, in chat
+    resp = self._client.chat.completions.create(**kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/soc/soc-agent/.venv312/lib64/python3.11/site-packages/openai/_utils/_utils.py", line 298, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/soc/soc-agent/.venv312/lib64/python3.11/site-packages/openai/resources/chat/completions/completions.py", line 1281, in create
+    return self._post(
+           ^^^^^^^^^^^
+  File "/home/soc/soc-agent/.venv312/lib64/python3.11/site-packages/openai/_base_client.py", line 1360, in post
+    return cast(ResponseT, self.request(cast_to, opts, stream=stream, stream_cls=stream_cls))
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/soc/soc-agent/.venv312/lib64/python3.11/site-packages/openai/_base_client.py", line 1100, in request
+    raise APIConnectionError(request=request) from err
+openai.APIConnectionError: Connection error.
+pl.llm = QwenClient  cascade_enabled = True
+研判 f5f03d450611453b …
+
+!! shallow_triage 崩:
+
+!! run_investigation 崩:
+=== done ===
