@@ -1,8 +1,9 @@
-=== ledger-stats  2026-07-25 01:16Z ===
-已研判(CONCLUDED)总数:32443
+=== ledger-stats  2026-07-25 01:21Z ===
+进度:已研判 32512 / 未研判(积压)36516 / 毒告警跳过 32891  —— 完成 31.9%
+★积压=0 即存量研判完(之后只随新入图告警慢慢涨)
 
 verdict × path 分布(S=浅层终局 / A=经验复用 / B=深度LLM):
-  false_positive   path=S    32316
+  false_positive   path=S    32385
   false_positive   path=B    102
   true_positive    path=B    10
   false_positive   path=A    9
