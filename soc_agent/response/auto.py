@@ -11,7 +11,24 @@ from datetime import datetime, timedelta, timezone
 
 from . import ledger
 
-__all__ = ["auto_respond", "zh_status", "STATUS_ZH"]
+__all__ = ["auto_respond", "zh_status", "STATUS_ZH", "read_response_mode"]
+
+_MODE_CYPHER = "MATCH (c:Config {key:'response_mode'}) RETURN c.value AS value LIMIT 1"
+
+
+def read_response_mode(graph, default="manual") -> str:
+    """从持久 :Config 读响应模式(manual/auto);缺失/异常 → default(=启动时 cfg.response_mode)。
+
+    ★poller 每批读一次(见 runtime/service),不每条 —— :Config 是毫秒级只读,mode 切换下一批生效即可,
+    避免 64 并发下每条一次往返。UI 的 PUT /api/config/response-mode 改这个节点。
+    """
+    try:
+        rows = graph.run_cypher(_MODE_CYPHER)
+    except Exception:
+        return default
+    if not rows or not rows[0].get("value"):
+        return default
+    return "auto" if str(rows[0]["value"]).strip().lower() == "auto" else "manual"
 
 # 处置状态 → 中文标识(前端/日志用)。用户口径:proposed=待处置、executed=已处置。
 STATUS_ZH = {

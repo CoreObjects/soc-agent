@@ -48,7 +48,8 @@ def _default_process(pl, uid, mode):
 
 class Poller:
     def __init__(self, pl, *, interval=10.0, concurrency=2, batch=50, retry_cap=3,
-                 process_fn=None, mode="recipe", logger=None, max_alerts=None, once=False):
+                 process_fn=None, mode="recipe", logger=None, max_alerts=None, once=False,
+                 before_batch=None):
         self.pl = pl
         self.interval = float(interval)
         self.concurrency = int(concurrency)
@@ -56,6 +57,8 @@ class Poller:
         self.retry_cap = int(retry_cap)
         self._process = process_fn or _default_process   # callable(pl, uid, mode)
         self.mode = mode
+        # ★每批开跑前的钩子(response_mode 按批刷:读一次 :Config 缓存整批,不每条读)
+        self._before_batch = before_batch
         self._log = logger or (lambda msg: print(msg, flush=True))
         self.max_alerts = max_alerts        # 处理满这么多条就停(小样本验证用);None=不限
         self.once = bool(once)              # True=队列排空即退(消化完存量就停),不常驻轮询
@@ -127,6 +130,11 @@ class Poller:
                         break
                     continue
                 self._log(f"# 取批 {len(uids)} 条(积压 {self.backlog_count()});research 中…")
+                if self._before_batch:
+                    try:
+                        self._before_batch()            # 按批刷 response_mode(读一次 :Config)
+                    except Exception as e:
+                        self._log(f"  [warn] before_batch 失败(维持上批模式):{str(e)[:120]}")
                 for f in [pool.submit(self.process_one, u) for u in uids]:
                     f.result()                      # process_one 自己吞异常,这里不会抛
                 if self._reached_max():              # 小样本验证:处理满 max_alerts 就停

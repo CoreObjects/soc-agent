@@ -35,6 +35,9 @@ def build_constraints():
         "CREATE CONSTRAINT responseplan_id IF NOT EXISTS FOR (p:ResponsePlan) REQUIRE p.plan_id IS UNIQUE",
         "CREATE CONSTRAINT disposition_step_key IF NOT EXISTS FOR (d:Disposition) REQUIRE d.step_key IS UNIQUE",
         "CREATE CONSTRAINT finding_key IF NOT EXISTS FOR (f:Finding) REQUIRE f.finding_key IS UNIQUE",
+        # Web:响应模式开关持久化(:Config{key})+ 逐步研判留痕(:Trace{alert_uid},per-alert 唯一,重研判幂等)
+        "CREATE CONSTRAINT config_key IF NOT EXISTS FOR (c:Config) REQUIRE c.key IS UNIQUE",
+        "CREATE CONSTRAINT trace_alert_uid IF NOT EXISTS FOR (t:Trace) REQUIRE t.alert_uid IS UNIQUE",
     ]
 
 
@@ -53,6 +56,51 @@ def _finding_stmts(alert_uid, result):
                        "attrs": json.dumps(f.attrs, ensure_ascii=False),
                        "polarity": f.polarity, "evidence_ref": f.evidence_ref, "skill": result.skill}}))
     return out
+
+
+_TRACE_MAX_STEPS = 400
+_TRACE_MAX_STR = 600
+
+
+def _lean_trace(trace):
+    """★收紧3:研判留痕落库前限大小 —— 丢掉行数据(只留计数)、截断喂 LLM 的 prompt / cypher 查询,
+    只留步骤骨架(同 render_trace '不打行数据')。防 10 万+持续写把 :Trace.steps 撑爆。"""
+    out = []
+    for step in (trace or [])[:_TRACE_MAX_STEPS]:
+        s = {"tool": step.get("tool")}
+        args = step.get("args") or {}
+        if args.get("query"):
+            s["query"] = " ".join(str(args["query"]).split())[:_TRACE_MAX_STR]   # 归一化空白 + 截断
+        res = step.get("result")
+        if isinstance(res, dict):
+            if "error" in res:
+                s["error"] = str(res["error"])[:_TRACE_MAX_STR]
+            if res.get("rows") is not None:
+                s["rows"] = len(res["rows"])            # ★只留行数,丢行数据
+        for k in ("step", "rows", "nudge", "decision", "action", "target", "reason"):
+            if k in step and k not in s:
+                v = step[k]
+                s[k] = v[:_TRACE_MAX_STR] if isinstance(v, str) else v
+        if step.get("content") is not None:            # LLM prompt/文本:只留长度 + 截断预览
+            c = str(step.get("content") or "")
+            s["content_len"] = len(c)
+            s["content_preview"] = c[:_TRACE_MAX_STR]
+        out.append(s)
+    return out
+
+
+def _trace_stmts(alert_uid, result):
+    """逐步研判留痕 → (:Alert)-[:HAS_TRACE]->(:Trace{alert_uid});per-alert 唯一键 → 重研判幂等。
+    复用(未真研判)不落 —— 调用方在 reuse 分支不调本函数。"""
+    trace = getattr(result, "trace", None)
+    if not trace:
+        return []
+    return [(
+        "MATCH (a:Alert {alert_uid:$alert_uid}) "
+        "MERGE (a)-[:HAS_TRACE]->(t:Trace {alert_uid:$alert_uid}) SET t.steps=$steps "
+        "RETURN t.alert_uid AS id",
+        {"alert_uid": alert_uid,
+         "steps": json.dumps(_lean_trace(trace), ensure_ascii=False, default=str)})]
 
 
 def build_write_statements(alert_uid, result):
@@ -139,7 +187,7 @@ def build_write_statements(alert_uid, result):
             "MERGE (v)-[:LED_TO]->(n) RETURN n.step_key AS id",
             {"alert_uid": alert_uid, "vkey": vkey}))
 
-    return stmts + _finding_stmts(alert_uid, result)
+    return stmts + _finding_stmts(alert_uid, result) + _trace_stmts(alert_uid, result)
 
 
 # 按 alert_uid(命中经验的来源 VID)捞回台账「原始上下文」:原告警字段 + Verdict 结论/理由 + 处置。

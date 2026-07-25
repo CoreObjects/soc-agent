@@ -14,6 +14,7 @@ dependencies = [
 [project.optional-dependencies]
 dev = ["pytest>=8.0"]
 og = ["psycopg2-binary>=2.9"]    # 第二类经验库 openGauss(server2 装;走 PG 协议)
+web = ["fastapi>=0.111", "uvicorn[standard]>=0.30"]   # 研判+处置控制台 API(server2 装;托管前端 dist)
 
 [build-system]
 requires = ["setuptools>=68"]

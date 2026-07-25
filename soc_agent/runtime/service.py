@@ -10,14 +10,19 @@ from .poller import Poller
 __all__ = ["run_poller", "make_processor"]
 
 
-def make_processor(cfg, appliance_client, logger=None):
-    """poller 的 per-alert 处理器(所有 worker 共用同一个 pipeline pl)。"""
+def make_processor(cfg, appliance_client, logger=None, mode_getter=None):
+    """poller 的 per-alert 处理器(所有 worker 共用同一个 pipeline pl)。
+
+    mode_getter():返回当前 response_mode(manual/auto)。默认回退静态 cfg.response_mode;
+    run_poller 注入一个读"按批刷新的持久 :Config"的 getter,让 UI 切换运行时生效(见 run_poller)。
+    """
     log = logger or (lambda m: print(m, flush=True))
+    get_mode = mode_getter or (lambda: cfg.response_mode)
 
     def process(pl, uid, mode):
         from ..cli import run_investigation
         run_investigation(pl, uid, mode=mode)        # 研判 + 组处置(TP→proposed 待处置)
-        if cfg.response_mode == "auto":
+        if get_mode() == "auto":
             from ..response.auto import auto_respond
             res = auto_respond(pl.graph, appliance_client, uid)   # 自动 approve/执行 → 已处置
             if res:
@@ -30,13 +35,21 @@ def run_poller(cfg, *, mode="recipe", max_alerts=None, once=False, logger=None):
     """建一套共享 pipeline + poller,常驻消化未研判告警。返回统计。"""
     from ..cli import build_pipeline
     from ..response.appliance_client import ApplianceClient
+    from ..response.auto import read_response_mode
     log = logger or (lambda m: print(m, flush=True))
     pl = build_pipeline(cfg)                         # ★一套共享 pipeline(线程安全:graph/llm + 加锁的经验库)
     client = ApplianceClient(cfg.response_url, cfg.response_token)
-    proc = make_processor(cfg, client, logger=log)
+    # ★收紧2:response_mode 按批刷(读一次 :Config 缓存整批),不每条读 —— 64 并发下省往返。
+    mode_state = {"mode": cfg.response_mode}
+
+    def _refresh_mode():
+        mode_state["mode"] = read_response_mode(pl.graph, cfg.response_mode)
+
+    proc = make_processor(cfg, client, logger=log, mode_getter=lambda: mode_state["mode"])
     poller = Poller(pl, interval=cfg.poller_interval, concurrency=cfg.poller_concurrency,
                     batch=cfg.poller_batch, retry_cap=cfg.poller_retry_cap,
-                    process_fn=proc, mode=mode, max_alerts=max_alerts, once=once, logger=log)
+                    process_fn=proc, mode=mode, max_alerts=max_alerts, once=once, logger=log,
+                    before_batch=_refresh_mode)
     poller.install_signal_handlers()
     log(f"# 处置模式={cfg.response_mode}(manual=只生成待处置不执行 / auto=自动执行)  并发={cfg.poller_concurrency}  "
         f"appliance={'on' if client.enabled else 'off'}  cascade={'on' if cfg.cascade_enabled else 'off'}")
