@@ -63,6 +63,12 @@ try:
     conc = graph.run_cypher("MATCH ()-[c:CONCLUDED]->() RETURN count(c) AS n")[0]["n"]
     print("图台账:Verdict+Disposition+ResponsePlan+Finding %d → %d;残留 CONCLUDED 边=%d(应0);事实 Alert=%d(保留)"
           % (n_before, n_after, conc, alerts))
+    # ★清 poller 运行态(poller_skip/poller_retries 是研判运行标记、非事实)→ 让全部告警重新可捞
+    poison = graph.run_cypher(
+        "MATCH (a:Alert) WHERE coalesce(a.poller_skip,false)=true RETURN count(a) AS n")[0]["n"]
+    graph.run_write("MATCH (a:Alert) WHERE a.poller_skip IS NOT NULL OR a.poller_retries IS NOT NULL "
+                    "REMOVE a.poller_skip, a.poller_retries")
+    print("清 poller 运行态:毒告警停放 %d → 0(poller_skip/poller_retries 已清,全部告警重新可捞)" % poison)
 finally:
     graph.close()
 
