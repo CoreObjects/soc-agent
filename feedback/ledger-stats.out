@@ -1,27 +1,16 @@
-=== ledger-stats  2026-07-25 01:21Z ===
-进度:已研判 32512 / 未研判(积压)36516 / 毒告警跳过 32891  —— 完成 31.9%
+=== ledger-stats  2026-07-25 02:12Z ===
+[warn] openGauss 不可用,经验层降级内存(本次不持久):canceling statement due to statement timeout
+
+进度:已研判 0 / 未研判(积压)101871 / 毒告警跳过 50  —— 完成 0.0%
 ★积压=0 即存量研判完(之后只随新入图告警慢慢涨)
 
 verdict × path 分布(S=浅层终局 / A=经验复用 / B=深度LLM):
-  false_positive   path=S    32385
-  false_positive   path=B    102
-  true_positive    path=B    10
-  false_positive   path=A    9
-  suspicious       path=B    5
-  true_positive    path=A    1
 
 处置 Disposition 状态(排除 __no_op__ 占位;★manual 应全 proposed=待处置):
-
-  proposed     21
+  (无真处置步骤)
 
 ResponsePlan 状态:
-  proposed     8
 
 TP 抽样(≤5 条,含处置步骤+状态):
-
-  237d1391e95e8a6c  plan=None  steps=[{'action': None, 'target': None, 'status': None}]
-  43abbce06dd381ca  plan=proposed  steps=[{'action': 'escalate', 'target': None, 'status': 'proposed'}, {'action': 'escalate', 'target': None, 'status': 'proposed'}, {'action': 'escalate', 'target': None, 'status': 'proposed'}]
-  6ec302bc135c970e  plan=proposed  steps=[{'action': 'escalate', 'target': None, 'status': 'proposed'}, {'action': 'escalate', 'target': None, 'status': 'proposed'}, {'action': 'escalate', 'target': None, 'status': 'proposed'}]
-  2c087f186c7ee9a8  plan=proposed  steps=[{'action': 'escalate', 'target': None, 'status': 'proposed'}, {'action': 'escalate', 'target': None, 'status': 'proposed'}, {'action': 'escalate', 'target': None, 'status': 'proposed'}]
-  98f207762542912b  plan=proposed  steps=[{'action': 'escalate', 'target': None, 'status': 'proposed'}, {'action': 'escalate', 'target': None, 'status': 'proposed'}]
+  (本轮无 TP)
 === done ===
