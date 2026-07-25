@@ -19,7 +19,14 @@ pl = build_pipeline(Config.from_env(dotenv_path=".env"))
 g = pl.graph
 try:
     tot = g.run_cypher("MATCH (a:Alert)-[:CONCLUDED]->() RETURN count(*) AS n")[0]["n"]
-    print(f"已研判(CONCLUDED)总数:{tot}\n")
+    backlog = g.run_cypher("MATCH (a:Alert) WHERE NOT (a)-[:CONCLUDED]->() "
+                           "AND coalesce(a.poller_skip,false)=false RETURN count(a) AS n")[0]["n"]
+    poison = g.run_cypher("MATCH (a:Alert) WHERE coalesce(a.poller_skip,false)=true "
+                          "RETURN count(a) AS n")[0]["n"]
+    total = tot + backlog + poison
+    pct = (100.0 * tot / total) if total else 0.0
+    print(f"进度:已研判 {tot} / 未研判(积压){backlog} / 毒告警跳过 {poison}  —— 完成 {pct:.1f}%")
+    print("★积压=0 即存量研判完(之后只随新入图告警慢慢涨)\n")
     print("verdict × path 分布(S=浅层终局 / A=经验复用 / B=深度LLM):")
     for r in g.run_cypher("MATCH (a:Alert)-[c:CONCLUDED]->(v:Verdict) "
                           "RETURN v.verdict AS verdict, coalesce(c.path,v.path) AS path, count(*) AS n "
