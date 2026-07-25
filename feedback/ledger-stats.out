@@ -1,4 +1,4 @@
-=== ledger-stats  2026-07-25 03:45Z ===
+=== ledger-stats  2026-07-25 03:55Z ===
 [warn] openGauss 不可用,经验层降级内存(本次不持久):canceling statement due to statement timeout
 
 进度:已研判 0 / 未研判(积压)101919 / 毒告警跳过 0  —— 完成 0.0%
