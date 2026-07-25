@@ -1,10 +1,10 @@
-=== ledger-stats  2026-07-25 04:18Z ===
-进度:已研判 32 / 未研判(积压)101887 / 毒告警跳过 0  —— 完成 0.0%
+=== ledger-stats  2026-07-25 04:22Z ===
+进度:已研判 49 / 未研判(积压)101870 / 毒告警跳过 0  —— 完成 0.0%
 ★积压=0 即存量研判完(之后只随新入图告警慢慢涨)
 
 verdict × path 分布(S=浅层终局 / A=经验复用 / B=深度LLM):
-  false_positive   path=B    18
-  false_positive   path=S    13
+  false_positive   path=S    27
+  false_positive   path=B    21
   suspicious       path=B    1
 
 处置 Disposition 状态(排除 __no_op__ 占位;★manual 应全 proposed=待处置):
