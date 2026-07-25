@@ -1,4 +1,4 @@
-"""浅层分诊的通用提示词 + 结构化输出 schema(喂 openJiuwen LLMComponent)。
+"""浅层分诊的通用提示词(喂 `cascade.run.shallow_triage` 的 QwenClient 工具调用)。
 
 核心判据(2026-07-23 定):**只有当"深度取证能提供改变结论的信息"时,升级才有意义。**
 光凭告警签名/payload 就能定"是攻击还是良性"、深度取证只补细节(扇出/估值/落地)的,浅层直接判
@@ -6,8 +6,10 @@
 重建主机行为/进程父子链/登录序列/跨层落地才能定的(A 类),才升级。见 [[soc-agent-cascade-openjiuwen]]。
 
 ★决策 A(2026-07-24):浅层**只终局 false_positive**;判 true_positive / suspicious 的**一律由系统升级深度**
-(TP 要完整取证 + 精准处置目标)。模型照常给 verdict/needs_deep,TP 的升级由 BranchRouter/run_cascade 兜底,
-不靠模型自觉 —— 所以下面 LLM 文案不变(仍让模型对签名清晰的攻击自信判 TP),升级是系统策略、对模型透明。
+(TP 要完整取证 + 精准处置目标)。模型照常给 verdict/needs_deep,TP 的升级由 run_cascade 兜底,不靠模型自觉
+—— 下面 LLM 文案不变(仍让模型对签名清晰的攻击自信判 TP),升级是系统策略、对模型透明。
+★浅层 LLM 客户端已从 openJiuwen 换成 QwenClient(结构化输出走 tool-call,见 run.shallow_triage);
+见 docs/openjiuwen-踩坑总结.md。
 """
 
 SHALLOW_PROMPT = (
@@ -27,20 +29,5 @@ SHALLOW_PROMPT = (
     "   · 可疑进程要看父子链、命令行上下文才知恶意与否;\n"
     "   · webshell/上传要看后端是否落地(写文件/派生进程/外连)。\n"
     "3) 真拿不准 → needs_deep=true。别硬判。\n\n"
-    "只输出 JSON,不要多余解释。"
+    "调用 shallow_triage 工具给出 needs_deep + verdict(+confidence/rationale),不要多余解释。"
 )
-
-# 全 JSON-Schema 形式(openJiuwen LLMCompConfig.output_config 接受;校验后字段透传成 ${shallow.<field>})
-SHALLOW_OUTPUT_SCHEMA = {
-    "type": "object",
-    "properties": {
-        "needs_deep": {"type": "boolean",
-                       "description": "true=需深度研判(要重建主机行为/进程链/登录序列才能定);false=光凭告警就能终局"},
-        "verdict": {"type": "string", "enum": ["true_positive", "false_positive", "suspicious"],
-                    "description": "needs_deep=false 时给 true_positive 或 false_positive;true 时给 suspicious"},
-        "confidence": {"type": "number", "description": "对判定的置信 0~1"},
-        "rationale": {"type": "string", "description": "一句话依据"},
-    },
-    # 只硬要 needs_deep + verdict(路由与结论靠它俩);confidence/rationale 缺了不崩
-    "required": ["needs_deep", "verdict"],
-}

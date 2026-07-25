@@ -281,8 +281,8 @@ def run_pipeline(pl, alert_uid, mode="recipe"):
 
 
 def run_investigation(pl, alert_uid, mode="recipe"):
-    """研判一条:cascade 开→浅度分诊(openJiuwen)判不动才深度;关→现状深度 run_pipeline。
-    返回 (result, report, picked)。★cascade 关时不 import openjiuwen(懒导入),3.10 深度-only 照跑。"""
+    """研判一条:cascade 开→浅度分诊(QwenClient)判不动才深度;关→现状深度 run_pipeline。
+    返回 (result, report, picked)。浅层已弃 openJiuwen(见 docs/openjiuwen-踩坑总结.md),全 Python。"""
     if getattr(pl, "cascade_enabled", False):
         from .cascade.run import run_cascade
         return run_cascade(pl, alert_uid, mode)

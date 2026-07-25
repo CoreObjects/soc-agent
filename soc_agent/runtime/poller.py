@@ -9,19 +9,12 @@
 纯逻辑(batch_cypher/poison_props)与 I/O 解耦,mock graph 即可测(不引 neo4j/openjiuwen)。
 默认研判入口 run_investigation 惰性导入 —— 本模块 3.10 可 import。
 """
-import asyncio
 import signal
 import threading
 import time
 from concurrent.futures import ThreadPoolExecutor
 
 __all__ = ["Poller", "batch_cypher", "poison_props"]
-
-
-def _init_worker():
-    """每 worker 线程创建时就 set 一个事件循环 —— openJiuwen 在非主线程同步调 get_event_loop 需要它存在。
-    fresh worker 线程本就无 loop,直接建一个(不先 get,免 DeprecationWarning)。"""
-    asyncio.set_event_loop(asyncio.new_event_loop())
 
 # 取批:未 CONCLUDED、未 poller_skip、按到达序升序(存量先旧后新;新告警随后自然接上)
 _BATCH_CYPHER = (
@@ -122,7 +115,7 @@ class Poller:
         """主循环:取批 → 2 并发研判 → 排空则 sleep 轮询。stop 后不取新批、在跑的收尾。"""
         self._log(f"# poller 启动  并发={self.concurrency} 批={self.batch} "
                   f"轮询间隔={self.interval}s 毒告警上限={self.retry_cap} 模式={self.mode}")
-        with ThreadPoolExecutor(max_workers=self.concurrency, initializer=_init_worker) as pool:
+        with ThreadPoolExecutor(max_workers=self.concurrency) as pool:
             while not self._stop.is_set():
                 uids = self.fetch_batch()
                 if not uids:
