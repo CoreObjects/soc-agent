@@ -5,6 +5,7 @@
 """
 import argparse
 import sys
+import threading
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -164,17 +165,42 @@ class Pipeline:
         self.graph.close()
 
 
+class _Locked:
+    """线程安全代理:方法调用经一把**共享锁**串行 —— 让共享 pipeline 下多 worker 并发安全访问经验/案例库
+    (openGauss 单连接、内存 dict 都非线程安全)。经验读写毫秒级、且 LLM 调用不在锁内,锁竞争可忽略,
+    因此可安全上高并发(如 64)。非方法属性(如 .store/.conn)原样透传。"""
+    __slots__ = ("_t", "_lock")
+
+    def __init__(self, target, lock):
+        object.__setattr__(self, "_t", target)
+        object.__setattr__(self, "_lock", lock)
+
+    def __getattr__(self, name):
+        attr = getattr(self._t, name)
+        if callable(attr):
+            lock = self._lock
+
+            def _wrapped(*a, **k):
+                with lock:
+                    return attr(*a, **k)
+            return _wrapped
+        return attr
+
+
 def _open_stores(config):
-    """经验/案例库:og_enabled 且连得上 → openGauss(缓存包);否则降级内存(经验层≈永远走 LLM)。"""
+    """经验/案例库:og_enabled 且连得上 → openGauss(缓存包);否则降级内存(经验层≈永远走 LLM)。
+    ★三库套 _Locked 共享一把锁(openGauss 三库共用一条连接;并发下必须串行访问)。"""
+    lock = threading.RLock()
     if config.og_enabled:
         try:
             from .experience.opengauss import open_stores
             exp, case, pcorpus = open_stores(config)
-            return ExperienceCache(exp), case, pcorpus
+            return _Locked(ExperienceCache(exp), lock), _Locked(case, lock), _Locked(pcorpus, lock)
         except Exception as e:                      # 连不上/缺 psycopg2 → 降级,不影响慢研判
             print(f"[warn] openGauss 不可用,经验层降级内存(本次不持久):{str(e)[:120]}")
     from .cascade.signature import InMemoryPayloadCaseStore
-    return ExperienceCache(InMemoryExperienceStore()), InMemoryCaseStore(), InMemoryPayloadCaseStore()
+    return (_Locked(ExperienceCache(InMemoryExperienceStore()), lock),
+            _Locked(InMemoryCaseStore(), lock), _Locked(InMemoryPayloadCaseStore(), lock))
 
 
 def build_pipeline(config: Config) -> "Pipeline":
