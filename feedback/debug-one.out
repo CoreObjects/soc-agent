@@ -1,4 +1,4 @@
-=== debug-one  2026-07-25 02:46Z ===
+=== debug-one  2026-07-25 03:04Z ===
 Traceback (most recent call last):
   File "<stdin>", line 20, in <module>
   File "/home/soc/soc-agent/soc_agent/cascade/run.py", line 50, in shallow_triage
@@ -18,7 +18,7 @@ Traceback (most recent call last):
                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
   File "/home/soc/soc-agent/.venv312/lib64/python3.11/site-packages/openai/_base_client.py", line 1133, in request
     raise self._make_status_error_from_response(err.response) from None
-openai.BadRequestError: Error code: 400 - {'error': {'message': 'tool_choice="required" requires --tool-call-parser to be set (request id: 2026072510465490253108030816095)', 'type': 'BadRequestError', 'param': '', 'code': 400}}
+openai.BadRequestError: Error code: 400 - {'error': {'message': 'tool_choice="required" requires --tool-call-parser to be set (request id: 2026072511041233153754027090052)', 'type': 'BadRequestError', 'param': '', 'code': 400}}
 Traceback (most recent call last):
   File "<stdin>", line 28, in <module>
   File "/home/soc/soc-agent/soc_agent/cli.py", line 288, in run_investigation
@@ -44,7 +44,7 @@ Traceback (most recent call last):
                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
   File "/home/soc/soc-agent/.venv312/lib64/python3.11/site-packages/openai/_base_client.py", line 1133, in request
     raise self._make_status_error_from_response(err.response) from None
-openai.InternalServerError: Error code: 500 - {'error': {'message': 'do request failed: Post "http://100.102.211.138:8002/v1/chat/completions": dial tcp 100.102.211.138:8002: connect: connection refused (request id: 202607251046555874290002615204)', 'type': 'one_api_error', 'param': '', 'code': 'do_request_failed'}}
+openai.BadRequestError: Error code: 400 - {'error': {'message': 'tool_choice="required" requires --tool-call-parser to be set (request id: 2026072511041248629629064937820)', 'type': 'BadRequestError', 'param': '', 'code': 400}}
 pl.llm = QwenClient  cascade_enabled = True
 研判 f5f03d450611453b …
 
