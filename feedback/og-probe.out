@@ -1,4 +1,4 @@
-=== og-probe  2026-07-25 03:55Z ===
+=== og-probe  2026-07-25 04:00Z ===
   og_enabled=True host=127.0.0.1 port=5432 db=soc user=soc_agent schema=soc
   [OK] psycopg2 可用:2.9.12 (dt dec pq3 ext lo64)
   [OK] 连接 + 建表(soc.experience / soc.cases / soc.payload_cases)
