@@ -1,10 +1,12 @@
-=== ledger-stats  2026-07-25 04:31Z ===
-进度:已研判 1748 / 未研判(积压)100171 / 毒告警跳过 0  —— 完成 1.7%
+=== ledger-stats  2026-07-25 04:33Z ===
+[warn] openGauss 不可用,经验层降级内存(本次不持久):canceling statement due to statement timeout
+
+进度:已研判 1767 / 未研判(积压)100152 / 毒告警跳过 0  —— 完成 1.7%
 ★积压=0 即存量研判完(之后只随新入图告警慢慢涨)
 
 verdict × path 分布(S=浅层终局 / A=经验复用 / B=深度LLM):
-  false_positive   path=S    1711
-  false_positive   path=B    26
+  false_positive   path=S    1729
+  false_positive   path=B    27
   false_positive   path=A    10
   suspicious       path=B    1
 
