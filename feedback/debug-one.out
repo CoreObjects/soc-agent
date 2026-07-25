@@ -1,54 +1,8 @@
-=== debug-one  2026-07-25 03:04Z ===
-Traceback (most recent call last):
-  File "<stdin>", line 20, in <module>
-  File "/home/soc/soc-agent/soc_agent/cascade/run.py", line 50, in shallow_triage
-    resp = llm.chat(
-           ^^^^^^^^^
-  File "/home/soc/soc-agent/soc_agent/llm/qwen.py", line 59, in chat
-    resp = self._client.chat.completions.create(**kwargs)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/soc/soc-agent/.venv312/lib64/python3.11/site-packages/openai/_utils/_utils.py", line 298, in wrapper
-    return func(*args, **kwargs)
-           ^^^^^^^^^^^^^^^^^^^^^
-  File "/home/soc/soc-agent/.venv312/lib64/python3.11/site-packages/openai/resources/chat/completions/completions.py", line 1281, in create
-    return self._post(
-           ^^^^^^^^^^^
-  File "/home/soc/soc-agent/.venv312/lib64/python3.11/site-packages/openai/_base_client.py", line 1360, in post
-    return cast(ResponseT, self.request(cast_to, opts, stream=stream, stream_cls=stream_cls))
-                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/soc/soc-agent/.venv312/lib64/python3.11/site-packages/openai/_base_client.py", line 1133, in request
-    raise self._make_status_error_from_response(err.response) from None
-openai.BadRequestError: Error code: 400 - {'error': {'message': 'tool_choice="required" requires --tool-call-parser to be set (request id: 2026072511041233153754027090052)', 'type': 'BadRequestError', 'param': '', 'code': 400}}
-Traceback (most recent call last):
-  File "<stdin>", line 28, in <module>
-  File "/home/soc/soc-agent/soc_agent/cli.py", line 288, in run_investigation
-    return run_cascade(pl, alert_uid, mode)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/soc/soc-agent/soc_agent/cascade/run.py", line 94, in run_cascade
-    shallow = shallow_triage(pl.llm, alert)
-              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/soc/soc-agent/soc_agent/cascade/run.py", line 50, in shallow_triage
-    resp = llm.chat(
-           ^^^^^^^^^
-  File "/home/soc/soc-agent/soc_agent/llm/qwen.py", line 59, in chat
-    resp = self._client.chat.completions.create(**kwargs)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/soc/soc-agent/.venv312/lib64/python3.11/site-packages/openai/_utils/_utils.py", line 298, in wrapper
-    return func(*args, **kwargs)
-           ^^^^^^^^^^^^^^^^^^^^^
-  File "/home/soc/soc-agent/.venv312/lib64/python3.11/site-packages/openai/resources/chat/completions/completions.py", line 1281, in create
-    return self._post(
-           ^^^^^^^^^^^
-  File "/home/soc/soc-agent/.venv312/lib64/python3.11/site-packages/openai/_base_client.py", line 1360, in post
-    return cast(ResponseT, self.request(cast_to, opts, stream=stream, stream_cls=stream_cls))
-                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/soc/soc-agent/.venv312/lib64/python3.11/site-packages/openai/_base_client.py", line 1133, in request
-    raise self._make_status_error_from_response(err.response) from None
-openai.BadRequestError: Error code: 400 - {'error': {'message': 'tool_choice="required" requires --tool-call-parser to be set (request id: 2026072511041248629629064937820)', 'type': 'BadRequestError', 'param': '', 'code': 400}}
+=== debug-one  2026-07-25 03:42Z ===
 pl.llm = QwenClient  cascade_enabled = True
 研判 f5f03d450611453b …
 
-!! shallow_triage 崩:
+shallow_triage OK → {'needs_deep': False, 'verdict': 'false_positive', 'confidence': 0.98, 'rationale': '文件名__PSScriptPolicyTest_xxx.ps1是PowerShell策略自检的标准命名，且由powershell.exe在Temp目录创建，属于良性系统行为。'} 
 
-!! run_investigation 崩:
+run_investigation OK → false_positive path= S decision= SHALLOW_TERMINAL
 === done ===
