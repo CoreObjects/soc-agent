@@ -1,0 +1,18 @@
+=== web-restart  2026-07-27 03:24Z ===
+-- 现有 uvicorn 进程 --
+554092 .venv312/bin/python -m uvicorn soc_agent.web.app:app --host 0.0.0.0 --port 8000
+-- 强杀所有 uvicorn --
+-- 8000 端口是否还被占 --
+  ✅ 8000 已空闲
+-- 起新的 uvicorn --
+  PID=575140
+-- 启动日志(看有无 'address already in use' 或报错)--
+INFO:     Started server process [575140]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+INFO:     100.99.193.241:54245 - "GET /api/stats HTTP/1.1" 200 OK
+-- curl /api/stats 验证后端字段(应含 sig_reuse / deep_reuse)--
+  reuse keys: ['deep', 'deep_reuse', 'reuse_hits', 'reuse_rate', 'shallow_rate', 'shallow_short', 'sig_reuse']
+  sig_reuse=21155 deep_reuse=19 reuse_hits=21174
+=== done ===
