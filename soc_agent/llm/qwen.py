@@ -36,11 +36,16 @@ class QwenClient:
                  enable_thinking=False):
         import httpx                            # 惰性导入,纯逻辑测试无需装 openai/httpx
         from openai import OpenAI
+        # ★不复用长连接(max_keepalive_connections=0):对着 LB 网关跑长任务,后端被回收会留下"半死"keep-alive
+        #   连接,worker 复用它会卡在 read 收不到响应头 → 整条流水线冻死(py-spy 实锤)。每次新连接开销 ≪ LLM 延迟。
+        # ★细分超时:连接/写/池 15s,读=timeout(生成慢正常);任一段超时即抛 → worker 快速失败恢复,不傻等 600s。
+        _timeout = httpx.Timeout(connect=15.0, read=float(timeout), write=15.0, pool=15.0)
+        _limits = httpx.Limits(max_keepalive_connections=0)
         self._client = OpenAI(
             base_url=base_url,
             api_key=api_key or "EMPTY",
             max_retries=0,                       # ★不重试:本地模型超时=真慢,重试只会 3× 浪费(122b 15min 惨案)
-            http_client=httpx.Client(trust_env=False, timeout=timeout),  # ★绕过公司代理
+            http_client=httpx.Client(trust_env=False, timeout=_timeout, limits=_limits),  # ★绕代理+不复用半死连接
         )
         self.model = model
         self.temperature = temperature
