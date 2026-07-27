@@ -1,0 +1,144 @@
+=== dump-tp  2026-07-27 02:57Z ===
+真实威胁(true_positive)总数: 32
+
+按 technique 分布:
+   T1558.003: 14
+   T1021.001: 6
+   T1003.001: 4
+   T1105: 3
+   T1059.001: 2
+   T1071.001: 2
+   T1547.001: 1
+
+研判方式: {'reuse': 9, 'llm': 23}  (reuse=复用经验命中,llm=真研判)
+
+逐条:
+  ── [T1003.001] 0d22b43148656c21  path=A/reuse  source=wazuh
+     规则: Credential dumping via LSASS access by C:\\Windows\\System32\\rundll32.exe (granted 0x1410)
+     依据: 
+     处置: revoke_sessions→vagrant, disable_account→vagrant, collect_artifact→castelblack.north.sevenkingdoms.local, revoke_kerberos→castelblack.north.sevenkingdoms.local, isolate_host→castelblack.north.sevenkingdoms.local
+  ── [T1003.001] 5fdf891b5c13a3a3  path=B/llm  source=wazuh
+     规则: Credential dumping via LSASS access by C:\\Windows\\System32\\rundll32.exe (granted 0x1410)
+     依据: 1. **攻击行为明确**: 源进程 `rundll32.exe` 调用 `comsvcs.dll` 的 `MiniDump` 函数，目标为 `lsass.exe`，访问掩码 `0x1410` (含 PROCESS_VM_READ)，符合 T1003.001 特征。2. **非误报**: 证据明确源进程非已知安全代理，且调用栈包含 `comsvcs.dll` (转储库)，排除了 HIDS/EDR 自身遥测的误报可能。3. **恶意上下文**: 进程由 PowerShell 编码命令启动，运行在低权限用户 `vagrant` 下，且产生了 dump 文件 `lsass_soc_test.dmp`
+     处置: revoke_sessions→vagrant, disable_account→vagrant, collect_artifact→castelblack.north.sevenkingdoms.local, revoke_kerberos→castelblack.north.sevenkingdoms.local, isolate_host→castelblack.north.sevenkingdoms.local
+  ── [T1003.001] c0b1c5757789aed6  path=B/llm  source=wazuh
+     规则: Credential dumping via LSASS access by C:\\Windows\\System32\\rundll32.exe (granted 0x1fffff)
+     依据: 1. **攻击行为确认**: 源进程 rundll32.exe 访问 lsass.exe 的 granted_access 为 0x1fffff（包含 PROCESS_VM_READ），且 cmdline 明确包含 MiniDump 参数，表明正在进行内存转储。2. **恶意度判定**: 源进程 rundll32.exe 非已知安全代理（如 Defender/Wazuh），且运行账号 vagrant 为普通用户（privileged=false），非系统进程。3. **调用栈证据**: call_trace 包含 dbgcore.dll 和 comsvcs.dll，这是典型的凭据转储工具（如 
+     处置: escalate→lsass_soc_test.dmp, escalate→{85e8c649-557b-6a4c-2d08-000000001400}, disable_account→vagrant, isolate_host→castelblack.north.sevenkingdoms.local
+  ── [T1003.001] f92e7fb44738aee4  path=A/reuse  source=wazuh
+     规则: Credential dumping via LSASS access by C:\\Windows\\System32\\rundll32.exe (granted 0x1fffff)
+     依据: 
+     处置: revoke_sessions→vagrant, disable_account→vagrant, collect_artifact→castelblack.north.sevenkingdoms.local, revoke_kerberos→castelblack.north.sevenkingdoms.local, isolate_host→castelblack.north.sevenkingdoms.local
+  ── [T1021.001] 50976718e82600ce  path=B/llm  source=wazuh
+     规则: Remote/network logon type 3 by vagrant on castelblack.north.sevenkingdoms.local
+     依据: 1. 攻击行为：账号 vagrant (CASTELBLACK 域) 通过 Type 3 (网络登录) 成功登录到目标主机 castelblack.north.sevenkingdoms.local (CASTELBLACK 域)。2. 异常特征：a) 跨域登录：源域 NORTH 与目标域 CASTELBLACK 不同，且目标为 member_server，非标准跨域运维场景。b) 扇出异常：该账号已登录 12 台不同主机，符合横向移动 (Lateral Movement) 特征。c) 基线缺失：该账号与目标主机的关联为首次发现 (first_seen 为 2026-06-30，距告警时间约 
+     处置: (无/未组出)
+  ── [T1021.001] 673f95f788d650d1  path=B/llm  source=wazuh
+     规则: Remote/network logon type 3 by vagrant on castelblack.north.sevenkingdoms.local
+     依据: 1. 攻击行为：事件 4624 显示 logon_type=3 (网络登录)，Subject 为 NORTH 域的机器账号 CASTELBLACK$，Target 为 CASTELBLACK 域的 vagrant 账号。这符合 PtH (Pass-the-Hash) 或凭据窃取后的横向移动特征。2. 异常性：vagrant 账号非特权账号 (acc_privileged=false)，但短时间内扇出至 12 台不同主机，行为模式异常。3. 来源可疑：登录来源是机器账号 (CASTELBLACK$)，而非预期的运维人员 IP 或已知跳板，且 Key Length=0 暗示可能未请求会话密钥或使用
+     处置: (无/未组出)
+  ── [T1021.001] a2e0fa61210640bc  path=B/llm  source=wazuh
+     规则: Remote/network logon type 3 by vagrant on castelblack.north.sevenkingdoms.local
+     依据: 1. **异常登录类型**: 事件为 Logon Type 3 (网络登录)，由服务进程 svchost.exe 发起，非交互式登录。2. **跨域异常**: 请求者主体为 CASTELBLACK$ (NORTH域)，目标主机为 castelblack.north.sevenkingdoms.local (CASTELBLACK域)。虽然存在跨域信任，但机器账号通常仅访问其所属域或受信任域内的特定服务，且目标主机为普通成员服务器而非DC，此行为偏离正常基线。3. **账号风险**: 账号 vagrant 虽标记为 non-privileged，但具有明显的横向移动扇出特征（12台主机），且登录
+     处置: (无/未组出)
+  ── [T1021.001] d04804e177acb434  path=B/llm  source=wazuh
+     规则: Remote/network logon type 3 by vagrant on castelblack.north.sevenkingdoms.local
+     依据: 1. **攻击主体异常**: 事件显示 Subject 为 `CASTELBLACK$` (机器账号)，Domain 为 `NORTH`，而目标账号 `vagrant` 属于 `CASTELBLACK` 域。机器账号发起网络登录(Type 3)通常用于服务间通信或横向移动，而非正常运维。2. **跨域信任利用**: 机器账号跨域登录，暗示存在域间信任关系被利用。3. **目标账号异常**: 目标账号 `vagrant` 为普通用户 (`acc_privileged: false`)，但短时间内扇出至 12 台主机，符合攻击者获取凭证后横向移动的特征。4. **关键信息缺失**: 源 IP 为 
+     处置: (无/未组出)
+  ── [T1021.001] 98da8a1dd8612d8d  path=B/llm  source=wazuh
+     规则: Remote/network logon type 3 by vagrant on castelblack.north.sevenkingdoms.local
+     依据: 1. 攻击者身份: 账号 vagrant (CASTELBLACK 域)，非特权账号 (acc_privileged=false)，但属于常见测试/低权限账号。2. 攻击行为: 网络登录 (Logon Type 3)，即远程共享/网络登录。3. 异常性: 该账号与目标主机 castelblack 无历史登录基线 (first_seen 为 2026-06-30，本次为 2026-07-14，且证据显示 count 为 null 或极低，结合上下文理解为本次为异常首见或低频异常)。4. 跨域风险: 事件日志显示 Subject 为 CASTELBLACK$ (NORTH 域)，Target 为 
+     处置: (无/未组出)
+  ── [T1021.001] e36b8ff6b0faf3dc  path=B/llm  source=wazuh
+     规则: Remote/network logon type 3 by vagrant on winterfell.north.sevenkingdoms.local
+     依据: 1. **攻击行为**: 账号 'vagrant' (非特权) 使用 NTLM 对域控 'winterfell' 进行网络登录 (Logon Type 3)。2. **异常性**: 该账号与目标主机无历史基线 (首见)，且源 IP (192.168.56.22) 非已知管理跳板。3. **横向移动证据**: 账号在极短时间内 (10 分钟) 扇出至 12 台不同主机，呈现典型的横向扩散行为。4. **高价值目标**: 攻击目标是域控 (critical)，风险极高。5. **排除误报**: 无跨域信任证据，且非服务账号广泛认证模式。
+     处置: (无/未组出)
+  ── [T1059.001] f0dd45072e9137dc  path=B/llm  source=wazuh
+     规则: Powershell.exe spawned a powershell process which executed a base64 encoded command
+     依据: 1. **攻击链还原**：父进程 powershell.exe 执行了包含 `$exec_wrapper` 逻辑的脚本，该脚本读取输入流并执行。子进程 powershell.exe 随后执行了明确的目标：获取 LSASS 进程 ID，调用 `rundll32.exe comsvcs.dll,MiniDump` 生成 `lsass_soc_test.dmp` 文件。2. **恶意特征**：使用 LOLBin (`rundll32.exe`) 进行隐藏执行 (`-WindowStyle Hidden`)，目标明确指向 LSASS 进程，意图窃取凭据。3. **排除误报**：虽然父进程命令中包含 `
+     处置: (无/未组出)
+  ── [T1059.001] d6a4705bedeca316  path=B/llm  source=wazuh
+     规则: Powershell.exe spawned a powershell process which executed a base64 encoded command
+     依据: 1. **恶意行为特征明确**: 子进程解码后的命令清晰展示了攻击意图：获取 LSASS 进程 ID，调用 `rundll32.exe comsvcs.dll,MiniDump` 将 LSASS 内存转储到 `C:\Windows\Temp\lsass_soc_test.dmp`。这是典型的内存转储攻击 (T1003.001)，用于窃取凭据。2. **使用 LOLBin 规避检测**: 攻击者使用 `rundll32.exe` 作为执行载体，属于 LOLBin 技术 (T1218)，旨在绕过基于文件签名的检测。3. **父进程链可疑**: 虽然父进程也是 PowerShell，但整个链条（Po
+     处置: (无/未组出)
+  ── [T1071.001] 3b135eb0a9a48a1a  path=B/llm  source=wazuh
+     规则: Suspicious outbound from C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe to 192.168.56.1:9200
+     依据: 1. **异常行为**: PowerShell 使用 `-encodedcommand` 执行，解码后显示为循环尝试连接 `192.168.56.1:9200` 并输出 `BEACON ... OK`，这是典型的 C2 心跳或存活探测脚本。2. **目标可疑**: 9200 端口非标准业务端口，且目标主机名为 `goad` (Google AdWords 相关，常用于攻击者基础设施或跳板)。3. **反复性**: 6 次连接在短时间内完成，非误触。4. **无良性证据**: 无代理转发、无已知运维脚本特征。
+     处置: (无/未组出)
+  ── [T1071.001] 2ccee5cd92fdc084  path=B/llm  source=wazuh
+     规则: Suspicious outbound from C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe to 192.168.56.1:9200
+     依据: 1. **恶意行为特征明确**：解码后的 PowerShell 命令显示为典型的‘心跳/Beacon’脚本，循环尝试连接目标 IP:9200 并输出状态。2. **隐蔽性**：使用了 `-encodedcommand` 进行 Base64 编码，意图规避基于签名的检测。3. **反复性**：聚合证据显示在 16 秒内连续发起 6 次连接，非单次误触。4. **目标分析**：目标 IP 192.168.56.1 为内部网段（非互联网），端口 9200 通常对应 Elasticsearch。虽然可能是内部服务，但 PowerShell 主动向外（即使是内网）发起高频探测且使用编码，属于异常外连行为
+     处置: (无/未组出)
+  ── [T1105] 237d1391e95e8a6c  path=B/llm  source=wazuh
+     规则: Executable file dropped in folder commonly used by malware
+     依据: 1. **工具特征**: 触发进程为 PowerShell，使用 `-EncodedCommand` 下载文件，落地文件为 `.ps1` 脚本，符合 T1105 特征。2. **恶意意图**: 解码后命令明确使用 ADSI 枚举用户，并调用 `System.IdentityModel.Tokens.KerberosRequestorSecurityToken` 尝试对 SPN 进行 Roasting (票据伪造攻击)，属于明确的横向移动/凭证攻击工具。3. **降噪排除**: 证据明确“未识别到已知良性噪声”(非 Ansible/策略探针)。4. **执行状态**: 落地文件位于 Temp 目
+     处置: (无/未组出)
+  ── [T1105] 3ab2e10d5d8c4de3  path=B/llm  source=wazuh
+     规则: Executable file dropped in folder commonly used by malware
+     依据: 1. 触发进程为 PowerShell，通过 -EncodedCommand 执行了一段恶意脚本。2. 解码后脚本逻辑清晰：使用 ADSI 枚举所有设置了 SPN 的用户账号（排除 krbtgt），并尝试使用 System.IdentityModel 创建 KerberosRequestorSecurityToken。这是典型的'Roasting'攻击，用于探测哪些账号可被用于票据伪造攻击。3. 落地文件位于 Temp 目录，且未识别为良性噪声（如 Ansible/策略探针）。4. 无证据表明是系统更新或正常运维。
+     处置: (无/未组出)
+  ── [T1105] 034511734f805683  path=B/llm  source=wazuh
+     规则: Executable file dropped in folder commonly used by malware
+     依据: 1. 触发进程为 PowerShell，落地文件为 .ps1 脚本，位于 Temp 目录，符合 T1105 特征。2. 解码后的命令逻辑清晰：遍历证书模板（ESC1/ESC4等），调用 Get-Certificate 尝试申请，属于攻击者利用 ADCS 漏洞（如 ESC）获取证书的自动化脚本。3. 未命中良性噪声（非浏览器/更新器，非策略探针）。4. 虽未落地即执行，但脚本内容本身具有明确的攻击意图（证书申请），且落地于临时目录，判定为真实攻击。
+     处置: (无/未组出)
+  ── [T1547.001] afc31d7ae6f9a5f2  path=B/llm  source=wazuh
+     规则: Registry autostart persistence: C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe set HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run\\SOC_Benign_Telemetry_Test
+     依据: 1. **恶意意图明确**: 攻击者使用 PowerShell 执行编码命令，将 `C:\Windows\System32\notepad.exe` 写入 `HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Run` 键值 `SOC_Benign_Telemetry_Test`。虽然 `notepad.exe` 本身是合法工具，但将其写入 HKLM 自启键属于典型的 LOLBin (Living off the Land Binaries) 滥用，目的是利用系统自带工具进行持久化，规避杀毒软件对恶意 EXE 的扫描。2. **权限异常**: 写入账户
+     处置: (无/未组出)
+  ── [T1558.003] 98f207762542912b  path=B/llm  source=wazuh
+     规则: Kerberoast: RC4(0x17) TGS request for service jon.snow
+     依据: 1. 请求者身份：'vagrant' 为普通用户（req_type=null, req_privileged=false），非机器账号，不适用跨域信任豁免。2. 加密类型异常：使用 RC4(0x17) 请求服务票据，该类型易被离线爆破，且请求者历史基线中 AES(0x12) 占绝对主导（23286次），RC4 仅占29次，属异常行为。3. 攻击行为确认：SPN 扇出扫描，短时间内请求了12个不同目标（distinct_targets=12），总请求量巨大（23315次），符合 GetUserSPNs 工具扫描特征。4. 跨域信任判定：虽然域 NORTH 信任 sevenkingdoms.loc
+     处置: escalate→None
+  ── [T1558.003] a2063126565b2be8  path=B/llm  source=wazuh
+     规则: Kerberoast: RC4(0x17) TGS request for service jon.snow
+     依据: 1. **请求者身份**: 'vagrant' 为普通用户 (req_type=null, req_privileged=false)，非机器账号，不适用跨域信任 FP 豁免规则。2. **加密类型异常**: 使用 RC4(0x17) 加密，该用户历史基线中 AES(0x12) 占绝大多数 (23286次)，RC4 仅占 29 次，属于异常行为。3. **扇出扫描**: 短时间内对 12 个不同 SPN 发起请求 (distinct_targets=12)，总请求量巨大 (23315次)，符合 GetUserSPNs 工具扫描特征。4. **跨域信任判定**: 请求者与目标均在 NORTH 域
+     处置: escalate→None
+  ── [T1558.003] dc157220582628b7  path=A/reuse  source=wazuh
+     规则: Kerberoast: RC4(0x17) TGS request for service jon.snow
+     依据: 
+     处置: escalate→None
+  ── [T1558.003] 2db19e289bacb06c  path=A/reuse  source=wazuh
+     规则: Kerberoast: RC4(0x17) TGS request for service jon.snow
+     依据: 
+     处置: escalate→None
+  ── [T1558.003] 2c087f186c7ee9a8  path=B/llm  source=wazuh
+     规则: Kerberoast: RC4(0x17) TGS request for service sansa.stark
+     依据: 1. **请求者身份**: 'vagrant' 为普通用户 (req_type=null, req_privileged=false)，非机器账号，不适用跨域信任 FP 豁免。2. **加密类型异常**: 使用 RC4(0x17) 请求服务票据，该类型极易离线爆破，且请求者历史基线中 AES(0x12) 占绝对主导 (23286次)，RC4 仅占 29次，属异常行为。3. **攻击行为特征**: 存在显著的 SPN 扇出 (distinct_targets=12, total_4769=23315)，符合 GetUserSPNs 工具批量扫描特征。4. **跨域信任判定**: 证据显示 sam
+     处置: disable_account→vagrant, expire_password→sansa.stark
+  ── [T1558.003] d5d9ce42a33a2128  path=A/reuse  source=wazuh
+     规则: Kerberoast: RC4(0x17) TGS request for service sansa.stark
+     依据: 
+     处置: escalate→None
+  ── [T1558.003] 34f9f95e15a90598  path=B/llm  source=wazuh
+     规则: Kerberoast: RC4(0x17) TGS request for service sql_svc
+     依据: 1. 请求者身份：vagrant 为普通用户（req_type=null, req_privileged=false），非机器账号，不适用跨域信任 FP 豁免规则。2. 加密类型异常：使用 RC4(0x17) 加密，该用户历史基线中 AES(0x12) 占绝大多数(23286次)，RC4 仅占29次，属于异常行为。3. 攻击行为确认：存在显著的 SPN 扇出（distinct_targets=12），远超正常业务需求，符合 GetUserSPNs 扫描工具特征。4. 目标价值：目标 sql_svc 虽非特权账号，但作为数据库服务账号，其凭据泄露风险较高。综上，证据链完整，判定为真实攻击。
+     处置: escalate→None
+  ── [T1558.003] 364eca8bc3f38a21  path=B/llm  source=wazuh
+     规则: Kerberoast: RC4(0x17) TGS request for service sql_svc
+     依据: 1. **请求者身份**: 'vagrant' 为普通用户 (req_type=null, req_privileged=false)，非机器账号，不适用跨域信任 FP 豁免规则。2. **加密类型异常**: 请求使用 RC4(0x17)，该用户历史基线中 AES(0x12) 占绝大多数 (23286次)，RC4 仅 29 次，属于异常行为。3. **攻击模式确认**: 短时间内对 12 个不同 SPN 发起请求 (distinct_targets=12)，总请求量巨大 (23315次)，符合 GetUserSPNs 工具扫描特征。4. **跨域豁免不成立**: 请求者域与目标域均为 NORT
+     处置: escalate→None
+  ── [T1558.003] 43abbce06dd381ca  path=B/llm  source=wazuh
+     规则: Kerberoast: RC4(0x17) TGS request for service sql_svc
+     依据: 1. **请求者身份**: 'vagrant' 为普通用户 (req_type=null, req_privileged=false)，非机器账号，不适用跨域信任 FP 豁免规则。2. **攻击行为**: 请求者对 'sql_svc' 使用 RC4(0x17) 加密类型请求 TGS，这是 Kerberoasting 的典型特征，旨在获取可离线爆破的票据。3. **扇出扫描**: 证据显示 distinct_targets=12, total_4769=23315，表明攻击者正在批量扫描服务账号，而非单次正常业务请求。4. **跨域信任判定**: 虽然存在跨域信任 (ESSOS trusts s
+     处置: escalate→None
+  ── [T1558.003] ce8a45a62b66b057  path=A/reuse  source=wazuh
+     规则: Kerberoast: RC4(0x17) TGS request for service sql_svc
+     依据: 
+     处置: escalate→None
+  ── [T1558.003] cece2ac27e152bb0  path=A/reuse  source=wazuh
+     规则: Kerberoast: RC4(0x17) TGS request for service sql_svc
+     依据: 
+     处置: escalate→None
+  ── [T1558.003] fc4cae6d730160ee  path=A/reuse  source=wazuh
+     规则: Kerberoast: RC4(0x17) TGS request for service sql_svc
+     依据: 
+     处置: escalate→None
+  ── [T1558.003] cbb4de766e971f29  path=A/reuse  source=wazuh
+     规则: Kerberoast: RC4(0x17) TGS request for service sql_svc
+     依据: 
+     处置: escalate→None
+  ── [T1558.003] 6ec302bc135c970e  path=B/llm  source=wazuh
+     规则: Kerberoast: RC4(0x17) TGS request for service sql_svc
+     依据: 1. 请求者身份：vagrant 为普通用户（req_type=null, req_privileged=false），非机器账号，不适用跨域信任豁免。2. 攻击行为：请求者使用 RC4(0x17) 加密类型请求服务票据，这是 Kerberoasting 的典型特征。3. 扇出扫描：证据显示 distinct_targets=12, total_4769=23315，表明攻击者正在批量获取多个服务账号的票据进行离线爆破，而非单次正常业务请求。4. 目标价值：目标 sql_svc 虽非特权账号，但作为数据库服务，其凭证泄露风险较高。5. 排除误报：跨域信任豁免仅适用于机器账号，且本例为同域请求（
+     处置: escalate→None
+=== done ===
