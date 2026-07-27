@@ -1,0 +1,18 @@
+=== web-serve  2026-07-27 02:38Z ===
+-- 装 web 依赖(幂等)--
+-- 后台启动 uvicorn :8000 --
+  PID=554092  日志 logs/web.log
+-- 8000 端口监听检查 --
+LISTEN 0      2048                                  0.0.0.0:8000       0.0.0.0:*          
+-- 本机自测(curl 绕代理)--
+  ✅ 本机 healthz 通 → 服务本身没问题;剩下就是从你电脑能不能连到下面某个 IP
+-- server2 的 IP(浏览器挨个试 http://<IP>:8000,优先 100.x)--
+   http://100.102.211.138:8000
+   http://192.168.122.1:8000
+   http://10.88.0.1:8000
+   http://10.89.0.1:8000
+
+★ 若上面 IP 浏览器仍连不上(但本机 healthz 通)= 防火墙挡了 8000。用 root 开:
+    sudo firewall-cmd --add-port=8000/tcp        # 临时(重启失效)
+    sudo firewall-cmd --add-port=8000/tcp --permanent && sudo firewall-cmd --reload   # 永久
+=== done ===
