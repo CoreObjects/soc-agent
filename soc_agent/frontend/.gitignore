@@ -1,4 +1,5 @@
 node_modules/
-dist/
 *.local
 .vite/
+# 注:dist/ 暂纳入版本管理 —— server2(ARM openEuler)未必有 node,
+# 直接推构建产物,web.sh --serve 即可托管。日后 server2 装了 node 可改回忽略 + --build。
