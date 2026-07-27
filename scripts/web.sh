@@ -41,15 +41,17 @@ try:
 except Exception as e:
     print("!! 建 app 失败(是否 pip install '.[web]'?):", repr(e)); sys.exit(1)
 app = create_app()
-routes = sorted({r.path for r in app.routes if getattr(r, "path", "").startswith("/api")})
-print("API 路由(%d 条):" % len(routes))
-for p in routes:
+# ★用 openapi 列路由:fastapi 0.140+ 把 include_router 挂成子应用,直接遍历 app.routes 看不到(会误判"只有 healthz")
+paths = sorted((app.openapi() or {}).get("paths", {}).keys())
+print("API 路由(%d 条):" % len(paths))
+for p in paths:
     print("   ", p)
-r = TestClient(app).get("/api/healthz")
-print("healthz:", r.status_code, r.json())
+c = TestClient(app)
+print("healthz:", c.get("/api/healthz").status_code, c.get("/api/healthz").json())
+print("前端托管 / :", c.get("/").status_code, "  SPA 回退 /queue :", c.get("/queue").status_code)
 import os.path as _p
 dist = _p.join("soc_agent", "frontend", "dist", "index.html")
-print("前端 dist:", "已构建(会被托管)" if _p.isfile(dist) else "未构建(纯 API 模式;bash scripts/web.sh --build 生成)")
+print("前端 dist:", "已入库(会被托管)" if _p.isfile(dist) else "未入库(纯 API;bash scripts/web.sh --build 或拉最新)")
 PYEOF
   echo "=== done ==="
 } 2>&1 | tee "$FB"
