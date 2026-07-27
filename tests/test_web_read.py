@@ -71,9 +71,10 @@ class FakeGraph:
         if "count(DISTINCT a) AS n" in cypher:
             return [{"n": 60}]
         if "coalesce(c.method,'llm') AS method" in cypher:
-            return [{"method": "reuse", "path": "A", "n": 10},
-                    {"method": "llm", "path": "S", "n": 45},
-                    {"method": "llm", "path": "B", "n": 5}]
+            return [{"method": "reuse", "path": "S", "n": 30},    # 签名复用
+                    {"method": "reuse", "path": "A", "n": 10},    # 深度经验复用
+                    {"method": "llm", "path": "S", "n": 45},      # 浅层 LLM 直判
+                    {"method": "llm", "path": "B", "n": 5}]        # 深度
         if "v.verdict AS verdict, coalesce(c.path,v.path) AS path" in cypher:
             return [{"verdict": "false_positive", "path": "S", "n": 45},
                     {"verdict": "true_positive", "path": "B", "n": 5}]
@@ -167,11 +168,12 @@ def test_stats_with_reuse_split(client):
     assert r.status_code == 200
     s = r.json()
     assert s["progress"]["concluded"] == 60 and s["progress"]["backlog"] == 40 and s["progress"]["poison"] == 0
-    # ★收紧1:复用命中(method=reuse=10)与浅层短路(llm+S=45)、深度(llm+B=5)分开
-    assert s["reuse"]["reuse_hits"] == 10
+    # ★收紧1 + 4路拆解:复用命中(reuse=签名30+深度经验10=40)、浅层直判(llm+S=45)、深度(llm+B=5)分开
+    assert s["reuse"]["sig_reuse"] == 30 and s["reuse"]["deep_reuse"] == 10
+    assert s["reuse"]["reuse_hits"] == 40                      # = sig_reuse + deep_reuse
     assert s["reuse"]["shallow_short"] == 45
     assert s["reuse"]["deep"] == 5
-    assert abs(s["reuse"]["reuse_rate"] - 10 / 60) < 1e-6
+    assert abs(s["reuse"]["reuse_rate"] - 40 / 60) < 1e-6
     assert s["dispo_status"][0]["status_zh"] == "待处置"
 
 

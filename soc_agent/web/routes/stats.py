@@ -22,7 +22,11 @@ def stats(graph=Depends(get_graph)):
 
     verdict_path = run_spec(graph, qb.q_verdict_path())
     method_path = run_spec(graph, qb.q_method_path())
-    reuse_hits = sum(r["n"] for r in method_path if r.get("method") == "reuse")
+    # ★4 路拆解(让"按方式"与"按路径"两个面板能对上账):
+    #   复用命中 = 签名复用(reuse&S,零LLM)+ 深度经验复用(reuse&A);浅层直判 = llm&S(真跑一次浅层LLM);深度 = llm&B
+    sig_reuse = sum(r["n"] for r in method_path if r.get("method") == "reuse" and r.get("path") == "S")
+    deep_reuse = sum(r["n"] for r in method_path if r.get("method") == "reuse" and r.get("path") == "A")
+    reuse_hits = sum(r["n"] for r in method_path if r.get("method") == "reuse")   # = sig_reuse + deep_reuse
     shallow_short = sum(r["n"] for r in method_path
                         if r.get("method") == "llm" and r.get("path") == "S")
     deep = sum(r["n"] for r in method_path
@@ -44,7 +48,8 @@ def stats(graph=Depends(get_graph)):
                      "total": total, "pct": round(concluded / (total or 1) * 100, 1)},
         "verdict_path": verdict_path,
         "method_path": method_path,
-        "reuse": {"reuse_hits": reuse_hits, "shallow_short": shallow_short, "deep": deep,
+        "reuse": {"reuse_hits": reuse_hits, "sig_reuse": sig_reuse, "deep_reuse": deep_reuse,
+                  "shallow_short": shallow_short, "deep": deep,
                   "reuse_rate": reuse_hits / denom, "shallow_rate": shallow_short / denom},
         "auto_close": {"auto_closed": auto_closed, "rate": auto_closed / denom},
         "dispo_status": dispo_status,

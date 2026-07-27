@@ -18,6 +18,19 @@ async function load(silent = false) {
 
 const concludedDenom = computed(() => s.value?.progress?.concluded || 1)
 
+// 成本构成 4 路(按研判方式拆,能与 verdict×path 的路径口径对上):
+//   签名复用(reuse&S,零LLM)+ 深度经验复用(reuse&A) = 复用命中;浅层LLM直判(llm&S);深度LLM(llm&B)
+const costRows = computed(() => {
+  const r = s.value?.reuse
+  if (!r) return []
+  return [
+    { label: '签名复用(零 LLM)', n: r.sig_reuse, color: '#409eff' },
+    { label: '深度经验复用', n: r.deep_reuse, color: '#79bbff' },
+    { label: '浅层 LLM 直判', n: r.shallow_short, color: '#67c23a' },
+    { label: '深度 LLM 研判', n: r.deep, color: '#e6a23c' },
+  ]
+})
+
 onMounted(() => {
   load()
   timer = setInterval(() => load(true), 8000)
@@ -44,32 +57,28 @@ onUnmounted(() => clearInterval(timer))
 
     <el-row :gutter="12" style="margin-top: 12px">
       <el-col :span="12">
-        <el-card shadow="never" header="成本构成(收紧①:复用 vs 浅层短路 vs 深度)">
-          <div class="bar">
-            <span class="bl">复用命中</span>
-            <el-progress :percentage="+(s.reuse.reuse_hits / concludedDenom * 100).toFixed(1)" color="#409eff" />
-            <span class="bn">{{ s.reuse.reuse_hits }}</span>
+        <el-card shadow="never" header="成本构成(按研判方式;越用越省)">
+          <div v-for="row in costRows" :key="row.label" class="bar">
+            <span class="bl">{{ row.label }}</span>
+            <el-progress :percentage="+(row.n / concludedDenom * 100).toFixed(1)" :color="row.color" />
+            <span class="bn">{{ row.n }}</span>
           </div>
-          <div class="bar">
-            <span class="bl">浅层短路</span>
-            <el-progress :percentage="+(s.reuse.shallow_short / concludedDenom * 100).toFixed(1)" color="#67c23a" />
-            <span class="bn">{{ s.reuse.shallow_short }}</span>
-          </div>
-          <div class="bar">
-            <span class="bl">深度研判</span>
-            <el-progress :percentage="+(s.reuse.deep / concludedDenom * 100).toFixed(1)" color="#e6a23c" />
-            <span class="bn">{{ s.reuse.deep }}</span>
-          </div>
-          <p class="muted">复用命中(签名+深度经验)随经验累计上涨=越用越省;浅层短路便宜结案、基本恒定;深度=稀有真研判。</p>
+          <p class="muted">
+            复用命中率 = 签名复用 + 深度经验复用 =
+            <b>{{ pct(s.reuse.reuse_hits, s.progress.concluded) }}</b>(随经验累计上涨 = 越用越省);
+            浅层/深度 LLM = 真跑模型的少数。
+            <br />注:签名复用走的是"浅层路径(S)",所以它与右侧 verdict×path 里"浅层(S)"的大头是同一批。
+          </p>
         </el-card>
       </el-col>
       <el-col :span="12">
-        <el-card shadow="never" header="verdict × path 分布">
+        <el-card shadow="never" header="verdict × path 分布(按路径切)">
           <el-table :data="s.verdict_path" size="small">
             <el-table-column label="结论"><template #default="{ row }">{{ verdictZh(row.verdict) }}</template></el-table-column>
             <el-table-column label="路径"><template #default="{ row }">{{ pathLabel(row.path) }}</template></el-table-column>
             <el-table-column prop="n" label="数量" width="90" />
           </el-table>
+          <p class="muted">注:"浅层(S)"里绝大多数是<b>签名复用</b>(=左侧的"签名复用",零 LLM),仅少数真跑浅层模型。此表按"路径"切、左表按"研判方式"切,同一批数据两种视角。</p>
         </el-card>
       </el-col>
     </el-row>

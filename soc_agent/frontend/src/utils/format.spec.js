@@ -16,9 +16,9 @@ describe('format', () => {
     expect(verdictTag('false_positive')).toBe('info')
   })
 
-  it('path 标签(浅层短路/经验复用/深度)', () => {
-    expect(pathLabel('S')).toBe('浅层短路')
-    expect(pathLabel('A')).toBe('经验复用')
+  it('path 标签(浅层/深度复用/深度研判)', () => {
+    expect(pathLabel('S')).toBe('浅层')
+    expect(pathLabel('A')).toBe('深度复用')
     expect(pathLabel('B')).toBe('深度研判')
   })
 

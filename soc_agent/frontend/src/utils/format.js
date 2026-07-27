@@ -34,7 +34,9 @@ export function verdictTag(v) {
   return { true_positive: 'danger', false_positive: 'info', benign: 'success', suspicious: 'warning' }[v] || 'info'
 }
 
-export const PATH_ZH = { S: '浅层短路', A: '经验复用', B: '深度研判' }
+// 路径 = 在哪一档定的案(不等于"复用/新判",复用与否看 method):
+//   S=浅层(签名复用 或 浅层LLM直判) / A=深度经验复用 / B=深度LLM研判
+export const PATH_ZH = { S: '浅层', A: '深度复用', B: '深度研判' }
 
 export function pathLabel(p) {
   return PATH_ZH[p] || p || '-'
