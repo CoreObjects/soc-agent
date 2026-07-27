@@ -8,11 +8,11 @@ import { pathLabel, pct, verdictZh } from '@/utils/format'
 const s = ref(null)
 let timer = null
 
-async function load() {
+async function load(silent = false) {
   try {
     s.value = await api.stats()
   } catch (e) {
-    ElMessage.error('加载失败:' + (e.response?.data?.detail || e.message))
+    if (!silent) ElMessage.error('加载失败:' + (e.response?.data?.detail || e.message))
   }
 }
 
@@ -20,7 +20,7 @@ const concludedDenom = computed(() => s.value?.progress?.concluded || 1)
 
 onMounted(() => {
   load()
-  timer = setInterval(load, 8000)
+  timer = setInterval(() => load(true), 8000)
 })
 onUnmounted(() => clearInterval(timer))
 </script>

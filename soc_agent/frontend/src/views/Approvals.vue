@@ -13,14 +13,14 @@ const loading = ref(false)
 const mode = ref('manual')
 let timer = null
 
-async function load() {
-  loading.value = true
+async function load(silent = false) {
+  if (!silent) loading.value = true          // 静默轮询,避免遮罩闪烁
   try {
     plans.value = (await api.plans(status.value)).plans
   } catch (e) {
-    ElMessage.error('加载失败:' + (e.response?.data?.detail || e.message))
+    if (!silent) ElMessage.error('加载失败:' + (e.response?.data?.detail || e.message))
   } finally {
-    loading.value = false
+    if (!silent) loading.value = false
   }
 }
 
@@ -63,7 +63,7 @@ async function act(id, kind) {
 onMounted(() => {
   load()
   loadMode()
-  timer = setInterval(load, 5000)
+  timer = setInterval(() => load(true), 8000)
 })
 onUnmounted(() => clearInterval(timer))
 </script>

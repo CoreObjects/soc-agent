@@ -27,7 +27,14 @@ function logout() {
   <el-container class="app">
     <el-aside width="200px" class="aside">
       <div class="brand">🛡 SOC 控制台</div>
-      <el-menu :default-active="activeMenu" router class="menu">
+      <el-menu
+        :default-active="activeMenu"
+        router
+        class="menu"
+        background-color="#1f2733"
+        text-color="#c8d3e0"
+        active-text-color="#79bbff"
+      >
         <el-menu-item v-for="m in menu" :key="m.index" :index="m.index">
           <el-icon><component :is="m.icon" /></el-icon>
           <span>{{ m.label }}</span>
@@ -68,7 +75,15 @@ body,
 }
 .menu {
   border-right: none;
-  background: transparent;
+}
+/* 悬停/选中更清晰 */
+.menu .el-menu-item:hover {
+  background-color: #2c3a4d !important;
+  color: #fff !important;
+}
+.menu .el-menu-item.is-active {
+  background-color: #2c3a4d !important;
+  border-left: 3px solid #79bbff;
 }
 .header {
   display: flex;

@@ -13,8 +13,8 @@ const loading = ref(false)
 const filters = reactive({ verdict: '', path: '', dispo_status: '', q: '', page: 1, size: 20 })
 let timer = null
 
-async function load() {
-  loading.value = true
+async function load(silent = false) {
+  if (!silent) loading.value = true          // 后台轮询静默刷新:不弹遮罩,避免"一闪一闪"
   try {
     const params = {
       page: filters.page, size: filters.size,
@@ -25,9 +25,9 @@ async function load() {
     rows.value = data.items
     total.value = data.total
   } catch (e) {
-    ElMessage.error('加载队列失败:' + (e.response?.data?.detail || e.message))
+    if (!silent) ElMessage.error('加载队列失败:' + (e.response?.data?.detail || e.message))
   } finally {
-    loading.value = false
+    if (!silent) loading.value = false
   }
 }
 
@@ -41,7 +41,7 @@ function open(row) {
 
 onMounted(() => {
   load()
-  timer = setInterval(load, 5000) // 轮询刷新
+  timer = setInterval(() => load(true), 8000) // 静默轮询刷新
 })
 onUnmounted(() => clearInterval(timer))
 </script>
