@@ -233,7 +233,11 @@ _SEED_CYPHER = (
 
 class Neo4jGraph:
     def __init__(self, uri, user, password, database=None):
+        import logging
         from neo4j import GraphDatabase          # 惰性导入
+        # 压掉海量无害通知("property key does not exist" 等)——查不存在的属性返回 null 是正常路径,
+        # 但驱动会 WARNING 刷屏、淹没真进度/报错。设 ERROR 只留真错。
+        logging.getLogger("neo4j").setLevel(logging.ERROR)
         self._driver = GraphDatabase.driver(uri, auth=(user, password))
         self._db = database
 
