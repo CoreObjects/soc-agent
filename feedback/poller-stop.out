@@ -1,0 +1,8 @@
+=== poller-stop  2026-07-27 01:42Z   并发→8 ===
+  已发 SIGTERM(优雅退出:停取新、在跑的收尾写完台账)…
+  仍在收尾,再等…
+  强制 kill -9
+  ✅ poller 已停
+  ✅ 并发已设 POLLER_CONCURRENCY=8(.env;下次 poller-full.sh/resume.sh 生效)
+  重新起(慢速常驻):bash scripts/poller-full.sh
+=== done ===
