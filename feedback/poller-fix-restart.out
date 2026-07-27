@@ -1,15 +1,15 @@
-=== poller-fix-restart  TMO=120 CONC=8  2026-07-27 06:43Z ===
+=== poller-fix-restart  TMO=120 CONC=32  2026-07-27 07:17Z ===
 -- .env 现值 --
-POLLER_CONCURRENCY=8
+POLLER_CONCURRENCY=32
 LLM_TIMEOUT=120
 -- 强杀旧 poller(清掉卡死的 worker)--
 -- 起新 poller(新 QwenClient:每次新连接、读超时 120s)--
-  PID=663162
+  PID=677193
 -- 60s 进度验证(看恢复没)--
   60s 内:新研判 0 条,新增毒告警 0 ≈ 0/分钟
   ⚠ 还是0 —— 看日志末尾,可能要再降并发或查模型
 -- 日志末尾 --
-# 处置模式=manual(manual=只生成待处置不执行 / auto=自动执行)  并发=8  appliance=on  cascade=on
-# poller 启动  并发=8 批=50 轮询间隔=10.0s 毒告警上限=3 模式=recipe
-# 取批 50 条(积压 78700);research 中…
+# 处置模式=manual(manual=只生成待处置不执行 / auto=自动执行)  并发=32  appliance=on  cascade=on
+# poller 启动  并发=32 批=50 轮询间隔=10.0s 毒告警上限=3 模式=recipe
+# 取批 50 条(积压 78469);research 中…
 === done ===
