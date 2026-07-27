@@ -1,0 +1,11 @@
+=== poller-diag  2026-07-27 06:30Z ===
+-- ① LLM 端点 http://100.102.211.138:8080/v1/models(硬超时 10s)--
+  HTTP 401  用时 0.001184s
+-- ② openGauss SELECT 1(硬超时 12s)--
+  ✅ openGauss OK  用时 0.01s
+-- ③ poller 线程栈(PID=648388;py-spy 有才打,看 8 个 worker 卡在哪一行)--
+  (无 py-spy;装了能看精确卡点:.venv312/bin/python -m pip install py-spy;或 sudo 跑)
+  退而求其次——进程状态:
+    PID STAT     ELAPSED %CPU %MEM CMD
+ 648388 Sl         20:54  0.7  0.0 .venv312/bin/python -m soc_agent.runtime
+=== done ===
