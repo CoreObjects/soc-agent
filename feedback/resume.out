@@ -1,0 +1,20 @@
+=== resume 探依赖  2026-07-27 01:35Z ===
+  [OK] Neo4j 连通;待研判积压 = 79047
+  [OK] openGauss 连通(经验库持久 → 复用/越用越省有效)
+  [OK] LLM 端点连通(http://100.102.211.138:8080/v1);模型 ['qwen3.5-27b', 'qwen3.5-9b']
+
+# 依赖全通 → 后台续跑 poller(幂等,接着写没写完的台账)
+✅ poller 已后台启动  PID=549725
+   日志:   tail -f logs/poller-full.log
+   进度:   bash scripts/ledger-stats.sh      # verdict/path 分布快照,ferry 回来
+   停(可续):pkill -f soc_agent.runtime
+
+—— 启动头几行 ——
+# 处置模式=manual(manual=只生成待处置不执行 / auto=自动执行)  并发=64  appliance=on  cascade=on
+# poller 启动  并发=64 批=50 轮询间隔=10.0s 毒告警上限=3 模式=recipe
+# 取批 50 条(积压 79047);research 中…
+Received notification from DBMS server: <GqlStatusObject gql_status='01N52', status_description='warn: property key does not exist. The property `key` does not exist. Verify that the spelling is correct.', position=<SummaryInputPosition line=1, column=18, offset=17>, raw_classification='UNRECOGNIZED', classification=<NotificationClassification.UNRECOGNIZED: 'UNRECOGNIZED'>, raw_severity='WARNING', severity=<NotificationSeverity.WARNING: 'WARNING'>, diagnostic_record={'_classification': 'UNRECOGNIZED', '_severity': 'WARNING', '_position': {'offset': 17, 'line': 1, 'column': 18}, 'OPERATION': '', 'OPERATION_CODE': '0', 'CURRENT_SCHEMA': '/'}> for query: "MATCH (c:Config {key:'response_mode'}) RETURN c.value AS value LIMIT 1"
+
+—— 台账进度快照 ——
+  已研判 21590 / 积压 79035 / 毒告警 1290  —— 完成 21.5%
+=== done ===
