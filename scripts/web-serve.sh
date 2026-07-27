@@ -15,15 +15,17 @@ FB="feedback/web-serve.out"
   echo "-- 装 web 依赖(幂等)--"
   "$PY" -m pip install -q -e '.[web]' 2>&1 | tail -2 || echo "  (pip install 有告警,见上)"
 
+  # ★每次都重启:静态 dist 实时读盘,但后端 Python 代码在运行进程里不会随 git pull 重载 → 必须重起才拾取最新
   if pgrep -f "uvicorn soc_agent.web.app" >/dev/null 2>&1; then
-    echo "-- uvicorn 已在跑(不重复启动)--"
-  else
-    echo "-- 后台启动 uvicorn :8000 --"
-    nohup env PYTHONUTF8=1 "$PY" -m uvicorn soc_agent.web.app:app --host 0.0.0.0 --port 8000 \
-      > logs/web.log 2>&1 &
-    sleep 5
-    echo "  PID=$!  日志 logs/web.log"
+    echo "-- 已有 uvicorn 在跑 → 先停(拾取最新后端代码)--"
+    pkill -f "uvicorn soc_agent.web.app" 2>/dev/null || true
+    sleep 2
   fi
+  echo "-- 后台启动 uvicorn :8000 --"
+  nohup env PYTHONUTF8=1 "$PY" -m uvicorn soc_agent.web.app:app --host 0.0.0.0 --port 8000 \
+    > logs/web.log 2>&1 &
+  sleep 5
+  echo "  PID=$!  日志 logs/web.log"
 
   echo "-- 8000 端口监听检查 --"
   (ss -ltn 2>/dev/null | grep ':8000' || netstat -ltn 2>/dev/null | grep ':8000' \
