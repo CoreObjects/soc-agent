@@ -1,0 +1,33 @@
+=== poller-diag3  2026-07-27 06:50Z ===
+-- poller PID=663162 --
+-- py-spy 线程栈(worker 现在卡在哪一行)--
+Thread 663162 (idle): "MainThread"
+    run (soc_agent/runtime/poller.py:139)
+Thread 663247 (idle): "ThreadPoolExecutor-0_0"
+Thread 663248 (idle): "ThreadPoolExecutor-0_1"
+Thread 663249 (idle): "ThreadPoolExecutor-0_2"
+    read (httpcore/_backends/sync.py:128)
+    _receive_event (httpcore/_sync/http11.py:217)
+    _receive_response_headers (httpcore/_sync/http11.py:177)
+    create (openai/resources/chat/completions/completions.py:1281)
+    chat (soc_agent/llm/qwen.py:64)
+    investigate (soc_agent/orchestrator/__init__.py:295)
+    run_pipeline (soc_agent/cli.py:298)
+    process_one (soc_agent/runtime/poller.py:93)
+Thread 663250 (idle): "ThreadPoolExecutor-0_3"
+Thread 663251 (idle): "ThreadPoolExecutor-0_4"
+Thread 663252 (idle): "ThreadPoolExecutor-0_5"
+Thread 663253 (idle): "ThreadPoolExecutor-0_6"
+Thread 663254 (idle): "ThreadPoolExecutor-0_7"
+-- 采样 150s(超 120s 超时线)--
+  T0: 已研判 21977 / 毒 1290
+  T1(+150s): 已研判 21992 / 毒 1290
+  → 150s 新研判 15 条,新增毒 0
+  ✅ 在动(只是慢,agent 多轮循环正常)
+-- 日志末尾 --
+# 处置模式=manual(manual=只生成待处置不执行 / auto=自动执行)  并发=8  appliance=on  cascade=on
+# poller 启动  并发=8 批=50 轮询间隔=10.0s 毒告警上限=3 模式=recipe
+# 取批 50 条(积压 78700);research 中…
+  [err] 研判 c8ecac1347686475e5c648734a6b7775a1b2a7dc8c5a2d3a8474081675c6f8ce 失败:Request timed out.
+# 取批 50 条(积压 78651);research 中…
+=== done ===
