@@ -1,45 +1,21 @@
-=== web-doctor  2026-07-27 02:11Z ===
+=== web-doctor v2  2026-07-27 02:20Z ===
 -- git HEAD --
-5af8492
-5af8492 fix(web): 强制入库前端 dist(root .gitignore 的 dist/ 误伤)+ web-doctor 诊断脚本
-39199ee feedback: web probe
-841f5f3 feedback: poller-stop 并发→8
--- 工作树关键文件 --
-routes/:
-alerts.py
-chat.py
-config.py
-experience.py
-__init__.py
-plans.py
-__pycache__
-stats.py
-dist/index.html:
--rw-r--r--. 1 soc soc 424 Jul 27 10:11 soc_agent/frontend/dist/index.html
-app.py 关键行:
-11:def create_app():
-16:    from .routes import alerts, chat, config, experience, plans, stats
-18:        app.include_router(mod.router)
--- python 到底导入的是哪个 soc_agent / app --
-  soc_agent.__file__ = /home/soc/soc-agent/soc_agent/__init__.py
-  web.app.__file__   = /home/soc/soc-agent/soc_agent/web/app.py
-  路由总数 = 8
-      /api/healthz
-      /assets
-      /docs
-      /docs/oauth2-redirect
-      /openapi.json
-      /redoc
-      /{full_path:path}
-      ?
--- .venv312 里 soc-agent 装法(editable? 冻结副本?)--
-Name: soc-agent
-Version: 0.1.0
-Location: /home/soc/soc-agent
-  meta_path/.pth 里的 __editable__:
-.venv312/lib/python3.11/site-packages/__editable__.soc_agent-0.1.0.pth
-  site-packages 里有没有 soc_agent 冻结副本:
--- fastapi 版本 --
-Name: fastapi
-Version: 0.140.0
+5adfd5b
+-- 清 __pycache__(排除陈旧 .pyc)--
+  cleared
+-- 逐路由模块:file + router 里几条路由 --
+  [alerts] file=/home/soc/soc-agent/soc_agent/web/routes/alerts.py
+        prefix=/api  routes=2: [('/api/alerts', ['GET']), ('/api/alerts/{uid}', ['GET'])]
+  [plans] file=/home/soc/soc-agent/soc_agent/web/routes/plans.py
+        prefix=/api  routes=5: [('/api/plans', ['GET']), ('/api/plans/{plan_id}/approve', ['POST']), ('/api/plans/{plan_id}/reject', ['POST']), ('/api/plans/{plan_id}/execute', ['POST']), ('/api/plans/{plan_id}/rollback', ['POST'])]
+  [stats] file=/home/soc/soc-agent/soc_agent/web/routes/stats.py
+        prefix=/api  routes=1: [('/api/stats', ['GET'])]
+  [experience] file=/home/soc/soc-agent/soc_agent/web/routes/experience.py
+        prefix=/api  routes=1: [('/api/experience', ['GET'])]
+  [config] file=/home/soc/soc-agent/soc_agent/web/routes/config.py
+        prefix=/api/config  routes=2: [('/api/config/response-mode', ['GET']), ('/api/config/response-mode', ['PUT'])]
+  [chat] file=/home/soc/soc-agent/soc_agent/web/routes/chat.py
+        prefix=/api  routes=1: [('/api/alerts/{uid}/chat', ['POST'])]
+-- create_app 全量路由 --
+   ['/api/healthz', '/assets', '/docs', '/docs/oauth2-redirect', '/openapi.json', '/redoc', '/{full_path:path}', '?']
 === done ===
