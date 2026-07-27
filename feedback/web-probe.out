@@ -1,0 +1,8 @@
+=== web probe  2026-07-27 01:52Z ===
+/home/soc/soc-agent/.venv312/lib64/python3.11/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+  from starlette.testclient import TestClient as TestClient  # noqa
+API 路由(1 条):
+    /api/healthz
+healthz: 200 {'ok': True}
+前端 dist: 未构建(纯 API 模式;bash scripts/web.sh --build 生成)
+=== done ===
