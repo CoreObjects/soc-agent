@@ -1,0 +1,17 @@
+=== prime-skills  2026-07-28 10:40Z ===
+-- 停 poller(单线程跑不抢模型)--
+  已停
+逐 skill 单线程跑通(1 条/类;findings>0=recipe 在真数据上工作,decision=沉淀/复用情况):
+  lateral_movement       76028fffefa9   216s  path=B verdict=suspicious findings=3 decision=FALLTHROUGH
+  dcsync                 5e471de89a28    44s  path=A verdict=false_positive findings=2 decision=AUTO_FP
+  adcs                   无待研判样本(technique=['T1649'])
+  c2_beacon              无待研判样本(technique=['T1071', 'T1071.001', 'T1071.004', 'T1568', 'T1568.002'])
+  suspicious_outbound    无待研判样本(technique=['T1571', 'T1090', 'T1041', 'T1048'])
+  registry_persistence   无待研判样本(technique=['T1547.001', 'T1112'])
+  suspicious_process     2ea5d7c12d4c     0s  path=S verdict=false_positive findings=0 decision=SIG_REUSE
+  ingress_tool_transfer  d9e3716f1b30     0s  path=S verdict=false_positive findings=0 decision=SIG_REUSE
+  web_exploit            无待研判样本(technique=['T1190', 'T1059.007'])
+  webshell               无待研判样本(technique=['T1505.003'])
+  kerberoast             0e4288a7677d ❌   317s  APITimeoutError: Request timed out.
+  lsass_dump             2df22154c55f     0s  path=S verdict=false_positive findings=0 decision=SIG_REUSE
+=== done ===
