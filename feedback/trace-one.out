@@ -1,0 +1,25 @@
+=== trace-one  2026-07-28 11:00Z ===
+-- poller 本没跑 --
+  LLM_TIMEOUT = 600  端点 = http://100.102.211.138:8080/v1  模型 = qwen3.5-9b
+研判样本: 43dfb2d5ed77a8e8 
+
+总用时 550.8s  path=B verdict=suspicious decision=FALLTHROUGH picked=recipe
+LLM 调用 3 次,合计 549.4s;非 LLM(取证/图查/组处置)约 1.3s
+
+每次 LLM 调用:
+  call# 1:  103.9s  上文2条/5975字符  →  tool_calls=1 content=0字符
+  call# 2:   94.1s  上文2条/8754字符  →  tool_calls=1 content=0字符
+  call# 3:  351.5s  上文2条/14925字符  →  tool_calls=1 content=0字符
+
+-- 逐步 trace(render_trace)--
+# 研判留痕(9 步)
+[1] recall_similar: None
+[2] recipe取证「登录事件」→ 1 行
+[3] recipe取证「该账号↔该主机基线」→ 1 行
+[4] recipe取证「账号扇出(共登过几台主机)」→ 1 行
+[5] recipe取证「结构化发现(findings)」→ 3 行
+[6] recipe取证「_图盲区」→ 1 行
+[7] recipe取证「经验比对(已知)」→ 1 行
+[8] recipe取证「历史相似判例(情报)」→ 3 行
+[9] ▶ 喂大模型的 user prompt(6972 字符;全文见 §③)
+=== done ===
