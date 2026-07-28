@@ -143,3 +143,60 @@ def test_lsass_dump_tool_emits_red_findings():
     assert "lsass.dump_lib_loaded" in ids                  # dbghelp
     assert "lsass.post_read_exfil" in ids                  # 外连 + 落盘
     assert "lsass.source_is_security_agent" not in ids
+
+
+# ---------- lateral_movement 迁移:finding 抽取 ----------
+def _lateral():
+    return SkillRegistry(_SKILLS).by_name("lateral_movement").recipe
+
+
+def test_lateral_benign_repeat_logon_emits_white_and_binds():
+    # robb.stark 型良性:type3 网络登录、普通账号、成员机、有基线、低扇出
+    graph = FakeGraph([
+        ("AS target_host", [{"event_code": "4624", "logon_type": 3, "result": "success",
+                             "acc_sam": "robb.stark", "acc_domain": "NORTH", "acc_privileged": False,
+                             "target_host": "castelblack", "target_role": "member_server",
+                             "target_criticality": "medium", "src_ip": "192.168.56.20"}]),
+        ("r.count AS count", [{"count": 42, "first_seen": "2026-06-01", "last_seen": "2026-07-20"}]),
+        ("distinct_hosts", [{"distinct_hosts": 2}]),
+    ])
+    a = Alert.from_node({"alert_uid": "lm1", "technique_ids": ["T1021.001"]})
+    fo = _lateral()(graph, a, {})
+    assert isinstance(fo, Forensics)
+    ids = fo.finding_ids()
+    assert "lateral.network_logon" in ids                  # 触发本身
+    assert "lateral.host_baseline_present" in ids          # 有基线 = 良性信号(white)
+    assert "lateral.no_host_baseline" not in ids
+    assert "lateral.privileged_account" not in ids         # 普通账号
+    assert "lateral.high_value_target" not in ids          # 成员机、非关键
+    fan = next(f for f in fo.findings if f.finding_id == "lateral.fanout")
+    assert fan.polarity == "neutral" and fan.attrs["distinct_hosts"] == 2   # 扇出 2 = 不 red
+    assert fo.bindings["account"] == "robb.stark"
+    assert fo.bindings["account_domain"] == "NORTH"
+    assert fo.bindings["target_host"] == "castelblack"
+    assert fo.bindings["src_ip"] == "192.168.56.20"
+    assert fo.context.get("登录事件")                       # prose 仍在(喂 LLM)
+
+
+def test_lateral_attack_first_seen_privileged_fanout_dc():
+    # 攻击型:首见(无基线)+ 特权账号 + 扇出 12 + 登域控
+    graph = FakeGraph([
+        ("AS target_host", [{"event_code": "4624", "logon_type": 3, "result": "success",
+                             "acc_sam": "administrator", "acc_domain": "NORTH", "acc_privileged": True,
+                             "target_host": "winterfell", "target_role": "domain_controller",
+                             "target_criticality": "critical", "src_ip": "10.0.0.9"}]),
+        # 无 "r.count AS count" 行 → 基线查询返回 [] → 首见
+        ("distinct_hosts", [{"distinct_hosts": 12}]),
+    ])
+    a = Alert.from_node({"alert_uid": "lm2", "technique_ids": ["T1021.001"]})
+    fo = _lateral()(graph, a, {})
+    ids = fo.finding_ids()
+    assert "lateral.network_logon" in ids
+    assert "lateral.no_host_baseline" in ids               # 无基线 = 首见(red)
+    assert "lateral.host_baseline_present" not in ids
+    assert "lateral.privileged_account" in ids             # 特权账号
+    assert "lateral.high_value_target" in ids              # 登域控
+    fan = next(f for f in fo.findings if f.finding_id == "lateral.fanout")
+    assert fan.polarity == "red" and fan.attrs["distinct_hosts"] == 12    # 12 台 = red
+    assert fo.bindings["account"] == "administrator"
+    assert fo.bindings["target_host"] == "winterfell"

@@ -7,7 +7,25 @@
 import base64
 import re
 
-__all__ = ["decode_powershell_cmd", "decode_chain", "provisioning_noise", "security_agent"]
+__all__ = ["decode_powershell_cmd", "decode_chain", "provisioning_noise", "security_agent",
+           "bucket", "is_machine"]
+
+
+def bucket(n) -> str:
+    """计数分桶(single/low/high/massive)—— 指纹用桶而非裸值,换环境仍稳。跨 recipe 共用。"""
+    n = n or 0
+    if n <= 1:
+        return "single"
+    if n <= 4:
+        return "low"
+    if n <= 19:
+        return "high"
+    return "massive"
+
+
+def is_machine(sam) -> bool:
+    """账号是否机器账号(sam 以 $ 结尾)—— 结构判别,不硬编码名单。跨 recipe 共用。"""
+    return bool(sam and str(sam).strip().endswith("$"))
 
 # PowerShell -EncodedCommand(可缩写 -enc / -e)后跟 base64。-e 需紧跟空格,避免误吃 -ExecutionPolicy。
 _ENC = re.compile(r"(?:-enc(?:odedcommand)?|-e)\s+([A-Za-z0-9+/=]{16,})", re.I)
