@@ -25,7 +25,7 @@ FB="feedback/poller-fix-restart.out"
   sleep 5
   echo "  PID=$!"
 
-  echo "-- 60s 进度验证(看恢复没)--"
+  echo "-- 180s 进度验证(深度研判是多轮 agent、每条几分钟,窗口必须够长才准)--"
   PYTHONUTF8=1 "$PY" - <<'PYEOF' 2>&1 || echo "  (查询失败)"
 import os, sys, time
 sys.path.insert(0, os.getcwd())
@@ -37,10 +37,11 @@ def snap():
     t = g.run_cypher("MATCH (a:Alert)-[:CONCLUDED]->() RETURN count(DISTINCT a) AS n")[0]["n"]
     p = g.run_cypher("MATCH (a:Alert) WHERE coalesce(a.poller_skip,false)=true RETURN count(a) AS n")[0]["n"]
     return t, p
-t0, p0 = snap(); time.sleep(60); t1, p1 = snap()
+t0, p0 = snap(); time.sleep(180); t1, p1 = snap()
 g.close()
-print(f"  60s 内:新研判 {t1-t0} 条,新增毒告警 {p1-p0} ≈ {t1-t0}/分钟")
-print("  ✅ 恢复了(数字在涨)" if t1 > t0 else "  ⚠ 还是0 —— 看日志末尾,可能要再降并发或查模型")
+rate = (t1 - t0) / 3.0
+print(f"  180s 内:新研判 {t1-t0} 条,新增毒告警 {p1-p0}  → 约 {rate:.1f}/分钟")
+print(f"  ✅ 在动(数字在涨)" if t1 > t0 else "  ⚠ 还是0 —— 看日志末尾/og 是否又挂")
 PYEOF
   echo "-- 日志末尾 --"; tail -10 logs/poller-full.log 2>/dev/null || true
   echo "=== done ==="
