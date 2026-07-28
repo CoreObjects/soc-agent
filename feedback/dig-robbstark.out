@@ -1,0 +1,32 @@
+=== dig-robbstark  2026-07-28 09:07Z ===
+抓到 3 条 robb.stark 登录
+
+── 4d82458bf4a56414  台账verdict=false_positive path=B
+   规则: Remote/network logon type 3 by robb.stark on castelblack.north.sevenki
+   路由 skill = lateral_movement
+   bindings(角色→值) = {}
+   findings 类型 = []
+   指纹 canon = {}
+   consult 决策 = FALLTHROUGH  (benign命中 0 / 威胁指纹 0 / 威胁规则 0)
+
+── 672d5b677f8cef1c  台账verdict=false_positive path=B
+   规则: Remote/network logon type 3 by robb.stark on castelblack.north.sevenki
+   路由 skill = lateral_movement
+   bindings(角色→值) = {}
+   findings 类型 = []
+   指纹 canon = {}
+   consult 决策 = FALLTHROUGH  (benign命中 0 / 威胁指纹 0 / 威胁规则 0)
+
+── d43609dba720bc7d  台账verdict=false_positive path=B
+   规则: Remote/network logon type 3 by robb.stark on castelblack.north.sevenki
+   路由 skill = lateral_movement
+   bindings(角色→值) = {}
+   findings 类型 = []
+   指纹 canon = {}
+   consult 决策 = FALLTHROUGH  (benign命中 0 / 威胁指纹 0 / 威胁规则 0)
+
+★这几条指纹是否完全一致: 是(一样却不复用=没沉淀经验/被威胁否决)
+
+库里该 skill 的经验:
+  skill=lateral_movement: 0 条
+=== done ===
