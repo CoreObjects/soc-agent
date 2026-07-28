@@ -1,0 +1,8 @@
+=== poller-diag4  2026-07-28 06:48Z ===
+★ 注:此脚本会单线程跑几条真投研判(与在跑的 poller 抢模型),计时含并发争用,属实况。
+① openGauss 读一次 active_for_skill: 0.00s (拿到 2 条经验)  <—— >1s 就是 og 慢
+② 单独跑 3 条投研判计时:
+   8e9495a5fbea3279  ❌ 216.7s  APITimeoutError: Request timed out.
+   356e3460aa807338  ❌ 261.5s  APITimeoutError: Request timed out.
+   0255b7532a154bfc  ❌ 200.4s  APITimeoutError: Request timed out.
+=== done ===
