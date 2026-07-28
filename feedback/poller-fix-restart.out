@@ -1,15 +1,17 @@
-=== poller-fix-restart  TMO=180 CONC=4  2026-07-28 07:13Z ===
+=== poller-fix-restart  TMO=180 CONC=8  2026-07-28 10:28Z ===
 -- .env 现值 --
-POLLER_CONCURRENCY=4
+POLLER_CONCURRENCY=8
 LLM_TIMEOUT=180
 -- 强杀旧 poller(清掉卡死的 worker)--
 -- 起新 poller(新 QwenClient:每次新连接、读超时 180s)--
-  PID=822037
+  PID=833396
 -- 180s 进度验证(深度研判是多轮 agent、每条几分钟,窗口必须够长才准)--
-  180s 内:新研判 0 条,新增毒告警 0  → 约 0.0/分钟
+  180s 内:新研判 0 条,新增毒告警 1  → 约 0.0/分钟
   ⚠ 还是0 —— 看日志末尾/og 是否又挂
 -- 日志末尾 --
-# 处置模式=manual(manual=只生成待处置不执行 / auto=自动执行)  并发=4  appliance=on  cascade=on
-# poller 启动  并发=4 批=50 轮询间隔=10.0s 毒告警上限=3 模式=recipe
-# 取批 50 条(积压 69690);research 中…
+# 处置模式=manual(manual=只生成待处置不执行 / auto=自动执行)  并发=8  appliance=on  cascade=on
+# poller 启动  并发=8 批=50 轮询间隔=10.0s 毒告警上限=3 模式=recipe
+# 取批 50 条(积压 69667);research 中…
+  [skip] 5c65393b37be43263cae6e37622f07d0c25315f8ff7bf2516eb56951d5ba30b6 连续失败 3 次 → 标 poller_skip,不再重捞
+  [err] 研判 5c65393b37be43263cae6e37622f07d0c25315f8ff7bf2516eb56951d5ba30b6 失败:Request timed out.
 === done ===
