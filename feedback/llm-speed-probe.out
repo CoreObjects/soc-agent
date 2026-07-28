@@ -1,0 +1,9 @@
+=== llm-speed-probe  2026-07-28 11:39Z ===
+端点=http://100.102.211.138:8080/v1  模型=qwen3.5-9b
+
+[关思维:extra_body chat_template_kwargs.enable_thinking=False(我们代码现用)]
+     122.9s  prompt_tokens=501 completion_tokens=112  → 0.9 tok/s
+    reasoning_content=无(0字符)  tool_calls=1
+[默认(不传 extra_body)] ❌ 600.1s  APITimeoutError: Request timed out.
+[prompt 加 /no_think] ❌ 600.1s  APITimeoutError: Request timed out.
+=== done ===
