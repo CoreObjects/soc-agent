@@ -48,11 +48,17 @@ for name in MIGRATED:
     try:
         result, report, picked = run_investigation(pl, uid, mode="recipe")
         dt = time.time() - t
-        nf = len(getattr(result, "findings", None) or [])
+        fds = getattr(result, "findings", None) or []
+        nf = len(fds)
         vd = result.verdict.verdict if (result and result.verdict) else None
         flag = "" if nf > 0 or result.path == "S" else "  ⚠findings=0(recipe 没产 finding?)"
         print(f"  {name:22} {uid[:12]} {dt:5.0f}s  path={result.path} verdict={vd} "
               f"findings={nf} decision={report.decision}{flag}")
+        def _fid(f): return getattr(f, "finding_id", None) or (f.get("finding_id") if isinstance(f, dict) else None) or "?"
+        def _pol(f): return str(getattr(f, "polarity", None) or (f.get("polarity") if isinstance(f, dict) else None) or "?")[:1]
+        if fds:
+            ids = ", ".join(f"{_fid(f)}[{_pol(f)}]" for f in fds[:14])
+            print(f"      findings: {ids}")
     except Exception as e:
         print(f"  {name:22} {uid[:12]} ❌ {time.time()-t:5.0f}s  {type(e).__name__}: {str(e)[:120]}")
 pl.close()
