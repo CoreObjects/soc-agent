@@ -1,22 +1,29 @@
 #!/usr/bin/env bash
-# server2:降 LLM 超时(防单次卡死冻住 worker)+ 重启 poller(拾取"关长连接复用"的 QwenClient 修复)+ 60s 验证恢复进度。
-# 用法: cd ~/soc-agent && git fetch origin && git reset --hard origin/main && bash scripts/poller-fix-restart.sh [LLM超时秒=120] [并发=8]
+# server2:【唯一的 poller 重启脚本】降超时 + 设并发 +(可选)设深浅模型 + 重启 + 180s 验证进度。
+# 用法: cd ~/soc-agent && git fetch origin && git reset --hard origin/main && bash scripts/poller-fix-restart.sh [超时=120] [并发=8] [深度模型] [浅层模型]
+#   例:  poller-fix-restart.sh 180 16                             # 超时180/并发16,模型沿用 .env
+#         poller-fix-restart.sh 180 16 qwen3.5-27b qwen3.5-9b     # 顺带设 深=27b/浅=9b(双模型漏斗)
+#         poller-fix-restart.sh 180 16 qwen3.5-27b               # 只设深度、浅层沿用 .env
+#   不传模型参数就不动 .env 里的 LLM_MODEL/SHALLOW_LLM_MODEL。
 set -uo pipefail
 cd "$(dirname "$0")/.."
 [ -f .env ] || { echo "!! 缺 .env"; exit 1; }
 PY=".venv312/bin/python"; [ -x "$PY" ] || PY=".venv/bin/python"
-TMO="${1:-120}"; CONC="${2:-8}"
+TMO="${1:-120}"; CONC="${2:-8}"; DEEP="${3:-}"; SHALLOW="${4:-}"
 
 mkdir -p feedback logs
 FB="feedback/poller-fix-restart.out"
 {
   echo "=== poller-fix-restart  TMO=$TMO CONC=$CONC  $(date -u '+%F %H:%MZ' 2>/dev/null || true) ==="
-  # 写 .env(有则替换、无则追加)
-  for kv in "LLM_TIMEOUT=$TMO" "POLLER_CONCURRENCY=$CONC"; do
+  # 写 .env(有则替换、无则追加);模型仅在传了参数时才改,不传沿用 .env
+  KVS=("LLM_TIMEOUT=$TMO" "POLLER_CONCURRENCY=$CONC")
+  [ -n "$DEEP" ]    && KVS+=("LLM_MODEL=$DEEP")
+  [ -n "$SHALLOW" ] && KVS+=("SHALLOW_LLM_MODEL=$SHALLOW")
+  for kv in "${KVS[@]}"; do
     k="${kv%%=*}"
     if grep -q "^$k=" .env; then sed -i "s|^$k=.*|$kv|" .env; else echo "$kv" >> .env; fi
   done
-  echo "-- .env 现值(注:本脚本不改模型,沿用 .env;换模型用 use-split.sh/use-27b.sh)--"
+  echo "-- .env 现值(深/浅模型 + 超时 + 并发)--"
   grep -E "^LLM_MODEL|^SHALLOW_LLM_MODEL|^LLM_TIMEOUT|^POLLER_CONCURRENCY|^SOC_CASCADE" .env || true
 
   echo "-- 强杀旧 poller(清掉卡死的 worker)--"
