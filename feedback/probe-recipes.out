@@ -1,0 +1,89 @@
+=== probe-recipes  2026-07-29 02:35Z  【纯取证·零LLM】 ===
+逐 recipe 纯取证(强制 skill、直调 collect、零 LLM;findings>0=recipe 在真数据上工作):
+
+■ lateral_movement: a2984cbdb256  findings=3
+    rule: Remote/network logon type 3 by robb.stark on castelblack.north.sevenkingdoms.local
+      lateral.network_logon[n] {logon_type=3 event_code=4624 result=success acc_privileged=False}
+      lateral.no_host_baseline[r] {}
+      lateral.fanout[n] {distinct_hosts=2 bucket=low}
+    bindings: {"account": "robb.stark", "account_domain": "NORTH", "target_host": "castelblack.north.sevenkingdoms.local"}
+    blind_spots: 认证包(NTLM/Kerberos)+KeyLength+冒充级别(PtH 首要签名)、票据生命周期(金票)、成员机票据↔DC 硬关联(银票)、来源工作站名 —— 未建模
+
+■ dcsync: e0d083f18160  findings=2
+    rule: Possible DCSync: directory replication rights access by KINGSLANDING$
+      dcsync.replication_request[n] {access_mask=0x100 props_bucket=get_changes}
+      dcsync.actor_is_machine[w] {}
+    bindings: {"account": "kingslanding$", "account_domain": "SEVENKINGDOMS", "host": "winterfell.north.sevenkingdoms.local", "domain": "sevenkingdoms.local"}
+    blind_spots: 复制范围(是否含 krbtgt/全域,4662 不给被同步目标账号)、授予复制权的前置 ACL 修改(5136 未接)、DC/授权同步账号权威白名单 —— 图未建模
+
+■ adcs: dd7d94516e41  findings=2
+    rule: ADCS certificate request/issue on CA (possible ESC abuse)
+      adcs.cert_request[n] {event_code=4887}
+      adcs.subject_self_enroll[w] {}
+    bindings: {"account": "vagrant", "account_domain": "SEVENKINGDOMS", "ca": "certsvc@kingslanding.sevenkingdoms.local", "subject_user": "vagrant"}
+    blind_spots: 模板名/EKU/ENROLLEE_SUPPLIES_SUBJECT、证书 SAN(subjectAltName,ESC1 真正的冒充载体,与 subject_dn 不同、仍未建模)、ESC8 中继/强制认证链、CA 审计是否开启 —— 未建
+
+■ c2_beacon: 2364db352a00  findings=2
+    rule: Suspicious outbound from C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe to
+      c2.periodic_beacon[r] {channel=http count_bucket=high}
+      c2.suspicious_process[r] {image=C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe parent=C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe suspicious_parent=True}
+    bindings: {"process": "C:\\\\Windows\\\\System32\\\\WindowsPowerShell\\\\v1.0\\\\powershell.exe", "ip": "192.168.56.1", "host": "castelblack.north.sevenkingdoms.local"}
+    blind_spots: 精确信标周期/jitter 显著性、字节量/时长、DNS 深度特征(记录类型/子域熵/NXDOMAIN)、TLS/JA3、目标 reputation/解析扇出(RESOLVES_TO 未建模,需 DNS 应答映射)—— host-only 
+
+■ suspicious_outbound: 库里无此类告警(technique=['T1571', 'T1090', 'T1041', 'T1048'])
+
+■ registry_persistence: afc31d7ae6f9  findings=2
+    rule: Registry autostart persistence: C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell
+      regpersist.autostart_write[n] {hive=HKLM key_type=run}
+      regpersist.suspicious_writer[r] {writer_image=C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe}
+    bindings: {"process": "C:\\\\Windows\\\\System32\\\\WindowsPowerShell\\\\v1.0\\\\powershell.exe", "host": "castelblack.north.sevenkingdoms.local", "account": "vagrant", "account_domain": "CASTELBLACK"}
+    blind_spots: 被持久化文件的哈希/签名、写入进程 EXE 签名、注册表前值/是否覆盖(篡改 vs 新建)、Winlogon/IFEO/COM 劫持等键是否纳入监控 —— 未建模
+
+■ suspicious_process: cc254e628201  findings=2
+    rule: C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe created a new scripting fil
+      suspproc.process[n] {event_code=11 integrity_level=None}
+      suspproc.provisioning_noise[w] {label=ps_execution_policy_probe(良性:PowerShell 执行策略自检(系统自动写,非攻击))}
+    bindings: {"process": "C:\\\\Windows\\\\System32\\\\WindowsPowerShell\\\\v1.0\\\\powershell.exe", "host": "kingslanding.sevenkingdoms.local"}
+    blind_spots: 进程 EXE 签名/是否 LOLBin 原版、完整性级别/Token 提权、注入子行为细节 —— 未建模;已解码命令与噪声标签见 context
+
+■ ingress_tool_transfer: aafbcbed8412  findings=2
+    rule: Executable file dropped in folder commonly used by malware
+      ingress.download[n] {event_code=11}
+      ingress.provisioning_noise[w] {label=ps_execution_policy_probe(良性:PowerShell 执行策略自检(系统自动写,非攻击))}
+    bindings: {"process": "C:\\\\Windows\\\\System32\\\\WindowsPowerShell\\\\v1.0\\\\powershell.exe", "host": "winterfell.north.sevenkingdoms.local"}
+    blind_spots: 完整下载 URL/文件名、落地文件哈希、IP/域信誉(reputation/asn 未建模、全空)、下载进程 EXE 签名 —— 未建模;编码命令已解码见 context,据此与噪声标签判良性/恶意
+
+■ web_exploit: c9c21910978d  findings=3
+    rule: Javascript method detected
+      webexploit.waf_hit[n] {crs_rule=941390 http_status=403 outcome=blocked}
+      webexploit.blocked_attempt[w] {}
+      webexploit.scanning_source[n] {waf_alerts_bucket=low distinct_crs_bucket=low}
+    bindings: {"ip": "192.168.56.1", "uri": "/", "service": "web@192.168.56.1"}
+    blind_spots: 被打后端主机的主机侧遥测(容器化 DVWA 无 Sysmon/HIDS→跨层空)、源 IP 真情报信誉、源 IP 历史判例(经验层 :ON 边积累后可查 repeat-offender,当前空)、ModSec matched_var/完整规
+
+■ webshell: f6f3b1458aec  findings=2
+    rule: Possible webshell drop: C:\\inetpub\\wwwroot\\soc-healthcheck.aspx written by C:\\Windows\
+      webshell.file_drop[n] {writer_image=C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe host_role=member_server host_criticality=medium}
+      webshell.in_webroot[r] {}
+    bindings: {"process": "C:\\\\Windows\\\\System32\\\\WindowsPowerShell\\\\v1.0\\\\powershell.exe", "host": "castelblack.north.sevenkingdoms.local"}
+    blind_spots: 落盘文件哈希/内容、WAF 上传请求关联(需 WAF→后端同主机映射)、站点物理路径→URL 可达性、落盘脚本后续被 w3wp 读取执行 —— 待补。写入进程/路径/解码写入内容/随后派生外连 已入图可用
+
+■ kerberoast: 4bf6a0e18f47  findings=4
+    rule: Kerberoast: RC4(0x17) TGS request for service NORTH.SEVENKINGDOMS.LOCAL
+      kerberoast.rc4_requested[r] {enc_type=0x17}
+      kerberoast.requester_is_machine[w] {sam=kingslanding$}
+      kerberoast.domain_trust_present[w] {trusts=['north.sevenkingdoms.local', 'essos.local']}
+      kerberoast.spn_fanout[n] {distinct_targets=4 total_4769=1028 bucket=low}
+    bindings: {"attacker_account": "kingslanding$", "attacker_account_domain": "SEVENKINGDOMS", "target_account": "north.sevenkingdoms.local", "target_account_domain": "SEVENKINGDOMS"}
+    blind_spots: 进程签名/发布者、票据实际用途、SPN 是否真服务账号 —— 图未建模
+
+■ lsass_dump: 5a00e337cb9b  findings=2
+    rule: Credential dumping via LSASS access by C:\\Program Files (x86)\\ossec-agent\\wazuh-agent.e
+      lsass.lsass_accessed[n] {src_image=C:\Program Files (x86)\ossec-agent\wazuh-agent.exe granted_access=0x1410 target_image=C:\Windows\system32\lsass.exe}
+      lsass.source_is_security_agent[w] {agent=Wazuh/OSSEC HIDS 代理 src_image=C:\Program Files (x86)\ossec-agent\wazuh-agent.exe}
+    bindings: {"source_process": "C:\\Program Files (x86)\\ossec-agent\\wazuh-agent.exe", "source_process_guid": "{85e8c649-7774-6a4b-7d07-000000001400}", "victim_host": "castelblack.north.sevenkingdoms.local", "ru
+    blind_spots: 源进程 EXE 签名/发布者/哈希(白名单只能按 image 路径)、call_trace 是否已语义化、dump 文件哈希 —— 未建模
+
+判读:findings>0 且 id/极性/attrs 合理 = 该 recipe 迁移成功、真数据上可用。
+      findings=0 = recipe 在真样本上取不到证(cypher 匹配不上/字段名对不上),需单独查那类。
+=== done ===
