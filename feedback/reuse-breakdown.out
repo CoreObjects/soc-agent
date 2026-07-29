@@ -1,26 +1,26 @@
-=== reuse-breakdown  2026-07-28 08:56Z ===
-总已研判 29383
-按 path : S(浅层)=23755  A(深度复用)=23  B(深度LLM)=5605
-按 method: reuse(真复用)=23762  llm(真调模型)=5621
+=== reuse-breakdown  2026-07-29 09:29Z ===
+总已研判 40753
+按 path : S(浅层)=26720  A(深度复用)=7999  B(深度LLM)=6034
+按 method: reuse(真复用)=34691  llm(真调模型)=6062
 
-规则种类共 37 种。Top 12(按量):
-   22441 (76.4%)  S/reuse  Executable file dropped in folder commonly used by malware
-    4373 (14.9%)  B/llm    Remote/network logon type 3 by robb.stark on castelblack.north.s
-     867 ( 3.0%)  S/reuse  Credential dumping via LSASS access by C:\\Program Files (x86)\\
-     595 ( 2.0%)  B/llm    Possible DCSync: directory replication rights access by KINGSLAN
-     305 ( 1.0%)  S/reuse  Lsass process was accessed by C:\\ProgramData\\Microsoft\\Window
-     117 ( 0.4%)  S/reuse  Powershell script may be using Base64 decoding method
-     107 ( 0.4%)  B/llm    Powershell.exe spawned a powershell process which executed a bas
-      76 ( 0.3%)  S/reuse  Credential dumping via LSASS access by C:\\Program Files (x86)\\
-      72 ( 0.2%)  S/reuse  C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe c
-      59 ( 0.2%)  B/llm    Possible DCSync: directory replication rights access by WINTERFE
-      53 ( 0.2%)  B/llm    Kerberoast: RC4(0x17) TGS request for service SEVENKINGDOMS.LOCA
-      48 ( 0.2%)  S/reuse  Credential dumping via LSASS access by C:\\ProgramData\\Microsof
+规则种类共 43 种。Top 12(按量):
+   25213 (61.9%)  S/reuse  Executable file dropped in folder commonly used by malware
+   10524 (25.8%)  A/reuse  Remote/network logon type 3 by robb.stark on castelblack.north.s
+    2289 ( 5.6%)  A/reuse  Possible DCSync: directory replication rights access by KINGSLAN
+     969 ( 2.4%)  S/reuse  Credential dumping via LSASS access by C:\\Program Files (x86)\\
+     344 ( 0.8%)  S/reuse  Lsass process was accessed by C:\\ProgramData\\Microsoft\\Window
+     218 ( 0.5%)  B/llm    Remote/network logon type 3 by vagrant on meereen.essos.local
+     192 ( 0.5%)  A/reuse  Possible DCSync: directory replication rights access by WINTERFE
+     173 ( 0.4%)  S/reuse  Powershell script may be using Base64 decoding method
+     159 ( 0.4%)  B/llm    Powershell.exe spawned a powershell process which executed a bas
+      87 ( 0.2%)  S/reuse  Windows Audit Policy changed
+      84 ( 0.2%)  S/reuse  Credential dumping via LSASS access by C:\\Program Files (x86)\\
+      81 ( 0.2%)  S/reuse  C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe c
 
-★去掉 Top1「Executable file dropped in folder common」(22441 条,占 76.4%)后 —— 剩 6942 条多样告警:
-    真复用率=22.3%   浅层LLM直判=0.2%   升级深度LLM=77.5%
-★去掉所有高频规则(单规则>1000条,共 2 种)后 —— 剩 2569 条'长尾'告警:
-    真复用率=60.3%   升级深度LLM=39.2%
+★去掉 Top1「Executable file dropped in folder common」(25213 条,占 61.9%)后 —— 剩 15540 条多样告警:
+    真复用率=62.8%   浅层LLM直判=0.2%   升级深度LLM=37.0%
+★去掉所有高频规则(单规则>1000条,共 3 种)后 —— 剩 2727 条'长尾'告警:
+    真复用率=74.5%   升级深度LLM=24.5%
 
 诚实结论:降噪覆盖率(path=S)被头部重复任务撑高;多样/长尾告警的真复用率才反映'越用越省'能力。
 === done ===
