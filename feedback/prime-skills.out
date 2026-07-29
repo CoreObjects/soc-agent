@@ -1,17 +1,20 @@
-=== prime-skills  2026-07-28 10:40Z ===
+=== prime-skills  2026-07-29 02:20Z ===
 -- 停 poller(单线程跑不抢模型)--
-  已停
+  本就没在跑
 逐 skill 单线程跑通(1 条/类;findings>0=recipe 在真数据上工作,decision=沉淀/复用情况):
-  lateral_movement       76028fffefa9   216s  path=B verdict=suspicious findings=3 decision=FALLTHROUGH
-  dcsync                 5e471de89a28    44s  path=A verdict=false_positive findings=2 decision=AUTO_FP
+  lateral_movement       03a8895a959f    94s  path=A verdict=false_positive findings=3 decision=AUTO_FP
+      findings: lateral.network_logon[n], lateral.no_host_baseline[r], lateral.fanout[n]
+  dcsync                 c8345925f873    30s  path=A verdict=false_positive findings=2 decision=AUTO_FP
+      findings: dcsync.replication_request[n], dcsync.actor_is_machine[w]
   adcs                   无待研判样本(technique=['T1649'])
   c2_beacon              无待研判样本(technique=['T1071', 'T1071.001', 'T1071.004', 'T1568', 'T1568.002'])
   suspicious_outbound    无待研判样本(technique=['T1571', 'T1090', 'T1041', 'T1048'])
   registry_persistence   无待研判样本(technique=['T1547.001', 'T1112'])
-  suspicious_process     2ea5d7c12d4c     0s  path=S verdict=false_positive findings=0 decision=SIG_REUSE
-  ingress_tool_transfer  d9e3716f1b30     0s  path=S verdict=false_positive findings=0 decision=SIG_REUSE
+  suspicious_process     297fbc22d18e     0s  path=S verdict=false_positive findings=0 decision=SIG_REUSE
+  ingress_tool_transfer  87fde2afb74f     0s  path=S verdict=false_positive findings=0 decision=SIG_REUSE
   web_exploit            无待研判样本(technique=['T1190', 'T1059.007'])
   webshell               无待研判样本(technique=['T1505.003'])
-  kerberoast             0e4288a7677d ❌   317s  APITimeoutError: Request timed out.
-  lsass_dump             2df22154c55f     0s  path=S verdict=false_positive findings=0 decision=SIG_REUSE
+  kerberoast             0e4288a7677d    70s  path=B verdict=false_positive findings=4 decision=FALLTHROUGH
+      findings: kerberoast.rc4_requested[r], kerberoast.requester_is_machine[w], kerberoast.domain_trust_present[w], kerberoast.spn_fanout[n]
+  lsass_dump             9be06b904ba2     0s  path=S verdict=false_positive findings=0 decision=SIG_REUSE
 === done ===
