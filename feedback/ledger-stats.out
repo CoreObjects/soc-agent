@@ -1,12 +1,12 @@
-=== ledger-stats  2026-07-29 08:26Z ===
-进度:已研判 39476 / 未研判(积压)59569 / 毒告警跳过 2874  —— 完成 38.7%
+=== ledger-stats  2026-07-29 08:54Z ===
+进度:已研判 40247 / 未研判(积压)58798 / 毒告警跳过 2874  —— 完成 39.5%
 ★积压=0 即存量研判完(之后只随新入图告警慢慢涨)
 
 verdict × path 分布(S=浅层终局 / A=经验复用 / B=深度LLM):
-  false_positive   path=S    26395
-  false_positive   path=A    7044
-  false_positive   path=B    4253
-  suspicious       path=B    1665
+  false_positive   path=S    26595
+  false_positive   path=A    7611
+  false_positive   path=B    4255
+  suspicious       path=B    1669
   true_positive    path=B    106
   true_positive    path=A    13
 
