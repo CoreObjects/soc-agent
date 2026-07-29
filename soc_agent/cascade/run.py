@@ -91,7 +91,7 @@ def run_cascade(pl, alert_uid, mode="recipe"):
 
     # ★浅层分诊(除非签名/floor 已强制升级)——决策 A:只终局 false_positive,其余(TP/suspicious/needs_deep)升级
     if not (tp_sig or force_deep(alert, pl.policy)):
-        shallow = shallow_triage(pl.llm, alert)
+        shallow = shallow_triage(getattr(pl, "shallow_llm", None) or pl.llm, alert)
         if not shallow.get("needs_deep") and shallow.get("verdict") == "false_positive":
             v = Verdict(verdict="false_positive", confidence=float(shallow.get("confidence") or 0.0),
                         summary="浅层直判(未升级,false_positive)", rationale=shallow.get("rationale") or "",
@@ -132,7 +132,8 @@ def run_shallow(pl, alert_uid, sig_store=None, sig_corpus=None, shallow_fn=None)
                 "shallow": {"needs_deep": True, "verdict": "true_positive", "confidence": None,
                             "rationale": f"TP 签名命中 {hit.exp_id[:8]} → 决策A 升级深度"}, "route": "escalate"}
 
-    shallow = shallow_fn(pl, alert) if shallow_fn is not None else shallow_triage(pl.llm, alert)
+    shallow = (shallow_fn(pl, alert) if shallow_fn is not None
+               else shallow_triage(getattr(pl, "shallow_llm", None) or pl.llm, alert))
     # 决策 A:只 false_positive 终局;needs_deep / force_deep / 非 FP(TP/suspicious)一律升级
     if bool(shallow.get("needs_deep")) or fd or shallow.get("verdict") != "false_positive":
         route = "escalate"

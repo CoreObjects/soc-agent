@@ -160,6 +160,7 @@ class Pipeline:
     llm_key: str = ""
     llm_timeout: int = 600              # 单次 LLM 超时(秒);同时用来抬 openJiuwen 工作流执行超时(默认才 60,qwen 慢会超)
     payload_corpus: object = None       # 浅层判例语料库(payload 签名反例回归);openGauss 或内存
+    shallow_llm: object = None           # 浅层分诊专用 client(小模型 9b);None → cascade 回退用 self.llm
 
     def close(self):
         self.graph.close()
@@ -209,12 +210,19 @@ def build_pipeline(config: Config) -> "Pipeline":
     iface = default_interface()
     composer = Composer(agent_inv.llm, iface=iface, agent_name=config.llm_model)
     exp_store, case_store, payload_corpus = _open_stores(config)
+    # 双模型漏斗:浅层分诊用小模型(SHALLOW_LLM_MODEL,如 9b),升级后深度仍用 llm_model(如 27b)。
+    # 未配 / 与深度同模型 → 直接复用深度 client(零行为变化,不多开连接)。
+    shallow_model = config.shallow_llm_model or config.llm_model
+    shallow_llm = agent_inv.llm if shallow_model == config.llm_model else QwenClient(
+        base_url=config.llm_api_base, model=shallow_model,
+        api_key=config.llm_api_key, timeout=config.llm_timeout)
     return Pipeline(graph=graph, router=router, agent_inv=agent_inv, recipe_inv=recipe_inv,
                     composer=composer, llm=agent_inv.llm, policy=agent_inv.policy, iface=iface,
                     exp_store=exp_store, case_store=case_store, agent_name=config.llm_model,
                     cascade_enabled=config.cascade_enabled, llm_base=config.llm_api_base,
                     llm_model=config.llm_model, llm_key=config.llm_api_key,
-                    llm_timeout=config.llm_timeout, payload_corpus=payload_corpus)
+                    llm_timeout=config.llm_timeout, payload_corpus=payload_corpus,
+                    shallow_llm=shallow_llm)
 
 
 def _reuse_tp(pl, alert, forensics, chosen):

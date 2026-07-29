@@ -16,8 +16,8 @@ FB="feedback/poller-fix-restart.out"
     k="${kv%%=*}"
     if grep -q "^$k=" .env; then sed -i "s|^$k=.*|$kv|" .env; else echo "$kv" >> .env; fi
   done
-  echo "-- .env 现值(注:本脚本不改 LLM_MODEL,沿用 .env;要换模型用 use-27b.sh)--"
-  grep -E "^LLM_MODEL|^LLM_TIMEOUT|^POLLER_CONCURRENCY|^SOC_CASCADE" .env || true
+  echo "-- .env 现值(注:本脚本不改模型,沿用 .env;换模型用 use-split.sh/use-27b.sh)--"
+  grep -E "^LLM_MODEL|^SHALLOW_LLM_MODEL|^LLM_TIMEOUT|^POLLER_CONCURRENCY|^SOC_CASCADE" .env || true
 
   echo "-- 强杀旧 poller(清掉卡死的 worker)--"
   pkill -9 -f "soc_agent.runtime" 2>/dev/null || true; sleep 3

@@ -52,6 +52,9 @@ class Config:
     og_user: str
     og_password: str
     og_schema: str
+    # 浅层分诊模型(漏斗小模型,如 9b);空 → 回退用 llm_model(与深度同模型,零行为变化)。
+    # 双模型漏斗:浅层小模型快筛终局 FP、升级后才用 llm_model(大模型)做深度研判。
+    shallow_llm_model: str = ""
     # 浅度研判 cascade(openJiuwen)总开关;默认关=现状深度-only,不引 openjiuwen(3.10 可跑)
     cascade_enabled: bool = False
     # 处置模式:manual=只生成处置指令(待处置)不执行、留人审(默认);auto=自动走执行通道(护栏对 DC/CA 仍留待处置)
@@ -90,6 +93,7 @@ class Config:
             neo4j_database=g("NEO4J_DATABASE", None),
             llm_api_base=g("LLM_API_BASE", ""),
             llm_model=g("LLM_MODEL", "qwen32b-ft"),
+            shallow_llm_model=g("SHALLOW_LLM_MODEL", ""),
             llm_api_key=g("LLM_API_KEY", "EMPTY"),
             llm_timeout=int(g("LLM_TIMEOUT", "600")),
             skills_dir=g("SKILLS_DIR", str(_REPO_ROOT / "skills")),

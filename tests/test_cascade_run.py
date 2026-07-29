@@ -146,3 +146,36 @@ def test_run_shallow_sig_tp_escalates():
     r = run_shallow(_pl_sh({"alert_uid": "a1", "source": "wazuh", "raw": raw}), "a1", sig_store=store)
     assert r["route"] == "escalate" and r["reused"] is False
     assert store.get(store.all()[0].exp_id).hit_count == 1
+
+
+# ---------- 双模型漏斗:浅层 9b / 深度 27b(shallow_llm 独立客户端)----------
+def test_run_cascade_uses_shallow_llm_when_present():
+    """pl.shallow_llm 存在 → 浅层分诊用它,pl.llm(深度)一次都不碰。"""
+    fp = {"needs_deep": False, "verdict": "false_positive", "confidence": 0.7, "rationale": "b"}
+    deep, shallow = _FakeLLM(fp), _FakeLLM(fp)                 # 两个可区分的 client
+    pl, written = _pl({"alert_uid": "a1", "source": "wazuh", "raw": "{}"}, exp_store=None, llm=deep)
+    pl.shallow_llm = shallow
+    result, report, picked = run_cascade(pl, "a1")
+    assert report.decision == "SHALLOW_TERMINAL"
+    assert shallow.n == 1 and deep.n == 0                      # 浅层走 shallow_llm、深度那个没被调
+
+
+def test_run_cascade_falls_back_to_llm_without_shallow():
+    """无 shallow_llm(老 pl)→ 浅层回退用 pl.llm,行为不变。"""
+    fp = {"needs_deep": False, "verdict": "false_positive", "confidence": 0.7, "rationale": "b"}
+    deep = _FakeLLM(fp)
+    pl, written = _pl({"alert_uid": "a1", "source": "wazuh", "raw": "{}"}, exp_store=None, llm=deep)
+    # 注:_pl 不设 shallow_llm 属性 → getattr 回退
+    result, report, picked = run_cascade(pl, "a1")
+    assert report.decision == "SHALLOW_TERMINAL" and deep.n == 1
+
+
+def test_config_shallow_llm_model_from_env():
+    from soc_agent.config import Config
+    c = Config.from_env(env={"SHALLOW_LLM_MODEL": "qwen3.5-9b"})
+    assert c.shallow_llm_model == "qwen3.5-9b"
+
+
+def test_config_shallow_llm_model_defaults_empty():
+    from soc_agent.config import Config
+    assert Config.from_env(env={}).shallow_llm_model == ""
