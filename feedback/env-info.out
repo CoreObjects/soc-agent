@@ -1,0 +1,66 @@
+=== openJiuwen 运行环境采集(server2)  2026-07-31 07:51Z ===
+
+== OS / 内核 / 架构 ==
+  OS: openEuler 24.09
+  内核: 6.6.0-45.0.0.54.oe2409.aarch64   架构: aarch64   主机: localhost.localdomain
+
+== CPU ==
+  Architecture:                         aarch64
+  Byte Order:                           Little Endian
+  CPU(s):                               256
+  Vendor ID:                            HiSilicon
+  Model name:                           Kunpeng-920
+
+== 内存 ==
+                 total        used        free      shared  buff/cache   available
+  Mem:           2.0Ti       150Gi       1.7Ti        70Gi       159Gi       1.8Ti
+  Swap:          4.0Gi          0B       4.0Gi
+
+== 昇腾 NPU / 驱动 / CANN(LLM 后端所在;openjiuwen 仅经 HTTP 连它,非直接用 NPU) ==
+  DrvMngGetConsoleLogLevel failed. (ret=4)
+  dcmi module initialize failed. ret is -8005
+  -- /usr/local/Ascend/driver/version.info --
+    Version=25.5.2
+    ascendhal_version=7.35.23
+    aicpu_version=1.0
+    tdt_version=1.0
+    log_version=1.0
+    prof_version=2.0
+
+== Python 解释器 + openjiuwen 及关键依赖版本(探多个候选) ==
+  -- /home/soc/soc-agent/.venv312/bin/python  (Python 3.11.6) --
+      openjiuwen = 0.1.16
+      openai = 2.47.0
+      httpx = 0.28.1
+      httpcore = 1.0.9
+      anyio = 4.14.2
+      pydantic = 2.13.4
+      aiohttp = 3.14.3
+      grpcio = 1.82.1
+  -- /home/soc/soc-agent/.venv/bin/python  (Python 3.11.6) --
+      openjiuwen = —(未装)
+  -- /usr/bin/python3.11  (Python 3.11.6) --
+      openjiuwen = 0.1.16
+      openai = 2.47.0
+      httpx = 0.28.1
+      httpcore = 1.0.9
+      anyio = 4.14.2
+      pydantic = 2.13.4
+      aiohttp = 3.14.3
+      grpcio = 1.82.1
+  -- /usr/bin/python3  (Python 3.11.6) --
+      openjiuwen = 0.1.16
+      openai = 2.47.0
+      httpx = 0.28.1
+      httpcore = 1.0.9
+      anyio = 4.14.2
+      pydantic = 2.13.4
+      aiohttp = 3.14.3
+      grpcio = 1.82.1
+
+== LLM 后端(openjiuwen 经 OpenAI 兼容端点连它) ==
+  端点: http://100.102.211.138:8080/v1
+sed: -e expression #1, char 9: unknown option to `s'
+  (探 /models 失败)
+
+=== done ===
