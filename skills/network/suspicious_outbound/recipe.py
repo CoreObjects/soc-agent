@@ -101,12 +101,13 @@ def collect(graph, alert, seed=None) -> Forensics:
     if dst_ip and is_lolbin(image):
         findings.append(Finding("outbound.lolbin", {"image": image}, evidence_ref=aid, polarity="red"))
 
-    # 5. 外连反复性:数连接事件(聚合边不存 count,现算;★cypher 不动)—— 反复=通道而非误触
+    # 5. 外连反复性:数连接事件 —— 反复=通道而非误触。
+    #    ★count-aware:折叠后代表事件带 e.count(=次数),未折叠事件视为 1;折叠前恒等于 count(e)。
     if pg and dst_ip:
         rows = graph.run_cypher(
             "MATCH (e:Event)-[:BY]->(:Process {process_guid:$g}) "
             "MATCH (e)-[:CONNECTED_TO]->(:IPAddress {ip:$ip}) "
-            "RETURN count(e) AS count, min(e.event_time) AS first_seen, max(e.event_time) AS last_seen",
+            "RETURN sum(coalesce(e.count,1)) AS count, min(e.event_time) AS first_seen, max(e.event_time) AS last_seen",
             g=pg, ip=dst_ip)
         agg = rows[0] if rows else {}
         ctx["外连聚合(反复性)"] = agg

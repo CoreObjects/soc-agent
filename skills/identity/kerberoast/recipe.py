@@ -94,7 +94,7 @@ def collect(graph, alert, seed=None) -> Forensics:
     if req_sam:
         ctx["请求者enc基线"] = graph.run_cypher(
             "MATCH (req:Account {sam:$s})<-[:BY]-(e:Event {event_code:'4769'}) "
-            "RETURN e.enc_type AS enc, count(*) AS n ORDER BY n DESC", s=req_sam)
+            "RETURN e.enc_type AS enc, sum(coalesce(e.count,1)) AS n ORDER BY n DESC", s=req_sam)
 
     # 4. ★"跨域信任 FP"豁免判定(别把真 roast 当跨域正常票)
     same_domain = _same_domain(req_domain, tgt_domain)
@@ -121,7 +121,7 @@ def collect(graph, alert, seed=None) -> Forensics:
     if req_sam:
         rows = graph.run_cypher(
             "MATCH (req:Account {sam:$s})<-[:BY]-(e:Event {event_code:'4769'})-[:REQUESTED]->(t) "
-            "RETURN count(DISTINCT t) AS distinct_targets, count(*) AS total_4769", s=req_sam)
+            "RETURN count(DISTINCT t) AS distinct_targets, sum(coalesce(e.count,1)) AS total_4769", s=req_sam)
         sf = rows[0] if rows else {}
         ctx["SPN扇出"] = sf
         dt = sf.get("distinct_targets")

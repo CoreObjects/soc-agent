@@ -42,8 +42,8 @@ def test_lolbin_nonstandard_repetitive_emits_red_findings_and_bindings():
            "command_line": r"rundll32.exe url.dll,OpenURL http://203.0.113.5:4444",
            "parent": "winword.exe", "account": "north\\jon.snow",
            "dst_ip": "203.0.113.5", "dst_port": 4444, "proto": "tcp", "host": "WKS01"}]),
-        # 外连反复性聚合(唯一子串 "count(e) AS count")
-        ("count(e) AS count",
+        # 外连反复性聚合(唯一子串 "sum(coalesce(e.count,1)) AS count")
+        ("sum(coalesce(e.count,1)) AS count",
          [{"count": 30, "first_seen": "2026-07-20T01:00:00", "last_seen": "2026-07-20T03:00:00"}]),
     ])
     a = Alert.from_node({"alert_uid": "so1", "technique_ids": ["T1571"]})
@@ -86,7 +86,7 @@ def test_provisioning_noise_benign_emits_white_and_no_lolbin():
            "command_line": "exec_wrapper.exe; ConvertFrom-AnsibleJson $payload; Write-AnsibleLog ok",
            "parent": "services.exe", "account": "north\\svc_ci",
            "dst_ip": "10.0.0.10", "dst_port": 8080, "proto": "tcp", "host": "SRV05"}]),
-        ("count(e) AS count",
+        ("sum(coalesce(e.count,1)) AS count",
          [{"count": 2, "first_seen": "2026-07-20T01:00:00", "last_seen": "2026-07-20T01:05:00"}]),
     ])
     a = Alert.from_node({"alert_uid": "so2", "technique_ids": ["T1571"]})

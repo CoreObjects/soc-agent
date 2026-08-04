@@ -93,7 +93,7 @@ def collect(graph, alert, seed=None) -> Forensics:
         http = graph.run_cypher(
             "MATCH (e:Event)-[:BY]->(:Process {process_guid:$g}) "
             "MATCH (e)-[:CONNECTED_TO]->(:IPAddress {ip:$ip}) "
-            "RETURN count(e) AS count, min(e.event_time) AS first_seen, max(e.event_time) AS last_seen",
+            "RETURN sum(coalesce(e.count,1)) AS count, min(e.event_time) AS first_seen, max(e.event_time) AS last_seen",
             g=pg, ip=dst_ip)
         ctx["外连聚合(周期性)"] = http
         _emit_periodic(findings, http, "http", aid)
@@ -102,7 +102,7 @@ def collect(graph, alert, seed=None) -> Forensics:
         dns = graph.run_cypher(
             "MATCH (e:Event)-[:BY]->(:Process {process_guid:$g}) "
             "MATCH (e)-[:QUERIED]->(:Domain {fqdn:$f}) "
-            "RETURN count(e) AS count, min(e.event_time) AS first_seen, max(e.event_time) AS last_seen",
+            "RETURN sum(coalesce(e.count,1)) AS count, min(e.event_time) AS first_seen, max(e.event_time) AS last_seen",
             g=pg, f=dst_domain)
         ctx["DNS查询聚合(周期性)"] = dns
         _emit_periodic(findings, dns, "dns", aid)
