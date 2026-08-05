@@ -1,0 +1,54 @@
+=== rules-inventory  2026-08-05 01:56Z ===
+沉淀规则总数: 28
+
+按 kind × verdict(误报白指纹 / 威胁红指纹 / 威胁DSL规则):
+  payload          false_positive   17
+  benign_fp        false_positive   9
+  threat           true_positive    2
+
+按 skill(攻击手法覆盖):
+  wazuh                      17
+  lsass_dump                 5
+  kerberoast                 2
+  ingress_tool_transfer      1
+  suspicious_process         1
+  dcsync                     1
+  lateral_movement           1
+
+复用:规则总命中(hit_count)=128960  ·  被人工纠正(override)=0  ·  active=28/28
+
+Top 复用规则(hit_count 降序 ≤12):
+  hit= 59935 benign_fp     /false_positive skill=lateral_movement     fids=['lateral.fanout', 'lateral.network_logon'] note=非特权账号的常规网络登录行为，扇出范围小且符合业务基线
+  hit= 47937 payload       /false_positive skill=wazuh                fids=None note=PowerShell 执行策略自检产生的标准临时文件
+  hit= 17596 benign_fp     /false_positive skill=dcsync               fids=['dcsync.actor_is_machine', 'dcsync.replication_request'] note=DC 间正常同步：机器账号发起的复制请求为良性行为。
+  hit=  1864 payload       /false_positive skill=wazuh                fids=None note=Wazuh Agent 通过 sysinfo/syscollector 组件访问 LSASS 是合法
+  hit=   849 payload       /false_positive skill=wazuh                fids=None note=Windows Defender (MsMpEng.exe) 访问 LSASS 进程是正常杀毒扫描行
+  hit=   161 benign_fp     /false_positive skill=kerberoast           fids=['kerberoast.domain_trust_present', 'kerberoast.requester_is_machine'] note=机器账号在域内对 SPN 请求 RC4 票据属于正常业务行为，应作为误报豁免。
+  hit=   159 payload       /false_positive skill=wazuh                fids=None note=Wazuh 代理访问 LSASS 获取心跳/状态信息，属正常行为。
+  hit=   119 benign_fp     /false_positive skill=ingress_tool_transfer fids=['ingress.provisioning_noise'] note=Ansible执行包装器导致的文件下载和执行是正常运维行为，属于已知良性噪声模式
+  hit=    99 payload       /false_positive skill=wazuh                fids=None note=Ansible exec_wrapper 包装器触发 Base64 解码告警，属良性运维行为
+  hit=    85 payload       /false_positive skill=wazuh                fids=None note=Windows Update组件TiWorker.exe修改审计策略属于系统更新例行操作
+  hit=    69 payload       /false_positive skill=wazuh                fids=None note=Ansible 自动化运维模块加载特征
+  hit=    48 payload       /false_positive skill=wazuh                fids=None note=PowerShell执行Base64编码命令但解码后为版本检查和参数解析脚本，无恶意行为特征
+
+沉淀时间跨度: 2026-07-25 04:09:21.178293+00:00  →  2026-07-29 06:38:48.797988+00:00
+
+样例(各 kind 抽 1 条,看规则长啥样):
+  [payload/false_positive] skill=wazuh
+    fingerprint = {}
+    rule(DSL)   = {"conditions": [{"path": "rule.description", "op": "eq", "value": "Windows application error event."}, {"path": "data.win.system.message", "op": "contains", "value": "Faulting application name: wazuh-agent.exe"}], "verdict": "false_positive", "note": "Wazuh 代理自身进程崩溃属于良性系统故障，非攻击行为。"}
+    note=Wazuh 代理自身进程崩溃属于良性系统故障，非攻击行为。  hit=0
+  [threat/true_positive] skill=lsass_dump
+    fingerprint = {"finding_ids": ["lsass.dump_lib_loaded", "lsass.post_read_exfil"], "canon": {"lsass.dump_lib_loaded": {"end_module": "C:\\\\Windows\\\\SYSTEM32\\\\ntdll.dll+5a2f1"}, "lsass.post_read_exfil": {}}, "weights": {"lsass.dump_lib_loaded": 1.0, "lsass.post_read_exfil": 1.0}}
+    rule(DSL)   = {"and": [{"exists": "lsass.dump_lib_loaded"}, {"exists": "lsass.post_read_exfil"}]}
+    note=调用转储库加载 LSASS 内存并落地 dump 文件，确认为凭据窃取 TP。  hit=3
+  [benign_fp/false_positive] skill=lsass_dump
+    fingerprint = {"finding_ids": ["lsass.source_is_security_agent"], "canon": {"lsass.source_is_security_agent": {"agent": "Wazuh/OSSEC HIDS 代理", "src_image": "C:\\Program Files (x86)\\ossec-agent\\wazuh-agent.exe"}}, "weights": {"lsass.source_is_security_agent": 1.0}}
+    note=安全代理（如 Wazuh/OSSEC）为完整性检查访问 LSASS 内存，且调用栈无转储库指纹，应直接判为误报。  hit=0
+
+经验复用对研判的贡献(S=浅层终局 / A=经验复用 / B=深度LLM):
+  path=A      77669  (57.3%)
+  path=S      51138  (37.8%)
+  path=B       6628  (4.9%)
+  → 经验规则直接复用完成的研判占比 = 57.3%(其余才落深度 LLM)
+=== done ===
