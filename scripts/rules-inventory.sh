@@ -38,26 +38,21 @@ try:
     active = sum(1 for e in exps if e.status == "active")
     print(f"\n复用:规则总命中(hit_count)={tot_hit}  ·  被人工纠正(override)={tot_ovr}  ·  active={active}/{len(exps)}")
 
-    print("\nTop 复用规则(hit_count 降序 ≤12):")
-    for e in sorted(exps, key=lambda e: -e.hit_count)[:12]:
-        fids = (e.fingerprint or {}).get("finding_ids")
-        print(f"  hit={e.hit_count:6} {str(e.kind):14}/{str(e.verdict):14} skill={e.skill:20} fids={fids} note={(e.note or '')[:50]}")
-
     cas = [e.created_at for e in exps if e.created_at]
     if cas:
         print(f"\n沉淀时间跨度: {min(cas)}  →  {max(cas)}")
 
-    print("\n样例(各 kind 抽 1 条,看规则长啥样):")
-    seen = set()
-    for e in exps:
-        if e.kind in seen:
-            continue
-        seen.add(e.kind)
-        print(f"  [{e.kind}/{e.verdict}] skill={e.skill}")
-        print(f"    fingerprint = {json.dumps(e.fingerprint, ensure_ascii=False)[:320]}")
+    # ★全部规则完整清单(不截断,领导要看完整内容)
+    print(f"\n=== 全部 {len(exps)} 条规则(完整清单,按命中降序)===")
+    for i, e in enumerate(sorted(exps, key=lambda e: -e.hit_count), 1):
+        print(f"\n[{i:>2}] {str(e.kind)}/{str(e.verdict)}  skill={e.skill}  命中={e.hit_count}  纠正={e.override_count}  status={e.status}  created={e.created_at}")
+        print(f"     说明: {e.note}")
+        if e.fingerprint:
+            print(f"     指纹: {json.dumps(e.fingerprint, ensure_ascii=False)}")
         if e.rule:
-            print(f"    rule(DSL)   = {json.dumps(e.rule, ensure_ascii=False)[:320]}")
-        print(f"    note={e.note}  hit={e.hit_count}")
+            print(f"     规则: {json.dumps(e.rule, ensure_ascii=False)}")
+        if e.playbook:
+            print(f"     处置: {json.dumps(e.playbook, ensure_ascii=False)}")
 
     g = pl.graph
     print("\n经验复用对研判的贡献(S=浅层终局 / A=经验复用 / B=深度LLM):")
