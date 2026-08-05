@@ -1,4 +1,4 @@
-=== rules-inventory  2026-08-05 01:56Z ===
+=== rules-inventory  2026-08-05 02:17Z ===
 沉淀规则总数: 28
 
 按 kind × verdict(误报白指纹 / 威胁红指纹 / 威胁DSL规则):
@@ -15,40 +15,131 @@
   dcsync                     1
   lateral_movement           1
 
-复用:规则总命中(hit_count)=128960  ·  被人工纠正(override)=0  ·  active=28/28
-
-Top 复用规则(hit_count 降序 ≤12):
-  hit= 59935 benign_fp     /false_positive skill=lateral_movement     fids=['lateral.fanout', 'lateral.network_logon'] note=非特权账号的常规网络登录行为，扇出范围小且符合业务基线
-  hit= 47937 payload       /false_positive skill=wazuh                fids=None note=PowerShell 执行策略自检产生的标准临时文件
-  hit= 17596 benign_fp     /false_positive skill=dcsync               fids=['dcsync.actor_is_machine', 'dcsync.replication_request'] note=DC 间正常同步：机器账号发起的复制请求为良性行为。
-  hit=  1864 payload       /false_positive skill=wazuh                fids=None note=Wazuh Agent 通过 sysinfo/syscollector 组件访问 LSASS 是合法
-  hit=   849 payload       /false_positive skill=wazuh                fids=None note=Windows Defender (MsMpEng.exe) 访问 LSASS 进程是正常杀毒扫描行
-  hit=   161 benign_fp     /false_positive skill=kerberoast           fids=['kerberoast.domain_trust_present', 'kerberoast.requester_is_machine'] note=机器账号在域内对 SPN 请求 RC4 票据属于正常业务行为，应作为误报豁免。
-  hit=   159 payload       /false_positive skill=wazuh                fids=None note=Wazuh 代理访问 LSASS 获取心跳/状态信息，属正常行为。
-  hit=   119 benign_fp     /false_positive skill=ingress_tool_transfer fids=['ingress.provisioning_noise'] note=Ansible执行包装器导致的文件下载和执行是正常运维行为，属于已知良性噪声模式
-  hit=    99 payload       /false_positive skill=wazuh                fids=None note=Ansible exec_wrapper 包装器触发 Base64 解码告警，属良性运维行为
-  hit=    85 payload       /false_positive skill=wazuh                fids=None note=Windows Update组件TiWorker.exe修改审计策略属于系统更新例行操作
-  hit=    69 payload       /false_positive skill=wazuh                fids=None note=Ansible 自动化运维模块加载特征
-  hit=    48 payload       /false_positive skill=wazuh                fids=None note=PowerShell执行Base64编码命令但解码后为版本检查和参数解析脚本，无恶意行为特征
+复用:规则总命中(hit_count)=129207  ·  被人工纠正(override)=0  ·  active=28/28
 
 沉淀时间跨度: 2026-07-25 04:09:21.178293+00:00  →  2026-07-29 06:38:48.797988+00:00
 
-样例(各 kind 抽 1 条,看规则长啥样):
-  [payload/false_positive] skill=wazuh
-    fingerprint = {}
-    rule(DSL)   = {"conditions": [{"path": "rule.description", "op": "eq", "value": "Windows application error event."}, {"path": "data.win.system.message", "op": "contains", "value": "Faulting application name: wazuh-agent.exe"}], "verdict": "false_positive", "note": "Wazuh 代理自身进程崩溃属于良性系统故障，非攻击行为。"}
-    note=Wazuh 代理自身进程崩溃属于良性系统故障，非攻击行为。  hit=0
-  [threat/true_positive] skill=lsass_dump
-    fingerprint = {"finding_ids": ["lsass.dump_lib_loaded", "lsass.post_read_exfil"], "canon": {"lsass.dump_lib_loaded": {"end_module": "C:\\\\Windows\\\\SYSTEM32\\\\ntdll.dll+5a2f1"}, "lsass.post_read_exfil": {}}, "weights": {"lsass.dump_lib_loaded": 1.0, "lsass.post_read_exfil": 1.0}}
-    rule(DSL)   = {"and": [{"exists": "lsass.dump_lib_loaded"}, {"exists": "lsass.post_read_exfil"}]}
-    note=调用转储库加载 LSASS 内存并落地 dump 文件，确认为凭据窃取 TP。  hit=3
-  [benign_fp/false_positive] skill=lsass_dump
-    fingerprint = {"finding_ids": ["lsass.source_is_security_agent"], "canon": {"lsass.source_is_security_agent": {"agent": "Wazuh/OSSEC HIDS 代理", "src_image": "C:\\Program Files (x86)\\ossec-agent\\wazuh-agent.exe"}}, "weights": {"lsass.source_is_security_agent": 1.0}}
-    note=安全代理（如 Wazuh/OSSEC）为完整性检查访问 LSASS 内存，且调用栈无转储库指纹，应直接判为误报。  hit=0
+=== 全部 28 条规则(完整清单,按命中降序)===
+
+[ 1] benign_fp/false_positive  skill=lateral_movement  命中=60077  纠正=0  status=active  created=2026-07-29 01:37:41.355442+00:00
+     说明: 非特权账号的常规网络登录行为，扇出范围小且符合业务基线
+     指纹: {"finding_ids": ["lateral.fanout", "lateral.network_logon"], "canon": {"lateral.fanout": {"distinct_hosts": 2, "bucket": "low"}, "lateral.network_logon": {"logon_type": "3", "event_code": "4624", "result": "success", "acc_privileged": false, "target_role": "member_server", "target_criticality": "medium"}}, "weights": {"lateral.fanout": 1.0, "lateral.network_logon": 1.0}}
+
+[ 2] payload/false_positive  skill=wazuh  命中=47998  纠正=0  status=active  created=2026-07-25 04:09:59.613104+00:00
+     说明: PowerShell 执行策略自检产生的标准临时文件
+     规则: {"conditions": [{"path": "data.win.eventdata.image", "op": "basename_eq", "value": "powershell.exe"}, {"path": "data.win.eventdata.targetFilename", "op": "contains", "value": "__PSScriptPolicyTest"}], "verdict": "false_positive", "note": "PowerShell 执行策略自检产生的标准临时文件"}
+
+[ 3] benign_fp/false_positive  skill=dcsync  命中=17640  纠正=0  status=active  created=2026-07-28 10:39:33.938676+00:00
+     说明: DC 间正常同步：机器账号发起的复制请求为良性行为。
+     指纹: {"finding_ids": ["dcsync.actor_is_machine", "dcsync.replication_request"], "canon": {"dcsync.actor_is_machine": {}, "dcsync.replication_request": {"access_mask": "0x100", "props_bucket": "get_changes"}}, "weights": {"dcsync.actor_is_machine": 1.0, "dcsync.replication_request": 1.0}}
+
+[ 4] payload/false_positive  skill=wazuh  命中=1864  纠正=0  status=active  created=2026-07-25 04:19:47.041674+00:00
+     说明: Wazuh Agent 通过 sysinfo/syscollector 组件访问 LSASS 是合法的资产发现行为
+     规则: {"conditions": [{"path": "data.win.eventdata.sourceImage", "op": "basename_eq", "value": "wazuh-agent.exe"}, {"path": "data.win.eventdata.callTrace", "op": "contains", "value": "sysinfo.dll"}, {"path": "data.win.eventdata.callTrace", "op": "contains", "value": "syscollector.dll"}], "verdict": "false_positive", "note": "Wazuh Agent 通过 sysinfo/syscollector 组件访问 LSASS 是合法的资产发现行为"}
+
+[ 5] payload/false_positive  skill=wazuh  命中=849  纠正=0  status=active  created=2026-07-25 04:27:09.534135+00:00
+     说明: Windows Defender (MsMpEng.exe) 访问 LSASS 进程是正常杀毒扫描行为，非恶意攻击。
+     规则: {"conditions": [{"path": "data.win.eventdata.sourceImage", "op": "basename_eq", "value": "MsMpEng.exe"}, {"path": "data.win.eventdata.targetImage", "op": "basename_eq", "value": "lsass.exe"}], "verdict": "false_positive", "note": "Windows Defender (MsMpEng.exe) 访问 LSASS 进程是正常杀毒扫描行为，非恶意攻击。"}
+
+[ 6] benign_fp/false_positive  skill=kerberoast  命中=161  纠正=0  status=active  created=2026-07-25 04:28:16.883642+00:00
+     说明: 机器账号在域内对 SPN 请求 RC4 票据属于正常业务行为，应作为误报豁免。
+     指纹: {"finding_ids": ["kerberoast.domain_trust_present", "kerberoast.requester_is_machine"], "canon": {"kerberoast.domain_trust_present": {}, "kerberoast.requester_is_machine": {"sam": "<attacker_account>"}}, "weights": {"kerberoast.domain_trust_present": 1.0, "kerberoast.requester_is_machine": 1.0}}
+
+[ 7] payload/false_positive  skill=wazuh  命中=159  纠正=0  status=active  created=2026-07-25 04:09:21.178293+00:00
+     说明: Wazuh 代理访问 LSASS 获取心跳/状态信息，属正常行为。
+     规则: {"conditions": [{"path": "data.win.eventdata.sourceImage", "op": "basename_eq", "value": "wazuh-agent.exe"}, {"path": "data.win.eventdata.targetImage", "op": "basename_eq", "value": "lsass.exe"}, {"path": "data.win.eventdata.grantedAccess", "op": "eq", "value": "0x1fffff"}], "verdict": "false_positive", "note": "Wazuh 代理访问 LSASS 获取心跳/状态信息，属正常行为。"}
+
+[ 8] benign_fp/false_positive  skill=ingress_tool_transfer  命中=119  纠正=0  status=active  created=2026-07-29 06:08:40.578400+00:00
+     说明: Ansible执行包装器导致的文件下载和执行是正常运维行为，属于已知良性噪声模式
+     指纹: {"finding_ids": ["ingress.provisioning_noise"], "canon": {"ingress.provisioning_noise": {"label": "ansible_exec_wrapper(良性:Ansible 配管供给/运维(凡用 Ansible 的环境皆有))"}}, "weights": {"ingress.provisioning_noise": 1.0}}
+
+[ 9] payload/false_positive  skill=wazuh  命中=99  纠正=0  status=active  created=2026-07-25 04:11:11.606384+00:00
+     说明: Ansible exec_wrapper 包装器触发 Base64 解码告警，属良性运维行为
+     规则: {"conditions": [{"path": "rule.id", "op": "eq", "value": "91809"}, {"path": "data.win.eventdata.scriptBlockText", "op": "contains", "value": "ConvertFrom-AnsibleJson"}, {"path": "data.win.eventdata.scriptBlockText", "op": "contains", "value": "Write-AnsibleLog"}, {"path": "data.win.eventdata.scriptBlockText", "op": "contains", "value": "exec_wrapper"}], "verdict": "false_positive", "note": "Ansible exec_wrapper 包装器触发 Base64 解码告警，属良性运维行为"}
+
+[10] payload/false_positive  skill=wazuh  命中=85  纠正=0  status=active  created=2026-07-29 05:24:15.892013+00:00
+     说明: Windows Update组件TiWorker.exe修改审计策略属于系统更新例行操作
+     规则: {"conditions": [{"path": "rule_description", "op": "eq", "value": "Windows Audit Policy changed"}, {"path": "data.win.eventdata.processName", "op": "basename_eq", "value": "TiWorker.exe"}], "verdict": "false_positive", "note": "Windows Update组件TiWorker.exe修改审计策略属于系统更新例行操作"}
+
+[11] payload/false_positive  skill=wazuh  命中=69  纠正=0  status=active  created=2026-07-25 04:11:31.310513+00:00
+     说明: Ansible 自动化运维模块加载特征
+     规则: {"conditions": [{"path": "data.win.eventdata.scriptBlockText", "op": "contains", "value": "Write-AnsibleLog"}, {"path": "data.win.eventdata.scriptBlockText", "op": "contains", "value": "module_wrapper"}], "verdict": "false_positive", "note": "Ansible 自动化运维模块加载特征"}
+
+[12] payload/false_positive  skill=wazuh  命中=48  纠正=0  status=active  created=2026-07-29 06:35:28.846317+00:00
+     说明: PowerShell执行Base64编码命令但解码后为版本检查和参数解析脚本，无恶意行为特征
+     规则: {"conditions": [{"path": "rule_description", "op": "eq", "value": "Powershell.exe spawned a powershell process which executed a base64 encoded command"}, {"path": "data.win.eventdata.commandLine", "op": "contains", "value": "EncodedCommand"}, {"path": "data.win.eventdata.image", "op": "basename_eq", "value": "powershell.exe"}], "verdict": "false_positive", "note": "PowerShell执行Base64编码命令但解码后为版本检查和参数解析脚本，无恶意行为特征"}
+
+[13] threat/true_positive  skill=kerberoast  命中=15  纠正=0  status=active  created=2026-07-25 04:37:17.291579+00:00
+     说明: 普通用户请求 RC4 票据且存在多目标扇出扫描
+     指纹: {"finding_ids": ["kerberoast.rc4_requested", "kerberoast.spn_fanout"], "canon": {"kerberoast.rc4_requested": {"enc_type": "0x17"}, "kerberoast.spn_fanout": {"distinct_targets": 12, "total_4769": 23315, "bucket": "high"}}, "weights": {"kerberoast.rc4_requested": 1.0, "kerberoast.spn_fanout": 1.0}}
+     规则: {"and": [{"exists": "kerberoast.rc4_requested"}, {"eq": ["kerberoast.spn_fanout:distinct_targets", 12]}]}
+     处置: [{"order": 1, "primitive": "collect_artifact", "params": {}, "risk": "low", "on_failure": "continue"}, {"order": 2, "primitive": "disable_account", "params": {}, "risk": "high", "on_failure": "abort"}, {"order": 3, "primitive": "expire_password", "params": {}, "risk": "high", "on_failure": "continue"}]
+
+[14] benign_fp/false_positive  skill=suspicious_process  命中=9  纠正=0  status=active  created=2026-07-29 06:09:01.757751+00:00
+     说明: Ansible 配管环境中的 exec_wrapper 脚本是典型良性噪声，命中该标签即可直接判定误报
+     指纹: {"finding_ids": ["suspproc.provisioning_noise"], "canon": {"suspproc.provisioning_noise": {"label": "ansible_exec_wrapper(良性:Ansible 配管供给/运维(凡用 Ansible 的环境皆有))"}}, "weights": {"suspproc.provisioning_noise": 1.0}}
+
+[15] benign_fp/false_positive  skill=lsass_dump  命中=7  纠正=0  status=active  created=2026-07-25 04:26:29.815987+00:00
+     说明: 安全代理（如 Defender）访问 LSASS 内存是正常行为，应直接判定为误报。
+     指纹: {"finding_ids": ["lsass.source_is_security_agent"], "canon": {"lsass.source_is_security_agent": {"agent": "Microsoft Defender", "src_image": "C:\\ProgramData\\Microsoft\\Windows Defender\\Platform\\4.18.26050.15-0\\MsMpEng.exe"}}, "weights": {"lsass.source_is_security_agent": 1.0}}
+
+[16] threat/true_positive  skill=lsass_dump  命中=3  纠正=0  status=active  created=2026-07-25 04:48:52.823300+00:00
+     说明: 调用转储库加载 LSASS 内存并落地 dump 文件，确认为凭据窃取 TP。
+     指纹: {"finding_ids": ["lsass.dump_lib_loaded", "lsass.post_read_exfil"], "canon": {"lsass.dump_lib_loaded": {"end_module": "C:\\\\Windows\\\\SYSTEM32\\\\ntdll.dll+5a2f1"}, "lsass.post_read_exfil": {}}, "weights": {"lsass.dump_lib_loaded": 1.0, "lsass.post_read_exfil": 1.0}}
+     规则: {"and": [{"exists": "lsass.dump_lib_loaded"}, {"exists": "lsass.post_read_exfil"}]}
+     处置: [{"order": 1, "primitive": "collect_artifact", "params": {"hostname": {"source": "entity_role", "role": "victim_host"}}, "risk": "low", "on_failure": "continue"}, {"order": 2, "primitive": "isolate_host", "params": {"hostname": {"source": "entity_role", "role": "victim_host"}}, "risk": "high", "on_failure": "abort"}, {"order": 3, "primitive": "disable_account", "params": {"sam": {"source": "entity_role", "role": "run_as_account"}}, "risk": "high", "on_failure": "abort"}, {"order": 4, "primitive": "revoke_sessions", "params": {"sam": {"source": "entity_role", "role": "run_as_account"}}, "risk": "high", "on_failure": "abort"}, {"order": 5, "primitive": "revoke_kerberos", "params": {"hostname": {"source": "entity_role", "role": "victim_host"}}, "risk": "high", "on_failure": "abort"}]
+
+[17] payload/false_positive  skill=wazuh  命中=2  纠正=0  status=active  created=2026-07-29 06:38:48.797988+00:00
+     说明: Windows DCOM Event ID 10016是常见的系统权限配置错误，非攻击行为，属于已知良性告警
+     规则: {"conditions": [{"path": "data.win.system.eventID", "op": "eq", "value": "10016"}, {"path": "data.win.system.providerName", "op": "eq", "value": "Microsoft-Windows-DistributedCOM"}], "verdict": "false_positive", "note": "Windows DCOM Event ID 10016是常见的系统权限配置错误，非攻击行为，属于已知良性告警"}
+
+[18] payload/false_positive  skill=wazuh  命中=2  纠正=0  status=active  created=2026-07-25 04:11:01.982614+00:00
+     说明: Ansible win_copy 模块标准脚本，含明确版权与许可证声明，Base64 解码仅用于处理 Unicode 文件名，属良性运维。
+     规则: {"conditions": [{"path": "data.win.system.message", "op": "contains", "value": "Copyright: (c) 2017, Ansible Project"}, {"path": "data.win.system.message", "op": "contains", "value": "GNU General Public License v3.0+"}, {"path": "data.win.system.message", "op": "contains", "value": "#Requires -Module Ansible.ModuleUtils.Legacy"}], "verdict": "false_positive", "note": "Ansible win_copy 模块标准脚本，含明确版权与许可证声明，Base64 解码仅用于处理 Unicode 文件名，属良性运维。"}
+
+[19] payload/false_positive  skill=wazuh  命中=1  纠正=0  status=active  created=2026-07-25 04:46:03.100174+00:00
+     说明: 证书申请因缺少邮箱字段导致的常规服务报错，属于良性操作。
+     规则: {"conditions": [{"path": "data.win.eventdata.errorCode", "op": "contains", "value": "CERTSRV_E_SUBJECT_EMAIL_REQUIRED"}, {"path": "data.win.eventdata.context", "op": "contains", "value": "vagrant"}], "verdict": "false_positive", "note": "证书申请因缺少邮箱字段导致的常规服务报错，属于良性操作。"}
+
+[20] payload/false_positive  skill=wazuh  命中=0  纠正=0  status=active  created=2026-07-25 04:20:53.610509+00:00
+     说明: Wazuh 代理自身进程崩溃属于良性系统故障，非攻击行为。
+     规则: {"conditions": [{"path": "rule.description", "op": "eq", "value": "Windows application error event."}, {"path": "data.win.system.message", "op": "contains", "value": "Faulting application name: wazuh-agent.exe"}], "verdict": "false_positive", "note": "Wazuh 代理自身进程崩溃属于良性系统故障，非攻击行为。"}
+
+[21] payload/false_positive  skill=wazuh  命中=0  纠正=0  status=active  created=2026-07-27 11:23:44.537472+00:00
+     说明: vagrant 账户在 VMware 默认网段 (192.168.56.x) 发起的远程登录 (LogonType 3) 属于已知良性开发环境行为。
+     规则: {"conditions": [{"path": "data.win.eventdata.targetUserName", "op": "eq", "value": "vagrant"}, {"path": "data.win.eventdata.logonType", "op": "eq", "value": "3"}, {"path": "data.win.eventdata.ipAddress", "op": "contains", "value": "192.168.56."}, {"path": "rule.id", "op": "eq", "value": "100805"}], "verdict": "false_positive", "note": "vagrant 账户在 VMware 默认网段 (192.168.56.x) 发起的远程登录 (LogonType 3) 属于已知良性开发环境行为。"}
+
+[22] benign_fp/false_positive  skill=lsass_dump  命中=0  纠正=0  status=active  created=2026-07-25 04:10:20.131165+00:00
+     说明: 安全代理（如 Wazuh/OSSEC）为完整性检查访问 LSASS 内存，且调用栈无转储库指纹，应直接判为误报。
+     指纹: {"finding_ids": ["lsass.source_is_security_agent"], "canon": {"lsass.source_is_security_agent": {"agent": "Wazuh/OSSEC HIDS 代理", "src_image": "C:\\Program Files (x86)\\ossec-agent\\wazuh-agent.exe"}}, "weights": {"lsass.source_is_security_agent": 1.0}}
+
+[23] benign_fp/false_positive  skill=lsass_dump  命中=0  纠正=0  status=active  created=2026-07-25 04:20:48.047281+00:00
+     说明: 安全代理（如 Defender）访问 LSASS 进行完整性检查或遥测，且调用栈无转储库指纹时，应判定为误报。
+     指纹: {"finding_ids": ["lsass.source_is_security_agent"], "canon": {"lsass.source_is_security_agent": {"agent": "Microsoft Defender", "src_image": "C:\\Program Files\\Windows Defender\\MsMpEng.exe"}}, "weights": {"lsass.source_is_security_agent": 1.0}}
+
+[24] payload/false_positive  skill=wazuh  命中=0  纠正=0  status=active  created=2026-07-29 05:24:14.596416+00:00
+     说明: 微软官方恶意软件移除工具MRT.exe访问LSASS属于正常扫描行为
+     规则: {"conditions": [{"path": "data.win.eventdata.sourceImage", "op": "basename_eq", "value": "MRT.exe"}, {"path": "data.win.eventdata.targetImage", "op": "basename_eq", "value": "lsass.exe"}], "verdict": "false_positive", "note": "微软官方恶意软件移除工具MRT.exe访问LSASS属于正常扫描行为"}
+
+[25] payload/false_positive  skill=wazuh  命中=0  纠正=0  status=active  created=2026-07-29 05:24:29.372077+00:00
+     说明: Windows性能计数器DLL加载失败错误，属于系统配置问题而非安全威胁
+     规则: {"conditions": [{"path": "rule_description", "op": "eq", "value": "Windows application error event."}, {"path": "data.win.system.providerName", "op": "eq", "value": "Microsoft-Windows-Perflib"}, {"path": "data.win.system.eventID", "op": "eq", "value": "1023"}, {"path": "data.win.eventdata.library", "op": "basename_eq", "value": "aspnet_perf.dll"}], "verdict": "false_positive", "note": "Windows性能计数器DLL加载失败错误，属于系统配置问题而非安全威胁"}
+
+[26] payload/false_positive  skill=wazuh  命中=0  纠正=0  status=active  created=2026-07-29 05:24:33.463462+00:00
+     说明: TiWorker.exe（Windows更新组件）修改文件审计策略属正常系统行为
+     规则: {"conditions": [{"path": "data.win.eventdata.processName", "op": "basename_eq", "value": "TiWorker.exe"}, {"path": "data.win.system.eventID", "op": "eq", "value": "4907"}], "verdict": "false_positive", "note": "TiWorker.exe（Windows更新组件）修改文件审计策略属正常系统行为"}
+
+[27] payload/false_positive  skill=wazuh  命中=0  纠正=0  status=active  created=2026-07-25 06:04:22.270092+00:00
+     说明: 证书服务客户端在证书申请时因主题名称无效或过长导致的系统错误，属于正常业务失败，非攻击行为。
+     规则: {"conditions": [{"path": "data.win.system.providerName", "op": "eq", "value": "Microsoft-Windows-CertificateServicesClient-CertEnroll"}, {"path": "data.win.system.eventID", "op": "eq", "value": "13"}, {"path": "data.win.eventdata.errorCode", "op": "contains", "value": "CERTSRV_E_BAD_REQUESTSUBJECT"}], "verdict": "false_positive", "note": "证书服务客户端在证书申请时因主题名称无效或过长导致的系统错误，属于正常业务失败，非攻击行为。"}
+
+[28] benign_fp/false_positive  skill=lsass_dump  命中=0  纠正=0  status=active  created=2026-07-25 05:19:17.103536+00:00
+     说明: WMI 进程 wmiprvse.exe 访问 LSASS 内存是系统正常行为，需结合调用栈（无转储库）和掩码（0x1410）判定为误报。
+     指纹: {"finding_ids": ["lsass.lsass_accessed"], "canon": {"lsass.lsass_accessed": {"src_image": "C:\\\\Windows\\\\system32\\\\wbem\\\\wmiprvse.exe", "granted_access": "0x1410", "target_image": "C:\\Windows\\system32\\lsass.exe"}}, "weights": {"lsass.lsass_accessed": 1.0}}
 
 经验复用对研判的贡献(S=浅层终局 / A=经验复用 / B=深度LLM):
-  path=A      77669  (57.3%)
-  path=S      51138  (37.8%)
-  path=B       6628  (4.9%)
-  → 经验规则直接复用完成的研判占比 = 57.3%(其余才落深度 LLM)
+  path=A      77855  (57.4%)
+  path=S      51199  (37.7%)
+  path=B       6630  (4.9%)
+  → 经验规则直接复用完成的研判占比 = 57.4%(其余才落深度 LLM)
 === done ===
