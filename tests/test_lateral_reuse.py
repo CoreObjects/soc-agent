@@ -38,12 +38,14 @@ def _recipe():
 
 def _benign_logon_graph(account, host, count):
     # 普通账号 type3 网络登录成员机、有基线、低扇出 —— 良性型
+    # 基线存在性 = AUTHENTICATED_TO 边存在(有 first_seen);登录次数从 4624 事件 sum(coalesce(count,1))(不读恒 null 的 r.count)
     return FakeGraph([
         ("AS target_host", [{"event_code": "4624", "logon_type": 3, "result": "success",
                              "acc_sam": account, "acc_domain": "NORTH", "acc_privileged": False,
                              "target_host": host, "target_role": "member_server",
                              "target_criticality": "medium", "src_ip": "192.168.56.20"}]),
-        ("r.count AS count", [{"count": count, "first_seen": "2026-06-01", "last_seen": "2026-07-20"}]),
+        ("r.first_seen AS first_seen", [{"first_seen": "2026-06-01", "last_seen": "2026-07-20"}]),
+        ("AS logins", [{"logins": count}]),
         ("distinct_hosts", [{"distinct_hosts": 3}]),
     ])
 
@@ -78,6 +80,29 @@ def test_lateral_benign_sediments_then_second_reuses_auto_fp():
     report = consult("lateral_movement", fo2.findings, store)
     assert report.decision == "AUTO_FP"        # ★复用:第二条零 LLM 直接判 FP(path=A)
     assert report.chosen is exp
+
+
+def test_lateral_baseline_present_keyed_on_edge_and_count_from_events():
+    """★presence bug 回归:有 AUTHENTICATED_TO 边=基线在(白),次数从 4624 事件读——
+    不读边上恒 null 的 r.count(旧码读它→host_baseline_present 永不触发→每次登录误判 no_host_baseline 红)。"""
+    recipe = _recipe()
+    a = Alert.from_node({"alert_uid": "lm-x", "technique_ids": ["T1021.001"]})
+    fo = recipe(_benign_logon_graph("robb.stark", "castelblack", 42), a, {})
+    ids = fo.finding_ids()
+    assert "lateral.host_baseline_present" in ids and "lateral.no_host_baseline" not in ids
+    assert fo.context["该账号↔该主机基线"]["登录次数"] == 42     # 次数来自事件 sum(coalesce(e.count,1))
+
+
+def test_lateral_no_baseline_when_edge_absent():
+    """无 AUTHENTICATED_TO 边(首见)= no_host_baseline(红)。"""
+    recipe = _recipe()
+    g = FakeGraph([("AS target_host", [{"event_code": "4624", "logon_type": 3, "result": "success",
+                    "acc_sam": "jon.snow", "acc_domain": "NORTH", "acc_privileged": False,
+                    "target_host": "winterfell", "target_role": "member_server",
+                    "target_criticality": "medium"}]),
+                   ("distinct_hosts", [{"distinct_hosts": 1}])])   # 无 first_seen/logins 条目=边不存在
+    fo = recipe(g, Alert.from_node({"alert_uid": "lm-y", "technique_ids": ["T1021.001"]}), {})
+    assert "lateral.no_host_baseline" in fo.finding_ids() and "lateral.host_baseline_present" not in fo.finding_ids()
 
 
 def test_lateral_attack_does_not_reuse_benign_fingerprint():

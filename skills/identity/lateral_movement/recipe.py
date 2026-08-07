@@ -59,19 +59,25 @@ def collect(graph, alert, seed=None) -> Forensics:
         findings.append(Finding("lateral.high_value_target",
                                 {"target_role": target_role, "target_criticality": target_crit}, polarity="red"))
 
-    # 2. 账号↔该主机基线:有史=良性信号(white),无史=首见(red 强信号)
+    # 2. 账号↔该主机基线:有史=良性信号(white),无史=首见(red 强信号)。
+    #    ★存在性 = AUTHENTICATED_TO 聚合边是否存在(first_seen/last_seen 从入图起就有);★次数从【事件】数
+    #    (sum(coalesce(e.count,1)),折叠后代表带 e.count)—— 绝不读边上的 r.count(聚合边不落 count、恒 null,
+    #    旧码读它→host_baseline_present 永不触发→每次登录误判成 no_host_baseline 红)。
     if acc_sam and target:
         rows = graph.run_cypher(
             "MATCH (acc:Account {sam:$s})-[r:AUTHENTICATED_TO]->(h:Host {hostname:$h}) "
-            "RETURN r.count AS count, r.first_seen AS first_seen, r.last_seen AS last_seen",
-            s=acc_sam, h=target)
+            "RETURN r.first_seen AS first_seen, r.last_seen AS last_seen", s=acc_sam, h=target)
+        has_baseline = bool(rows)
+        cnt = graph.run_cypher(
+            "MATCH (e:Event {event_code:'4624'})-[:BY]->(:Account {sam:$s}) "
+            "MATCH (e)-[:AUTHENTICATED_TO]->(:Host {hostname:$h}) "
+            "RETURN sum(coalesce(e.count,1)) AS logins", s=acc_sam, h=target)
+        logins = (cnt[0].get("logins") if cnt else None) or 0
         bl = rows[0] if rows else {}
-        ctx["该账号↔该主机基线"] = bl or {"note": "无历史,疑似首次登该主机"}
-        if bl.get("count"):
-            # 存在性即良性信号(有史);具体次数留 ctx 给 LLM,不进 attrs —— 免得 count 变了指纹就不认
-            findings.append(Finding("lateral.host_baseline_present", {}, polarity="white"))
-        else:
-            findings.append(Finding("lateral.no_host_baseline", {}, polarity="red"))
+        ctx["该账号↔该主机基线"] = {**bl, "登录次数": logins} if has_baseline else {"note": "无历史,疑似首次登该主机"}
+        # 存在性即良性信号(有史);具体次数留 ctx 给 LLM,不进 attrs —— 免得 count 变了指纹就不认
+        findings.append(Finding("lateral.host_baseline_present", {}, polarity="white") if has_baseline
+                        else Finding("lateral.no_host_baseline", {}, polarity="red"))
 
     # 3. 扇出:登过几台主机(短时多台 = 横向扩散)
     if acc_sam:

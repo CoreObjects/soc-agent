@@ -157,7 +157,9 @@ def test_lateral_benign_repeat_logon_emits_white_and_binds():
                              "acc_sam": "robb.stark", "acc_domain": "NORTH", "acc_privileged": False,
                              "target_host": "castelblack", "target_role": "member_server",
                              "target_criticality": "medium", "src_ip": "192.168.56.20"}]),
-        ("r.count AS count", [{"count": 42, "first_seen": "2026-06-01", "last_seen": "2026-07-20"}]),
+        # 基线存在性=AUTHENTICATED_TO 边存在(有 first_seen);次数从 4624 事件读(不读恒 null 的 r.count)
+        ("r.first_seen AS first_seen", [{"first_seen": "2026-06-01", "last_seen": "2026-07-20"}]),
+        ("AS logins", [{"logins": 42}]),
         ("distinct_hosts", [{"distinct_hosts": 2}]),
     ])
     a = Alert.from_node({"alert_uid": "lm1", "technique_ids": ["T1021.001"]})
