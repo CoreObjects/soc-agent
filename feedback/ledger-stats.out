@@ -1,12 +1,14 @@
-=== ledger-stats  2026-08-06 08:19Z ===
-进度:已研判 157615 / 未研判(积压)1624 / 毒告警跳过 3059  —— 完成 97.1%
+=== ledger-stats  2026-08-07 07:48Z ===
+[warn] openGauss 不可用,经验层降级内存(本次不持久):connection to server at "127.0.0.1", port 5432 failed: timeout expired
+
+进度:已研判 160329 / 未研判(积压)8581 / 毒告警跳过 3315  —— 完成 93.1%
 ★积压=0 即存量研判完(之后只随新入图告警慢慢涨)
 
 verdict × path 分布(S=浅层终局 / A=经验复用 / B=深度LLM):
-  false_positive   path=A    93999
-  false_positive   path=S    56843
-  false_positive   path=B    4355
-  suspicious       path=B    2295
+  false_positive   path=A    95935
+  false_positive   path=S    57606
+  false_positive   path=B    4358
+  suspicious       path=B    2307
   true_positive    path=B    110
   true_positive    path=A    13
 
