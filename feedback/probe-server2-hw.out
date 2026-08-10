@@ -1,0 +1,70 @@
+=== server2 硬件/资源画像(只读)  2026-08-10 08:52Z ===
+
+== [1] 主机 / OS / 内核 / 架构 ==
+  OS: openEuler 24.09
+  内核: 6.6.0-45.0.0.54.oe2409.aarch64   架构: aarch64   主机: localhost.localdomain
+
+== [2] CPU(核数=并发事务处理能力;但 70eps 单写者用不满)==
+  Architecture:                         aarch64
+  CPU(s):                               256
+  Vendor ID:                            HiSilicon
+  Model name:                           Kunpeng-920
+  Thread(s) per core:                   1
+  Core(s) per socket:                   64
+  Socket(s):                            4
+  逻辑核: 256   负载(1/5/15m):0.34 0.45 0.40
+
+== [3] 内存 —— ★共存关键:vLLM/openGauss 吃掉后剩多少给图 page cache ==
+                 total        used        free      shared  buff/cache   available
+  Mem:           2.0Ti       126Gi       1.7Ti        71Gi       187Gi       1.8Ti
+  Swap:          4.0Gi          0B       4.0Gi
+  -- 当前 RSS TOP10 进程(看 vLLM/python/gaussdb 已占多少)--
+        RSS(KB)      PID  COMM
+        3722548  2235776  VLLM::EngineCor
+        3711924  2229207  VLLM::EngineCor
+        3682552   144822  python
+        3556080  2266067  VLLM::Worker_TP
+        3449728  2266068  VLLM::Worker_TP
+        2182192  2227874  python3
+        2171072  2234785  python3
+        2130088  2265147  python3
+        1938456  2265956  VLLM::EngineCor
+        1143660   819810  gaussdb
+
+== [4] 磁盘 —— ★ROTA=0 是 SSD/NVMe(小事务提交上千/秒);=1 是 HDD(fsync 受限,不适合图) ==
+  NAME      SIZE ROTA TYPE MODEL
+  sda     892.3G    0 disk RAID0
+  nvme1n1   3.5T    0 disk HWE6AP443T8L00KN
+  nvme0n1   3.5T    0 disk HWE6AP443T8L00KN
+  -- 挂载点可用空间(图 store 落哪就看哪个)--
+  Filesystem                  Size  Used Avail Use% Mounted on
+  /dev/mapper/openeuler-root  787G  152G  596G  21% /
+  efivarfs                     83K   73K   11K  88% /sys/firmware/efi/efivars
+  /dev/sda2                   974M  191M  717M  21% /boot
+  /dev/sda1                   599M  6.4M  593M   2% /boot/efi
+  /dev/mapper/openeuler-home  7.0T  877G  5.8T  13% /home
+
+== [5] JVM(Neo4j 是 JVM 应用,ARM 上需 arm64 JDK 才能跑)==
+  (PATH 无 java)
+
+== [6] 容器运行时(决定图是容器化还是原生装;记忆:server2 只有未配的 rootless podman)==
+  docker: (无)
+  podman: podman version 4.9.4
+    storage-driver=    (info 取不到——可能未起服务/未配 rootless)
+
+== [7] 已驻留服务端口(5432=openGauss 8000=vLLM 7687/7474=Neo4j 9200=ES 9092=Kafka)==
+  LISTEN 0      2048                                   0.0.0.0:8000       0.0.0.0:*          
+  LISTEN 1      4096                                 127.0.0.1:5432       0.0.0.0:*          
+
+== [8] 昇腾 NPU(确认机器身份;NPU 与图要用的 CPU/RAM 是分开的资源)==
+  DrvMngGetConsoleLogLevel failed. (ret=4)
+  dcmi module initialize failed. ret is -8005
+
+== 判读(接回 IO 天花板问题)==
+  · [4] 若 ROTA=0(SSD/NVMe)+ [2] 多核 → 单写者 Neo4j 仍做上千小事务/秒 → 70eps(100x)照样是零头,
+        写 TPS 在 server2 这种机器上也不是墙。若 ROTA=1(HDD)才需担心 fsync 提交速率。
+  · [3] 真正约束 = RAM 余量:vLLM(通常吃大块)+ openGauss 占用后 free/available 还剩多少,
+        决定图 page cache 能不能装下'有界骨架(身份+告警+近期事件)'的热工作集。这才是共存的风险点,不是写 TPS。
+  · [6]/[7] 若无 docker、且 8000/5432 已被 vLLM/openGauss 占 → 图放这台得原生装 Neo4j(+arm64 JDK[5]),与它们抢 RAM;
+        更稳的架构=图仍独占一台(像现在 server1),server2 只跑研判只读查 bolt。拿到数再定。
+=== done ===
