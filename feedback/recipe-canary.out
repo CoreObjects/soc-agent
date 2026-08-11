@@ -1,0 +1,14 @@
+=== recipe 字面量哨兵(只读) 2026-08-11 09:17Z ===
+图规模:Event=886137  Alert=212169   (URI=bolt://10.185.93.0:7687)
+
+类型            字面量                图中条数  使用它的 recipe
+------------------------------------------------------------------------------
+alert_source  waf                   4  application/web_exploit
+event_code    4624             190106  identity/lateral_movement
+event_code    4662              42389  identity/dcsync
+event_code    4769              33511  identity/kerberoast
+event_code    waf_match             4  application/web_exploit
+
+✅ 所有硬编码字面量都能在图里取到数据
+[退出码] 0
+=== done ===
