@@ -11,14 +11,18 @@ __all__ = ["Neo4jGraph", "build_write_statements", "build_constraints",
            "shape_ledger", "recall_ledger"]
 
 # 处置目标类型 → (实体 label, 匹配字段);:ON 绑真实体用。label/字段来自固定表,非用户输入 → 安全内插。
-# ★匹配字段取"处置目标值就是那个字段"的:sam(账号)/ip/process_guid/sha256(文件的图唯一键)/fqdn(域)。
-#   host 只能按 hostname(prop,图唯一键是 asset_id、但处置时只握有主机名)——靠"仅唯一命中才绑"防绑错。
+# ★匹配字段取"处置目标值就是那个字段"的:sam(账号)/ip/process_guid/path(文件)/fqdn(域)/hostname(主机)。
+# ★修正(WP3):file 原为 sha256 —— 那是照着一条**错误的 DDL 约束**写的。图里 File 的强键是
+#   (path, host),**没有任何 mapper 写过 sha256**,而处置目标握的是文件路径 ⇒ 匹配恒 0 命中,
+#   **文件类处置从来就绑不上 :ON 边**(静默,无人发现)。改按 path 匹配。
+#   注:File 键含 host,同名路径出现在多台主机时会命中多个 → 本机制"仅唯一命中才绑"会安全跳过
+#   (与 host 按 hostname 匹配是同一套防绑错策略),不会绑错;要精确到主机需把机制扩成双字段,另议。
 _ENTITY_BY_KIND = {
     "ip": ("IPAddress", "ip"),
     "account": ("Account", "sam"),
     "host": ("Host", "hostname"),
     "process": ("Process", "process_guid"),
-    "file": ("File", "sha256"),
+    "file": ("File", "path"),
     "domain": ("Domain", "fqdn"),
 }
 

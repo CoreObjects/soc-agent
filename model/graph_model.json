@@ -1,8 +1,9 @@
 {
   "$schema_note": "全场景安全告警研判知识图谱 · 单一事实源(Single Source of Truth)。v3 两层事实(实体结构 + 无损事件)+ 告警 + 经验。设计稿见 docs/graph-model/design-v3.md;事件落图映射见 docs/data-ingestion/ingest-mapping-spec.md。改模型只改此文件,并同步 soc-graph-ingest 的 cypher 白名单/映射 spec。",
-  "version": "3.0",
-  "status": "草案 (DRAFT · v3.0,已过用户设计评审,待落 mapper)",
+  "version": "3.1",
+  "status": "已落地 (v3.1 与线上 mapper/DDL 实测对账一致;强键权威在 soc-graph-ingest/ingest/keys.py,DDL 由其生成)",
   "changelog": [
+    "v3.1 (2026-08-11): ★与线上实测对账(WP3)。此前是 DRAFT、多处与线上不符,已按'改声明去迁就 mapper 与 recipe、绝不反过来'的原则修正:(1) 强键三处纠正 —— Host 键 asset_id→hostname(线上 88 万事件经它绑定,重 key 是 flag day;asset_id 降为属性,新租户策略另议)、File 键 sha256→(path,host)(且删除 `file_sha256 UNIQUE` 约束:同一二进制两路径即违约、整条事务失败,是地雷)、Uri 键 (host,path)→(uri)(web_exploit 读 u.uri,反过来改键会静默清空其取证)。(2) LogonSession 澄清为**二选一键**(logon_guid 非零则用,否则 logon_id),原并列写法易误读成复合键。(3) event_node.props 补齐 39 个线上实际写入、此前从未声明的标量(recipe 正在读它们)。(4) aggregate_edges.props **删掉 count** —— 它从未被写入过,lateral_movement 读它恒得 null,曾导致每次登录都被误判(见该文件 load-bearing 注释);次数一律从事件 `sum(coalesce(e.count,1))` 算。(5) aggregate_edges.verbs 补 TARGET/CLEARED(线上已在产出)。(6) 新增 Event.activity(中立活动类,WP4 起双写;event_code 保留原生值永不重编号)。强键与 DDL 的单一权威移到 ingest/keys.py 并由其生成,scripts/check_model_sync.py 在 CI 卡漂移。",
     "v3.0 (2026-07-07): 两层事实模型,取代 v1.x 单 :Event 星型。(1) 事实分两层:①事件节点(:Event 只存 time + 少量本次标量,无损细节层)经 BY→主语、<谓语>→宾语、FROM/ON_HOST→次要参与者 连实体;②聚合关系边(一对实体·一谓语一条,带 count/first_seen/last_seen,路径查询专用,躲开笛卡尔积爆炸)。谓语在事件的宾语边上→解决'A-B 两条聚合边、事件挂着分不清谁归谁'。(2) 告警:(:Event)-[:TRIGGERED]→(:Alert)-[:INDICATES]→(:Technique),单一触发事件=唯一溯源入口;告警 payload 自带底层事件→TRIGGERED 永不落空;废弃 v1.2 的 INVOLVES/ABOUT(实体全经触发事件一跳可达)。(3) 新增经验层:(:Alert)-[:CONCLUDED]→(:Verdict)-[:LED_TO]→(:Disposition)-[:ON]→(实体),Agent 研判/处置产出写回图作历史经验(留存永久)。(4) 边命名精简、不含宾语名词(TRIGGERED 不叫 TRIGGERED_ALERT)。(5) 事实层保持纯净:pattern_key/快慢通道/相似召回机制不入事实层(Agent 运行时);研判/处置结论入图(经验层)。入图门槛不变(能解析成实体且对取证有用才入,噪声/解析不进/无用的不入)。",
     "v1.2 (2026-07-06): 告警入图(Alert 提为 L1_alert,INVOLVES/ABOUT 挂实体/观测)+ 事实节点去下游污染。【已被 v3 取代】",
     "v1.1.1 (2026-07-03): event_uid_rule 加 host(record_id 每主机每通道计数器,跨主机撞)。",
@@ -42,29 +43,47 @@
     "experience":  {"title": "经验层 · 研判/处置产出", "desc": "Agent 调查完写回图,历史经验/判例,留存永久", "color": "#dc2626"}
   },
   "entities": [
-    {"name": "Host", "keys": ["asset_id"], "fallback_key": ["fqdn"], "props": ["hostname", "fqdn", "os", "role", "criticality", "zone"], "note": "IP 经 HAS_IP 边"},
+    {"name": "Host", "keys": ["hostname"], "props": ["hostname", "asset_id", "fqdn", "os", "role", "criticality", "zone", "is_dc"], "note": "★键=hostname(线上实况)。asset_id 是更正确的键(L2 文档第一条不变量:实体不得依赖会变的名字),但线上 88 万事件/21 万告警/16 万研判都经 hostname 绑定,重 key 是 flag day → 按'每租户键策略'处理:存量租户保持 hostname,新租户强制 asset_id;asset_id 始终作属性写入。IP 经 HAS_IP 边"},
     {"name": "Account", "keys": ["sam", "domain"], "fallback_key": ["sid"], "props": ["sam", "domain", "sid", "upn", "type"], "temporal_state_props": ["privileged", "spn", "delegation_flag", "preauth_flag"], "note": "★统一身份:按 (sam小写, 域NetBIOS) 建键(避免同一人从 SID键/sam键/UPN 各成节点、RAN_AS 2×、pivot 断半);SID/UPN 降为属性;无 sam 时退 SID 键。域归一=FQDN 首段大写(NORTH.SEVENKINGDOMS.LOCAL→NORTH)。可变状态属性带时效"},
     {"name": "Group", "keys": ["sid"], "fallback_key": ["name", "domain"], "props": ["sid", "name", "domain", "scope"]},
     {"name": "Process", "keys": ["process_guid"], "props": ["process_guid", "pid", "image", "command_line", "start_time"], "note": "由 ProcessCreate 生成;结构边 SPAWNED(父→子)/RAN_AS→Account"},
-    {"name": "File", "keys": ["sha256"], "fallback_key": ["path", "host"], "props": ["path", "md5", "sha256"], "note": "无 hash 时用 path+host 兜底键"},
+    {"name": "File", "keys": ["path", "host"], "props": ["path", "host", "md5", "sha256"], "note": "★键=(path,host)(线上实况)。sha256 **不是键、不加唯一约束** —— 同一个二进制出现在两个路径就会违约、整条事务失败;它降为普通索引(可查不唯一)。★soc-agent 的处置绑定 _ENTITY_BY_KIND['file'] 必须同步为 (path,host),否则文件类处置永远绑不上"},
     {"name": "RegistryKey", "keys": ["hive", "key_path"], "props": ["hive", "key_path"]},
     {"name": "RegistryValue", "keys": ["hive", "key_path", "value_name"], "props": ["hive", "key_path", "value_name"], "note": "改动经事件(谓语 SET);value_data 作事件标量"},
     {"name": "IPAddress", "keys": ["ip"], "props": ["ip", "version", "type", "geo", "asn", "reputation", "first_seen", "last_seen"], "note": "ip 为弱键(SNAT/NAT 干扰)"},
     {"name": "Domain", "keys": ["fqdn"], "props": ["fqdn", "netbios", "dc", "first_seen", "reputation"], "note": "AD 域实例化后带 netbios(与 Account.domain 对齐)+ dc;域间 TRUSTS 边"},
     {"name": "Service", "keys": ["service_id"], "props": ["service_id", "name", "kind", "port", "protocol", "host_header"], "note": "kind ∈ {web, mssql, certificate_authority, ...}"},
-    {"name": "LogonSession", "keys": ["logon_id", "logon_guid"], "props": ["logon_id", "logon_guid", "logon_type", "start_time"]},
+    {"name": "LogonSession", "keys": ["logon_guid"], "alt_keys": [["logon_id"]], "props": ["logon_id", "logon_guid", "logon_type", "start_time"], "note": "★**二选一**键不是复合键:logon_guid 非零(非 {000…})则用它,否则退 logon_id。原并列写法易被误读成复合键"},
     {"name": "Certificate", "keys": ["thumbprint"], "fallback_key": ["serial", "ca"], "props": ["thumbprint", "serial", "template", "subject", "ca"], "note": "有物料时实体化;ADCS 盲区时 CA 用 Service(kind=certificate_authority)代"},
     {"name": "DirectoryObject", "keys": ["guid"], "fallback_key": ["dn"], "props": ["dn", "guid", "object_class"]},
     {"name": "Ticket", "keys": ["ticket_hash"], "props": ["ticket_hash", "kind", "enc_type", "flags"], "note": "凭据对象,仅有真实票据物料(Rubeus/mimikatz)时才实体化;否则 enc_type/options 作事件标量"},
-    {"name": "Uri", "keys": ["host", "path"], "props": ["host", "path"]},
+    {"name": "Uri", "keys": ["uri"], "props": ["uri", "host", "path"], "note": "★键=uri(线上实况;原声明 (host,path) 与 DDL 索引一致但与 mapper 不一致,索引永远命不中)。**绝不能反过来改键**:web_exploit/recipe.py:35 读 u.uri、:68 收 uu.uri,改键会静默把 target_uri 变 null、清空 endpoints_hit、废掉带 uri binding 的指纹"},
     {"name": "Module", "keys": ["path", "host"], "fallback_key": ["sha256"], "props": ["path", "sha256", "signed"], "note": "DLL/驱动;ImageLoad 的宾语"}
   ],
   "event_node": {
     "name": "Event",
     "layer": "event",
     "keys": ["event_uid"],
-    "props": ["event_uid", "event_time", "ingest_time", "source", "sensor", "event_code", "outcome", "raw_ref"],
-    "scalar_leaf_props_note": "只放'本次独有、非实体'的标量;按谓语不同扩展(process_access: granted_access/call_trace;credential_request: enc_type/ticket_options;authentication: logon_type;registry_set: value_data;certificate: request_type)。参与者一律建实体、走边,不作字符串属性。",
+    "props": ["event_uid", "event_time", "ingest_time", "source", "sensor", "event_code", "activity", "outcome", "raw_ref",
+              "arrival_ms", "stream", "count"],
+    "props_note": "信封 + 编排注入 + 折叠。★`arrival_ms`/`stream` 由 tail.stamp_arrival 注入(到达单调,裁剪/播种用它,绝不用假日期 event_time)。★`count` = **折叠代表**的次数(同 sem_key 老事件塌成一条时写),读法一律 `sum(coalesce(e.count,1))`;它**只在事件上**,聚合边上没有(见 aggregate_edges)。★`activity` = 厂商中立活动类(WP4 起与 event_code 双写);`event_code` 保留**源的原生码**永不重编号(改它会作废已沉淀的经验语料)。查询过滤用 activity,身份与排障用 event_code。",
+    "scalar_leaf_props": {
+      "_note": "★以下为线上 mapper 实际写入、v3.0 从未声明而 recipe 正在读的标量(WP3 实测补齐)。按 activity 分组;不同源缺字段是正常的,recipe 必须优雅降级。",
+      "auth.logon": ["logon_type", "auth_package", "elevated_token", "status", "sub_status", "failure_reason"],
+      "auth.ticket_request": ["enc_type", "ticket_options", "preauth_type"],
+      "auth.explicit_creds": ["process_name", "target_server", "creds_sam", "creds_domain"],
+      "directory.access": ["access_mask", "properties", "operation"],
+      "cert.request": ["attributes", "request_id", "subject_dn", "disposition"],
+      "process.spawn": ["integrity_level"],
+      "process.access": ["granted_access", "call_trace"],
+      "script.exec": ["script_block_text", "message_no", "message_total"],
+      "network.flow": ["dst_port", "proto", "initiated"],
+      "dns.query": ["query_status", "answers"],
+      "file.write": ["creation_time"],
+      "registry.set": ["operation", "value_data"],
+      "http.request": ["http_method", "http_status", "payload", "rule_ids", "hostname", "client_port", "request_id"]
+    },
+    "scalar_leaf_props_note": "只放'本次独有、非实体'的标量。参与者一律建实体、走边,不作字符串属性。★注:上表多数是 Windows/Sysmon/ModSec 形状(enc_type/call_trace/logon_type…),这是**故意的**——它们是真实取证证据,不该为了'中立'而抹掉;中立性靠 activity 分派与 recipe 的优雅降级实现,不靠阉割字段。",
     "edges": {
       "subject": {"name": "BY", "to": ["Account", "Process"], "card": "1", "note": "主语/actor;谁做的"},
       "predicate": {"name": "<谓语>", "to": "宾语实体(按 verb_registry)", "card": "1", "note": "边类型=谓语(见 verb_registry);事件的宾语边"},
@@ -98,9 +117,9 @@
   },
   "aggregate_edges": {
     "desc": "结构/路径层。每对实体·每种谓语只一条,谓语名同 verb_registry;带统计。路径查询只走这层→一对实体一条边,变长路径不爆炸。事件↔聚合边归属靠'谓语+端点'推出。",
-    "props": ["count", "first_seen", "last_seen"],
-    "stats_note": "初版只放 count/first/last;distinct 源IP集合/max 权限等摘要先不放(细节在事件节点,随时能算),高频查询卡住再加。",
-    "verbs": ["SPAWNED", "ACCESSED", "LOADED", "WROTE", "SET", "CONNECTED_TO", "QUERIED", "AUTHENTICATED_TO", "REQUESTED", "ADDED", "EXECUTED"]
+    "props": ["first_seen", "last_seen"],
+    "stats_note": "★v3.1 **删掉 count**:它从未被写入过(cypher._render_agg_edge 只落 first/last,注释写明'count 不落边、查询现算'),而 lateral_movement 曾按声明去读 `r.count`,恒得 null → `host_baseline_present` 永不触发 → **每次登录都被误判成红**(该 recipe 里留有 load-bearing 注释记录此事)。次数一律从事件层算:`sum(coalesce(e.count,1))`。基线'有没有'看边是否存在(r.first_seen),'多少次'看事件。",
+    "verbs": ["SPAWNED", "ACCESSED", "LOADED", "WROTE", "SET", "CONNECTED_TO", "QUERIED", "AUTHENTICATED_TO", "REQUESTED", "ADDED", "EXECUTED", "CLEARED", "TARGET"]
   },
   "structural_edges": {
     "desc": "实体↔实体的非事件聚合结构关系(归属/静态事实)",
