@@ -44,6 +44,8 @@ QUERIES = {
     "alert_source": ("MATCH (a:Alert {source:$v}) RETURN count(a) AS n", "Alert"),
 }
 
+LOW_WATER = 100     # 低于此数 = 该 recipe 几乎没被真实数据验证过(警告,不失败)
+
 
 def main():
     cfg = Config.from_env(dotenv_path=str(ROOT / ".env"))
@@ -53,7 +55,7 @@ def main():
         return 2
 
     graph = Neo4jGraph(cfg.neo4j_uri, cfg.neo4j_user, cfg.neo4j_password, cfg.neo4j_database)
-    dead = []
+    dead, thin = [], []
     try:
         total_ev = graph.run_cypher("MATCH (e:Event) RETURN count(e) AS n")[0]["n"]
         total_al = graph.run_cypher("MATCH (a:Alert) RETURN count(a) AS n")[0]["n"]
@@ -63,14 +65,26 @@ def main():
         for (kind, val), users in sorted(lits.items()):
             q, _ = QUERIES[kind]
             n = graph.run_cypher(q, v=val)[0]["n"]
-            flag = "  ⚠ 零行!" if n == 0 else ""
+            # ★"零行"是硬失败;但"只有个位数"同样危险 —— 实测 waf_match 在 88.6 万事件的图里只有 4 条,
+            #   等于该 recipe 几乎没被真实数据验证过,且从 4 掉到 4(陈旧)用 >0 阈值看不出来。
             if n == 0:
                 dead.append((kind, val, users))
+                flag = "  ⚠ 零行!"
+            elif n < LOW_WATER:
+                thin.append((kind, val, users, n))
+                flag = f"  ⚠ 低水位(<{LOW_WATER})"
+            else:
+                flag = ""
             print(f"{kind:13} {val:12} {n:>10}  {', '.join(sorted(set(users)))}{flag}")
     finally:
         graph.close()
 
     print()
+    if thin:
+        print(f"⚠ {len(thin)} 条字面量数据极少(<{LOW_WATER}),对应 recipe 基本未被真实数据检验:")
+        for kind, val, users, n in thin:
+            print(f"   · {kind}='{val}' 仅 {n} 条  ← {', '.join(sorted(set(users)))}")
+        print("   含义:该源要么刚接、要么已停;'从 4 条掉到 4 条陈旧'用 >0 阈值发现不了。")
     if dead:
         print(f"❌ {len(dead)} 条字面量在图里取不到任何数据 —— 对应 recipe 现在是**静默瞎的**:")
         for kind, val, users in dead:
