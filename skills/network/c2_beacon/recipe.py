@@ -16,7 +16,34 @@ import re
 from datetime import datetime
 
 from soc_agent.forensics import Finding, Forensics
-from soc_agent.recipe_lib import bucket, decode_chain, provisioning_noise, security_agent
+from soc_agent.graph.pivot import resolve_pivot
+from soc_agent.recipe_lib import (bucket, coverage_absent, decode_chain, provisioning_noise,
+                                  security_agent)
+
+# 本 recipe 能在哪些主语上工作(WP7 pivot 多态):
+#   process  —— Sysmon EID3/22(GOAD 今天走这条,查询字面量原样保留)
+#   endpoint —— Zeek conn/dns、NetFlow 那类**没有发起进程**的记录,主语是源 IP
+# ★"周期性"这条核心判据在 endpoint 上照样成立(数的是流,不是进程),所以 endpoint 值得支持;
+#   而"发起进程画像"那条判据不成立 → 该轴单独产出 `_coverage.absent`,不是整条 recipe 弃疗。
+SUPPORTED_PIVOTS = ("process", "endpoint")
+
+# ★process 分支:与迁移前**逐字相同**(Windows 侧零回归的依据就是它没被动过)
+_BASE_PROCESS = (
+    "MATCH (a:Alert {alert_uid:$aid})<-[:TRIGGERED]-(e:Event)-[:BY]->(p:Process) "
+    "OPTIONAL MATCH (e)-[:CONNECTED_TO]->(ip:IPAddress) "
+    "OPTIONAL MATCH (e)-[:QUERIED]->(d:Domain) "
+    "OPTIONAL MATCH (e)-[:ON_HOST]->(h:Host) "
+    "RETURN p.process_guid AS proc_guid, p.image AS image, p.command_line AS command_line, "
+    "e.dst_port AS dst_port, ip.ip AS dst_ip, d.fqdn AS dst_domain, h.hostname AS host")
+
+# endpoint 分支:同一行形状,进程侧三列恒 null(下游逻辑一行不用改)
+_BASE_ENDPOINT = (
+    "MATCH (a:Alert {alert_uid:$aid})<-[:TRIGGERED]-(e:Event)-[:BY]->(src:IPAddress) "
+    "OPTIONAL MATCH (e)-[:CONNECTED_TO]->(ip:IPAddress) "
+    "OPTIONAL MATCH (e)-[:QUERIED]->(d:Domain) "
+    "OPTIONAL MATCH (e)-[:ON_HOST]->(h:Host) "
+    "RETURN null AS proc_guid, null AS image, null AS command_line, src.ip AS src_ip, "
+    "e.dst_port AS dst_port, ip.ip AS dst_ip, d.fqdn AS dst_domain, h.hostname AS host")
 
 # 浏览器 = 周期性 HTTP/DNS 外连的正常发起者(通用允许集,非厂商黑名单);非浏览器发起信标 = 可疑
 _BROWSER = re.compile(r"chrome\.exe|msedge\.exe|firefox\.exe|iexplore\.exe|opera\.exe|brave\.exe|safari", re.I)
@@ -55,18 +82,23 @@ def collect(graph, alert, seed=None) -> Forensics:
     aid = alert.alert_uid
     ctx, findings, bindings = {}, [], {}
 
-    base = graph.run_cypher(
-        "MATCH (a:Alert {alert_uid:$aid})<-[:TRIGGERED]-(e:Event)-[:BY]->(p:Process) "
-        "OPTIONAL MATCH (e)-[:CONNECTED_TO]->(ip:IPAddress) "
-        "OPTIONAL MATCH (e)-[:QUERIED]->(d:Domain) "
-        "OPTIONAL MATCH (e)-[:ON_HOST]->(h:Host) "
-        "RETURN p.process_guid AS proc_guid, p.image AS image, p.command_line AS command_line, "
-        "e.dst_port AS dst_port, ip.ip AS dst_ip, d.fqdn AS dst_domain, h.hostname AS host",
-        aid=aid)
+    # ★先定主语:进程发起的信标,还是一条只有源 IP 的流/DNS 记录?
+    pivot = resolve_pivot(graph, aid)
+    if pivot is None or pivot.kind not in SUPPORTED_PIVOTS:
+        return Forensics(
+            findings=[coverage_absent("c2_beacon", need="network_flow_telemetry", pivot=pivot,
+                                      detail="主语既不是进程也不是端点,数不出「谁反复连了哪儿」")],
+            context={"pivot": getattr(pivot, "kind", None)},
+            blind_spots="这条告警的触发事件没有可用主语(进程/源端点),周期性判据整条不成立")
+    ctx["主语(pivot)"] = {"kind": pivot.kind, "label": pivot.label,
+                       "key": pivot.key_prop, "value": pivot.key_value}
+
+    base = graph.run_cypher(_BASE_PROCESS if pivot.kind == "process" else _BASE_ENDPOINT, aid=aid)
     b = base[0] if base else {}
     ctx["进程与目标"] = b
-    pg, image = b.get("proc_guid"), b.get("image")
+    image = b.get("image")
     dst_ip, dst_domain, host = b.get("dst_ip"), b.get("dst_domain"), b.get("host")
+    pk = pivot.key_value
 
     # 实体登记:进程 image 保留原值(语义承重 key),身份角色(ip/域/主机)供指纹抽象为占位符
     if image:
@@ -77,6 +109,8 @@ def collect(graph, alert, seed=None) -> Forensics:
         bindings["domain"] = dst_domain
     if host:
         bindings["host"] = host
+    if b.get("src_ip"):
+        bindings["src_ip"] = b["src_ip"]
 
     # ★解码发起命令行 + 良性供给/自检证伪 —— 编码信标的真身摊开
     layers = decode_chain(b.get("command_line") or "")
@@ -89,21 +123,21 @@ def collect(graph, alert, seed=None) -> Forensics:
 
     # 外连/DNS 反复性 —— 周期性粗信号(count 分桶;高=可疑但单独绝不定性)
     ref_time = alert.time                 # 域新鲜度参考时刻:优先告警时间,缺则退聚合末次时间
-    if pg and dst_ip:                     # HTTP beacon:数连接事件(聚合边不存 count,现算)
+    if pk is not None and dst_ip:         # HTTP beacon:数连接事件(聚合边不存 count,现算)
         http = graph.run_cypher(
-            "MATCH (e:Event)-[:BY]->(:Process {process_guid:$g}) "
+            "MATCH " + pivot.match() + " "
             "MATCH (e)-[:CONNECTED_TO]->(:IPAddress {ip:$ip}) "
             "RETURN sum(coalesce(e.count,1)) AS count, min(e.event_time) AS first_seen, max(e.event_time) AS last_seen",
-            g=pg, ip=dst_ip)
+            pk=pk, ip=dst_ip)
         ctx["外连聚合(周期性)"] = http
         _emit_periodic(findings, http, "http", aid)
         ref_time = ref_time or (http[0].get("last_seen") if http else None)
-    if pg and dst_domain:                 # DNS beacon:数查询事件
+    if pk is not None and dst_domain:     # DNS beacon:数查询事件
         dns = graph.run_cypher(
-            "MATCH (e:Event)-[:BY]->(:Process {process_guid:$g}) "
+            "MATCH " + pivot.match() + " "
             "MATCH (e)-[:QUERIED]->(:Domain {fqdn:$f}) "
             "RETURN sum(coalesce(e.count,1)) AS count, min(e.event_time) AS first_seen, max(e.event_time) AS last_seen",
-            g=pg, f=dst_domain)
+            pk=pk, f=dst_domain)
         ctx["DNS查询聚合(周期性)"] = dns
         _emit_periodic(findings, dns, "dns", aid)
         ref_time = ref_time or (dns[0].get("last_seen") if dns else None)
@@ -119,11 +153,11 @@ def collect(graph, alert, seed=None) -> Forensics:
             findings.append(Finding("c2.new_domain", {}, evidence_ref=aid, polarity="red"))
 
     parent = None
-    if pg:                                # 发起进程正常吗
+    if pivot.kind == "process":           # 发起进程正常吗
         proc = graph.run_cypher(
             "MATCH (p:Process {process_guid:$g}) OPTIONAL MATCH (parent:Process)-[:SPAWNED]->(p) "
             "OPTIONAL MATCH (p)-[:RAN_AS]->(acc:Account) "
-            "RETURN parent.image AS parent, acc.sam AS account", g=pg)
+            "RETURN parent.image AS parent, acc.sam AS account", g=pk)
         ctx["发起进程"] = proc
         parent = proc[0].get("parent") if proc else None
 
@@ -143,6 +177,12 @@ def collect(graph, alert, seed=None) -> Forensics:
             findings.append(Finding("c2.suspicious_process",
                                     {"image": image, "parent": parent, "suspicious_parent": susp_parent},
                                     evidence_ref=aid, polarity="red"))
+    else:
+        # ★三信号里的"③ 进程异常"这一轴整条不可用(周期性/目标可疑两轴仍然成立)。
+        #   不说出来的话,下游看到的是"查过进程了、没发现可疑" —— 与事实相反。
+        findings.append(coverage_absent("c2_beacon", need="process_telemetry", pivot=pivot,
+                                        detail="无发起进程 image:进程画像(浏览器/更新器/可疑父链)"
+                                               "与编码命令解码 均不可用,只剩周期性与目标可疑两轴"))
 
     return Forensics(findings=findings, bindings=bindings, context=ctx,
                      blind_spots="精确信标周期/jitter 显著性、字节量/时长、DNS 深度特征(记录类型/子域熵/NXDOMAIN)、"

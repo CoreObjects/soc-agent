@@ -7,8 +7,47 @@
 import base64
 import re
 
+from soc_agent.forensics import Finding
+
 __all__ = ["decode_powershell_cmd", "decode_chain", "provisioning_noise", "security_agent",
-           "bucket", "is_machine"]
+           "bucket", "is_machine", "coverage_absent", "probe"]
+
+# ---------------------------------------------------------------------------
+# 覆盖度感知(WP7):recipe 拿不到它赖以判别的那类遥测时,**明说自己瞎了**。
+#
+# 为什么必须有:三个 network/application recipe 的锚点查询是**硬性** `-[:BY]->(:Process)`,
+# 换成没有发起进程的源(Zeek/NetFlow/防火墙)→ `base==[]` → `findings==[]` → 不报错,
+# 落深度 LLM,给出一个**自信的空结论**。空 findings 与"确实没发现异常"在下游无法区分,
+# 这是本系统里最贵的一类静默失败:它不会红,只会让结论悄悄变差。
+#
+# ★`_` 前缀 = 元 finding(不是证据)。`distill` 把它排除在指纹之外 ——
+#   否则"瞎了 → 判 FP"会被当成经验学下来,以后一瞎就自动放过。
+# ---------------------------------------------------------------------------
+
+
+def coverage_absent(skill, *, need, pivot=None, detail=None) -> Finding:
+    """产出 `_coverage.absent`:这条 recipe 需要 `need` 这类遥测,当前数据里没有。
+
+    need 用**通用遥测类别名**(process_telemetry / file_telemetry / dns_telemetry …),
+    不写厂商名 —— 跟指纹守的是同一条可移植性红线。
+    """
+    attrs = {"skill": skill, "need": need, "pivot_kind": getattr(pivot, "kind", None)}
+    if detail:
+        attrs["detail"] = detail
+    return Finding("_coverage.absent", attrs, polarity="neutral")
+
+
+def probe(graph, query, *, skill, need, findings, pivot=None, **params):
+    """跑一条"按契约本应有行"的查询;**零行 = 覆盖度缺口**,追加 `_coverage.absent` 再返回 []。
+
+    这就是计划里 `run_cypher(..., expect=...)` 的落点。★没做进 `graph.client.run_cypher`:
+    那是 LLM 工具共用的只读 API,让它反向依赖 `forensics.Finding` 会把两层黏死;
+    而且"零行意味着什么"本来就是 recipe 的语义,不是图客户端的。
+    """
+    rows = graph.run_cypher(query, **params)
+    if not rows:
+        findings.append(coverage_absent(skill, need=need, pivot=pivot))
+    return rows
 
 
 def bucket(n) -> str:

@@ -59,20 +59,27 @@ class Skill:
     path: Path
     is_generic: bool = False
     recipe: Optional[object] = None                # recipe.py::collect(graph,alert,seed)→证据(慢通道喂 LLM)
+    # ★recipe 加载失败的原因(语法/导入错)。**隔离但不静默**:
+    #   以前这里只 `return None`,一个坏 recipe 就把该 skill 静默降级成"没有取证能力",
+    #   系统照跑、只是从此永远走裸 LLM —— 与 `_coverage.absent` 要治的是同一类病
+    #   (不报错、结论悄悄变差)。存下来,让 `registry.load_errors()` 能把它喊出来。
+    recipe_error: Optional[str] = None
 
 
 def _load_attr(dir_path: Path, filename: str, attr: str):
-    """加载 skill 目录里某 .py 的某函数;不存在→None;★出错→None(每文件隔离,坏文件不拖垮 registry)。"""
+    """加载 skill 目录里某 .py 的某函数 → `(func|None, error|None)`。
+    ★出错不抛(每文件隔离,坏文件不拖垮 registry),但**把原因带出来**,不吞。"""
     fp = dir_path / filename
     if not fp.exists():
-        return None
+        return None, None
     try:
         spec = importlib.util.spec_from_file_location(f"skill_{attr}_{dir_path.name}", fp)
         mod = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(mod)
-        return getattr(mod, attr, None)
-    except Exception:               # 语法/导入错等 → 该 skill 缺这块能力,但不炸整个加载
-        return None
+        fn = getattr(mod, attr, None)
+        return fn, (None if fn else f"{filename} 里没有 {attr}()")
+    except Exception as e:          # 语法/导入错等 → 该 skill 缺这块能力,但不炸整个加载
+        return None, f"{type(e).__name__}: {e}"
 
 
 def _load_recipe(dir_path: Path):
@@ -85,6 +92,7 @@ def load_skill(dir_path, is_generic: bool = False) -> Skill:
     tids = meta.get("technique_ids") or []
     if isinstance(tids, str):
         tids = [tids] if tids else []
+    recipe, recipe_error = _load_recipe(dir_path)
     return Skill(
         name=meta.get("name") or dir_path.name,
         layer=meta.get("layer") or None,
@@ -93,7 +101,8 @@ def load_skill(dir_path, is_generic: bool = False) -> Skill:
         methodology=body.strip(),
         path=dir_path,
         is_generic=is_generic,
-        recipe=_load_recipe(dir_path),
+        recipe=recipe,
+        recipe_error=recipe_error,
     )
 
 
@@ -112,6 +121,11 @@ class SkillRegistry:
 
     def all(self) -> list:
         return list(self._skills)
+
+    def load_errors(self) -> list:
+        """`[(skill 名, 原因)]` —— recipe 加载失败的 skill。★启动/诊断时必须看它:
+        一个语法坏掉的 recipe 不会让任何东西崩,只会让那条线从此永远走裸 LLM。"""
+        return [(s.name, s.recipe_error) for s in self._skills if s.recipe_error]
 
     def specific(self) -> list:
         """非兜底 skill(供 LLM 路由做 Discovery 的候选集)。"""

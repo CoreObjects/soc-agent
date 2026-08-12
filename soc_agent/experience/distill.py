@@ -50,6 +50,10 @@ def distill(llm, skill, findings, bindings, verdict, agent_name=None, origin_cas
     if verdict is None or verdict.verdict not in ("true_positive", "false_positive", "benign"):
         return None
     kind = "threat" if verdict.verdict == "true_positive" else "benign_fp"
+    # ★`_` 前缀 = 元 finding(`_coverage.absent` 这种"我瞎了"的自述),不是证据,一律不进指纹。
+    #   否则"缺进程遥测 → 没发现异常 → FP"会被蒸馏成经验,
+    #   下次同样瞎的时候直接自动放过 —— 等于把覆盖度缺口学成了免责条款。
+    findings = [f for f in (findings or []) if not str(f.finding_id).startswith("_")]
     finding_ids = sorted({f.finding_id for f in findings})
     if not finding_ids:
         return None

@@ -29,6 +29,17 @@ def _suspicious_outbound():
     return SkillRegistry(_SKILLS).by_name("suspicious_outbound").recipe
 
 
+def pivot_process(guid, hostname=None):
+    """`resolve_pivot` 的预置行:主语 = Process(GOAD/Sysmon 今天的形状)。
+
+    ★WP7 起 recipe **先解析主语再取证**,所以 fixture 必须把"这条告警的主语是谁"说清楚。
+    不给的话 recipe 会产出 `_coverage.absent` —— 这正是它该有的行为(见 test_pivot.py)。
+    """
+    return ("labels(subj) AS subj_labels",
+            [{"subj_labels": ["Process"], "subj": {"process_guid": guid},
+              "src_labels": None, "src": None, "hostname": hostname}])
+
+
 def _finding(fo, fid):
     return next(f for f in fo.findings if f.finding_id == fid)
 
@@ -36,6 +47,7 @@ def _finding(fo, fid):
 # ---------- ① 可疑态:LOLBin(rundll32)+ 非标端口(4444)+ 反复外连(30) → red ----------
 def test_lolbin_nonstandard_repetitive_emits_red_findings_and_bindings():
     graph = FakeGraph([
+        pivot_process("pg-c2", "WKS01"),
         # base 查询(唯一子串 "e.dst_port AS dst_port")
         ("e.dst_port AS dst_port",
          [{"proc_guid": "pg-c2", "image": r"C:\Windows\System32\rundll32.exe",
@@ -81,6 +93,7 @@ def test_lolbin_nonstandard_repetitive_emits_red_findings_and_bindings():
 # ---------- ② 良性态:命中 Ansible 供给噪声 → white,非 LOLBin,常见端口 ----------
 def test_provisioning_noise_benign_emits_white_and_no_lolbin():
     graph = FakeGraph([
+        pivot_process("pg-ci", "SRV05"),
         ("e.dst_port AS dst_port",
          [{"proc_guid": "pg-ci", "image": r"C:\ProgramData\ansible\exec_wrapper.exe",
            "command_line": "exec_wrapper.exe; ConvertFrom-AnsibleJson $payload; Write-AnsibleLog ok",

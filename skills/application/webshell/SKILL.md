@@ -3,6 +3,7 @@ name: webshell
 layer: application
 technique_ids: [T1505.003]
 description: 研判 Webshell 上传/落地/利用告警。当告警涉及"上传可执行脚本到 Web 目录(.aspx/.php/.jsp)""Web 进程(w3wp/php-cgi)写脚本文件到站点根""webshell 被回连执行(Web 进程派生 cmd/powershell)"时选它。关键词 webshell/web shell/aspx/php/jsp/china chopper/behinder/冰蝎/inetpub/wwwroot/w3wp。
+supported_pivots: [process, host]
 ---
 # Webshell 上传与落地研判(T1505.003)
 

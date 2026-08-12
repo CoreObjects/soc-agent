@@ -13,7 +13,34 @@ active_use(红,写后派生 shell 或外连)。红=攻击迹象,白=良性豁免
 import re
 
 from soc_agent.forensics import Finding, Forensics
-from soc_agent.recipe_lib import decode_chain, provisioning_noise, security_agent
+from soc_agent.graph.pivot import resolve_pivot
+from soc_agent.recipe_lib import coverage_absent, decode_chain, provisioning_noise, security_agent
+
+# 本 recipe 能在哪些主语上工作(WP7 pivot 多态):
+#   process —— Sysmon EID11(GOAD 今天走这条,查询字面量原样保留);判别链条**完整**
+#   host    —— 纯 FIM/文件审计源(没有写入进程归因):只拿得到"落了什么、落在哪",
+#              ★核心判别①(写入进程是不是 web 服务进程)结构上不成立 → 显式 `_coverage.absent`
+# ★这里不硬凑:webshell 的判别本质就是"谁写的",拿不到写入者就是拿不到;
+#   把话说清楚,比编一个看起来合理的结论有价值得多。
+SUPPORTED_PIVOTS = ("process", "host")
+
+# ★process 分支:与迁移前**逐字相同**(Windows 侧零回归的依据就是它没被动过)
+_BASE_PROCESS = (
+    "MATCH (a:Alert {alert_uid:$aid})<-[:TRIGGERED]-(e:Event)-[:BY]->(w:Process) "
+    "OPTIONAL MATCH (e)-[:WROTE]->(f:File) "
+    "OPTIONAL MATCH (e)-[:ON_HOST]->(h:Host) "
+    "RETURN w.process_guid AS writer_guid, w.image AS writer_image, w.command_line AS writer_cmd, "
+    "collect(DISTINCT f.path) AS dropped_paths, "
+    "h.hostname AS host, h.role AS host_role, h.criticality AS host_criticality")
+
+# host 分支:无写入进程归因,写入者三列恒 null;落盘文件与主机画像仍然拿得到
+_BASE_HOST = (
+    "MATCH (a:Alert {alert_uid:$aid})<-[:TRIGGERED]-(e:Event) "
+    "OPTIONAL MATCH (e)-[:WROTE]->(f:File) "
+    "OPTIONAL MATCH (e)-[:ON_HOST]->(h:Host) "
+    "RETURN null AS writer_guid, null AS writer_image, null AS writer_cmd, "
+    "collect(DISTINCT f.path) AS dropped_paths, "
+    "h.hostname AS host, h.role AS host_role, h.criticality AS host_criticality")
 
 _WEBROOT_HINT = ("inetpub", "wwwroot", "htdocs", "\\www\\", "webapps", "\\web\\")
 _SHELL = re.compile(r"cmd\.exe|powershell|pwsh|/bin/(?:ba)?sh|\bbash\b|\bsh\b", re.I)
@@ -28,14 +55,18 @@ def collect(graph, alert, seed=None) -> Forensics:
     aid = alert.alert_uid
     ctx, findings, bindings = {}, [], {}
 
-    base = graph.run_cypher(
-        "MATCH (a:Alert {alert_uid:$aid})<-[:TRIGGERED]-(e:Event)-[:BY]->(w:Process) "
-        "OPTIONAL MATCH (e)-[:WROTE]->(f:File) "
-        "OPTIONAL MATCH (e)-[:ON_HOST]->(h:Host) "
-        "RETURN w.process_guid AS writer_guid, w.image AS writer_image, w.command_line AS writer_cmd, "
-        "collect(DISTINCT f.path) AS dropped_paths, "
-        "h.hostname AS host, h.role AS host_role, h.criticality AS host_criticality",
-        aid=aid)
+    # ★先定主语:有写入进程(EID11 那类),还是只有一条文件变更记录(纯 FIM)?
+    pivot = resolve_pivot(graph, aid)
+    if pivot is None or pivot.kind not in SUPPORTED_PIVOTS:
+        return Forensics(
+            findings=[coverage_absent("webshell", need="file_write_telemetry", pivot=pivot,
+                                      detail="主语既不是写入进程也不是主机,取不到「谁往哪儿写了什么」")],
+            context={"pivot": getattr(pivot, "kind", None)},
+            blind_spots="这条告警的触发事件没有可用主语(写入进程/主机),落盘判别整条不成立")
+    ctx["主语(pivot)"] = {"kind": pivot.kind, "label": pivot.label,
+                       "key": pivot.key_prop, "value": pivot.key_value}
+
+    base = graph.run_cypher(_BASE_PROCESS if pivot.kind == "process" else _BASE_HOST, aid=aid)
     b = base[0] if base else {}
     wg, wimg = b.get("writer_guid"), (b.get("writer_image") or "")
     # 反斜杠归一 + 去重(同一文件因 alert 双转义/winlogbeat 单转义建了两个 File 节点)
@@ -61,6 +92,15 @@ def collect(graph, alert, seed=None) -> Forensics:
         bindings["process"] = wimg          # 进程镜像原值 = 可移植承重 key(fingerprint 保留不抽象)
     if host:
         bindings["host"] = host
+
+    # ★没有写入进程归因 = 本 skill 的核心判别①整条失效。必须明说:
+    #   否则 writer_is_webproc/agent 双双 False,读起来像"查过了,写入者不是 web 进程也不是安全代理",
+    #   而事实是"根本不知道谁写的" —— 这两件事对结论的意义完全相反。
+    if not wimg:
+        findings.append(coverage_absent(
+            "webshell", need="process_telemetry", pivot=pivot,
+            detail="无写入进程归因:核心判别①(写入者是否 web 服务进程)、安全代理证伪、"
+                   "写入命令解码、写后派生/外连 全部不可用,只剩落盘路径一条判据"))
 
     # 触发本身:一次脚本落盘(writer_image 原值进 attrs 作承重 key;host_role/criticality 标量随行)
     if base:

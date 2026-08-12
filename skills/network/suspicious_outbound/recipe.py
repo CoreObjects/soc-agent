@@ -15,7 +15,35 @@ finding 词典(方法论):
 代理后落点、协议真伪、IP/域 reputation 需探针,是图盲区。
 """
 from soc_agent.forensics import Finding, Forensics
-from soc_agent.recipe_lib import bucket, decode_chain, provisioning_noise
+from soc_agent.graph.pivot import resolve_pivot
+from soc_agent.recipe_lib import bucket, coverage_absent, decode_chain, provisioning_noise
+
+# 本 recipe 能在哪些主语上工作(WP7 pivot 多态):
+#   process  —— Sysmon EID3 那类"进程发起外连"(GOAD 今天走这条,查询字面量原样保留)
+#   endpoint —— Zeek/NetFlow/防火墙那类**没有发起进程**的流记录,主语是源 IP
+# host/principal 拿不到"谁连了哪儿",不在此列 → 产出 `_coverage.absent`,绝不静默返回空。
+SUPPORTED_PIVOTS = ("process", "endpoint")
+
+# ★process 分支:与迁移前**逐字相同**(Windows 侧零回归的依据就是它没被动过)
+_BASE_PROCESS = (
+    "MATCH (a:Alert {alert_uid:$aid})<-[:TRIGGERED]-(e:Event)-[:BY]->(p:Process) "
+    "OPTIONAL MATCH (e)-[:CONNECTED_TO]->(ip:IPAddress) "
+    "OPTIONAL MATCH (e)-[:ON_HOST]->(h:Host) "
+    "OPTIONAL MATCH (parent:Process)-[:SPAWNED]->(p) "
+    "OPTIONAL MATCH (p)-[:RAN_AS]->(acc:Account) "
+    "RETURN p.process_guid AS proc_guid, p.image AS image, p.command_line AS command_line, "
+    "parent.image AS parent, acc.sam AS account, "
+    "ip.ip AS dst_ip, e.dst_port AS dst_port, e.proto AS proto, h.hostname AS host")
+
+# endpoint 分支:同一行形状,进程侧三列恒 null —— 下游逻辑一行不用改;
+# 而"进程侧为空"会被显式记成 `_coverage.absent`,不会被当成"查过了、没异常"。
+_BASE_ENDPOINT = (
+    "MATCH (a:Alert {alert_uid:$aid})<-[:TRIGGERED]-(e:Event)-[:BY]->(src:IPAddress) "
+    "OPTIONAL MATCH (e)-[:CONNECTED_TO]->(ip:IPAddress) "
+    "OPTIONAL MATCH (e)-[:ON_HOST]->(h:Host) "
+    "RETURN null AS proc_guid, null AS image, null AS command_line, "
+    "null AS parent, null AS account, src.ip AS src_ip, "
+    "ip.ip AS dst_ip, e.dst_port AS dst_port, e.proto AS proto, h.hostname AS host")
 
 # 常见/正当业务端口(Web/代理/DB/邮件/目录服务等);不在此集合的 → 提示"非常用"(端口值只进 ctx)
 _COMMON_PORTS = {20, 21, 22, 25, 53, 80, 110, 143, 389, 443, 445, 465, 587, 636, 993, 995,
@@ -53,20 +81,22 @@ def collect(graph, alert, seed=None) -> Forensics:
     aid = alert.alert_uid
     ctx, findings, bindings = {}, [], {}
 
-    # 1. 发起进程 + 外连目标(IP/端口/proto)+ 父链 + 账号(★cypher 不动)
-    base = graph.run_cypher(
-        "MATCH (a:Alert {alert_uid:$aid})<-[:TRIGGERED]-(e:Event)-[:BY]->(p:Process) "
-        "OPTIONAL MATCH (e)-[:CONNECTED_TO]->(ip:IPAddress) "
-        "OPTIONAL MATCH (e)-[:ON_HOST]->(h:Host) "
-        "OPTIONAL MATCH (parent:Process)-[:SPAWNED]->(p) "
-        "OPTIONAL MATCH (p)-[:RAN_AS]->(acc:Account) "
-        "RETURN p.process_guid AS proc_guid, p.image AS image, p.command_line AS command_line, "
-        "parent.image AS parent, acc.sam AS account, "
-        "ip.ip AS dst_ip, e.dst_port AS dst_port, e.proto AS proto, h.hostname AS host",
-        aid=aid)
+    # 0. ★先定主语:是进程发起的外连,还是一条只有源 IP 的流记录?
+    pivot = resolve_pivot(graph, aid)
+    if pivot is None or pivot.kind not in SUPPORTED_PIVOTS:
+        return Forensics(
+            findings=[coverage_absent("suspicious_outbound", need="network_flow_telemetry",
+                                      pivot=pivot, detail="主语既不是进程也不是端点,取不到「谁连了哪儿」")],
+            context={"pivot": getattr(pivot, "kind", None)},
+            blind_spots="这条告警的触发事件没有可用主语(进程/源端点),本 recipe 的判别链条整条不成立")
+    ctx["主语(pivot)"] = {"kind": pivot.kind, "label": pivot.label,
+                       "key": pivot.key_prop, "value": pivot.key_value}
+
+    # 1. 发起主语 + 外连目标(IP/端口/proto)+ 父链 + 账号
+    base = graph.run_cypher(_BASE_PROCESS if pivot.kind == "process" else _BASE_ENDPOINT, aid=aid)
     b = base[0] if base else {}
     ctx["进程与目标+父链"] = b
-    pg, image, dst_ip = b.get("proc_guid"), b.get("image"), b.get("dst_ip")
+    image, dst_ip = b.get("image"), b.get("dst_ip")
     dst_port, proto, host = b.get("dst_port"), b.get("proto"), b.get("host")
 
     # 实例登记:process 保留 image 原值(承重 key,不抽象);ip/host = 身份角色 → 抽象为占位符
@@ -76,6 +106,14 @@ def collect(graph, alert, seed=None) -> Forensics:
         bindings["ip"] = dst_ip
     if host:
         bindings["host"] = host
+    if b.get("src_ip"):
+        bindings["src_ip"] = b["src_ip"]
+
+    # ★没有进程遥测 = LOLBin / 命令行解码 / 供给噪声证伪三条判据整条失效 —— 明说,别装作查过了。
+    if not image:
+        findings.append(coverage_absent("suspicious_outbound", need="process_telemetry", pivot=pivot,
+                                        detail="无发起进程 image/command_line:"
+                                               "LOLBin 判别、编码命令解码、良性供给证伪 均不可用"))
 
     # 触发本身:一次外连(proto 承 attrs 供指纹按"协议种类"泛化;端口易变,只进 ctx 不入 attrs)
     if b:
@@ -103,12 +141,12 @@ def collect(graph, alert, seed=None) -> Forensics:
 
     # 5. 外连反复性:数连接事件 —— 反复=通道而非误触。
     #    ★count-aware:折叠后代表事件带 e.count(=次数),未折叠事件视为 1;折叠前恒等于 count(e)。
-    if pg and dst_ip:
+    if pivot.key_value is not None and dst_ip:
         rows = graph.run_cypher(
-            "MATCH (e:Event)-[:BY]->(:Process {process_guid:$g}) "
+            "MATCH " + pivot.match() + " "
             "MATCH (e)-[:CONNECTED_TO]->(:IPAddress {ip:$ip}) "
             "RETURN sum(coalesce(e.count,1)) AS count, min(e.event_time) AS first_seen, max(e.event_time) AS last_seen",
-            g=pg, ip=dst_ip)
+            pk=pivot.key_value, ip=dst_ip)
         agg = rows[0] if rows else {}
         ctx["外连聚合(反复性)"] = agg
         cnt = agg.get("count")

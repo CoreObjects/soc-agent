@@ -29,9 +29,21 @@ def _webshell():
     return SkillRegistry(_SKILLS).by_name("webshell").recipe
 
 
+def pivot_process(guid, hostname=None):
+    """`resolve_pivot` 的预置行:主语 = Process(GOAD/Sysmon 今天的形状)。
+
+    ★WP7 起 recipe **先解析主语再取证**,所以 fixture 必须把"这条告警的主语是谁"说清楚。
+    不给的话 recipe 会产出 `_coverage.absent` —— 这正是它该有的行为(见 test_pivot.py)。
+    """
+    return ("labels(subj) AS subj_labels",
+            [{"subj_labels": ["Process"], "subj": {"process_guid": guid},
+              "src_labels": None, "src": None, "hostname": hostname}])
+
+
 def test_w3wp_writes_webroot_then_spawns_shell_is_active_webshell():
     # 确定态:w3wp 应用池身份在 wwwroot 写 .aspx + 随后派生 cmd → 活跃 webshell
     graph = FakeGraph([
+        pivot_process("w1", "castelblack"),
         ("dropped_paths", [{"writer_guid": "w1",
                             "writer_image": r"C:\Windows\System32\inetsrv\w3wp.exe",
                             "writer_cmd": "",
@@ -68,6 +80,7 @@ def test_w3wp_writes_webroot_then_spawns_shell_is_active_webshell():
 def test_security_agent_writer_is_benign_white():
     # 良性态:安全代理(ossec)写脚本到自己目录 → security_agent_writer(白),web_process_writer 不触发
     graph = FakeGraph([
+        pivot_process("w2", "srv02"),
         ("dropped_paths", [{"writer_guid": "w2",
                             "writer_image": r"C:\Program Files\ossec-agent\ossec-agent.exe",
                             "writer_cmd": "",
@@ -98,6 +111,7 @@ def test_security_agent_writer_is_benign_white():
 def test_deploy_process_writes_webroot_is_ambiguous():
     # 中间态:部署进程(msdeploy)写 wwwroot → in_webroot(红) 但非 web 进程/非安全代理/无利用 → 交 LLM
     graph = FakeGraph([
+        pivot_process("w3", "castelblack"),
         ("dropped_paths", [{"writer_guid": "w3",
                             "writer_image": r"C:\Program Files\IIS\Microsoft Web Deploy V3\msdeploy.exe",
                             "writer_cmd": "",

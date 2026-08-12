@@ -29,9 +29,21 @@ def _c2():
     return SkillRegistry(_SKILLS).by_name("c2_beacon").recipe
 
 
+def pivot_process(guid, hostname=None):
+    """`resolve_pivot` 的预置行:主语 = Process(GOAD/Sysmon 今天的形状)。
+
+    ★WP7 起 recipe **先解析主语再取证**,所以 fixture 必须把"这条告警的主语是谁"说清楚。
+    不给的话 recipe 会产出 `_coverage.absent` —— 这正是它该有的行为(见 test_pivot.py)。
+    """
+    return ("labels(subj) AS subj_labels",
+            [{"subj_labels": ["Process"], "subj": {"process_guid": guid},
+              "src_labels": None, "src": None, "hostname": hostname}])
+
+
 def test_c2_attack_periodic_newdomain_suspproc_emit_red():
     # C2 态:非浏览器进程(rundll32,可疑父链 powershell)高周期外连到近期新域 → 三红信号叠加
     graph = FakeGraph([
+        pivot_process("p-1", "WIN10"),
         ("AS dst_domain", [{"proc_guid": "p-1", "image": r"C:\Windows\Temp\rundll32.exe",
                             "command_line": "rundll32.exe evil,Start http://45.77.10.10/", "dst_port": 443,
                             "dst_ip": "45.77.10.10", "dst_domain": "badc2.example", "host": "WIN10"}]),
@@ -71,6 +83,7 @@ def test_c2_attack_periodic_newdomain_suspproc_emit_red():
 def test_c2_benign_known_updater_old_domain_no_suspproc():
     # 良性态:已知更新器(GoogleUpdate)低频外连到老域 → known_updater 白;suspicious_process/new_domain 不触发
     graph = FakeGraph([
+        pivot_process("p-2", "WKS01"),
         ("AS dst_domain", [{"proc_guid": "p-2",
                             "image": r"C:\Program Files\Google\Update\GoogleUpdate.exe",
                             "command_line": "GoogleUpdate.exe /svc", "dst_port": 443,
@@ -101,6 +114,7 @@ def test_c2_benign_known_updater_old_domain_no_suspproc():
 def test_c2_provisioning_noise_emits_white():
     # Ansible 配管供给经 powershell 外连 → provisioning_noise 白(已知良性,证伪)
     graph = FakeGraph([
+        pivot_process("p-3", "SRV02"),
         ("AS dst_domain", [{"proc_guid": "p-3",
                             "image": r"C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe",
                             "command_line": "powershell.exe -c Write-AnsibleLog 'provision'", "dst_port": 8080,
