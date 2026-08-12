@@ -19,6 +19,10 @@ REV="${BASE_COMMIT}^"
 
 {
   echo "=== WP7 pivot 行为对等(只读) $(date -u '+%F %H:%MZ' 2>/dev/null || true) ==="
+  # ★把"这份结果是哪个版本跑出来的"写进报告本身:没有它,拿到一份旧结果时
+  #   分不清是"没跑"还是"跑了旧脚本"(实测吃过一次亏)。
+  echo "代码版本: $(git rev-parse --short HEAD 2>/dev/null) $(git log -1 --format=%s 2>/dev/null | cut -c1-60)"
+  echo "解释器  : $PY -> $("$PY" -V 2>&1)"
   echo "基线 rev = $REV  (= 引入 pivot.py 的提交 $BASE_COMMIT 的父提交)"
   git --no-pager log -1 --format='  基线提交: %h %s' "$REV" 2>&1 || true
   echo
@@ -30,8 +34,22 @@ REV="${BASE_COMMIT}^"
 
 git config user.email >/dev/null 2>&1 || git config user.email "soc-agent@server2"
 git config user.name  >/dev/null 2>&1 || git config user.name  "soc-agent"
-git add "$FB" >/dev/null 2>&1 || true
+git add -f "$FB" >/dev/null 2>&1 || true
 git commit -q -m "feedback: pivot-parity $(date -u '+%m-%d %H:%MZ' 2>/dev/null || echo)" 2>&1 | tail -2 || true
-git push origin HEAD >/dev/null 2>&1 \
-  || { git pull --rebase -q origin main >/dev/null 2>&1 && git push origin HEAD 2>&1 | tail -2; }
-echo "✅ 已推 $FB"
+git push origin HEAD 2>&1 | tail -3
+if [ -n "$(git rev-parse HEAD 2>/dev/null)" ]; then
+  git pull --rebase -q origin main 2>&1 | tail -2 || true
+  git push origin HEAD 2>&1 | tail -3 || true
+fi
+
+# ★核实推送**真的**落地了,再说成功。此前这里无条件打印"已推" —— 推失败也照样显示成功。
+git fetch -q origin 2>/dev/null || true
+LOCAL="$(git rev-parse HEAD 2>/dev/null)"
+REMOTE="$(git rev-parse origin/main 2>/dev/null)"
+if [ -n "$LOCAL" ] && [ "$LOCAL" = "$REMOTE" ]; then
+  echo "✅ 已推并核实落地:$FB  (origin/main = $(echo "$LOCAL" | cut -c1-8))"
+else
+  echo "❌ **没推上去**:本地 HEAD=$(echo "$LOCAL" | cut -c1-8) 远端 origin/main=$(echo "$REMOTE" | cut -c1-8)"
+  echo "   结果只在本机 $FB —— 别当成跑完了,先解决推送(网络/代理/冲突)。"
+  exit 3
+fi
