@@ -2,7 +2,10 @@
 # WP7 真机闸门(★只读):pivot 化前后,三个 recipe 在真实告警上的取证产物逐条对比。
 # 用法: cd ~/soc-agent && git fetch origin && git reset --hard origin/main && bash scripts/pivot-parity.sh
 set -uo pipefail
+# ★推送带延时重试 + 核实落地(这台机器出网是间歇性抖,不是断)
+# shellcheck source=scripts/_ferry.sh
 cd "$(dirname "$0")/.."
+source "$(dirname "$0")/_ferry.sh"
 [ -f .env ] || { echo "!! 缺 .env"; exit 1; }
 PY=".venv/bin/python"
 [ -x "$PY" ] || { python3 -m venv .venv && ./.venv/bin/pip install -q -e .; }
@@ -32,24 +35,4 @@ REV="${BASE_COMMIT}^"
   echo "=== done ==="
 } 2>&1 | tee "$FB"
 
-git config user.email >/dev/null 2>&1 || git config user.email "soc-agent@server2"
-git config user.name  >/dev/null 2>&1 || git config user.name  "soc-agent"
-git add -f "$FB" >/dev/null 2>&1 || true
-git commit -q -m "feedback: pivot-parity $(date -u '+%m-%d %H:%MZ' 2>/dev/null || echo)" 2>&1 | tail -2 || true
-git push origin HEAD 2>&1 | tail -3
-if [ -n "$(git rev-parse HEAD 2>/dev/null)" ]; then
-  git pull --rebase -q origin main 2>&1 | tail -2 || true
-  git push origin HEAD 2>&1 | tail -3 || true
-fi
-
-# ★核实推送**真的**落地了,再说成功。此前这里无条件打印"已推" —— 推失败也照样显示成功。
-git fetch -q origin 2>/dev/null || true
-LOCAL="$(git rev-parse HEAD 2>/dev/null)"
-REMOTE="$(git rev-parse origin/main 2>/dev/null)"
-if [ -n "$LOCAL" ] && [ "$LOCAL" = "$REMOTE" ]; then
-  echo "✅ 已推并核实落地:$FB  (origin/main = $(echo "$LOCAL" | cut -c1-8))"
-else
-  echo "❌ **没推上去**:本地 HEAD=$(echo "$LOCAL" | cut -c1-8) 远端 origin/main=$(echo "$REMOTE" | cut -c1-8)"
-  echo "   结果只在本机 $FB —— 别当成跑完了,先解决推送(网络/代理/冲突)。"
-  exit 3
-fi
+ferry_push "$FB" "feedback: pivot-parity $(date -u '+%m-%d %H:%MZ' 2>/dev/null || echo)"
