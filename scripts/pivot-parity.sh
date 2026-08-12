@@ -23,7 +23,7 @@ REV="${BASE_COMMIT}^"
   git --no-pager log -1 --format='  基线提交: %h %s' "$REV" 2>&1 || true
   echo
   PYTHONUTF8=1 "$PY" -X utf8 scripts/pivot_parity.py --rev "$REV" --limit "${LIMIT:-800}" \
-      --min-nonempty "${MIN_NONEMPTY:-500}"
+      --random-limit "${RANDOM_LIMIT:-400}" --min-nonempty "${MIN_NONEMPTY:-500}"
   echo "[退出码] $?"
   echo "=== done ==="
 } 2>&1 | tee "$FB"

@@ -96,76 +96,141 @@ def diff(old_fo, new_fo):
     return out
 
 
-def sample_alerts(g, limit):
-    """取最近的真实告警(带触发事件的优先 —— 否则新旧都只能报瞎,比对没信息量)。"""
+def sample_alerts(g, limit, anchored):
+    """分层抽样。
+
+    ★首跑教训:按"最近 800 条告警"随便抽,只有 205 条能走到 process 分支 —— 闸门自己判了
+      无区分力。零回归这个断言说的是 **process 分支**,那就该抽真正走这条分支的样本;
+      这不是挑好看的数据,而是让样本对准被断言的那件事。随机层单独留着看覆盖度故事。
+    """
+    if anchored:
+        q = ("MATCH (a:Alert)<-[:TRIGGERED]-(e:Event)-[:BY]->(:Process) "
+             "RETURN DISTINCT a{.*} AS a ORDER BY a.arrival_ms DESC LIMIT $n")
+    else:
+        q = ("MATCH (a:Alert)<-[:TRIGGERED]-(e:Event) "
+             "RETURN DISTINCT a{.*} AS a ORDER BY a.arrival_ms DESC LIMIT $n")
+    return [Alert.from_node(r["a"]) for r in g.run_cypher(q, n=limit)]
+
+
+def diagnose_unresolvable(g, limit):
+    """★量清楚"解析不出主语"的告警到底是什么 —— 首跑里它占了 74%,不查明白就不知道
+    这是"这些告警本来就不该给这三个 recipe 看"还是"我的主语阶梯缺了一级"。"""
+    print("=== 主语解析不出来的那部分,到底是什么 ===")
     rows = g.run_cypher(
         "MATCH (a:Alert)<-[:TRIGGERED]-(e:Event) "
-        "RETURN a{.*} AS a ORDER BY a.arrival_ms DESC LIMIT $n", n=limit)
-    return [Alert.from_node(r["a"]) for r in rows]
+        "WHERE NOT (e)-[:BY]->() AND NOT (e)-[:FROM]->() "
+        "RETURN e.event_code AS code, e.activity AS activity, e.source AS source, "
+        "count(*) AS n, sum(CASE WHEN (e)-[:ON_HOST]->(:Host) THEN 1 ELSE 0 END) AS with_host "
+        "ORDER BY n DESC LIMIT 15")
+    print("  ① 既无 BY 也无 FROM 的触发事件(按 event_code):")
+    for r in rows:
+        print(f"     code={r['code']!r:>10} activity={r['activity']!r:<22} source={r['source']!r:<12}"
+              f" n={r['n']:<7} 其中带 ON_HOST={r['with_host']}")
+    if not rows:
+        print("     (无)")
+
+    rows2 = g.run_cypher(
+        "MATCH (a:Alert)<-[:TRIGGERED]-(e:Event)-[:BY]->(s) "
+        "WHERE NOT any(l IN labels(s) WHERE l IN ['Process','IPAddress','Account','Host']) "
+        "RETURN labels(s) AS labels, count(*) AS n ORDER BY n DESC LIMIT 10")
+    print("  ② BY 指向了主语闭集之外的标签(有的话就是阶梯缺了一级):")
+    for r in rows2:
+        print(f"     labels={r['labels']} n={r['n']}")
+    if not rows2:
+        print("     (无 —— 闭集覆盖了所有 BY 端)")
+
+    rows3 = g.run_cypher(
+        "MATCH (a:Alert)<-[:TRIGGERED]-(e:Event) "
+        "WHERE NOT (e)-[:BY]->() AND NOT (e)-[:FROM]->() AND NOT (e)-[:ON_HOST]->(:Host) "
+        "RETURN count(DISTINCT a) AS n")
+    print(f"  ③ 三级阶梯(BY→FROM→ON_HOST)全落空的告警数: {rows3[0]['n'] if rows3 else '?'}")
+    print()
+
+
+def run_stratum(g, reg, alerts, rev, label):
+    """对一批告警跑新旧两版 collect 并逐条比对。返回 (全过?, 旧版非空样本数)。"""
+    print(f"########## {label}:{len(alerts)} 条 ##########\n")
+    ok_all, nonempty_min = True, None
+    for name, path in RECIPES.items():
+        old = load_old(path, rev)
+        new = reg.by_name(name).recipe
+        bad, crashes, nonempty, old_empty, pivots = [], [], 0, 0, {}
+        for a in alerts:
+            try:
+                ofo = old.collect(g, a, {})
+            except Exception as e:
+                # ★旧版自己崩的样本不判失败:那不是新代码的回归,而是没法比。单独报出来。
+                crashes.append((a.alert_uid, f"{type(e).__name__}: {e}"))
+                continue
+            nfo = new(g, a, {})
+            k = (nfo.context.get("主语(pivot)") or {}).get("kind")
+            pivots[k] = pivots.get(k, 0) + 1
+            if ofo.findings:
+                nonempty += 1
+                d = diff(ofo, nfo)
+                if d:
+                    bad.append((a.alert_uid, d))
+            else:
+                old_empty += 1
+                # 旧版静默返回空的那些:新版**必须**要么给出结论、要么明说报缺
+                if not nfo.findings:
+                    bad.append((a.alert_uid, ["旧版空 findings,新版既没结论也没报缺 —— 静默照旧"]))
+        nonempty_min = nonempty if nonempty_min is None else min(nonempty_min, nonempty)
+        ok = not bad
+        ok_all &= ok
+        print(f"--- {name} ---")
+        print(f"  主语分布 {pivots}")
+        print(f"  旧版非空 findings {nonempty} 条 / 旧版静默返回空 {old_empty} 条"
+              f"({100.0 * old_empty / max(1, len(alerts)):.1f}%)")
+        print(f"  {'✅' if ok else '❌'} 异常差异 {len(bad)} 条")
+        for uid, d in bad[:10]:
+            print(f"     {uid}: {d}")
+        if len(bad) > 10:
+            print(f"     ...另有 {len(bad) - 10} 条")
+        if crashes:
+            print(f"  ⚠ 旧版自身异常 {len(crashes)} 条(不判失败:没法比,但要看):")
+            for uid, e in crashes[:5]:
+                print(f"     {uid}: {e}")
+        print()
+    return ok_all, (nonempty_min or 0)
 
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--rev", default="HEAD", help="迁移前的 git 版本(默认 HEAD=尚未提交本次改动时)")
-    ap.add_argument("--limit", type=int, default=800)
+    ap.add_argument("--rev", default="HEAD", help="迁移前的 git 版本")
+    ap.add_argument("--limit", type=int, default=800, help="锚定层(走 process 分支)样本上限")
+    ap.add_argument("--random-limit", type=int, default=400, help="随机层样本上限(看覆盖度故事)")
     ap.add_argument("--min-nonempty", type=int, default=500,
-                    help="旧版必须在这么多条上产出过非空 findings,否则判本次比对无区分力")
+                    help="★锚定层里,**每个** recipe 旧版都必须在这么多条上产出过非空 findings,"
+                         "否则判本次比对无区分力")
     args = ap.parse_args()
 
     cfg = Config.from_env(dotenv_path=os.path.join(ROOT, ".env"))
     g = Neo4jGraph(cfg.neo4j_uri, cfg.neo4j_user, cfg.neo4j_password, cfg.neo4j_database)
     reg = SkillRegistry(os.path.join(ROOT, "skills"))
     try:
-        alerts = sample_alerts(g, args.limit)
-        print(f"取到 {len(alerts)} 条真实告警(均带触发事件)  对比基线 rev={args.rev}\n")
-        if not alerts:
-            print("⛔ 图里没有带触发事件的告警,比对无从做起")
-            return 2
+        print(f"对比基线 rev={args.rev}\n")
+        diagnose_unresolvable(g, args.limit)
 
-        overall_ok, total_nonempty = True, 0
-        for name, path in RECIPES.items():
-            old = load_old(path, args.rev)
-            new = reg.by_name(name).recipe
-            bad, nonempty, old_silent_empty, pivots = [], 0, 0, {}
-            for a in alerts:
-                try:
-                    ofo = old.collect(g, a, {})
-                except Exception as e:                       # 旧版自己崩的样本不参与比对
-                    bad.append((a.alert_uid, [f"旧版异常 {type(e).__name__}: {e}"]))
-                    continue
-                nfo = new(g, a, {})
-                k = (nfo.context.get("主语(pivot)") or {}).get("kind")
-                pivots[k] = pivots.get(k, 0) + 1
-                if ofo.findings:
-                    nonempty += 1
-                    d = diff(ofo, nfo)
-                    if d:
-                        bad.append((a.alert_uid, d))
-                else:
-                    old_silent_empty += 1
-                    if "_coverage.absent" not in nfo.finding_ids() and not nfo.findings:
-                        bad.append((a.alert_uid, ["旧版空 findings,新版既没结论也没报缺 —— 静默照旧"]))
-            total_nonempty = max(total_nonempty, nonempty)
-            ok = not bad
-            overall_ok &= ok
-            print(f"--- {name} ---")
-            print(f"  主语分布 {pivots}")
-            print(f"  旧版产出非空 findings: {nonempty} 条;旧版静默返回空: {old_silent_empty} 条"
-                  f"({100.0 * old_silent_empty / max(1, len(alerts)):.1f}% ← 这就是被修的那个洞)")
-            print(f"  {'✅' if ok else '❌'} 差异 {len(bad)} 条")
-            for uid, d in bad[:10]:
-                print(f"     {uid}: {d}")
-            if len(bad) > 10:
-                print(f"     ...另有 {len(bad) - 10} 条")
-            print()
-
-        if total_nonempty < args.min_nonempty:
-            print(f"⛔ 旧版仅在 {total_nonempty} 条上产出过非空 findings(<{args.min_nonempty}),"
-                  f"本次比对**无区分力**(两边都在空转时零差异什么都不证明)⇒ 判结论无效,不是通过。")
+        anchored = sample_alerts(g, args.limit, anchored=True)
+        if not anchored:
+            print("⛔ 图里没有「触发事件带 BY→Process」的告警 —— 零回归断言无从验证")
             return 2
-        print(f"⇒ WP7 真机行为对等 {'✅ 通过' if overall_ok else '❌ 失败'}"
-              f"(有区分力:旧版非空样本 {total_nonempty} ≥ {args.min_nonempty})")
-        return 0 if overall_ok else 1
+        ok_a, nonempty = run_stratum(g, reg, anchored, args.rev,
+                                     "锚定层(触发事件带 BY→Process,直接压 process 分支)")
+
+        rnd = sample_alerts(g, args.random_limit, anchored=False)
+        ok_b, _ = run_stratum(g, reg, rnd, args.rev, "随机层(最近告警,看覆盖度是否被如实说出)")
+
+        if nonempty < args.min_nonempty:
+            print(f"⛔ 锚定层里最少的那个 recipe 旧版只在 {nonempty} 条上产出过非空 findings"
+                  f"(<{args.min_nonempty})⇒ 本次比对**无区分力**,判结论无效,不是通过。"
+                  f"加大 --limit 重跑。")
+            return 2
+        ok = ok_a and ok_b
+        print(f"⇒ WP7 真机行为对等 {'✅ 通过' if ok else '❌ 失败'}"
+              f"(有区分力:锚定层每个 recipe 旧版非空样本 ≥ {nonempty})")
+        return 0 if ok else 1
     finally:
         g.close()
 
