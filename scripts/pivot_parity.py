@@ -163,7 +163,12 @@ def run_stratum(g, reg, alerts, rev, label):
                 crashes.append((a.alert_uid, f"{type(e).__name__}: {e}"))
                 continue
             nfo = new(g, a, {})
-            k = (nfo.context.get("主语(pivot)") or {}).get("kind")
+            # ★"解析不出主语"与"主语解析出来了但本 recipe 不支持"必须分开计 ——
+            #   接新源时前者=阶梯缺级(要改 pivot.py),后者=缺支持(要改 recipe),两回事。
+            pv = nfo.context.get("主语(pivot)") or {}
+            k = pv.get("kind") or "无主语"
+            if pv.get("supported") is False:
+                k = f"{k}(不支持)"
             pivots[k] = pivots.get(k, 0) + 1
             if ofo.findings:
                 nonempty += 1

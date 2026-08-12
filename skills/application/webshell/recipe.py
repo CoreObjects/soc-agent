@@ -61,9 +61,14 @@ def collect(graph, alert, seed=None) -> Forensics:
         return Forensics(
             findings=[coverage_absent("webshell", need="file_write_telemetry", pivot=pivot,
                                       detail="主语既不是写入进程也不是主机,取不到「谁往哪儿写了什么」")],
-            context={"pivot": getattr(pivot, "kind", None)},
+            # ★与正常路径同一个键:否则报表里"没有主语"和"主语不被本 recipe 支持"
+            #   会混成一格 —— 而这正是接新源时最需要分清的一件事(缺阶梯 vs 缺支持)。
+            context={"主语(pivot)": {"kind": getattr(pivot, "kind", None),
+                                  "label": getattr(pivot, "label", None),
+                                  "supported": False,
+                                  "supported_pivots": list(SUPPORTED_PIVOTS)}},
             blind_spots="这条告警的触发事件没有可用主语(写入进程/主机),落盘判别整条不成立")
-    ctx["主语(pivot)"] = {"kind": pivot.kind, "label": pivot.label,
+    ctx["主语(pivot)"] = {"kind": pivot.kind, "label": pivot.label, "supported": True,
                        "key": pivot.key_prop, "value": pivot.key_value}
 
     base = graph.run_cypher(_BASE_PROCESS if pivot.kind == "process" else _BASE_HOST, aid=aid)

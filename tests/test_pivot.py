@@ -347,3 +347,28 @@ def test_broken_recipe_is_isolated_but_not_silent(tmp_path):
     assert reg.by_name("bad").recipe is None
     assert "SyntaxError" in (reg.by_name("bad").recipe_error or ""), "失败原因被吞了"
     assert [n for n, _ in reg.load_errors()] == ["bad"]
+
+
+@pytest.mark.parametrize("name,tech", [("c2_beacon", "T1071.001"),
+                                       ("suspicious_outbound", "T1571"),
+                                       ("webshell", "T1505.003")])
+def test_pivot_context_shape_is_the_same_on_both_paths(name, tech):
+    """★"没有主语"与"主语解析出来了但本 recipe 不支持"必须能分开读。
+
+    这两件事对下游的含义完全不同:前者=主语阶梯缺级(改 pivot.py),后者=缺 recipe 支持
+    (改 recipe)。首跑真机报表把它们混成一格 `None: 300`,就是因为早退路径用了另一个
+    context 键。两条路径写同一个键、同一形状,报表才不会骗人。
+    """
+    # ① 完全解析不出主语
+    fo = _recipe(name)(RecordingGraph([]), Alert.from_node(
+        {"alert_uid": "x", "technique_ids": [tech]}), {})
+    pv = fo.context["主语(pivot)"]
+    assert pv["kind"] is None and pv["supported"] is False
+
+    # ② 主语解析出来了(principal),但三个 recipe 都不支持它
+    fo2 = _recipe(name)(RecordingGraph([_pivot_row(["Account"], {"sam": "jon.snow"})]),
+                        Alert.from_node({"alert_uid": "x", "technique_ids": [tech]}), {})
+    pv2 = fo2.context["主语(pivot)"]
+    assert pv2["kind"] == "principal" and pv2["supported"] is False
+    assert "principal" not in pv2["supported_pivots"]
+    assert fo2.finding_ids() == {"_coverage.absent"}
