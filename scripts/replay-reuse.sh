@@ -38,9 +38,16 @@ MODE="${1:-}"
     echo "[退出码] $?"
   else
     PYTHONUTF8=1 "$PY" -X utf8 scripts/replay_reuse.py --limit "${LIMIT:-500}" --save "$BASE"
-    echo "[退出码] $?"
+    RC=$?
+    echo "[退出码] $RC"
     echo
-    echo "★这一份是**基线**。改动之后跑 \`bash scripts/replay-reuse.sh --compare\` 对比。"
+    # ★首跑这里无条件打了"这一份是基线",而那次其实**失败了**(空经验库)——
+    #   又一次"失败却报得像成功"。按退出码说话。
+    if [ "$RC" -eq 0 ]; then
+      echo "★这一份是**基线**。改动之后跑 \`bash scripts/replay-reuse.sh --compare\` 对比。"
+    else
+      echo "❌ 本次**没有产出基线**(退出码 $RC)。先按上面的提示修好再跑,别拿这次的输出当基线。"
+    fi
   fi
   echo "=== done ==="
 } 2>&1 | tee "$FB"
