@@ -35,6 +35,10 @@ class Experience:
     note: Optional[str] = None                        # qwen 蒸馏给的"本质"一句话(命中时喂 LLM 作参照)
     created_by: Optional[str] = None
     created_at: Optional[str] = None
+    # ★这条经验是在**什么覆盖度条件下**学到的(WP9 覆盖度签名)。
+    #   只记录,**不参与召回**,除非显式打开 EXPERIENCE_COVERAGE_PARTITION。
+    #   空串 = 存量(学它的时候还没这个字段)或没测过覆盖度 —— 一律当"未知",不当"不匹配"。
+    coverage_sig: str = ""
     exp_id: str = field(default_factory=lambda: uuid4().hex)
 
     def __post_init__(self):
@@ -48,7 +52,8 @@ class Experience:
                 "fingerprint": self.fingerprint, "rule": self.rule, "playbook": list(self.playbook),
                 "status": self.status, "hit_count": self.hit_count, "override_count": self.override_count,
                 "origin_case_id": self.origin_case_id, "origin_verdict_id": self.origin_verdict_id,
-                "note": self.note, "created_by": self.created_by, "created_at": self.created_at}
+                "note": self.note, "created_by": self.created_by, "created_at": self.created_at,
+                "coverage_sig": self.coverage_sig}
 
     @classmethod
     def from_dict(cls, d: dict) -> "Experience":
@@ -58,7 +63,8 @@ class Experience:
                    hit_count=int(d.get("hit_count") or 0), override_count=int(d.get("override_count") or 0),
                    origin_case_id=d.get("origin_case_id"), origin_verdict_id=d.get("origin_verdict_id"),
                    note=d.get("note"), created_by=d.get("created_by"),
-                   created_at=d.get("created_at"), exp_id=d.get("exp_id") or uuid4().hex)
+                   created_at=d.get("created_at"), coverage_sig=d.get("coverage_sig") or "",
+                   exp_id=d.get("exp_id") or uuid4().hex)
 
 
 class ExperienceStore:

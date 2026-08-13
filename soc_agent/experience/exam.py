@@ -27,13 +27,14 @@ def exam(exp, origin_findings, cases):
     return True, {"reason": "passed", "checked_adversary": len(adversary)}
 
 
-def sediment(llm, skill, result, exp_store, case_store, agent_name=None):
+def sediment(llm, skill, result, exp_store, case_store, agent_name=None, coverage_sig=""):
     """完整研判后回流:蒸馏 → 考试(对已存案例)→ 过关入库 active。返回 (exp or None, report)。
 
     调用前应已 snapshot_case(本案例进语料);exam 用 result.findings 直接回放 origin,反类只查异类案例。
     """
     exp = distill(llm, skill, result.findings, result.bindings, result.verdict,
-                  agent_name=agent_name, origin_case_id=result.alert_uid)
+                  agent_name=agent_name, origin_case_id=result.alert_uid,
+                  coverage_sig=coverage_sig)      # ★记下学它时的覆盖度条件(WP9,只记录不召回)
     if exp is None:
         return None, {"reason": "not_distilled"}
     # 收敛守卫(替代删掉的 pattern_id 去重):已有 active 同类经验能覆盖本案(在这些 findings 上点火)→

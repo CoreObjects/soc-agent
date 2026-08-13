@@ -67,7 +67,8 @@ NEED_ACTIVITIES.update({
 
 _LOAD = ("MATCH (c:Coverage) RETURN c.activity AS activity, c.status AS status, "
          "c.family AS family, c.events AS events, c.subjects AS subjects, "
-         "c.sources AS sources, c.stale_days AS stale_days, c.arrival_on AS arrival_on")
+         "c.sources AS sources, c.stale_days AS stale_days, c.arrival_on AS arrival_on, "
+         "c.coverage_sig AS coverage_sig")
 
 _TTL_SEC = 900          # 覆盖度是慢变量(测量本身是定期跑的),15 分钟足够新
 _cache = {"at": 0.0, "profile": None}
@@ -81,6 +82,20 @@ class CoverageProfile:
     known: bool = False
 
     # ---------------------------------------------------------------- 基本问询
+    @property
+    def signature(self) -> str:
+        """覆盖度签名 —— **读**入图侧算好写在节点上的值,**不在这里重算**。
+
+        ★它冗余地写在每个 `:Coverage` 节点上(同一个值),看着浪费,但换来的是这边不必
+          照着同一套规则再实现一遍哈希。两份"逐字一致、不许漂"的实现是本项目反复吃亏的形状。
+        空串 = 还没测过,或入图侧版本旧(没写这个属性)—— 两种都意味着"不知道",别当成一个真签名。
+        """
+        for f in self.facts.values():
+            sig = f.get("coverage_sig")
+            if sig:
+                return str(sig)
+        return ""
+
     def has(self, activity) -> bool:
         f = self.facts.get(activity)
         return bool(f and f.get("status") == "present")

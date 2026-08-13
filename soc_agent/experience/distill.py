@@ -45,7 +45,8 @@ def _prompt(skill, kind):
     return body
 
 
-def distill(llm, skill, findings, bindings, verdict, agent_name=None, origin_case_id=None):
+def distill(llm, skill, findings, bindings, verdict, agent_name=None, origin_case_id=None,
+            coverage_sig=""):
     """→ Experience(playbook 空)或 None(suspicious 不沉淀 / 无 finding / 模型没给)。"""
     if verdict is None or verdict.verdict not in ("true_positive", "false_positive", "benign"):
         return None
@@ -76,4 +77,7 @@ def distill(llm, skill, findings, bindings, verdict, agent_name=None, origin_cas
     fp = build_fingerprint(findings, bindings, subset_ids=subset)
     return Experience(skill=(skill.name if skill else "unknown"), kind=kind, verdict=verdict.verdict,
                       fingerprint=fp, rule=rule, playbook=[], created_by=agent_name,
-                      origin_case_id=origin_case_id, origin_verdict_id=verdict.verdict_id, note=note)
+                      origin_case_id=origin_case_id, origin_verdict_id=verdict.verdict_id, note=note,
+                      # ★记下这条经验是在什么覆盖度条件下学到的(WP9)。只记录、不参与召回,
+                      #   除非显式打开分区开关 —— 见 consult.py 里为什么默认不开。
+                      coverage_sig=coverage_sig or "")

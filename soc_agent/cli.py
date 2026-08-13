@@ -300,7 +300,8 @@ def run_pipeline(pl, alert_uid, mode="recipe"):
     seed = pl.graph.seed(alert)
     skill = pl.router.route(alert, seed)                                        # ★LLM 选 skill
     forensics = collect_forensics(pl.graph, alert, seed, skill)                # ★取证
-    report = consult(skill.name if skill else None, forensics.findings, pl.exp_store)   # ★经验比对
+    report = consult(skill.name if skill else None, forensics.findings, pl.exp_store,
+                     coverage_sig=coverage.get(pl.graph).signature)          # ★经验比对
     if report.decision == "AUTO_TP":
         result, picked = _reuse_tp(pl, alert, forensics, report.chosen), "经验复用(AUTO_TP)"
         pl.exp_store.bump_hit(report.chosen.exp_id)
@@ -317,7 +318,9 @@ def run_pipeline(pl, alert_uid, mode="recipe"):
     if pl.case_store is not None:
         snapshot_case(pl.case_store, skill.name if skill else None, result)    # 存回归语料
     if report.decision == "FALLTHROUGH":                                       # ★回流:蒸馏→考试→入库
-        sediment(pl.llm, skill, result, pl.exp_store, pl.case_store, agent_name=pl.agent_name)
+        # ★带上学它时的覆盖度签名(WP9)。缓存过的画像,不额外查图。
+        sediment(pl.llm, skill, result, pl.exp_store, pl.case_store, agent_name=pl.agent_name,
+                 coverage_sig=coverage.get(pl.graph).signature)
     return result, report, picked
 
 
