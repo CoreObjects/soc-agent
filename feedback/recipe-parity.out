@@ -1,6 +1,6 @@
-=== 行集一致闸门 2026-08-13 11:49Z ===
+=== 行集一致闸门 2026-08-13 12:02Z ===
 主机    : localhost.localdomain   仓库 /home/soc/soc-agent
-代码版本: 727a7c7 recipe-parity: 报告打出**代码实际收到的**声明放行
+代码版本: e2d0d33 WP10: activity 改从 seed 取,查询一字不动(闸门抓到 ctx 也被改了)
 解释器  : .venv312/bin/python -> Python 3.11.6
 
 基线 rev = 15b0ca0
@@ -25,55 +25,19 @@
 
     样本:定向(台账里用过本 skill 的)0 条 + 通用池兜底 → 共 1200 条
 --- skills/identity/adcs/recipe.py ---
-  比对 39 条 / 旧版非空 30 条 → 有差异
-     64aaaea883009511c32478b4c74b1582f786fb19f9558cfa8d3eb224a73d43c5: context[请求者与CA] 内容变了
-        旧: {"attributes": null, "ca": null, "ca_host": "winterfell.north.sevenkingdoms.local", "ca_kind": null, "event_code": "4662", "req_domain": "SEVENKINGDOMS", "req_privileged": false, "req_sam": "kingslanding$", "req_upn": "KINGSLANDING$@SEVENKINGDOMS.LOCAL", "request_id": null, "subject_dn": null}
-        新: {"activity": "directory.access", "attributes": null, "ca": null, "ca_host": "winterfell.north.sevenkingdoms.local", "ca_kind": null, "event_code": "4662", "req_domain": "SEVENKINGDOMS", "req_privileged": false, "req_sam": "kingslanding$", "req_upn": "KINGSLANDING$@SEVENKINGDOMS.LOCAL", "request_id":
-     efc9258d1334b78154c05161c94116318d283036bad409fdd3faea64395e0892: context[请求者与CA] 内容变了
-        旧: {"attributes": null, "ca": null, "ca_host": "castelblack.north.sevenkingdoms.local", "ca_kind": null, "event_code": "4624", "req_domain": "NORTH", "req_privileged": false, "req_sam": "robb.stark", "req_upn": "robb.stark@NORTH.SEVENKINGDOMS.LOCAL", "request_id": null, "subject_dn": null}
-        新: {"activity": "auth.logon", "attributes": null, "ca": null, "ca_host": "castelblack.north.sevenkingdoms.local", "ca_kind": null, "event_code": "4624", "req_domain": "NORTH", "req_privileged": false, "req_sam": "robb.stark", "req_upn": "robb.stark@NORTH.SEVENKINGDOMS.LOCAL", "request_id": null, "subje
-     a817a56184fda4711e2dd8678ddd44bd8e5d7d396524dfed55c777ecb7a73e75: context[请求者与CA] 内容变了
-        旧: {"attributes": null, "ca": null, "ca_host": "castelblack.north.sevenkingdoms.local", "ca_kind": null, "event_code": "4624", "req_domain": "NORTH", "req_privileged": false, "req_sam": "robb.stark", "req_upn": "robb.stark@NORTH.SEVENKINGDOMS.LOCAL", "request_id": null, "subject_dn": null}
-        新: {"activity": "auth.logon", "attributes": null, "ca": null, "ca_host": "castelblack.north.sevenkingdoms.local", "ca_kind": null, "event_code": "4624", "req_domain": "NORTH", "req_privileged": false, "req_sam": "robb.stark", "req_upn": "robb.stark@NORTH.SEVENKINGDOMS.LOCAL", "request_id": null, "subje
-     93c6e9abc4a5bfd395eb4b76b7afe23a33514e8e89faa22564c777bb022f8276: context[请求者与CA] 内容变了
-        旧: {"attributes": null, "ca": null, "ca_host": "castelblack.north.sevenkingdoms.local", "ca_kind": null, "event_code": "4624", "req_domain": "NORTH", "req_privileged": false, "req_sam": "robb.stark", "req_upn": "robb.stark@NORTH.SEVENKINGDOMS.LOCAL", "request_id": null, "subject_dn": null}
-        新: {"activity": "auth.logon", "attributes": null, "ca": null, "ca_host": "castelblack.north.sevenkingdoms.local", "ca_kind": null, "event_code": "4624", "req_domain": "NORTH", "req_privileged": false, "req_sam": "robb.stark", "req_upn": "robb.stark@NORTH.SEVENKINGDOMS.LOCAL", "request_id": null, "subje
-     3c52dfdae79578b325072e625ef7116ea86604d8ba7dc3648198caa1118ec789: context[请求者与CA] 内容变了
-        旧: {"attributes": null, "ca": null, "ca_host": "castelblack.north.sevenkingdoms.local", "ca_kind": null, "event_code": "4624", "req_domain": "NORTH", "req_privileged": false, "req_sam": "robb.stark", "req_upn": "robb.stark@NORTH.SEVENKINGDOMS.LOCAL", "request_id": null, "subject_dn": null}
-        新: {"activity": "auth.logon", "attributes": null, "ca": null, "ca_host": "castelblack.north.sevenkingdoms.local", "ca_kind": null, "event_code": "4624", "req_domain": "NORTH", "req_privileged": false, "req_sam": "robb.stark", "req_upn": "robb.stark@NORTH.SEVENKINGDOMS.LOCAL", "request_id": null, "subje
-     eaf2b045215612d7fe02ae0ff9c8d73e97898bdbaa5627eda7f6bd5cffd039fb: context[请求者与CA] 内容变了
-        旧: {"attributes": null, "ca": null, "ca_host": "winterfell.north.sevenkingdoms.local", "ca_kind": null, "event_code": "4662", "req_domain": "SEVENKINGDOMS", "req_privileged": false, "req_sam": "kingslanding$", "req_upn": "KINGSLANDING$@SEVENKINGDOMS.LOCAL", "request_id": null, "subject_dn": null}
-        新: {"activity": "directory.access", "attributes": null, "ca": null, "ca_host": "winterfell.north.sevenkingdoms.local", "ca_kind": null, "event_code": "4662", "req_domain": "SEVENKINGDOMS", "req_privileged": false, "req_sam": "kingslanding$", "req_upn": "KINGSLANDING$@SEVENKINGDOMS.LOCAL", "request_id":
-     …还有 24 条(形态多半相同,先看上面这几条)
+  比对 38 条 / 旧版非空 30 条 → ok
      噪声底(同一旧版首尾两次之差):0 条
 
     样本:定向(台账里用过本 skill 的)120 条 + 通用池兜底 → 共 1320 条
 --- skills/identity/lateral_movement/recipe.py ---
-  比对 30 条 / 旧版非空 30 条 → 有差异
-     af026df36fc6df359a43d687a83a94b894c364240b643065107410d0b756ad78: context[登录事件] 内容变了
-        旧: {"acc_domain": "NORTH", "acc_privileged": false, "acc_sam": "robb.stark", "event_code": "4624", "logon_type": "3", "result": "success", "src_ip": null, "target_criticality": "medium", "target_host": "castelblack.north.sevenkingdoms.local", "target_role": "member_server"}
-        新: {"acc_domain": "NORTH", "acc_privileged": false, "acc_sam": "robb.stark", "activity": "auth.logon", "event_code": "4624", "logon_type": "3", "result": "success", "src_ip": null, "target_criticality": "medium", "target_host": "castelblack.north.sevenkingdoms.local", "target_role": "member_server"}
-     8e4c8924ae79f87e66d548d4bad4882f6b614dc81b59ef6bbaa31963f2deed29: context[登录事件] 内容变了
-        旧: {"acc_domain": "NORTH", "acc_privileged": false, "acc_sam": "robb.stark", "event_code": "4624", "logon_type": "3", "result": "success", "src_ip": "192.168.56.1", "target_criticality": "medium", "target_host": "castelblack.north.sevenkingdoms.local", "target_role": "member_server"}
-        新: {"acc_domain": "NORTH", "acc_privileged": false, "acc_sam": "robb.stark", "activity": "auth.logon", "event_code": "4624", "logon_type": "3", "result": "success", "src_ip": "192.168.56.1", "target_criticality": "medium", "target_host": "castelblack.north.sevenkingdoms.local", "target_role": "member_s
-     2ba251c8c034670b8faf97aa391e016c79a510ec6018639764ed635ecfcd1b98: context[登录事件] 内容变了
-        旧: {"acc_domain": "NORTH", "acc_privileged": false, "acc_sam": "robb.stark", "event_code": "4624", "logon_type": "3", "result": "success", "src_ip": "192.168.56.11", "target_criticality": "medium", "target_host": "castelblack.north.sevenkingdoms.local", "target_role": "member_server"}
-        新: {"acc_domain": "NORTH", "acc_privileged": false, "acc_sam": "robb.stark", "activity": "auth.logon", "event_code": "4624", "logon_type": "3", "result": "success", "src_ip": "192.168.56.11", "target_criticality": "medium", "target_host": "castelblack.north.sevenkingdoms.local", "target_role": "member_
-     3c9f0a5c561ff44f263467c24e0d1179269542f1b447adedf7870dc1db089464: context[登录事件] 内容变了
-        旧: {"acc_domain": "NORTH", "acc_privileged": false, "acc_sam": "robb.stark", "event_code": "4624", "logon_type": "3", "result": "success", "src_ip": null, "target_criticality": "medium", "target_host": "castelblack.north.sevenkingdoms.local", "target_role": "member_server"}
-        新: {"acc_domain": "NORTH", "acc_privileged": false, "acc_sam": "robb.stark", "activity": "auth.logon", "event_code": "4624", "logon_type": "3", "result": "success", "src_ip": null, "target_criticality": "medium", "target_host": "castelblack.north.sevenkingdoms.local", "target_role": "member_server"}
-     e0578ad3093df8cdb112ba9ebd0c065b4564c09f6309f020905d6f18ac10e09f: context[登录事件] 内容变了
-        旧: {"acc_domain": "NORTH", "acc_privileged": false, "acc_sam": "robb.stark", "event_code": "4624", "logon_type": "3", "result": "success", "src_ip": "192.168.56.1", "target_criticality": "medium", "target_host": "castelblack.north.sevenkingdoms.local", "target_role": "member_server"}
-        新: {"acc_domain": "NORTH", "acc_privileged": false, "acc_sam": "robb.stark", "activity": "auth.logon", "event_code": "4624", "logon_type": "3", "result": "success", "src_ip": "192.168.56.1", "target_criticality": "medium", "target_host": "castelblack.north.sevenkingdoms.local", "target_role": "member_s
-     379268b2b972b76e12d0c1f99d7f7774413c23b90a3e5ae7c91ee084e84cdfc7: context[登录事件] 内容变了
-        旧: {"acc_domain": "NORTH", "acc_privileged": false, "acc_sam": "robb.stark", "event_code": "4624", "logon_type": "3", "result": "success", "src_ip": "192.168.56.11", "target_criticality": "medium", "target_host": "castelblack.north.sevenkingdoms.local", "target_role": "member_server"}
-        新: {"acc_domain": "NORTH", "acc_privileged": false, "acc_sam": "robb.stark", "activity": "auth.logon", "event_code": "4624", "logon_type": "3", "result": "success", "src_ip": "192.168.56.11", "target_criticality": "medium", "target_host": "castelblack.north.sevenkingdoms.local", "target_role": "member_
-     …还有 24 条(形态多半相同,先看上面这几条)
-     噪声底(同一旧版首尾两次之差):0 条
+  比对 30 条 / 旧版非空 30 条 → ok
+     噪声底(同一旧版首尾两次之差):1 条
+     ★同一份**旧代码**在测量窗口内自己就变了 1 条 ——与本次改动无关(已从判定里抵消):
+        a490670bd067b4a73c84451c83970518eb7710cdaf6415d0fd75d1b1de59dcb9: ['context[该账号↔该主机基线']
+        (两类成因:①**图在动** —— 如 sum(e.count) 这种活计数,新事件持续在进;②**查询没有确定序** —— `base[0]` 取多行结果第一行、`collect(…)[..N]` 切无序集合。①无需修;②值得单独修。)
 
-❌ **行集不一致**:['skills/identity/adcs/recipe.py', 'skills/identity/lateral_movement/recipe.py']
-   声明过的新增之外的任何差异都算失败。要么改回去,要么把新增显式声明进命令行(并想清楚它为什么该被放行)。
-[退出码] 1
+✅ 全部行集一致(内容层面),且样本有区分力。
+[退出码] 0
 
-❌ 不通过:出现了**未声明**的差异。这正是本闸门要拦的东西 —— 别急着加白名单放行。
+✅ 通过:行集一致,且样本有区分力。
 === done ===
