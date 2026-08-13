@@ -1,0 +1,24 @@
+=== 行集一致闸门 2026-08-13 08:34Z ===
+主机    : localhost.localdomain   仓库 /home/soc/soc-agent
+代码版本: a521030 WP10-1(读侧):web_exploit 去掉两处厂商写死
+解释器  : .venv312/bin/python -> Python 3.11.6
+
+基线 rev = b60dfeb
+待测 recipe(rev..HEAD 改动过的):
+  skills/application/web_exploit/recipe.py
+
+候选告警池 1200 条(按到达倒序)
+
+--- skills/application/web_exploit/recipe.py ---
+  比对 30 条 / 旧版非空 30 条 → 有差异
+     f420eac58ee4fd162a4fe9a5ded39211e928e9dc94712589ce2ebd449a50d534: context[源IP的WAF打击画像] 变了
+     42f0bd452433129647e835d3a011918e241cd4475957b780bb0970a35a65f3c3: context[源IP的WAF打击画像] 变了
+     04ca92cdef4c100292131c9bb7a1005462b52d87efac275de009829654f61564: context[源IP的WAF打击画像] 变了
+     65b3d76e774292345d53954d6aac7cbb379ad7e89353c28ae36d6719cb20afb2: context[源IP的WAF打击画像] 变了
+
+❌ **行集不一致**:['skills/application/web_exploit/recipe.py']
+   声明过的新增之外的任何差异都算失败。要么改回去,要么把新增显式声明进命令行(并想清楚它为什么该被放行)。
+[退出码] 1
+
+❌ 不通过:出现了**未声明**的差异。这正是本闸门要拦的东西 —— 别急着加白名单放行。
+=== done ===
