@@ -1,6 +1,6 @@
-=== 行集一致闸门 2026-08-13 10:12Z ===
+=== 行集一致闸门 2026-08-13 10:18Z ===
 主机    : localhost.localdomain   仓库 /home/soc/soc-agent
-代码版本: 19e2730 recipe-parity: 噪声底要覆盖**整个**测量窗口 —— 改成「旧 → 新 → 旧」夹心
+代码版本: 9cc8478 recipe-parity: 噪声底恒打印 —— 沉默分不清「吸收了」还是「没发生」
 解释器  : .venv312/bin/python -> Python 3.11.6
 
 基线 rev = e45a1d5
@@ -12,28 +12,31 @@
 候选告警池 1200 条(按到达倒序)
 
 --- skills/application/web_exploit/recipe.py ---
-  比对 30 条 / 旧版非空 30 条 → ok(但有 5 条**仅顺序不同**,已列出供人过目)
-     7b684c190a84e79252430104b9bc3a354553f7b68f75762983cb0520024b9951: [顺序] context[源IP的WAF打击画像] 仅顺序不同(内容相同)
+  比对 30 条 / 旧版非空 30 条 → ok(但有 4 条**仅顺序不同**,已列出供人过目)
+     710692e994d170fbf7da2c7945f765f8a1c8b0b8492fb3db75c5b65b1d16c776: [顺序] context[源IP的WAF打击画像] 仅顺序不同(内容相同)
         旧: {"distinct_crs_rules": 3, "endpoints_hit": ["/static/app.js", "/api/v1/items/42", "/health", "/products", "/search", "/about", "/static/app.css", "/products/", "/orders", "/api/v1/items", "/nonexistent-page", "/docs/guide", "/index.html", "/", "/vulnerabilities/sqli/"], "sample_rules": ["920350", "9
         新: {"distinct_crs_rules": 3, "endpoints_hit": ["/about", "/", "/index.html", "/docs/guide", "/api/v1/items", "/products", "/health", "/products/", "/static/app.js", "/search", "/api/v1/items/42", "/orders", "/nonexistent-page", "/static/app.css", "/vulnerabilities/sqli/"], "sample_rules": ["920350", "9
-     44d153e234cdde50d42d71d3937e662fe8e7b4f92d375f367974863d4d358d50: [顺序] context[源IP的WAF打击画像] 仅顺序不同(内容相同)
+     85d35fd0ebe0fdd495fb3d883763f889f95d8407e6f8de3a0bde0ee4970a7273: [顺序] context[源IP的WAF打击画像] 仅顺序不同(内容相同)
         旧: {"distinct_crs_rules": 3, "endpoints_hit": ["/static/app.js", "/api/v1/items/42", "/health", "/products", "/search", "/about", "/static/app.css", "/products/", "/orders", "/api/v1/items", "/nonexistent-page", "/docs/guide", "/index.html", "/", "/vulnerabilities/sqli/"], "sample_rules": ["920350", "9
         新: {"distinct_crs_rules": 3, "endpoints_hit": ["/about", "/", "/index.html", "/docs/guide", "/api/v1/items", "/products", "/health", "/products/", "/static/app.js", "/search", "/api/v1/items/42", "/orders", "/nonexistent-page", "/static/app.css", "/vulnerabilities/sqli/"], "sample_rules": ["920350", "9
-     e960767715c4bf9716e0dceb9497098b3121c3ed79a274a0bd4bd593a8ec27d0: [顺序] context[源IP的WAF打击画像] 仅顺序不同(内容相同)
+     19bfd8fc63bdbfa41eaad32c30f74d49020e1b1e1d40792c52022b0c88e4dae5: [顺序] context[源IP的WAF打击画像] 仅顺序不同(内容相同)
         旧: {"distinct_crs_rules": 3, "endpoints_hit": ["/static/app.js", "/api/v1/items/42", "/health", "/products", "/search", "/about", "/static/app.css", "/products/", "/orders", "/api/v1/items", "/nonexistent-page", "/docs/guide", "/index.html", "/", "/vulnerabilities/sqli/"], "sample_rules": ["920350", "9
         新: {"distinct_crs_rules": 3, "endpoints_hit": ["/about", "/", "/index.html", "/docs/guide", "/api/v1/items", "/products", "/health", "/products/", "/static/app.js", "/search", "/api/v1/items/42", "/orders", "/nonexistent-page", "/static/app.css", "/vulnerabilities/sqli/"], "sample_rules": ["920350", "9
-     23792b879ee8369620a08ac6a64bbedf0612defd422a3e25ca99f238eea75b17: [顺序] context[源IP的WAF打击画像] 仅顺序不同(内容相同)
+     85308dc67725dae664e0c5e5d74f51f13d19b098644ff7f811b21350f8e66fd6: [顺序] context[源IP的WAF打击画像] 仅顺序不同(内容相同)
         旧: {"distinct_crs_rules": 3, "endpoints_hit": ["/static/app.js", "/api/v1/items/42", "/health", "/products", "/search", "/about", "/static/app.css", "/products/", "/orders", "/api/v1/items", "/nonexistent-page", "/docs/guide", "/index.html", "/", "/vulnerabilities/sqli/"], "sample_rules": ["920350", "9
         新: {"distinct_crs_rules": 3, "endpoints_hit": ["/about", "/", "/index.html", "/docs/guide", "/api/v1/items", "/products", "/health", "/products/", "/static/app.js", "/search", "/api/v1/items/42", "/orders", "/nonexistent-page", "/static/app.css", "/vulnerabilities/sqli/"], "sample_rules": ["920350", "9
-     9e3f9c70afd080fa2351d0bb8993c75a2d41c64dd4013ccbeb81c48487189574: [顺序] context[源IP的WAF打击画像] 仅顺序不同(内容相同)
-        旧: {"distinct_crs_rules": 3, "endpoints_hit": ["/static/app.js", "/api/v1/items/42", "/health", "/products", "/search", "/about", "/static/app.css", "/products/", "/orders", "/api/v1/items", "/nonexistent-page", "/docs/guide", "/index.html", "/", "/vulnerabilities/sqli/"], "sample_rules": ["920350", "9
-        新: {"distinct_crs_rules": 3, "endpoints_hit": ["/about", "/", "/index.html", "/docs/guide", "/api/v1/items", "/products", "/health", "/products/", "/static/app.js", "/search", "/api/v1/items/42", "/orders", "/nonexistent-page", "/static/app.css", "/vulnerabilities/sqli/"], "sample_rules": ["920350", "9
+     噪声底(同一旧版首尾两次之差):0 条
 
 --- skills/identity/dcsync/recipe.py ---
   比对 30 条 / 旧版非空 30 条 → ok
+     噪声底(同一旧版首尾两次之差):0 条
 
 --- skills/identity/lateral_movement/recipe.py ---
-  比对 38 条 / 旧版非空 30 条 → ok
+  比对 41 条 / 旧版非空 30 条 → ok
+     噪声底(同一旧版首尾两次之差):1 条
+     ★同一份**旧代码**在测量窗口内自己就变了 1 条 ——与本次改动无关(已从判定里抵消):
+        85308dc67725dae664e0c5e5d74f51f13d19b098644ff7f811b21350f8e66fd6: ['context[该账号↔该主机基线']
+        (两类成因:①**图在动** —— 如 sum(e.count) 这种活计数,新事件持续在进;②**查询没有确定序** —— `base[0]` 取多行结果第一行、`collect(…)[..N]` 切无序集合。①无需修;②值得单独修。)
 
 ℹ️ ['skills/application/web_exploit/recipe.py'] 只有**顺序**变了、内容逐条相同 —— 不判失败。
    (Cypher 的 collect() 本就无序;但请扫一眼上面列出的新旧值,
