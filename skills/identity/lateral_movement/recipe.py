@@ -69,7 +69,17 @@ def collect(graph, alert, seed=None) -> Forensics:
             "RETURN r.first_seen AS first_seen, r.last_seen AS last_seen", s=acc_sam, h=target)
         has_baseline = bool(rows)
         cnt = graph.run_cypher(
-            "MATCH (e:Event {event_code:'4624'})-[:BY]->(:Account {sam:$s}) "
+            # ★WP10 放宽:`event_code='4624'` 是 Windows 专有码,换个源(Samba AD / sshd /
+            #   第三方采集器)就再也命不中 —— 数据入了图,这里却查出零行、不报错。
+            #   中立写法用 `activity`,**但不能一刀切**:
+            #   ★`auth.logon` 比 4624 **粗** —— 4624(成功)/4625(失败)/4776(NTLM 校验)
+            #     都归到它。这里数的是"登录次数",把失败登录算进来就是错的。
+            #     (PROFILE 探针显示两边结果一致,是因为这条查询还要求 `-[:AUTHENTICATED_TO]->`,
+            #      失败登录没有这条边、被顺带滤掉了 —— 那是**靠边的形状兜住**,不是谓词精确。
+            #      换个把失败登录也建了这条边的源就会破。所以用 `outcome` 显式约束。)
+            #   **只加不改**:存量 4624 走 OR 前半段照常命中,行集不变。
+            "MATCH (e:Event)-[:BY]->(:Account {sam:$s}) "
+            "WHERE e.event_code='4624' OR (e.activity='auth.logon' AND e.outcome='success') "
             "MATCH (e)-[:AUTHENTICATED_TO]->(:Host {hostname:$h}) "
             "RETURN sum(coalesce(e.count,1)) AS logins", s=acc_sam, h=target)
         logins = (cnt[0].get("logins") if cnt else None) or 0

@@ -49,7 +49,13 @@ def collect(graph, alert, seed=None) -> Forensics:
 
     # 1. 发起者 + 被访问对象 + 落地主机(★保留原始 cypher 与证据不动)
     base = graph.run_cypher(
-        "MATCH (a:Alert {alert_uid:$aid})<-[:TRIGGERED]-(e:Event {event_code:'4662'})-[:BY]->(actor:Account) "
+        # ★WP10 放宽:`event_code='4662'` 是 Windows 专有码,换个源就再也命不中
+        #   (数据入了图、这里却零行且不报错)。中立写法用 `activity='directory.access'`。
+        #   ★这条**不像 auth.logon / auth.ticket_request 那样粗**:词表里只有 4662 映到
+        #     directory.access,一对一,所以简单 OR 就够、不需要额外判别位。
+        #   **只加不改**:存量 4662 走 OR 前半段照常命中,行集不变(PROFILE 实测 1.00×、结果一致)。
+        "MATCH (a:Alert {alert_uid:$aid})<-[:TRIGGERED]-(e:Event)-[:BY]->(actor:Account) "
+        "WHERE e.event_code='4662' OR e.activity='directory.access' "
         "OPTIONAL MATCH (e)-[:ACCESSED]->(obj:DirectoryObject) "
         "OPTIONAL MATCH (e)-[:ON_HOST]->(eh:Host) "
         "RETURN actor.sam AS actor_sam, actor.domain AS actor_domain, actor.upn AS actor_upn, "
