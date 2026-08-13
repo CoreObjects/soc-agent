@@ -1,6 +1,6 @@
-=== openGauss 诊断(只读) 2026-08-13 14:44:18 ===
+=== openGauss 诊断(只读) 2026-08-13 14:54:54 ===
 主机: localhost.localdomain   Linux 6.6.0-45.0.0.54.oe2409.aarch64 aarch64
-开机: up 22 hours, 1 minute
+开机: up 22 hours, 11 minutes
      最后启动:  system boot 2026-08-12 16:43
 
 --- ① 我们到底在连什么(.env 里的 OG_* )---
