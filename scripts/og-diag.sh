@@ -22,6 +22,25 @@ ferry_guard "$FB" "feedback: og-diag $(date -u '+%m-%d %H:%MZ' 2>/dev/null || ec
 # 每个外部调用都要有上限(本会话吃过"脚本挂一整晚"的亏)
 r() { timeout -k 3 20 "$@" 2>&1; }
 
+# ★以 root 跑时 $HOME 是 /root —— 查 shell 历史/家目录会**搜错人**。
+#   所以一律以「仓库属主」为准来定位应用用户的家目录,而不是当前用户的。
+APP_USER="$(stat -c '%U' . 2>/dev/null || echo "$(whoami)")"
+APP_HOME="$(getent passwd "$APP_USER" 2>/dev/null | cut -d: -f6)"
+APP_HOME="${APP_HOME:-$HOME}"
+IS_ROOT=0; [ "$(id -u)" = "0" ] && IS_ROOT=1
+
+# ★root 跑完必须把属主还回去:否则 .git/feedback 变成 root 所有,
+#   下次以 soc 身份跑会一路权限报错 —— 用 root 查问题,不该留下新问题。
+_restore_owner() {
+  [ "$IS_ROOT" = "1" ] || return 0
+  chown -R "$APP_USER" .git feedback 2>/dev/null || true
+  echo "[root] 已把 .git / feedback 的属主还给 $APP_USER"
+}
+# ★注意顺序:`ferry_guard` 已经装了 EXIT 陷阱(负责把结果推回去)。
+#   这里直接 `trap ... EXIT` 会**覆盖**它,结果就推不回来了 —— 所以串起来,
+#   并且**先推后还属主**(推的时候还在用 git,还早了又会变成 root 所有)。
+trap '_ferry_guard_fire 结束; _restore_owner' EXIT
+
 {
   echo "=== openGauss 诊断(只读) $(date '+%F %T' 2>/dev/null) ==="
   # ★这行是我自己定的规矩,却在这个脚本里漏了 —— 结果第二跑拿到一份看不出版本的报告,
@@ -87,7 +106,7 @@ r() { timeout -k 3 20 "$@" 2>&1; }
     r ls -l "$DD/postmaster.pid" | sed 's/^/    /' || echo "    (无 postmaster.pid —— 说明它是**干净停的**,不是崩在半路)"
     echo "    监听配置:"
     r grep -E "^\s*(listen_addresses|port)\s*=" "$DD/postgresql.conf" | sed 's/^/      /' \
-      || echo "      (读不到 postgresql.conf,可能需要 sudo/omm 身份)"
+      || echo "      (读不到 postgresql.conf —— 以 root 跑本脚本即可,别用 sudo:这台机器用不了)"
   fi
   echo
 
@@ -96,7 +115,7 @@ r() { timeout -k 3 20 "$@" 2>&1; }
   for d in "${GAUSSLOG:-}" /var/log/gaussdb /var/log/opengauss "$DD/pg_log" "$DD/log" /home/omm/log; do
     [ -n "$d" ] && [ -d "$d" ] && { LOGD="$d"; break; }
   done
-  echo "  日志目录 = ${LOGD:-（没找到;可能在 omm 家目录下,需 sudo -u omm 看）}"
+  echo "  日志目录 = ${LOGD:-（没找到 —— 已确认这台机器没有 omm 用户,宿主机上也没装,见 ⑦b）}"
   if [ -n "$LOGD" ]; then
     LATEST="$(r find "$LOGD" -name '*.log' -printf '%T@ %p\n' 2>/dev/null | sort -rn | head -1 | cut -d' ' -f2-)"
     echo "  最新日志 = ${LATEST:-（没有 .log）}"
@@ -117,41 +136,52 @@ r() { timeout -k 3 20 "$@" 2>&1; }
   for kc in k3s kubectl crictl; do
     printf '    %-8s %s\n' "$kc" "$(command -v $kc 2>/dev/null || echo '(不在 PATH)')"
   done
-  # ★上一跑这里全"列不出" —— 那**不是** k3s 没起(它 is-active: active),
-  #   是 k3s 的 kubeconfig(/etc/rancher/k3s/k3s.yaml)默认只有 root 能读。
-  #   所以这里**用交互式 sudo**(不是 sudo -n):你在终端上跑,输一次密码即可;
-  #   真无人值守时有 timeout 兜底,不会挂住。
+  # ★上一跑 pod 全"列不出",**不是** k3s 没起(它 is-active: active),
+  #   是 k3s 的 kubeconfig 只有 root 能读。我上一版让人用 sudo —— **错了**:
+  #   这台机器的 soc 用户建号时就没设密码、登录也不要密码,sudo 根本用不了。
+  #   现在改成:命令直接跑(以 root 身份跑本脚本时自然有权限),不是 root 就明说这节跳过。
   export KUBECONFIG="${KUBECONFIG:-/etc/rancher/k3s/k3s.yaml}"
-  echo "  KUBECONFIG=$KUBECONFIG  可读:$([ -r "$KUBECONFIG" ] && echo 是 || echo '否(要 sudo)')"
-  echo "  ★所有 pod(不只找 gauss —— 要看的是**整个应用层回来没有**):"
-  timeout -k 3 40 sudo k3s kubectl get pods -A -o wide 2>&1 | head -25 | sed 's/^/    /' \
-    || echo "    (拿不到;若提示密码错/无权限,直接手动跑 sudo k3s kubectl get pods -A)"
-  echo "  最近的事件(为什么没起来,答案通常在这):"
-  timeout -k 3 30 sudo k3s kubectl get events -A --sort-by=.lastTimestamp 2>&1 \
-    | tail -15 | cut -c1-190 | sed 's/^/    /' || echo "    (拿不到)"
-  echo "  containerd 里的容器(含已退出的 —— 退出码/原因在这):"
-  timeout -k 3 30 sudo crictl ps -a 2>&1 | head -15 | sed 's/^/    /' || echo "    (crictl 拿不到)"
-  echo "  podman / docker:"
-  r podman ps -a --format '    {{.Names}}\t{{.Status}}\t{{.Image}}' | head -8 || echo "    (podman 不可用)"
-  r docker ps -a --format '    {{.Names}}\t{{.Status}}\t{{.Image}}' | head -8 || echo "    (docker 不可用)"
+  echo "  当前身份: $(whoami)  (仓库属主 $APP_USER,家目录 $APP_HOME)"
+  if [ "$IS_ROOT" = "1" ] || [ -r "$KUBECONFIG" ]; then
+    echo "  ★全部 pod(不只找 gauss —— 要看的是**整个应用层回来没有**):"
+    r k3s kubectl get pods -A -o wide | head -25 | sed 's/^/    /'
+    echo "  最近的事件(为什么没起来,答案通常直接写在这):"
+    r k3s kubectl get events -A --sort-by=.lastTimestamp | tail -15 | cut -c1-190 | sed 's/^/    /'
+    echo "  部署对象(pod 没了也能看出**本来该有什么**):"
+    r k3s kubectl get deploy,sts,ds -A | head -20 | sed 's/^/    /'
+    echo "  containerd 容器(含已退出的 —— 退出码/原因在这):"
+    r crictl ps -a | head -15 | sed 's/^/    /'
+  else
+    echo "  ⚠ 非 root 且读不到 kubeconfig ⇒ **这一节查不了**。"
+    echo "    以 root 身份重跑本脚本即可(sudo 在这台机器上用不了,别试):"
+    echo "      cd $(pwd) && bash scripts/og-diag.sh"
+  fi
+  echo "  podman:"
+  r podman ps -a --format '    {{.Names}}	{{.Status}}	{{.Image}}' | head -8 || echo "    (podman 不可用)"
   echo
-  echo "  ★对照组:**别的服务回来了没有**(上一跑的答案:只有 :6443/k3s 自己在听,"
+
+  echo "  ★现在到底有什么在跑(容器里的进程宿主机也看得见 —— 这条不需要任何权限):"
+  r ps -eo pid,etime,user,cmd --sort=-etime     | grep -iE 'containerd-shim|vllm|gauss|k3s server|python.*serve' | grep -v grep     | head -15 | cut -c1-170 | sed 's/^/    /' || echo "    (没有相关进程)"
+  echo
+
+  echo "  ★★它们当初是怎么起的 —— 这才是能把服务拉回来的线索(全部无需 root):"
+  echo "  (a) shell 历史里的启动命令($APP_HOME):"
+  r grep -hiE 'vllm|gauss|gsql|kubectl apply|helm |podman run|nerdctl|k3s ctr'       "$APP_HOME/.bash_history" "$APP_HOME/.zsh_history" 2>/dev/null     | tail -15 | cut -c1-160 | sed 's/^/      /' || echo "      (历史里没有相关命令)"
+  echo "  (b) 家目录里的部署文件(yaml/compose/启动脚本):"
+  r find "$APP_HOME" -maxdepth 4 \( -name '*.yaml' -o -name '*.yml' -o -name '*.sh' \) 2>/dev/null     | head -400 | xargs -r grep -liE 'gauss|vllm|:5432|:8000' 2>/dev/null | head -12 | sed 's/^/      /'     || echo "      (没找到)"
+  echo "  (c) crontab:"
+  r crontab -u "$APP_USER" -l 2>/dev/null | grep -vE '^\s*#' | head -8 | sed 's/^/      /'     || echo "      (没有 crontab)"
+  echo "  (d) 用户级 systemd 服务 + linger(没开 linger 的用户服务,重启后**不会**自动起):"
+  r systemctl --user list-units --type=service --no-pager | head -8 | sed 's/^/      /'     || echo "      (取不到用户级服务)"
+  r loginctl show-user "$APP_USER" -p Linger 2>/dev/null | sed 's/^/      /' || echo "      (查不到 linger)"
+  echo "  (e) tmux/screen 会话(手工起在会话里的,一重启就全没):"
+  r tmux ls | head -5 | sed 's/^/      /' || echo "      (没有 tmux 会话)"
+  r screen -ls | head -5 | sed 's/^/      /' || echo "      (没有 screen 会话)"
+  echo
+
+  echo "  ★对照组:**别的服务回来了没有**(上一跑答案:只有 :6443/k3s 本体在听,"
   echo "    **qwen vLLM :8000 也没起来** ⇒ 不是高斯一个的问题,是整个应用层没回来)"
-  r ss -tlnp | awk 'NR==1 || /:8000|:5432|:6443|:11434|:7687/' | head -10 | sed 's/^/    /'
-  echo
-  echo "  应用层是不是**手工起在会话里**的(tmux/screen 一重启就全没):"
-  r tmux ls | head -5 | sed 's/^/    /' || echo "    (没有 tmux 会话)"
-  r screen -ls | head -5 | sed 's/^/    /' || echo "    (没有 screen 会话)"
-  echo "  用户级 systemd 服务(有的人把 vLLM 放这儿,但它需要 linger 才会开机起):"
-  r systemctl --user list-units --type=service --no-pager | head -8 | sed 's/^/    /' \
-    || echo "    (没有用户级服务)"
-  echo "  loginctl linger(没开 linger,用户级服务重启后**不会**自动拉起):"
-  r loginctl show-user "$(whoami)" -p Linger | sed 's/^/    /' || echo "    (查不到)"
-  echo
-  echo "  最近跑过什么(从 shell 历史里找启动命令 —— 手工起的服务线索都在这):"
-  r grep -hiE 'vllm|gauss|gsql|docker run|podman run|kubectl apply|helm ' \
-      ~/.bash_history ~/.zsh_history 2>/dev/null | tail -12 | cut -c1-160 | sed 's/^/    /' \
-    || echo "    (历史里没有相关命令)"
+  r ss -tln | awk 'NR==1 || /:8000|:5432|:6443|:11434|:7687/' | head -10 | sed 's/^/    /'
   echo
 
   echo "--- ⑧ 两个最常见的「起不来」根因 ---"
@@ -163,7 +193,7 @@ r() { timeout -k 3 20 "$@" 2>&1; }
   echo "  内核有没有杀过它:"
   (r dmesg -T 2>/dev/null || r journalctl -k --since '-7 days' 2>/dev/null) \
     | grep -iE 'out of memory|killed process|oom' | tail -6 | sed 's/^/    /' \
-    || echo "    (没有 OOM 记录,或没权限读内核日志 —— 试 sudo dmesg)"
+    || echo "    (没有 OOM 记录,或非 root 读不到内核日志 —— 以 root 跑本脚本即可)"
   echo
 
   echo "--- ⑨ 怎么读这份报告 ---"
@@ -186,14 +216,22 @@ r() { timeout -k 3 20 "$@" 2>&1; }
   echo "  · ②有人听但不是 127.0.0.1:5432(比如只听 ::1 或别的端口)"
   echo "      ⇒ 不是「没起来」,是**听错地方**,改 .env 的 OG_HOST/OG_PORT 或改 listen_addresses。"
   echo
-  echo "--- ⑩ 起它的命令(★先看完上面再执行,别照抄)---"
-  echo "    sudo su - omm                     # openGauss 通常以 omm 身份管理"
-  echo "    gs_ctl start -D \$GAUSSDATA        # 或 gs_om -t start(集群方式装的)"
-  echo "    gs_ctl query -D \$GAUSSDATA        # 起完确认状态"
-  echo "  验证连得上(回到普通用户):"
-  echo "    ss -tln | grep 5432"
-  echo "  ★起回来之后,别忘了确认经验表非空:"
-  echo "    cd ~/soc-agent && bash scripts/replay-reuse.sh   # 空库它会当场停,不会再吐假基线"
+  echo "--- ⑩ 下一步(★先看完上面再动手)---"
+  echo "  ⚠ 原来这一节写的是 `sudo su - omm` + gs_ctl —— **在这台机器上是错的**:"
+  echo "    既没有 omm 用户、宿主机也没装 openGauss,而且 sudo 用不了(soc 无密码)。"
+  echo "    正确姿势是**以 root 身份跑本脚本**,把 ⑦b 那几节的答案拿到手。"
+  echo
+  echo "  拿到答案后按情况:"
+  echo "  · ⑦b 的 deploy/sts 里有 gauss/vllm,但 pod 不是 Running"
+  echo "      ⇒ k3s 里本来就部署着,只是起不来。看同一节的 events,原因通常直接写在那儿。"
+  echo "  · deploy/sts 里**压根没有**它们,而 (a)(b) 里能看到手工启动命令"
+  echo "      ⇒ 它们从来不是 k3s 负载,是手工起的 —— 重启就全没了。"
+  echo "        这时**别只是再手工起一次**:同样的事下次重启还会再发生一遍。"
+  echo "        照 (a)(b) 找到的命令做成 systemd unit(或 k3s manifest)并 enable,才算修完。"
+  echo
+  echo "  ★两件事的优先级:**vLLM :8000 比 openGauss 更急** ——"
+  echo "    没有 vLLM,soc-agent 一条告警都研判不了(poller 若在跑,每条都在失败);"
+  echo "    没有 openGauss,只是经验不落库、退化成每条都走 LLM。"
   echo "=== done(本次跑到了 ⑦b 容器排查;报告里没有 ⑦b = 跑的是旧脚本)==="
 } 2>&1 | tee "$FB"
 # 推送由 ferry_guard(EXIT 陷阱)负责。
