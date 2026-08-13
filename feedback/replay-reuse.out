@@ -1,6 +1,6 @@
-=== 语料保全闸门:重放复用率 2026-08-13 08:35Z ===
+=== 语料保全闸门:重放复用率 2026-08-13 08:48Z ===
 主机    : localhost.localdomain   仓库 /home/soc/soc-agent
-代码版本: 4690884 feedback: recipe-parity 08-13 08:34Z
+代码版本: 6ffc2fd feedback: recipe-parity 08-13 08:47Z
 解释器  : .venv312/bin/python -> Python 3.11.6
 每 skill 抽: 60 条(★分层抽样,不是总数封顶)
 
