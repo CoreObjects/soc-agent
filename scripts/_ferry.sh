@@ -130,7 +130,17 @@ ferry_push() {
   # shellcheck disable=SC2086
   [ -n "${FERRY_EXTRA:-}" ] && git add -f ${FERRY_EXTRA} >/dev/null 2>&1
   true
-  git commit -q -m "$msg" 2>&1 | tail -1 || true
+  # ★★只提交**自己的 feedback 文件**,绝不捎带索引里碰巧躺着的别的东西。
+  #
+  # 2026-08-13 真出过事:为了给闸门出基线,我让人先
+  #   `git checkout <改动前的rev> -- <某个 recipe>` 把工作树退回改动前。
+  #   **`git checkout <rev> -- <path>` 会同时写索引**,于是随后 ferry 的 `git commit`
+  #   把那次回退**一起提交了** —— 一个刚通过闸门验证的改动就此被静默撤销,
+  #   而提交信息写的是 "feedback: replay-reuse"。查了半天才从 --stat 里看出来。
+  #
+  # `git commit -- <paths>` 只提交这些路径的内容,索引里其它暂存一概不带。
+  # shellcheck disable=SC2086
+  git commit -q -m "$msg" -- "$fb" ${FERRY_EXTRA:-} 2>&1 | tail -1 || true
 
   # ★★先同步再推,不要"推失败了再说"。
   #
