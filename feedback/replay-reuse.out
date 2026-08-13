@@ -1,16 +1,32 @@
-=== 语料保全闸门:重放复用率 2026-08-13 07:37Z ===
+=== 语料保全闸门:重放复用率 2026-08-13 07:57Z ===
 主机    : localhost.localdomain   仓库 /home/soc/soc-agent
-代码版本: 21ac1d5 查明:openGauss 是 podman 容器,重启后没自启;并修三个真 bug
+代码版本: a5bf6f2 新增 og-recreate.sh:重建 openGauss 容器(去掉失效的 SELinux 标签 + 加重启策略)
 解释器  : .venv312/bin/python -> Python 3.11.6
 条数    : 200
 
-[warn] openGauss 不可用,经验层降级内存(本次不持久):connection to server at "127.0.0.1", port 5432 failed: Connection refused
-	Is the server running on that host and accept
-❌ **经验库是空的** —— 这份重放量不出任何东西(空库必然 100% FALLTHROUGH)。
-   最常见原因:openGauss 没起来,pipeline 降级成了内存空库(上面应有 [warn] 行)。
-   语料保全闸门的前提就是有语料;拿 0% 当基线 = 之后任何改动都通过,闸门形同虚设。
-   先把 openGauss 起来(server2 本机 5432),确认经验表非空,再跑。
-[退出码] 2
+经验库:28 条经验
+  …已重放 25/200
+  …已重放 50/200
+  …已重放 75/200
+  …已重放 100/200
+  …已重放 125/200
+  …已重放 150/200
+  …已重放 175/200
+  …已重放 200/200
 
-❌ 本次**没有产出基线**(退出码 2)。先按上面的提示修好再跑,别拿这次的输出当基线。
+--- 重放 200 条(覆盖度签名 821229922c273556;分区开关 关)---
+  AUTO_FP      197
+  FALLTHROUGH  3
+  ★自动复用率 = 98.5%
+
+  按 skill:
+    dcsync                   39/41  (95%)
+    lateral_movement         158/159  (99%)
+
+  (没给基线 —— 这一份就是基线,用 --save 存下来,改完之后 --baseline 对比)
+
+  基线已存:feedback/replay-reuse.baseline.json
+[退出码] 0
+
+★这一份是**基线**。改动之后跑 `bash scripts/replay-reuse.sh --compare` 对比。
 === done ===
