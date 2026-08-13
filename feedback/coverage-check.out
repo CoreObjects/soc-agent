@@ -1,0 +1,24 @@
+=== WP9 读侧覆盖度闸门(只读) 2026-08-13 03:18Z ===
+主机    : localhost.localdomain   仓库 /home/soc/soc-agent
+代码版本: 036eb47 coverage-check:报告头打主机名与图地址
+解释器  : .venv/bin/python -> Python 3.11.6
+图      : bolt://10.185.93.0:7687
+
+Traceback (most recent call last):
+  File "/home/soc/soc-agent/scripts/coverage_check.py", line 88, in <module>
+    sys.exit(main())
+             ^^^^^^
+  File "/home/soc/soc-agent/scripts/coverage_check.py", line 25, in main
+    graph = Neo4jGraph(cfg.neo4j_uri, cfg.neo4j_user, cfg.neo4j_password, cfg.neo4j_database)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/soc/soc-agent/soc_agent/graph/client.py", line 245, in __init__
+    self._driver = GraphDatabase.driver(uri, auth=(user, password))
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/soc/soc-agent/.venv/lib64/python3.11/site-packages/neo4j/_sync/driver.py", line 193, in driver
+    driver_type, security_type, parsed = parse_neo4j_uri(uri)
+                                         ^^^^^^^^^^^^^^^^^^^^
+  File "/home/soc/soc-agent/.venv/lib64/python3.11/site-packages/neo4j/_api.py", line 103, in parse_neo4j_uri
+    raise ConfigurationError(
+neo4j.exceptions.ConfigurationError: URI scheme '' is not supported. Supported URI schemes are ['bolt', 'bolt+ssc', 'bolt+s', 'neo4j', 'neo4j+ssc', 'neo4j+s']. Examples: bolt://host[:port] or neo4j://host[:port][?routing_context]
+[退出码] 1
+=== done ===
