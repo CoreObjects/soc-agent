@@ -1,0 +1,37 @@
+=== 谓词放宽的执行计划体检(只读) 2026-08-13 09:08Z ===
+主机    : localhost.localdomain   仓库 /home/soc/soc-agent
+代码版本: e45a1d5 WP10 前置:先用 PROFILE 证明谓词放宽不打掉索引,再动手
+解释器  : .venv312/bin/python -> Python 3.11.6
+
+--- 用来 profile 的真实参数(挑事件最多的那个,计划才有代表性)---
+  account_host: {'s': 'robb.stark', 'h': 'castelblack.north.sevenkingdoms.local'}
+  account_4769: {'s': 'robb.stark'}
+  alert_4662: {'aid': '3048926949513e219eccae20785da930642f2da181c9f66fb4536fec25b34aa7'}
+
+--- lateral_movement 登录基线计数 ---
+  旧: dbHits=1728116  行=[{'logins': 203268}]
+  新: dbHits=1731193  行=[{'logins': 203268}]
+  倍率=1.00×   结果一致=True   新形式出现 Event 全标签扫=False
+  新形式算子链: ProduceResults@neo4j → EagerAggregation@neo4j → Filter@neo4j → Expand(All)@neo4j → Filter@neo4j → Expand(All)@neo4j → NodeUniqueIndexSeek@neo4j
+  ✅ 放宽没有代价
+
+--- kerberoast 该账号取票总量 ---
+  旧: dbHits=1623515  行=[{'distinct_targets': 2, 'total': 244921}]
+  新: dbHits=2569760  行=[{'distinct_targets': 6, 'total': 460205}]
+  倍率=1.58×   结果一致=False   新形式出现 Event 全标签扫=False
+  新形式算子链: ProduceResults@neo4j → EagerAggregation@neo4j → Expand(All)@neo4j → Filter@neo4j → Expand(All)@neo4j → Filter@neo4j → NodeByLabelScan@neo4j
+  ❌ 结果不一致; dbHits 涨了 1.6×
+
+--- dcsync 告警锚点 ---
+  旧: dbHits=15       行=[{'sam': 'kingslanding$', 't': '2026-08-07T05:40:03.156Z'}]
+  新: dbHits=15       行=[{'sam': 'kingslanding$', 't': '2026-08-07T05:40:03.156Z'}]
+  倍率=1.00×   结果一致=True   新形式出现 Event 全标签扫=False
+  新形式算子链: ProduceResults@neo4j → Projection@neo4j → Filter@neo4j → Expand(All)@neo4j → Filter@neo4j → Expand(All)@neo4j → NodeUniqueIndexSeek@neo4j
+  ✅ 放宽没有代价
+
+❌ 以下谓词**不能直接 OR 放宽**,要换写法(如拆成 UNION 两支):
+   kerberoast 该账号取票总量: 结果不一致; dbHits 涨了 1.6×
+[退出码] 1
+
+❌ 至少一条不能直接 OR —— 需要换写法(拆 UNION 两支之类),别硬改。
+=== done ===
