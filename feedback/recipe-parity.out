@@ -1,34 +1,46 @@
-=== 行集一致闸门 2026-08-13 08:47Z ===
+=== 行集一致闸门 2026-08-13 09:20Z ===
 主机    : localhost.localdomain   仓库 /home/soc/soc-agent
-代码版本: b7b92e8 recipe-parity: 把「仅顺序不同」与「内容变了」分开
+代码版本: be469a5 WP10-2/3:lateral_movement 与 dcsync 谓词放宽(PROFILE 先验过)
 解释器  : .venv312/bin/python -> Python 3.11.6
 
-基线 rev = b60dfeb
+基线 rev = e45a1d5
 待测 recipe(rev..HEAD 改动过的):
   skills/application/web_exploit/recipe.py
+  skills/identity/dcsync/recipe.py
+  skills/identity/lateral_movement/recipe.py
 
 候选告警池 1200 条(按到达倒序)
 
 --- skills/application/web_exploit/recipe.py ---
-  比对 30 条 / 旧版非空 30 条 → ok(但有 4 条**仅顺序不同**,已列出供人过目)
-     10a18578c8707b3cba231bea8ccc9ce4f4afbd47f54c75db162ed889104ba36a: [顺序] context[源IP的WAF打击画像] 仅顺序不同(内容相同)
+  比对 30 条 / 旧版非空 30 条 → 有差异
+     646a999cfe4420a25ac4142c58d290b64802f400dec1c47c7b0699a78ef5c6da: context[请求与WAF命中] 内容变了
+        旧: {"all_crs_rules": null, "crs_rule": "92213", "event_time": "2026-08-13T09:12:48.565892100Z", "http_method": null, "http_status": null, "outcome": null, "payload": null, "rule_desc": "Executable file dropped in folder commonly used by malware", "severity": 15, "src_ip": null, "target_service": null, 
+        新: {"all_crs_rules": null, "crs_rule": "92213", "event_time": "2026-08-13T09:12:48.565Z", "http_method": null, "http_status": null, "outcome": null, "payload": null, "rule_desc": "Executable file dropped in folder commonly used by malware", "severity": 15, "src_ip": null, "target_service": null, "targe
+     545b9a686645d1b44ba02a30f44e09c465475bb7249e5f43aa171e7c97ff6286: context[请求与WAF命中] 内容变了
+        旧: {"all_crs_rules": null, "crs_rule": "100805", "event_time": "2026-08-13T09:11:48.797Z", "http_method": null, "http_status": null, "outcome": "success", "payload": null, "rule_desc": "Remote/network logon type 3 by robb.stark on castelblack.north.sevenkingdoms.local", "severity": 8, "src_ip": null, "
+        新: {"all_crs_rules": null, "crs_rule": "100805", "event_time": "2026-08-13T09:11:48.797668100Z", "http_method": null, "http_status": null, "outcome": "success", "payload": null, "rule_desc": "Remote/network logon type 3 by robb.stark on castelblack.north.sevenkingdoms.local", "severity": 8, "src_ip": n
+     a989d0581e748f33ebc549fe746889ba8229e910110a9e05810b2354eab9b6eb: [顺序] context[源IP的WAF打击画像] 仅顺序不同(内容相同)
         旧: {"distinct_crs_rules": 3, "endpoints_hit": ["/static/app.js", "/api/v1/items/42", "/health", "/products", "/search", "/about", "/static/app.css", "/products/", "/orders", "/api/v1/items", "/nonexistent-page", "/docs/guide", "/index.html", "/", "/vulnerabilities/sqli/"], "sample_rules": ["920350", "9
         新: {"distinct_crs_rules": 3, "endpoints_hit": ["/about", "/", "/index.html", "/docs/guide", "/api/v1/items", "/products", "/health", "/products/", "/static/app.js", "/search", "/api/v1/items/42", "/orders", "/nonexistent-page", "/static/app.css", "/vulnerabilities/sqli/"], "sample_rules": ["920350", "9
-     c9e991db5f16ff8df1a0428d67457757cf34053bf8250cd91a82410e4a32cf82: [顺序] context[源IP的WAF打击画像] 仅顺序不同(内容相同)
+     d2e72e41eb47b9784532f7d4ae701fa3c5273f19c4f5d829c2f8b34d0243c037: [顺序] context[源IP的WAF打击画像] 仅顺序不同(内容相同)
         旧: {"distinct_crs_rules": 3, "endpoints_hit": ["/static/app.js", "/api/v1/items/42", "/health", "/products", "/search", "/about", "/static/app.css", "/products/", "/orders", "/api/v1/items", "/nonexistent-page", "/docs/guide", "/index.html", "/", "/vulnerabilities/sqli/"], "sample_rules": ["920350", "9
         新: {"distinct_crs_rules": 3, "endpoints_hit": ["/about", "/", "/index.html", "/docs/guide", "/api/v1/items", "/products", "/health", "/products/", "/static/app.js", "/search", "/api/v1/items/42", "/orders", "/nonexistent-page", "/static/app.css", "/vulnerabilities/sqli/"], "sample_rules": ["920350", "9
-     09c49e8878132a21b194f685812e46daeedc064bec803e3bcf3d8d3618858dfa: [顺序] context[源IP的WAF打击画像] 仅顺序不同(内容相同)
+     a5cbd50a78c7c1c7164bfa790ce3451f0d55f1010097e5603675d45400eb20c6: [顺序] context[源IP的WAF打击画像] 仅顺序不同(内容相同)
         旧: {"distinct_crs_rules": 3, "endpoints_hit": ["/static/app.js", "/api/v1/items/42", "/health", "/products", "/search", "/about", "/static/app.css", "/products/", "/orders", "/api/v1/items", "/nonexistent-page", "/docs/guide", "/index.html", "/", "/vulnerabilities/sqli/"], "sample_rules": ["920350", "9
         新: {"distinct_crs_rules": 3, "endpoints_hit": ["/about", "/", "/index.html", "/docs/guide", "/api/v1/items", "/products", "/health", "/products/", "/static/app.js", "/search", "/api/v1/items/42", "/orders", "/nonexistent-page", "/static/app.css", "/vulnerabilities/sqli/"], "sample_rules": ["920350", "9
-     f0c7adea64a654f992f7f20a4b31d4a28e431c15449f00be98ec196fbd1b5142: [顺序] context[源IP的WAF打击画像] 仅顺序不同(内容相同)
+     e84fca1e31855f0f7e25b568a391ca9736ef954b020404a2ccc03a3bd93b9989: [顺序] context[源IP的WAF打击画像] 仅顺序不同(内容相同)
         旧: {"distinct_crs_rules": 3, "endpoints_hit": ["/static/app.js", "/api/v1/items/42", "/health", "/products", "/search", "/about", "/static/app.css", "/products/", "/orders", "/api/v1/items", "/nonexistent-page", "/docs/guide", "/index.html", "/", "/vulnerabilities/sqli/"], "sample_rules": ["920350", "9
         新: {"distinct_crs_rules": 3, "endpoints_hit": ["/about", "/", "/index.html", "/docs/guide", "/api/v1/items", "/products", "/health", "/products/", "/static/app.js", "/search", "/api/v1/items/42", "/orders", "/nonexistent-page", "/static/app.css", "/vulnerabilities/sqli/"], "sample_rules": ["920350", "9
 
-ℹ️ ['skills/application/web_exploit/recipe.py'] 只有**顺序**变了、内容逐条相同 —— 不判失败。
-   (Cypher 的 collect() 本就无序;但请扫一眼上面列出的新旧值,
-    确认那个顺序对你要表达的东西确实无所谓。)
-✅ 全部行集一致(内容层面),且样本有区分力。
-[退出码] 0
+--- skills/identity/dcsync/recipe.py ---
+  比对 30 条 / 旧版非空 30 条 → ok
 
-✅ 通过:行集一致,且样本有区分力。
+--- skills/identity/lateral_movement/recipe.py ---
+  比对 40 条 / 旧版非空 30 条 → ok
+
+❌ **行集不一致**:['skills/application/web_exploit/recipe.py']
+   声明过的新增之外的任何差异都算失败。要么改回去,要么把新增显式声明进命令行(并想清楚它为什么该被放行)。
+[退出码] 1
+
+❌ 不通过:出现了**未声明**的差异。这正是本闸门要拦的东西 —— 别急着加白名单放行。
 === done ===
