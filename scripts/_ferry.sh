@@ -105,6 +105,10 @@ ferry_push() {
   git config user.email >/dev/null 2>&1 || git config user.email "ferry@range"
   git config user.name  >/dev/null 2>&1 || git config user.name  "ferry"
   git add -f "$fb" >/dev/null 2>&1 || true
+  # 需要连同结果一起推的附件(空格分隔),由调用方设置 FERRY_EXTRA。
+  # shellcheck disable=SC2086
+  [ -n "${FERRY_EXTRA:-}" ] && git add -f ${FERRY_EXTRA} >/dev/null 2>&1
+  true
   git commit -q -m "$msg" 2>&1 | tail -1 || true
 
   ferry_retry git push -q origin HEAD || {
