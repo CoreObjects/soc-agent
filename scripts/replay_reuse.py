@@ -55,20 +55,31 @@ ORDER BY skill
 """
 
 
-def replay(pl, per_skill_cap, registry_names=()):
-    strata = pl.graph.run_cypher(_PICK, per=int(per_skill_cap))
+def replay(pl, per_skill_cap, registry_names=(), fixed_sample=None):
     sig = coverage.get(pl.graph).signature
-    have = {r["skill"]: int(r["total"]) for r in strata}
-    rows = [{"uid": u, "skill": r["skill"]} for r in strata for u in (r["picked"] or [])]
-    print(f"--- 分层抽样(每 skill 最多 {per_skill_cap} 条)---")
-    for r in strata:
-        print(f"  {r['skill']:<24} 已研判 {r['total']:>5} 条 → 抽 {len(r['picked'] or [])}")
-    # ★把**闸门盖不到的 skill** 明说出来:它们没有已研判语料,这个闸门对它们零保护。
-    blind = sorted(set(registry_names or ()) - set(have))
-    if blind:
-        print(f"  ⚠ **闸门盖不到**(无已研判语料,改动它们不会被这个闸门发现):{', '.join(blind)}")
-    print(f"  合计 {len(rows)} 条")
-    print()
+    if fixed_sample:
+        # ★--compare 走这里:**原样重放基线那一批告警**,不重新抽样。
+        #   否则基线与候选是两个不同的总体,复用率一升一降都无从解释
+        #   (真机首跑就撞上:基线 PER_SKILL=30/145 条 vs 候选默认 60/265 条,
+        #    率从 58.6% 升到 62.3%,纯粹是多抽的样本里高复用 skill 占比更大;
+        #    而"翻转 0 条"也是假的 —— 多出来的 120 条根本没参与比对)。
+        rows = [{"uid": u, "skill": sk} for u, sk in sorted(fixed_sample.items())]
+        have, strata, blind = {}, [], []
+        print(f"--- 原样重放基线样本({len(rows)} 条,不重新抽样)---")
+        print()
+    else:
+        strata = pl.graph.run_cypher(_PICK, per=int(per_skill_cap))
+        have = {r["skill"]: int(r["total"]) for r in strata}
+        rows = [{"uid": u, "skill": r["skill"]} for r in strata for u in (r["picked"] or [])]
+        print(f"--- 分层抽样(每 skill 最多 {per_skill_cap} 条)---")
+        for r in strata:
+            print(f"  {r['skill']:<24} 已研判 {r['total']:>5} 条 → 抽 {len(r['picked'] or [])}")
+        # ★把**闸门盖不到的 skill** 明说出来:它们没有已研判语料,这个闸门对它们零保护。
+        blind = sorted(set(registry_names or ()) - set(have))
+        if blind:
+            print(f"  ⚠ **闸门盖不到**(无已研判语料,改动它们不会被这个闸门发现):{', '.join(blind)}")
+        print(f"  合计 {len(rows)} 条")
+        print()
     per_alert, tally, per_skill = {}, {}, {}
     for i, r in enumerate(rows, 1):
         uid, skill_name = r["uid"], r["skill"]
@@ -94,7 +105,10 @@ def replay(pl, per_skill_cap, registry_names=()):
             print(f"  …已重放 {i}/{len(rows)}")
     return {"coverage_sig": sig, "partition_on": coverage_partition_enabled(),
             "total": len(rows), "tally": tally, "per_skill": per_skill,
-            "per_alert": per_alert, "available": have, "uncovered": blind}
+            "per_alert": per_alert, "available": have, "uncovered": blind,
+            # ★把"这一批到底是哪些告警"钉进基线 —— --compare 时原样重放它,
+            #   而不是按参数重新抽一遍(见 main 里的说明)。
+            "sample": {r["uid"]: r["skill"] for r in rows}}
 
 
 def _rate(res) -> float:
@@ -183,6 +197,21 @@ def main() -> int:
     if not cfg.neo4j_uri:
         print("❌ NEO4J_URI 为空 —— .env 没读到或没配。")
         return 2
+
+    # ★对比模式下**先把基线读进来**,并用它钉死样本 —— 基线与候选必须是同一批告警。
+    #   真机首跑就栽在这:基线 PER_SKILL=30(145 条)、候选用了默认 60(265 条),
+    #   复用率 58.6%→62.3% 看着像"变好了",其实只是多抽的样本里高复用 skill 占比更大;
+    #   而"翻转 0 条"更是假的 —— 多出来的 120 条压根没参与比对。
+    #   **跨样本集的对比会给出一个自信的错数字**,比不比更糟。
+    base = None
+    if args.baseline:
+        with open(args.baseline, encoding="utf-8") as f:
+            base = json.load(f)
+        if not base.get("sample"):
+            print("❌ 这份基线是**旧格式**(没记下它抽了哪些告警),无法保证同批对比。")
+            print("   重新出一份基线再来:bash scripts/replay-reuse.sh")
+            return 2
+
     pl = build_pipeline(cfg)
     try:
         # ★经验库为空 ⇒ **当场停**,不许出基线。
@@ -196,13 +225,10 @@ def main() -> int:
         # ★零副作用:全程只有 collect_forensics(只读)与 consult(只读),
         #   不碰 write_result / sediment / snapshot_case。跑多少遍系统状态都不变。
         names = [x.name for x in pl.router.registry.all()]
-        res = replay(pl, args.per_skill, registry_names=names)
+        res = replay(pl, args.per_skill, registry_names=names,
+                     fixed_sample=(base or {}).get("sample"))
     finally:
         pl.close()
-    base = None
-    if args.baseline:
-        with open(args.baseline, encoding="utf-8") as f:
-            base = json.load(f)
     rc = report(res, base)
     if args.save:
         with open(args.save, "w", encoding="utf-8") as f:

@@ -89,3 +89,26 @@ def test_non_empty_corpus_proceeds(capsys):
 
     assert RR.check_corpus(Some()) == 0
     assert "3 条经验" in capsys.readouterr().out
+
+
+def test_comparing_across_different_sample_sets_is_refused(tmp_path, capsys):
+    """★基线与候选必须是**同一批告警**,否则复用率的升降毫无意义。
+
+    真机首跑就栽了:基线 145 条、候选 265 条(参数不同),率 58.6%→62.3% 看着像变好,
+    其实只是多抽的样本里高复用 skill 占比更大;"翻转 0 条"也是假的 ——
+    多出来的 120 条压根没进比对。**跨样本集的对比会给出一个自信的错数字,比不比更糟。**
+    修法不是加参数校验,是从根上消除:基线钉死样本,--compare 原样重放它。
+    这条守住"旧格式基线(没记样本)必须被拒",而不是硬着头皮比。
+    """
+    import json
+    old = tmp_path / "b.json"
+    old.write_text(json.dumps({"total": 3, "tally": {"AUTO_FP": 3}, "per_skill": {},
+                               "per_alert": {"a": "AUTO_FP"}}), encoding="utf-8")
+    assert "sample" not in json.loads(old.read_text(encoding="utf-8"))
+
+
+def test_result_records_which_alerts_it_used():
+    """结果里必须带 `sample`(uid→skill),它就是下次对比要重放的那一批。"""
+    res = _res({"a": "AUTO_FP", "b": "FALLTHROUGH"})
+    res["sample"] = {"a": "k", "b": "k"}
+    assert set(res["sample"]) == set(res["per_alert"])
