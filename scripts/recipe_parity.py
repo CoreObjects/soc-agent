@@ -314,7 +314,12 @@ def main() -> int:
                          if sk else p)
         paths = fixed
 
+    # ★把**代码实际收到的**声明打出来。上一跑报了"attrs 多了未声明的 activity",
+    #   而我明明让人带了 ALLOW_ATTRS=activity —— 报告里没记参数,就分不清
+    #   "没传"还是"传了没生效",只能靠猜。与 og-diag 漏打「代码版本」是同一个错。
+    decl = {k: v for k, v in allow.items() if v}
     print(f"基线 rev = {args.rev}")
+    print(f"声明放行(代码实际收到):{decl or '（无 —— 零容忍)'}")
     print(f"待测 recipe({'手工指定' if args.skills else 'rev..HEAD 改动过的'}):")
     for p in paths:
         print(f"  {p}")
