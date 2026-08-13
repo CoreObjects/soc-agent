@@ -23,8 +23,12 @@ ferry_guard "$FB" "feedback: coverage-check $(date -u '+%m-%d %H:%MZ' 2>/dev/nul
 
 {
   echo "=== WP9 读侧覆盖度闸门(只读) $(date -u '+%F %H:%MZ' 2>/dev/null || true) ==="
+  # ★打主机名:soc-agent 跑在 **server2 研判机**,而本项目大多数脚本跑在靶场机 ——
+  #   两台机器的 feedback 混在一个仓里,不写主机名就分不清哪份是哪台跑的。
+  echo "主机    : $(hostname 2>/dev/null)   仓库 $(pwd)"
   echo "代码版本: $(git rev-parse --short HEAD 2>/dev/null) $(git log -1 --format=%s 2>/dev/null | cut -c1-60)"
   echo "解释器  : $PY -> $("$PY" -V 2>&1)"
+  echo "图      : $(grep -E '^NEO4J_URI=' .env 2>/dev/null | cut -d= -f2- | tr -d '\"')"
   echo
   PYTHONUTF8=1 "$PY" -X utf8 scripts/coverage_check.py
   echo "[退出码] $?"
