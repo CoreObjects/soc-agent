@@ -1,21 +1,102 @@
-=== 行集一致闸门 2026-08-13 10:54Z ===
+=== 行集一致闸门 2026-08-13 11:35Z ===
 主机    : localhost.localdomain   仓库 /home/soc/soc-agent
-代码版本: 4268c9c recipe-parity: 按 skill 定向取样 —— 通用池对冷门 skill 一条都不沾
+代码版本: 50425c6 WP10 配套:4 个 recipe 的 Finding.attrs 加 activity(只加不改)+ 闸门支持声明 
 解释器  : .venv312/bin/python -> Python 3.11.6
 
 基线 rev = 461490b
 待测 recipe(rev..HEAD 改动过的):
+  skills/host/ingress_tool_transfer/recipe.py
+  skills/host/suspicious_process/recipe.py
+  skills/identity/adcs/recipe.py
   skills/identity/kerberoast/recipe.py
+  skills/identity/lateral_movement/recipe.py
 
 候选告警池 1200 条(按到达倒序)
+
+    样本:定向(台账里用过本 skill 的)120 条 + 通用池兜底 → 共 1320 条
+--- skills/host/ingress_tool_transfer/recipe.py ---
+  比对 30 条 / 旧版非空 30 条 → 有差异
+     b205f1f76f8ab3d77096725fe593f8f3fb0fb4876c5c405bb663dd6c81e4c5a3: finding ingress.download attrs 多了未声明的 ['activity']
+     15da1474cd55a4ebe250241e69af288b536608826affee480369cb3896a60e06: finding ingress.download attrs 多了未声明的 ['activity']
+     2f472668fa411a2ef4c813c281cccbdaf91cb207a7257692c1d3352299488d20: finding ingress.download attrs 多了未声明的 ['activity']
+     277f7e698e0cce2aea1539a030cfd728874dcf81e419f2b8b7ef1edee00982d4: finding ingress.download attrs 多了未声明的 ['activity']
+     6e3a67dfe332c843d9546a6d02f89f3461672146e8a773ec2478a08509e9c0f8: finding ingress.download attrs 多了未声明的 ['activity']
+     04eef9809523ddc7607f54fa7abfadc8ac865f82c0e3b8fdb454edac14884f03: finding ingress.download attrs 多了未声明的 ['activity']
+     …还有 24 条(形态多半相同,先看上面这几条)
+     噪声底(同一旧版首尾两次之差):0 条
+
+    样本:定向(台账里用过本 skill 的)10 条 + 通用池兜底 → 共 1210 条
+--- skills/host/suspicious_process/recipe.py ---
+  比对 30 条 / 旧版非空 30 条 → 有差异
+     18ddaefbde8931f3066cdd70a53bb0b04d15c3f4f8cbefce624e760df50008b2: finding suspproc.process attrs 多了未声明的 ['activity']
+     02ea30a1760c2c39bf13f971a1cc69ef3bdfb3421a6352bb69fc21155f791c8c: finding suspproc.process attrs 多了未声明的 ['activity']
+     d3e33e6bbf9e86ee28e28b69628847db6fabf193d1aa43bd889499f02a221c00: finding suspproc.process attrs 多了未声明的 ['activity']
+     a02479a194b9eb3ee728a664231a246dfd460501bb12f063060c15aaf54ebebf: finding suspproc.process attrs 多了未声明的 ['activity']
+     ed80c07df9c4c3c2f639c6285351f3790f1eabe7ac424bf185cad6f2e2e7a1ab: finding suspproc.process attrs 多了未声明的 ['activity']
+     f9919f04e814ea394e5ec79bb63d69190d152568251449f6072c80d5469ab77f: finding suspproc.process attrs 多了未声明的 ['activity']
+     …还有 24 条(形态多半相同,先看上面这几条)
+     噪声底(同一旧版首尾两次之差):0 条
+
+    样本:定向(台账里用过本 skill 的)0 条 + 通用池兜底 → 共 1200 条
+--- skills/identity/adcs/recipe.py ---
+  比对 40 条 / 旧版非空 30 条 → 有差异
+     e87b452a22e2a95a0dd522608182c6d72b9ea95848c468edb58569cbab2dfc21: finding adcs.cert_request attrs 多了未声明的 ['activity']; context[请求者与CA] 内容变了
+        旧: {"attributes": null, "ca": null, "ca_host": "winterfell.north.sevenkingdoms.local", "ca_kind": null, "event_code": "4662", "req_domain": "SEVENKINGDOMS", "req_privileged": false, "req_sam": "kingslanding$", "req_upn": "KINGSLANDING$@SEVENKINGDOMS.LOCAL", "request_id": null, "subject_dn": null}
+        新: {"activity": "directory.access", "attributes": null, "ca": null, "ca_host": "winterfell.north.sevenkingdoms.local", "ca_kind": null, "event_code": "4662", "req_domain": "SEVENKINGDOMS", "req_privileged": false, "req_sam": "kingslanding$", "req_upn": "KINGSLANDING$@SEVENKINGDOMS.LOCAL", "request_id":
+     cbbb0d17cc19e8c73dfe570bb6ad86ba99d5e6a690148bb9bfce7c3fabffaaa5: finding adcs.cert_request attrs 多了未声明的 ['activity']; context[请求者与CA] 内容变了
+        旧: {"attributes": null, "ca": null, "ca_host": "castelblack.north.sevenkingdoms.local", "ca_kind": null, "event_code": "4624", "req_domain": "NORTH", "req_privileged": false, "req_sam": "robb.stark", "req_upn": "robb.stark@NORTH.SEVENKINGDOMS.LOCAL", "request_id": null, "subject_dn": null}
+        新: {"activity": "auth.logon", "attributes": null, "ca": null, "ca_host": "castelblack.north.sevenkingdoms.local", "ca_kind": null, "event_code": "4624", "req_domain": "NORTH", "req_privileged": false, "req_sam": "robb.stark", "req_upn": "robb.stark@NORTH.SEVENKINGDOMS.LOCAL", "request_id": null, "subje
+     359c4d49ecf6b4cb035481ff2e5c94e984c7e32e601f870fbaeb7489df3d0bbf: finding adcs.cert_request attrs 多了未声明的 ['activity']; context[请求者与CA] 内容变了
+        旧: {"attributes": null, "ca": null, "ca_host": "castelblack.north.sevenkingdoms.local", "ca_kind": null, "event_code": "4624", "req_domain": "NORTH", "req_privileged": false, "req_sam": "robb.stark", "req_upn": "robb.stark@NORTH.SEVENKINGDOMS.LOCAL", "request_id": null, "subject_dn": null}
+        新: {"activity": "auth.logon", "attributes": null, "ca": null, "ca_host": "castelblack.north.sevenkingdoms.local", "ca_kind": null, "event_code": "4624", "req_domain": "NORTH", "req_privileged": false, "req_sam": "robb.stark", "req_upn": "robb.stark@NORTH.SEVENKINGDOMS.LOCAL", "request_id": null, "subje
+     8ea3f0d85ff259889b184c031830917e7c9797d78c5a18b0481ef4125be64e39: finding adcs.cert_request attrs 多了未声明的 ['activity']; context[请求者与CA] 内容变了
+        旧: {"attributes": null, "ca": null, "ca_host": "castelblack.north.sevenkingdoms.local", "ca_kind": null, "event_code": "4624", "req_domain": "NORTH", "req_privileged": false, "req_sam": "robb.stark", "req_upn": "robb.stark@NORTH.SEVENKINGDOMS.LOCAL", "request_id": null, "subject_dn": null}
+        新: {"activity": "auth.logon", "attributes": null, "ca": null, "ca_host": "castelblack.north.sevenkingdoms.local", "ca_kind": null, "event_code": "4624", "req_domain": "NORTH", "req_privileged": false, "req_sam": "robb.stark", "req_upn": "robb.stark@NORTH.SEVENKINGDOMS.LOCAL", "request_id": null, "subje
+     255f7505d21f880f215b1bc691d14b18d34bbdc71ac7c32f41e8d21b3176c90d: finding adcs.cert_request attrs 多了未声明的 ['activity']; context[请求者与CA] 内容变了
+        旧: {"attributes": null, "ca": null, "ca_host": "castelblack.north.sevenkingdoms.local", "ca_kind": null, "event_code": "4624", "req_domain": "NORTH", "req_privileged": false, "req_sam": "robb.stark", "req_upn": "robb.stark@NORTH.SEVENKINGDOMS.LOCAL", "request_id": null, "subject_dn": null}
+        新: {"activity": "auth.logon", "attributes": null, "ca": null, "ca_host": "castelblack.north.sevenkingdoms.local", "ca_kind": null, "event_code": "4624", "req_domain": "NORTH", "req_privileged": false, "req_sam": "robb.stark", "req_upn": "robb.stark@NORTH.SEVENKINGDOMS.LOCAL", "request_id": null, "subje
+     26ffbdba720689506863360387862f2d6cca8d8bca2d64b1db9f8402badfb0e3: finding adcs.cert_request attrs 多了未声明的 ['activity']; context[请求者与CA] 内容变了
+        旧: {"attributes": null, "ca": null, "ca_host": "winterfell.north.sevenkingdoms.local", "ca_kind": null, "event_code": "4662", "req_domain": "SEVENKINGDOMS", "req_privileged": false, "req_sam": "kingslanding$", "req_upn": "KINGSLANDING$@SEVENKINGDOMS.LOCAL", "request_id": null, "subject_dn": null}
+        新: {"activity": "directory.access", "attributes": null, "ca": null, "ca_host": "winterfell.north.sevenkingdoms.local", "ca_kind": null, "event_code": "4662", "req_domain": "SEVENKINGDOMS", "req_privileged": false, "req_sam": "kingslanding$", "req_upn": "KINGSLANDING$@SEVENKINGDOMS.LOCAL", "request_id":
+     …还有 24 条(形态多半相同,先看上面这几条)
+     噪声底(同一旧版首尾两次之差):0 条
 
     样本:定向(台账里用过本 skill 的)120 条 + 通用池兜底 → 共 1320 条
 --- skills/identity/kerberoast/recipe.py ---
   比对 30 条 / 旧版非空 30 条 → ok
      噪声底(同一旧版首尾两次之差):0 条
 
-✅ 全部行集一致(内容层面),且样本有区分力。
-[退出码] 0
+    样本:定向(台账里用过本 skill 的)120 条 + 通用池兜底 → 共 1320 条
+--- skills/identity/lateral_movement/recipe.py ---
+  比对 30 条 / 旧版非空 30 条 → 有差异
+     af026df36fc6df359a43d687a83a94b894c364240b643065107410d0b756ad78: finding lateral.network_logon attrs 多了未声明的 ['activity']; context[登录事件] 内容变了
+        旧: {"acc_domain": "NORTH", "acc_privileged": false, "acc_sam": "robb.stark", "event_code": "4624", "logon_type": "3", "result": "success", "src_ip": null, "target_criticality": "medium", "target_host": "castelblack.north.sevenkingdoms.local", "target_role": "member_server"}
+        新: {"acc_domain": "NORTH", "acc_privileged": false, "acc_sam": "robb.stark", "activity": "auth.logon", "event_code": "4624", "logon_type": "3", "result": "success", "src_ip": null, "target_criticality": "medium", "target_host": "castelblack.north.sevenkingdoms.local", "target_role": "member_server"}
+     8e4c8924ae79f87e66d548d4bad4882f6b614dc81b59ef6bbaa31963f2deed29: finding lateral.network_logon attrs 多了未声明的 ['activity']; context[登录事件] 内容变了
+        旧: {"acc_domain": "NORTH", "acc_privileged": false, "acc_sam": "robb.stark", "event_code": "4624", "logon_type": "3", "result": "success", "src_ip": "192.168.56.1", "target_criticality": "medium", "target_host": "castelblack.north.sevenkingdoms.local", "target_role": "member_server"}
+        新: {"acc_domain": "NORTH", "acc_privileged": false, "acc_sam": "robb.stark", "activity": "auth.logon", "event_code": "4624", "logon_type": "3", "result": "success", "src_ip": "192.168.56.1", "target_criticality": "medium", "target_host": "castelblack.north.sevenkingdoms.local", "target_role": "member_s
+     2ba251c8c034670b8faf97aa391e016c79a510ec6018639764ed635ecfcd1b98: finding lateral.network_logon attrs 多了未声明的 ['activity']; context[登录事件] 内容变了
+        旧: {"acc_domain": "NORTH", "acc_privileged": false, "acc_sam": "robb.stark", "event_code": "4624", "logon_type": "3", "result": "success", "src_ip": "192.168.56.11", "target_criticality": "medium", "target_host": "castelblack.north.sevenkingdoms.local", "target_role": "member_server"}
+        新: {"acc_domain": "NORTH", "acc_privileged": false, "acc_sam": "robb.stark", "activity": "auth.logon", "event_code": "4624", "logon_type": "3", "result": "success", "src_ip": "192.168.56.11", "target_criticality": "medium", "target_host": "castelblack.north.sevenkingdoms.local", "target_role": "member_
+     3c9f0a5c561ff44f263467c24e0d1179269542f1b447adedf7870dc1db089464: finding lateral.network_logon attrs 多了未声明的 ['activity']; context[登录事件] 内容变了
+        旧: {"acc_domain": "NORTH", "acc_privileged": false, "acc_sam": "robb.stark", "event_code": "4624", "logon_type": "3", "result": "success", "src_ip": null, "target_criticality": "medium", "target_host": "castelblack.north.sevenkingdoms.local", "target_role": "member_server"}
+        新: {"acc_domain": "NORTH", "acc_privileged": false, "acc_sam": "robb.stark", "activity": "auth.logon", "event_code": "4624", "logon_type": "3", "result": "success", "src_ip": null, "target_criticality": "medium", "target_host": "castelblack.north.sevenkingdoms.local", "target_role": "member_server"}
+     e0578ad3093df8cdb112ba9ebd0c065b4564c09f6309f020905d6f18ac10e09f: finding lateral.network_logon attrs 多了未声明的 ['activity']; context[登录事件] 内容变了
+        旧: {"acc_domain": "NORTH", "acc_privileged": false, "acc_sam": "robb.stark", "event_code": "4624", "logon_type": "3", "result": "success", "src_ip": "192.168.56.1", "target_criticality": "medium", "target_host": "castelblack.north.sevenkingdoms.local", "target_role": "member_server"}
+        新: {"acc_domain": "NORTH", "acc_privileged": false, "acc_sam": "robb.stark", "activity": "auth.logon", "event_code": "4624", "logon_type": "3", "result": "success", "src_ip": "192.168.56.1", "target_criticality": "medium", "target_host": "castelblack.north.sevenkingdoms.local", "target_role": "member_s
+     379268b2b972b76e12d0c1f99d7f7774413c23b90a3e5ae7c91ee084e84cdfc7: finding lateral.network_logon attrs 多了未声明的 ['activity']; context[登录事件] 内容变了
+        旧: {"acc_domain": "NORTH", "acc_privileged": false, "acc_sam": "robb.stark", "event_code": "4624", "logon_type": "3", "result": "success", "src_ip": "192.168.56.11", "target_criticality": "medium", "target_host": "castelblack.north.sevenkingdoms.local", "target_role": "member_server"}
+        新: {"acc_domain": "NORTH", "acc_privileged": false, "acc_sam": "robb.stark", "activity": "auth.logon", "event_code": "4624", "logon_type": "3", "result": "success", "src_ip": "192.168.56.11", "target_criticality": "medium", "target_host": "castelblack.north.sevenkingdoms.local", "target_role": "member_
+     …还有 24 条(形态多半相同,先看上面这几条)
+     噪声底(同一旧版首尾两次之差):2 条
+     ★同一份**旧代码**在测量窗口内自己就变了 2 条 ——与本次改动无关(已从判定里抵消):
+        9e48ea3d4c3bf1568a5a3c9a996d53360ce689bd44e85873aa941095fb88002b: ['context[该账号↔该主机基线']
+        c8c5c3112a32c1f81eb8b6a12800dedc2c9e47c2700b00add6b003a65be3711a: ['context[该账号↔该主机基线']
+        (两类成因:①**图在动** —— 如 sum(e.count) 这种活计数,新事件持续在进;②**查询没有确定序** —— `base[0]` 取多行结果第一行、`collect(…)[..N]` 切无序集合。①无需修;②值得单独修。)
 
-✅ 通过:行集一致,且样本有区分力。
+❌ **行集不一致**:['skills/host/ingress_tool_transfer/recipe.py', 'skills/host/suspicious_process/recipe.py', 'skills/identity/adcs/recipe.py', 'skills/identity/lateral_movement/recipe.py']
+   声明过的新增之外的任何差异都算失败。要么改回去,要么把新增显式声明进命令行(并想清楚它为什么该被放行)。
+[退出码] 1
+
+❌ 不通过:出现了**未声明**的差异。这正是本闸门要拦的东西 —— 别急着加白名单放行。
 === done ===
