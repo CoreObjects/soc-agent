@@ -111,11 +111,22 @@ ferry_push() {
   true
   git commit -q -m "$msg" 2>&1 | tail -1 || true
 
-  ferry_retry git push -q origin HEAD || {
-    # 推不动可能是落后于远端(别人先推了)—— 先 rebase 再重试,而不是直接放弃
-    ferry_retry git pull --rebase -q --autostash origin main || true
-    ferry_retry git push -q origin HEAD || true
-  }
+  # ★★先同步再推,不要"推失败了再说"。
+  #
+  # 2026-08-13 实测踩到:本机落后于远端时 push 报
+  #   `! [rejected] (fetch first)` —— 这是**必然失败**,不是网络抖动,
+  # 而 ferry_retry 把所有失败一视同仁,傻等 3/8/15/30 秒重试 5 遍,每遍都以同样的理由失败,
+  # 真正的修法(rebase)被推到半分钟之后才轮到。**把确定性失败当成瞬时失败去重试,是纯浪费**,
+  # 更糟的是它会让人以为"网又断了"。
+  #
+  # 所以顺序反过来:fetch → rebase → push。落后是常态(我在另一头推代码),不是异常。
+  ferry_retry git fetch -q origin || true
+  if ! git rebase -q --autostash origin/main >/dev/null 2>&1; then
+    git rebase --abort >/dev/null 2>&1 || true
+    echo "   ↳ rebase 到 origin/main 失败(多半是同一个 feedback 文件两头都改过)。" >&2
+    echo "     结果**已在本机** $fb;手动处理:git fetch origin && git rebase origin/main" >&2
+  fi
+  ferry_retry git push -q origin HEAD || true
 
   # ★核实:以「远端真的有这个提交」为准,不以 push 的退出码为准。
   ferry_retry git fetch -q origin || true
