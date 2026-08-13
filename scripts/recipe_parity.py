@@ -103,9 +103,12 @@ def diff(old_fo, new_fo, *, new_findings=(), new_ctx=(), new_bindings=()) -> lis
     if set(ncx) - set(oc) - nc:
         out.append(f"context 多了未声明的 {sorted(set(ncx) - set(oc) - nc)}")
     for k in set(oc) & set(ncx):
-        if json.dumps(oc[k], sort_keys=True, default=str) != \
-           json.dumps(ncx[k], sort_keys=True, default=str):
-            out.append(f"context[{k}] 变了")
+        a = json.dumps(oc[k], sort_keys=True, default=str, ensure_ascii=False)
+        b = json.dumps(ncx[k], sort_keys=True, default=str, ensure_ascii=False)
+        if a != b:
+            # ★只说"变了"没用:一个每 PR 都要跑的闸门,必须让人**当场看出变成什么**,
+            #   否则每次红了都得另外写脚本去捞 —— 首跑就卡在这。
+            out.append(f"context[{k}] 变了\n        旧: {a[:300]}\n        新: {b[:300]}")
 
     if old_fo.blind_spots != new_fo.blind_spots:
         out.append("blind_spots 变了")
@@ -226,10 +229,10 @@ def main() -> int:
             results[p] = r
             print(f"--- {p} ---")
             print(f"  比对 {r['compared']} 条 / 旧版非空 {r['nonempty']} 条 → {r['state']}")
-            for d in r["diffs"][:10]:
+            for d in r["diffs"][:6]:
                 print(f"     {d}")
-            if len(r["diffs"]) > 10:
-                print(f"     …还有 {len(r['diffs']) - 10} 条")
+            if len(r["diffs"]) > 6:
+                print(f"     …还有 {len(r['diffs']) - 6} 条(形态多半相同,先看上面这几条)")
             if r.get("why"):
                 print(f"     {r['why']}")
             print()
