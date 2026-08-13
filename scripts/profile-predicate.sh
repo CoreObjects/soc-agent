@@ -5,9 +5,15 @@
 # 在 90 万事件上那是灾难,而且**不会报错**,只会让研判默默变慢。
 # 首跑就抓到一条真问题(kerberoast 扇出 2→6),按结论补了 ticket_kind 判别位。
 #
-# ★改完要复跑:首跑之后 recipe 又改了两处,探针一度停在过期写法上。
-#   现在脚本开跑先做防漂移自检(新形式的 WHERE 必须与 recipe 源码逐字一致),
-#   对不上直接退 2,不会再给出一个不知道在测什么的结论。
+# ★这个脚本自己被修过两次,两次都是「闸门没生效」而不是「闸门报错」——
+#   后者会喊,前者长得像通过:
+#   ① 首跑之后 recipe 改了两处(kerberoast 补 ticket_kind、lateral 补 outcome),
+#      探针把新形式写死在自己里、没跟着改 ⇒ 一直在测一个代码里已不存在的写法。
+#      现在开跑先做防漂移自检:新形式的 WHERE 必须与 recipe 源码逐字一致,对不上退 2。
+#   ② 全标签扫判据写成 op == NodeByLabelScan,而驱动回的算子名带 @neo4j 后缀
+#      ⇒ 恒 False,从首跑起一次都没生效。报告里能直接看到自相矛盾:算子链印着
+#      NodeByLabelScan@neo4j,同一行却写 全标签扫=False。
+#      现已按前缀判,并区分扫的是 :Event(90 万,灾难)还是 :Account 之类小标签。
 #
 # 用法(soc 身份,server2): cd ~/soc-agent && bash scripts/profile-predicate.sh
 set -uo pipefail
