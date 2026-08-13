@@ -64,7 +64,7 @@
   "meta_nodes": {
     "note": "元节点:**不是**被观测到的实体,而是对「这套部署的数据本身」的测量结果。由 soc-graph-ingest 的 `runner coverage` **扫描**写入,不经投影器 —— 所以既不在 entities 里、也不在 ontology.NODE_LABELS 里(那个闭集管的是「适配器能输出什么」,把元节点放进去等于允许某个源的文档声称自己产出了一条覆盖度事实)。对应 ontology.META_LABELS,强键同样由 ingest/keys.py 生成 DDL。",
     "nodes": [
-      {"name": "Coverage", "keys": ["activity"], "props": ["activity", "family", "status", "sources", "events", "events_raw", "first_ms", "last_ms", "stale_days", "subjects", "fill_request_id", "fill_asset_id", "fill_principal_id", "fill_trigger_record_id", "measured_at_ms"], "note": "每个 activity 一条,**含没有数据的**(status='absent')—— 缺失由 ACTIVITIES 闭集词表减去扫到的得出,因为扫描永远看不见不存在的东西。键只有 activity:不带 tenant(一租户一图是部署边界,图身份不带租户),也不按 source 展开((源×活动)是笛卡尔积,会造出「winlogbeat 没有 http.request」这类无意义缺失;每源明细进报告不进图)。subjects 形如 [\"BY:Process\",\"FROM:IPAddress\"],读侧据此判断 pivot 解不解得出来。另有**覆盖度签名**(只由结构性事实决定、不含填充率)作经验指纹分区键 —— 填充率天天抖,拿它分区会让指纹天天冷启动"}
+      {"name": "Coverage", "keys": ["activity"], "props": ["activity", "family", "status", "sources", "events", "events_raw", "first_ms", "last_ms", "stale_days", "subjects", "arrival_on", "fill_request_id", "fill_asset_id", "fill_principal_id", "fill_trigger_record_id", "measured_at_ms"], "note": "每个 activity 一条,**含没有数据的**(status='absent')—— 缺失由 ACTIVITIES 闭集词表减去扫到的得出,因为扫描永远看不见不存在的东西。键只有 activity:不带 tenant(一租户一图是部署边界,图身份不带租户),也不按 source 展开((源×活动)是笛卡尔积,会造出「winlogbeat 没有 http.request」这类无意义缺失;每源明细进报告不进图)。subjects 形如 [\"BY:Process\",\"FROM:IPAddress\"],读侧据此判断 pivot 解不解得出来。另有**覆盖度签名**(只由结构性事实决定、不含填充率)作经验指纹分区键 —— 填充率天天抖,拿它分区会让指纹天天冷启动"}
     ]
   },
   "event_node": {
