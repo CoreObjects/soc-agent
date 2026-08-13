@@ -1,9 +1,13 @@
 #!/usr/bin/env bash
-# WP10 前置(★只读):用 PROFILE 证明「event_code 放宽成 OR activity」没有打掉索引命中。
+# WP10(★只读):用 PROFILE 证明谓词放宽没有打掉索引命中、且行为不变。
 #
 # 计划点名的风险:两个属性各有各的索引,OR 可能**两个索引都不走**、退化成 :Event 全标签扫。
 # 在 90 万事件上那是灾难,而且**不会报错**,只会让研判默默变慢。
-# 所以三条谓词动手之前先把这件事证掉,而不是改完再看。
+# 首跑就抓到一条真问题(kerberoast 扇出 2→6),按结论补了 ticket_kind 判别位。
+#
+# ★改完要复跑:首跑之后 recipe 又改了两处,探针一度停在过期写法上。
+#   现在脚本开跑先做防漂移自检(新形式的 WHERE 必须与 recipe 源码逐字一致),
+#   对不上直接退 2,不会再给出一个不知道在测什么的结论。
 #
 # 用法(soc 身份,server2): cd ~/soc-agent && bash scripts/profile-predicate.sh
 set -uo pipefail
@@ -27,8 +31,9 @@ ferry_guard "$FB" "feedback: profile-predicate $(date -u '+%m-%d %H:%MZ' 2>/dev/
   echo "[退出码] $RC"
   echo
   case "$RC" in
-    0) echo "✅ 可以直接 OR 放宽,三条谓词按计划走。" ;;
+    0) echo "✅ 四条谓词放宽均无代价:索引命中未变、dbHits 无显著上涨、结果一致。" ;;
     1) echo "❌ 至少一条不能直接 OR —— 需要换写法(拆 UNION 两支之类),别硬改。" ;;
+    2) echo "⚠ 前置不满足:探针与 recipe 漂移了,或连不上图。看上面第一段。" ;;
     *) echo "⚠ 异常退出($RC),看上面的报错。" ;;
   esac
   echo "=== done ==="
