@@ -68,6 +68,35 @@ ferry_retry() {
   done
 }
 
+_FERRY_GUARD_FB=""
+_FERRY_GUARD_MSG=""
+
+_ferry_guard_fire() {
+  local how="$1" rc="${2:-0}"
+  trap - EXIT INT TERM                       # 只放一次,免得递归
+  if [ -s "${_FERRY_GUARD_FB:-}" ]; then
+    echo
+    echo "[ferry] 脚本${how} —— 把**已经产出的部分**推回去($_FERRY_GUARD_FB)"
+    ferry_push "$_FERRY_GUARD_FB" "$_FERRY_GUARD_MSG"
+  fi
+  if [ "$rc" != 0 ]; then exit "$rc"; fi
+  return 0
+}
+
+ferry_guard() {
+  # $1=要推的文件  $2=提交信息
+  # 给整个脚本装一个「无论怎么结束都把已产出的结果推回去」的兜底,**在正文之前**调用。
+  #
+  # ★为什么需要(2026-08-13 真丢过一次):tee 是边跑边写的,但脚本中途被 Ctrl-C / kill 掉时,
+  #   结尾的 ferry_push 根本没机会跑,结果只留在本机;而 feedback/*.out 是**被 git 跟踪**的,
+  #   下一条 `git reset --hard` 一来就用已提交的旧版本把它覆盖掉 —— 一晚上白跑,证据归零。
+  #   装上它以后,Ctrl-C 也会先把跑到的部分推回去再退出。
+  _FERRY_GUARD_FB="$1"; _FERRY_GUARD_MSG="$2"
+  trap '_ferry_guard_fire 被中断 130' INT
+  trap '_ferry_guard_fire 被终止 143' TERM
+  trap '_ferry_guard_fire 结束' EXIT
+}
+
 ferry_push() {
   # $1=要推的文件  $2=提交信息
   # 保证:**最多 FERRY_DEADLINE 秒就返回**,绝不无限等。

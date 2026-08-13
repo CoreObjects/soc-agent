@@ -30,7 +30,15 @@ FB="feedback/whats-stuck.out"
   newest="$(ls -t feedback/*.out 2>/dev/null | grep -v whats-stuck | head -1)"
   if [ -n "${newest:-}" ]; then
     echo
-    echo "  最新的是 $newest —— 最后 15 行:"
+    # ★别只看 mtime:`git reset --hard` / `git checkout` 会把**已提交的旧版本**写回来,
+    #   顺带把 mtime 刷成检出时刻 —— 于是一份陈年结果看起来像「刚跑完的」。
+    #   上一轮我就是这么误判的。所以拿**文件头里自己记的时间**去对。
+    echo "  最新的是 $newest"
+    echo "    mtime(可能只是 git 检出时间): $(date -r "$newest" '+%F %T' 2>/dev/null)"
+    echo "    文件头自己记的               : $(head -1 "$newest" 2>/dev/null)"
+    echo "    ★两者差很远 ⇒ 这是 **git 检出**的产物,不是本次运行的结果,别拿它当证据。"
+    echo
+    echo "  最后 15 行:"
     tail -15 "$newest" 2>/dev/null | sed 's/^/    /'
     echo
     echo "  ★判读:"
