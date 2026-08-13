@@ -73,7 +73,11 @@ r() { timeout -k 3 20 "$@" 2>&1; }
   done
   if [ -z "$DD" ]; then
     echo "  常见路径都没命中,全盘找一下(限时):"
-    DD="$(r timeout 15 find / -maxdepth 5 -name postgresql.conf -path '*data*' 2>/dev/null | head -1 | xargs -r dirname)"
+    # ★别走 r():它 2>&1 会把 find 的 "Permission denied" 并进结果,
+    #   于是 DD 变成一堆报错文本,后面 ls/grep 全部对着垃圾路径跑(首跑就是这样)。
+    DD="$(timeout 20 find / -maxdepth 6 -name postgresql.conf -path '*data*' 2>/dev/null \
+          | head -1 | xargs -r dirname)"
+    [ -n "$DD" ] && echo "    找到 $DD" || echo "    ★全盘也没有 postgresql.conf —— 它多半**不是装在宿主机上的**(见下一节)"
   fi
   echo "  数据目录 = ${DD:-（没找到）}"
   if [ -n "$DD" ]; then
@@ -98,6 +102,31 @@ r() { timeout -k 3 20 "$@" 2>&1; }
     r grep -hriE "FATAL|PANIC|shutting down|database system is shut down|could not" "$LOGD" \
       | tail -12 | cut -c1-200 | sed 's/^/    /' || echo "    (搜不到)"
   fi
+  echo
+
+  echo "--- ⑦b ★它是不是跑在容器里 ---"
+  echo "  (首跑证据指向这个方向:**没有 omm 用户**、宿主机上没有任何 gaussdb 二进制,"
+  echo "   而 df 里出现了 /run/k3s/containerd/… —— 这台机器上有 k3s。"
+  echo "   我此前记的是「原生 openGauss」,这条得以实际证据为准。)"
+  echo "  k3s / containerd:"
+  r systemctl is-active k3s | sed 's/^/    k3s is-active: /'
+  r systemctl is-enabled k3s | sed 's/^/    k3s is-enabled: /'
+  for kc in k3s kubectl crictl; do
+    printf '    %-8s %s\n' "$kc" "$(command -v $kc 2>/dev/null || echo '(不在 PATH)')"
+  done
+  echo "  k3s 里的 pod(找 gauss/postgres/db):"
+  (r k3s kubectl get pods -A -o wide 2>/dev/null || r sudo -n k3s kubectl get pods -A 2>/dev/null) \
+    | grep -iE 'NAME|gauss|postg|db' | head -10 | sed 's/^/    /' || echo "    (列不出;可能要 sudo 或 k3s 没起)"
+  echo "  containerd 容器(crictl):"
+  (r crictl ps -a 2>/dev/null || r sudo -n crictl ps -a 2>/dev/null) \
+    | grep -iE 'CONTAINER|gauss|postg' | head -8 | sed 's/^/    /' || echo "    (crictl 不可用)"
+  echo "  podman / docker:"
+  r podman ps -a --format '    {{.Names}}\t{{.Status}}\t{{.Image}}' | head -8 || echo "    (podman 不可用)"
+  r docker ps -a --format '    {{.Names}}\t{{.Status}}\t{{.Image}}' | head -8 || echo "    (docker 不可用)"
+  echo
+  echo "  ★对照组:**别的服务回来了没有** —— 这条能分清「只有高斯没起」还是「整机服务都没自启」"
+  echo "    (研判机上本该有 qwen vLLM 在 :8000)"
+  r ss -tlnp | awk 'NR==1 || /:8000|:5432|:6443|:11434/' | head -8 | sed 's/^/    /'
   echo
 
   echo "--- ⑧ 两个最常见的「起不来」根因 ---"
