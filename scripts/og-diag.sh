@@ -24,6 +24,9 @@ r() { timeout -k 3 20 "$@" 2>&1; }
 
 {
   echo "=== openGauss 诊断(只读) $(date '+%F %T' 2>/dev/null) ==="
+  # ★这行是我自己定的规矩,却在这个脚本里漏了 —— 结果第二跑拿到一份看不出版本的报告,
+  #   分不清是"没跑"还是"跑了旧脚本",只能靠 git log 反推。补回来。
+  echo "代码版本: $(git rev-parse --short HEAD 2>/dev/null) $(git log -1 --format=%s 2>/dev/null | cut -c1-50)"
   echo "主机: $(hostname 2>/dev/null)   $(uname -srm 2>/dev/null)"
   # ★开机时长是头号线索:机器刚重启过 + 数据库不是开机自启 = 直接就是答案
   echo "开机: $(uptime -p 2>/dev/null || uptime 2>/dev/null)"
@@ -162,6 +165,6 @@ r() { timeout -k 3 20 "$@" 2>&1; }
   echo "    ss -tln | grep 5432"
   echo "  ★起回来之后,别忘了确认经验表非空:"
   echo "    cd ~/soc-agent && bash scripts/replay-reuse.sh   # 空库它会当场停,不会再吐假基线"
-  echo "=== done ==="
+  echo "=== done(本次跑到了 ⑦b 容器排查;报告里没有 ⑦b = 跑的是旧脚本)==="
 } 2>&1 | tee "$FB"
 # 推送由 ferry_guard(EXIT 陷阱)负责。
