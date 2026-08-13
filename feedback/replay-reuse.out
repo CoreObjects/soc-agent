@@ -1,19 +1,11 @@
-=== 语料保全闸门:重放复用率 2026-08-13 08:56Z ===
+=== 语料保全闸门:重放复用率 2026-08-13 08:58Z ===
 主机    : localhost.localdomain   仓库 /home/soc/soc-agent
-代码版本: d0360c0 replay-reuse: --compare 必须重放**基线那一批**,不许跨样本集比
+代码版本: 50fb442 feedback: replay-reuse 08-13 08:56Z
 解释器  : .venv312/bin/python -> Python 3.11.6
-每 skill 抽: 30 条(★分层抽样,不是总数封顶)
+每 skill 抽: 60 条(★分层抽样,不是总数封顶)
 
 经验库:28 条经验
---- 分层抽样(每 skill 最多 30 条)---
-  dcsync                   已研判 22660 条 → 抽 30
-  ingress_tool_transfer    已研判   182 条 → 抽 30
-  kerberoast               已研判   219 条 → 抽 30
-  lateral_movement         已研判 75079 条 → 抽 30
-  lsass_dump               已研判    15 条 → 抽 15
-  suspicious_process       已研判    10 条 → 抽 10
-  ⚠ **闸门盖不到**(无已研判语料,改动它们不会被这个闸门发现):adcs, c2_beacon, generic_application, generic_host, generic_identity, generic_network, registry_persistence, suspicious_outbound, web_exploit, webshell
-  合计 145 条
+--- 原样重放基线样本(145 条,不重新抽样)---
 
   …已重放 25/145
   …已重放 50/145
@@ -34,10 +26,10 @@
     lsass_dump               0/15  (0%)
     suspicious_process       10/10  (100%)
 
-  (没给基线 —— 这一份就是基线,用 --save 存下来,改完之后 --baseline 对比)
+--- 与基线对比(基线 145 条,复用率 58.6%)---
+  翻转 0 条:丢掉复用 0 / 新增复用 0
+  复用率 58.6% → 58.6%(变化 -0.0%)
 
-  基线已存:feedback/replay-reuse.baseline.json
+  ✅ 复用率未下降,语料保全闸门通过。
 [退出码] 0
-
-★这一份是**基线**。改动之后跑 `bash scripts/replay-reuse.sh --compare` 对比。
 === done ===
