@@ -194,14 +194,22 @@ def check_one(g, reg, path, rev, pool, min_nonempty, allow) -> dict:
     for alert in pool:
         seed = g.seed(alert)
         try:
-            # ★同一份**旧代码**跑两遍 —— 先量这个 recipe 自己的噪声底。
-            #   真机撞到过:web_exploit 有条查询用 `base[0]` 取多行结果的第一行,
-            #   而 Cypher 不保证行序 ⇒ 同一条告警两次跑就可能不同。
-            #   不先量噪声,这种自身不确定性会被算成"改动引入的差异",冤枉改动、
-            #   而真正该修的东西(查询没有确定序)反倒被当成误报忽略掉。
+            # ★★**把新版夹在两次旧版中间**跑:旧 → 新 → 旧。
+            #   噪声底 = 头尾两次**旧版**的差异 ⇒ 它覆盖的是**整个测量窗口**。
+            #
+            #   为什么不是"先跑两遍旧版再跑新版":那样噪声底只覆盖前半段。
+            #   图是活的 —— `该账号↔该主机基线` 里的登录次数是 `sum(e.count)`,
+            #   robb.stark 有 20 万次登录、新事件持续在进;只要有一条 4624 落在
+            #   "第二次旧版"与"新版"之间,漂移就会被算到改动头上。
+            #   实测就是这么翻车的:同样的代码连跑两轮,一轮 web_exploit 红、
+            #   一轮 lateral_movement 红,**结论在两次运行之间翻转** —— 那不是改动的问题,
+            #   是测量方法漏掉了后半段的漂移。
+            #
+            #   另一类噪声(查询本身没有确定序,如 `base[0]` 取多行结果第一行、
+            #   `collect(…)[..N]` 在无序集合上切片)同样被这个夹心结构覆盖。
             of = Forensics.coerce(old.collect(g, alert, seed))
-            of2 = Forensics.coerce(old.collect(g, alert, seed))
             nf_ = Forensics.coerce(skill.recipe(g, alert, seed))
+            of2 = Forensics.coerce(old.collect(g, alert, seed))
         except Exception as e:                     # 一条炸不该毁掉整轮,但要记下来
             diffs.append(f"{alert.alert_uid}: 跑挂了 {type(e).__name__}: {e}")
             continue
@@ -294,12 +302,13 @@ def main() -> int:
             if len(r["diffs"]) > 6:
                 print(f"     …还有 {len(r['diffs']) - 6} 条(形态多半相同,先看上面这几条)")
             if r.get("unstable"):
-                print(f"     ★该 recipe **自己跟自己**都不一致 {len(r['unstable'])} 条 ——"
-                      f"这是它本身的不确定性,与本次改动无关(已从上面的判定里抵消):")
+                print(f"     ★同一份**旧代码**在测量窗口内自己就变了 {len(r['unstable'])} 条 ——"
+                      f"与本次改动无关(已从判定里抵消):")
                 for u in r["unstable"][:4]:
                     print(f"        {u}")
-                print("        (值得单独修:多半是查询没有确定序,如 `base[0]` 取多行结果第一行、"
-                      "或 `collect(…)[..N]` 在无序集合上切片。)")
+                print("        (两类成因:①**图在动** —— 如 sum(e.count) 这种活计数,新事件持续在进;"
+                      "②**查询没有确定序** —— `base[0]` 取多行结果第一行、`collect(…)[..N]` 切无序集合。"
+                      "①无需修;②值得单独修。)")
             if r.get("why"):
                 print(f"     {r['why']}")
             print()
