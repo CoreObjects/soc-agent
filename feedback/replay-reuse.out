@@ -1,43 +1,48 @@
-=== 语料保全闸门:重放复用率 2026-08-13 08:06Z ===
+=== 语料保全闸门:重放复用率 2026-08-13 08:35Z ===
 主机    : localhost.localdomain   仓库 /home/soc/soc-agent
-代码版本: 1e28367 闸门改成按 skill 分层抽样 —— 首份基线对被改对象零覆盖
+代码版本: 4690884 feedback: recipe-parity 08-13 08:34Z
 解释器  : .venv312/bin/python -> Python 3.11.6
-每 skill 抽: 30 条(★分层抽样,不是总数封顶)
+每 skill 抽: 60 条(★分层抽样,不是总数封顶)
 
 经验库:28 条经验
---- 分层抽样(每 skill 最多 30 条)---
-  dcsync                   已研判 22660 条 → 抽 30
-  ingress_tool_transfer    已研判   182 条 → 抽 30
-  kerberoast               已研判   219 条 → 抽 30
-  lateral_movement         已研判 75079 条 → 抽 30
+--- 分层抽样(每 skill 最多 60 条)---
+  dcsync                   已研判 22660 条 → 抽 60
+  ingress_tool_transfer    已研判   182 条 → 抽 60
+  kerberoast               已研判   219 条 → 抽 60
+  lateral_movement         已研判 75079 条 → 抽 60
   lsass_dump               已研判    15 条 → 抽 15
   suspicious_process       已研判    10 条 → 抽 10
   ⚠ **闸门盖不到**(无已研判语料,改动它们不会被这个闸门发现):adcs, c2_beacon, generic_application, generic_host, generic_identity, generic_network, registry_persistence, suspicious_outbound, web_exploit, webshell
-  合计 145 条
+  合计 265 条
 
-  …已重放 25/145
-  …已重放 50/145
-  …已重放 75/145
-  …已重放 100/145
-  …已重放 125/145
+  …已重放 25/265
+  …已重放 50/265
+  …已重放 75/265
+  …已重放 100/265
+  …已重放 125/265
+  …已重放 150/265
+  …已重放 175/265
+  …已重放 200/265
+  …已重放 225/265
+  …已重放 250/265
 
---- 重放 145 条(覆盖度签名 821229922c273556;分区开关 关)---
-  AUTO_FP      85
-  FALLTHROUGH  60
-  ★自动复用率 = 58.6%
+--- 重放 265 条(覆盖度签名 821229922c273556;分区开关 关)---
+  AUTO_FP      165
+  FALLTHROUGH  100
+  ★自动复用率 = 62.3%
 
   按 skill:
-    dcsync                   28/30  (93%)
-    ingress_tool_transfer    17/30  (57%)
-    kerberoast               0/30  (0%)
-    lateral_movement         30/30  (100%)
+    dcsync                   58/60  (97%)
+    ingress_tool_transfer    37/60  (62%)
+    kerberoast               0/60  (0%)
+    lateral_movement         60/60  (100%)
     lsass_dump               0/15  (0%)
     suspicious_process       10/10  (100%)
 
-  (没给基线 —— 这一份就是基线,用 --save 存下来,改完之后 --baseline 对比)
+--- 与基线对比(基线 145 条,复用率 58.6%)---
+  翻转 0 条:丢掉复用 0 / 新增复用 0
+  复用率 58.6% → 62.3%(变化 +3.6%)
 
-  基线已存:feedback/replay-reuse.baseline.json
+  ✅ 复用率未下降,语料保全闸门通过。
 [退出码] 0
-
-★这一份是**基线**。改动之后跑 `bash scripts/replay-reuse.sh --compare` 对比。
 === done ===
