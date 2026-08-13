@@ -1,6 +1,7 @@
-=== openGauss 诊断(只读) 2026-08-13 14:54:54 ===
+=== openGauss 诊断(只读) 2026-08-13 15:00:33 ===
+代码版本: b4a5c29 fix(ferry): 别把「必然失败」当成「网络抖动」去重试 —— 先 rebase 再推
 主机: localhost.localdomain   Linux 6.6.0-45.0.0.54.oe2409.aarch64 aarch64
-开机: up 22 hours, 11 minutes
+开机: up 22 hours, 17 minutes
      最后启动:  system boot 2026-08-12 16:43
 
 --- ① 我们到底在连什么(.env 里的 OG_* )---
@@ -37,21 +38,34 @@
 
 --- ⑥ 数据目录与锁文件(★残留 postmaster.pid 会让它起不来)---
   常见路径都没命中,全盘找一下(限时):
-  数据目录 = .
-‘/home
-.
-.
-    ls: cannot access '.'$'\n''‘/home'$'\n''.'$'\n''./postmaster.pid': No such file or directory
-    (无 postmaster.pid —— 说明它是**干净停的**,不是崩在半路)
-    监听配置:
-      grep: .
-      ‘/home
-      .
-      ./postgresql.conf: No such file or directory
-      (读不到 postgresql.conf,可能需要 sudo/omm 身份)
+    ★全盘也没有 postgresql.conf —— 它多半**不是装在宿主机上的**(见下一节)
+  数据目录 = （没找到）
 
 --- ⑦ ★日志:它到底是怎么停的 / 为什么起不来 ---
   日志目录 = （没找到;可能在 omm 家目录下,需 sudo -u omm 看）
+
+--- ⑦b ★它是不是跑在容器里 ---
+  (首跑证据指向这个方向:**没有 omm 用户**、宿主机上没有任何 gaussdb 二进制,
+   而 df 里出现了 /run/k3s/containerd/… —— 这台机器上有 k3s。
+   我此前记的是「原生 openGauss」,这条得以实际证据为准。)
+  k3s / containerd:
+    k3s is-active: active
+    k3s is-enabled: enabled
+    k3s      /usr/local/bin/k3s
+    kubectl  /usr/local/bin/kubectl
+    crictl   /usr/local/bin/crictl
+  k3s 里的 pod(找 gauss/postgres/db):
+    (列不出;可能要 sudo 或 k3s 没起)
+  containerd 容器(crictl):
+    (crictl 不可用)
+  podman / docker:
+timeout: failed to run command ‘docker’: No such file or directory
+    (docker 不可用)
+
+  ★对照组:**别的服务回来了没有** —— 这条能分清「只有高斯没起」还是「整机服务都没自启」
+    (研判机上本该有 qwen vLLM 在 :8000)
+    State  Recv-Q Send-Q                          Local Address:Port  Peer Address:PortProcess
+    LISTEN 0      4096                                        *:6443             *:*          
 
 --- ⑧ 两个最常见的「起不来」根因 ---
   磁盘:
@@ -66,7 +80,7 @@
   ★任一分区 100%(尤其数据目录所在的)⇒ 数据库会拒绝启动或自行停下。
   内存 / OOM:
                    total        used        free      shared  buff/cache   available
-    Mem:           2.0Ti       135Gi       1.6Ti        69Gi       356Gi       1.8Ti
+    Mem:           2.0Ti       135Gi       1.6Ti        69Gi       357Gi       1.8Ti
     Swap:          4.0Gi       7.5Mi       4.0Gi
   内核有没有杀过它:
     (没有 OOM 记录,或没权限读内核日志 —— 试 sudo dmesg)
@@ -92,4 +106,4 @@
     ss -tln | grep 5432
   ★起回来之后,别忘了确认经验表非空:
     cd ~/soc-agent && bash scripts/replay-reuse.sh   # 空库它会当场停,不会再吐假基线
-=== done ===
+=== done(本次跑到了 ⑦b 容器排查;报告里没有 ⑦b = 跑的是旧脚本)===
