@@ -121,6 +121,29 @@ def report(res, base=None) -> int:
     return 0
 
 
+def check_corpus(exp_store) -> int:
+    """经验库为空 ⇒ **当场停**,不许出基线。返回 0=可继续,2=停。
+
+    ★首跑就栽在这:openGauss 连不上(5432 refused),`build_pipeline` 打了句 warn
+      就降级成内存空库继续跑,于是吐出一份"复用率 0.0%"的基线 —— 看着像模像样。
+      而拿 0% 当基线,之后**任何**改动都不会低于它 = 语料保全闸门变成**永远绿灯**。
+      降级运行的结果比没有结果更危险,所以这里宁可什么都不给。
+    """
+    try:
+        n = len(exp_store.all())
+    except Exception as e:
+        print(f"❌ 读不到经验库:{type(e).__name__}: {e}")
+        return 2
+    if n == 0:
+        print("❌ **经验库是空的** —— 这份重放量不出任何东西(空库必然 100% FALLTHROUGH)。")
+        print("   最常见原因:openGauss 没起来,pipeline 降级成了内存空库(上面应有 [warn] 行)。")
+        print("   语料保全闸门的前提就是有语料;拿 0% 当基线 = 之后任何改动都通过,闸门形同虚设。")
+        print("   先把 openGauss 起来(server2 本机 5432),确认经验表非空,再跑。")
+        return 2
+    print(f"经验库:{n} 条经验")
+    return 0
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--limit", type=int, default=500, help="重放条数(计划要求 ≥500)")
@@ -134,6 +157,14 @@ def main() -> int:
         return 2
     pl = build_pipeline(cfg)
     try:
+        # ★经验库为空 ⇒ **当场停**,不许出基线。
+        #   首跑就栽在这:openGauss 连不上(5432 refused),`build_pipeline` 打了句 warn
+        #   就降级成内存空库继续跑,于是吐出一份"复用率 0.0%"的基线 —— 看着像模像样。
+        #   而拿 0% 当基线,之后**任何**改动都不会低于它 = 语料保全闸门变成永远绿灯。
+        #   降级运行的结果比没有结果更危险,所以这里宁可什么都不给。
+        rc = check_corpus(pl.exp_store)
+        if rc:
+            return rc
         # ★零副作用:全程只有 collect_forensics(只读)与 consult(只读),
         #   不碰 write_result / sediment / snapshot_case。跑多少遍系统状态都不变。
         res = replay(pl, args.limit)

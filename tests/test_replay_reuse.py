@@ -56,3 +56,36 @@ def test_no_baseline_says_so_instead_of_silently_passing(capsys):
     """没有基线时不能假装通过 —— 那是"检查没跑却报成功"的又一种形态。"""
     assert RR.report(_res({"a": "AUTO_FP"}), None) == 0
     assert "这一份就是基线" in capsys.readouterr().out
+
+
+def test_empty_corpus_stops_instead_of_emitting_a_zero_baseline(capsys):
+    """★空经验库必须**当场停**,不许出基线。
+
+    首跑真出过事:openGauss 连不上 → pipeline 降级成内存空库 → 打一句 warn 继续跑 →
+    吐出一份"复用率 0.0%"的基线。而拿 0% 当基线,之后**任何**改动都不会低于它,
+    语料保全闸门就此变成永远绿灯 —— 降级运行的结果比没有结果更危险。
+    """
+    class Empty:
+        def all(self):
+            return []
+
+    assert RR.check_corpus(Empty()) == 2
+    assert "经验库是空的" in capsys.readouterr().out
+
+
+def test_unreadable_corpus_also_stops(capsys):
+    class Boom:
+        def all(self):
+            raise RuntimeError("连不上")
+
+    assert RR.check_corpus(Boom()) == 2
+    assert "读不到经验库" in capsys.readouterr().out
+
+
+def test_non_empty_corpus_proceeds(capsys):
+    class Some:
+        def all(self):
+            return [1, 2, 3]
+
+    assert RR.check_corpus(Some()) == 0
+    assert "3 条经验" in capsys.readouterr().out
