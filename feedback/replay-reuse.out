@@ -1,45 +1,16 @@
-=== 语料保全闸门:重放复用率 2026-08-13 06:01Z ===
+=== 语料保全闸门:重放复用率 2026-08-13 06:29Z ===
 主机    : localhost.localdomain   仓库 /home/soc/soc-agent
-代码版本: 4e7d188 建语料保全闸门:重放已研判告警量自动复用率(WP10 的硬闸门)
+代码版本: a3f1441 fix(replay-reuse): 空经验库必须当场停 —— 首跑吐出了一份"0% 复用率"的假基线
 解释器  : .venv312/bin/python -> Python 3.11.6
 条数    : 500
 
 [warn] openGauss 不可用,经验层降级内存(本次不持久):connection to server at "127.0.0.1", port 5432 failed: Connection refused
 	Is the server running on that host and accept
-  …已重放 25/500
-  …已重放 50/500
-  …已重放 75/500
-  …已重放 100/500
-  …已重放 125/500
-  …已重放 150/500
-  …已重放 175/500
-  …已重放 200/500
-  …已重放 225/500
-  …已重放 250/500
-  …已重放 275/500
-  …已重放 300/500
-  …已重放 325/500
-  …已重放 350/500
-  …已重放 375/500
-  …已重放 400/500
-  …已重放 425/500
-  …已重放 450/500
-  …已重放 475/500
-  …已重放 500/500
-
---- 重放 500 条(覆盖度签名 (未测);分区开关 关)---
-  FALLTHROUGH  500
-  ★自动复用率 = 0.0%
-
-  按 skill:
-    dcsync                   0/108  (0%)
-    kerberoast               0/1  (0%)
-    lateral_movement         0/391  (0%)
-
-  (没给基线 —— 这一份就是基线,用 --save 存下来,改完之后 --baseline 对比)
-
-  基线已存:feedback/replay-reuse.baseline.json
-[退出码] 0
+❌ **经验库是空的** —— 这份重放量不出任何东西(空库必然 100% FALLTHROUGH)。
+   最常见原因:openGauss 没起来,pipeline 降级成了内存空库(上面应有 [warn] 行)。
+   语料保全闸门的前提就是有语料;拿 0% 当基线 = 之后任何改动都通过,闸门形同虚设。
+   先把 openGauss 起来(server2 本机 5432),确认经验表非空,再跑。
+[退出码] 2
 
 ★这一份是**基线**。改动之后跑 `bash scripts/replay-reuse.sh --compare` 对比。
 === done ===
