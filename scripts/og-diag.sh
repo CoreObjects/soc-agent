@@ -117,19 +117,41 @@ r() { timeout -k 3 20 "$@" 2>&1; }
   for kc in k3s kubectl crictl; do
     printf '    %-8s %s\n' "$kc" "$(command -v $kc 2>/dev/null || echo '(不在 PATH)')"
   done
-  echo "  k3s 里的 pod(找 gauss/postgres/db):"
-  (r k3s kubectl get pods -A -o wide 2>/dev/null || r sudo -n k3s kubectl get pods -A 2>/dev/null) \
-    | grep -iE 'NAME|gauss|postg|db' | head -10 | sed 's/^/    /' || echo "    (列不出;可能要 sudo 或 k3s 没起)"
-  echo "  containerd 容器(crictl):"
-  (r crictl ps -a 2>/dev/null || r sudo -n crictl ps -a 2>/dev/null) \
-    | grep -iE 'CONTAINER|gauss|postg' | head -8 | sed 's/^/    /' || echo "    (crictl 不可用)"
+  # ★上一跑这里全"列不出" —— 那**不是** k3s 没起(它 is-active: active),
+  #   是 k3s 的 kubeconfig(/etc/rancher/k3s/k3s.yaml)默认只有 root 能读。
+  #   所以这里**用交互式 sudo**(不是 sudo -n):你在终端上跑,输一次密码即可;
+  #   真无人值守时有 timeout 兜底,不会挂住。
+  export KUBECONFIG="${KUBECONFIG:-/etc/rancher/k3s/k3s.yaml}"
+  echo "  KUBECONFIG=$KUBECONFIG  可读:$([ -r "$KUBECONFIG" ] && echo 是 || echo '否(要 sudo)')"
+  echo "  ★所有 pod(不只找 gauss —— 要看的是**整个应用层回来没有**):"
+  timeout -k 3 40 sudo k3s kubectl get pods -A -o wide 2>&1 | head -25 | sed 's/^/    /' \
+    || echo "    (拿不到;若提示密码错/无权限,直接手动跑 sudo k3s kubectl get pods -A)"
+  echo "  最近的事件(为什么没起来,答案通常在这):"
+  timeout -k 3 30 sudo k3s kubectl get events -A --sort-by=.lastTimestamp 2>&1 \
+    | tail -15 | cut -c1-190 | sed 's/^/    /' || echo "    (拿不到)"
+  echo "  containerd 里的容器(含已退出的 —— 退出码/原因在这):"
+  timeout -k 3 30 sudo crictl ps -a 2>&1 | head -15 | sed 's/^/    /' || echo "    (crictl 拿不到)"
   echo "  podman / docker:"
   r podman ps -a --format '    {{.Names}}\t{{.Status}}\t{{.Image}}' | head -8 || echo "    (podman 不可用)"
   r docker ps -a --format '    {{.Names}}\t{{.Status}}\t{{.Image}}' | head -8 || echo "    (docker 不可用)"
   echo
-  echo "  ★对照组:**别的服务回来了没有** —— 这条能分清「只有高斯没起」还是「整机服务都没自启」"
-  echo "    (研判机上本该有 qwen vLLM 在 :8000)"
-  r ss -tlnp | awk 'NR==1 || /:8000|:5432|:6443|:11434/' | head -8 | sed 's/^/    /'
+  echo "  ★对照组:**别的服务回来了没有**(上一跑的答案:只有 :6443/k3s 自己在听,"
+  echo "    **qwen vLLM :8000 也没起来** ⇒ 不是高斯一个的问题,是整个应用层没回来)"
+  r ss -tlnp | awk 'NR==1 || /:8000|:5432|:6443|:11434|:7687/' | head -10 | sed 's/^/    /'
+  echo
+  echo "  应用层是不是**手工起在会话里**的(tmux/screen 一重启就全没):"
+  r tmux ls | head -5 | sed 's/^/    /' || echo "    (没有 tmux 会话)"
+  r screen -ls | head -5 | sed 's/^/    /' || echo "    (没有 screen 会话)"
+  echo "  用户级 systemd 服务(有的人把 vLLM 放这儿,但它需要 linger 才会开机起):"
+  r systemctl --user list-units --type=service --no-pager | head -8 | sed 's/^/    /' \
+    || echo "    (没有用户级服务)"
+  echo "  loginctl linger(没开 linger,用户级服务重启后**不会**自动拉起):"
+  r loginctl show-user "$(whoami)" -p Linger | sed 's/^/    /' || echo "    (查不到)"
+  echo
+  echo "  最近跑过什么(从 shell 历史里找启动命令 —— 手工起的服务线索都在这):"
+  r grep -hiE 'vllm|gauss|gsql|docker run|podman run|kubectl apply|helm ' \
+      ~/.bash_history ~/.zsh_history 2>/dev/null | tail -12 | cut -c1-160 | sed 's/^/    /' \
+    || echo "    (历史里没有相关命令)"
   echo
 
   echo "--- ⑧ 两个最常见的「起不来」根因 ---"
@@ -145,9 +167,16 @@ r() { timeout -k 3 20 "$@" 2>&1; }
   echo
 
   echo "--- ⑨ 怎么读这份报告 ---"
-  echo "  · ②没人听 + ③没进程 + ⑤ systemd 里没有它 + ①开机时间很新"
-  echo "      ⇒ **机器重启过,而它是手工起的、没设开机自启**。这是最常见的一种,也最好修:"
-  echo "        起回来之后把它做成开机自启,否则下次重启还会静悄悄地没。"
+  echo "  ★已经确定的(前两跑):磁盘 28% 不满、2TiB 内存无 OOM、无残留 postmaster.pid、"
+  echo "    5432 无人监听、宿主机上没有任何 gaussdb 二进制、没有 omm 用户。"
+  echo "    而 **k3s is-active/is-enabled 都是 active/enabled**,却只有 :6443 在听 ——"
+  echo "    **qwen vLLM :8000 也没起来**。所以这不是「高斯一个没回来」,是"
+  echo "    **重启之后整个应用层都没回来,只有 k3s 本体自启了**。"
+  echo "  · ⑦b 的 pod 列表里有 gauss/vllm 但状态不是 Running(CrashLoopBackOff/Pending/Error)"
+  echo "      ⇒ 它们**试过起但起不来**,看同一节的 events,原因通常直接写在那儿。"
+  echo "  · pod 列表里**压根没有**它们"
+  echo "      ⇒ 从来没被部署进 k3s,是手工起的(看 tmux/screen/shell 历史那几行)。"
+  echo "        修法不是「再手工起一次」,而是做成开机自启,否则下次重启还会静悄悄地全没。"
   echo "  · ⑦日志里有 PANIC / could not write / No space left"
   echo "      ⇒ 看⑧的磁盘,多半是写满了。腾空间再起。"
   echo "  · ⑧有 OOM killed"
