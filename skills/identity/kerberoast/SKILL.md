@@ -3,6 +3,7 @@ name: kerberoast
 layer: identity
 technique_ids: [T1558.003]
 description: 研判 Kerberoasting(服务票据离线爆破)告警。当告警涉及"请求 Kerberos 服务票据/TGS""RC4/0x17 弱加密票据请求""带 SPN 的服务账号被大量取票""疑似离线爆破服务账号口令"时选它。关键词 Kerberoast/TGS/service ticket/SPN/RC4/0x17/4769/GetUserSPNs/Rubeus。
+needs: [auth_ticket_request_telemetry]
 ---
 # Kerberoasting 研判(T1558.003)
 

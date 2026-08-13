@@ -3,6 +3,7 @@ name: lsass_dump
 layer: host
 technique_ids: [T1003.001]
 description: 研判 LSASS 凭据转储告警。当告警涉及"进程访问/读取 lsass.exe 内存""OpenProcess 拿 lsass 句柄""转储 LSASS/导出 NTLM 哈希或票据""mimikatz/procdump/comsvcs 抓密码"时选它。关键词 LSASS/credential dump/凭据转储/mimikatz/procdump/comsvcs/sekurlsa/GrantedAccess/进程内存读取。
+needs: [process_access_telemetry, process_spawn_telemetry, file_write_telemetry, network_flow_telemetry]
 ---
 # LSASS 凭据转储研判(T1003.001)
 

@@ -3,6 +3,7 @@ name: registry_persistence
 layer: host
 technique_ids: [T1547.001, T1112]
 description: 研判注册表自启持久化告警。当告警涉及"写 Run/RunOnce/Winlogon/Services 等自启键""注册表被改以开机/登录自动执行""注册表持久化"时选它。关键词 registry persistence/注册表持久化/Run key/RunOnce/Winlogon/自启/autorun/T1547/reg add。
+needs: [registry_set_telemetry, process_spawn_telemetry]
 ---
 # 注册表自启持久化研判(T1547.001 / T1112)
 

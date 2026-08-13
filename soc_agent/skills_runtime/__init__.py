@@ -10,6 +10,7 @@ frontmatter 用极简自解析(免 yaml 依赖):`key: value`,列表写 `[a, b]`�
 """
 import importlib.util
 from dataclasses import dataclass
+from dataclasses import field as dataclasses_field
 from pathlib import Path
 from typing import Optional
 
@@ -64,6 +65,10 @@ class Skill:
     #   系统照跑、只是从此永远走裸 LLM —— 与 `_coverage.absent` 要治的是同一类病
     #   (不报错、结论悄悄变差)。存下来,让 `registry.load_errors()` 能把它喊出来。
     recipe_error: Optional[str] = None
+    # ★这个 skill 的判别**赖以成立**的遥测类别(SKILL.md 的 `needs:`,通用类别名不写厂商)。
+    #   WP9 用它对着实测覆盖度算部署级缺口:整类没有 ⇒ 明说"我看不到",
+    #   而不是照常跑出一份空 findings 然后被读成"没发现异常"。
+    needs: list = dataclasses_field(default_factory=list)
 
 
 def _load_attr(dir_path: Path, filename: str, attr: str):
@@ -92,6 +97,9 @@ def load_skill(dir_path, is_generic: bool = False) -> Skill:
     tids = meta.get("technique_ids") or []
     if isinstance(tids, str):
         tids = [tids] if tids else []
+    needs = meta.get("needs") or []
+    if isinstance(needs, str):
+        needs = [needs] if needs else []
     recipe, recipe_error = _load_recipe(dir_path)
     return Skill(
         name=meta.get("name") or dir_path.name,
@@ -103,6 +111,7 @@ def load_skill(dir_path, is_generic: bool = False) -> Skill:
         is_generic=is_generic,
         recipe=recipe,
         recipe_error=recipe_error,
+        needs=list(needs),
     )
 
 

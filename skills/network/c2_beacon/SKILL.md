@@ -4,6 +4,7 @@ layer: network
 technique_ids: [T1071, T1071.001, T1071.004, T1568, T1568.002]
 description: 研判 C2 信标 / DNS beacon / 周期性外连告警。当告警涉及"进程周期性回连某 IP/域(信标节律)""DNS 隧道/DGA 域名""可疑/低信誉/新注册域外连""HTTP(S) 心跳式外连"时选它。关键词 C2/beacon/信标/DNS tunneling/DGA/callback/periodic connection/命令控制/心跳。
 supported_pivots: [process, endpoint]
+needs: [network_flow_telemetry, dns_query_telemetry, process_spawn_telemetry]
 ---
 # C2 信标 / DNS beacon 研判(T1071 / T1568)
 

@@ -30,8 +30,13 @@ def coverage_absent(skill, *, need, pivot=None, detail=None) -> Finding:
 
     need 用**通用遥测类别名**(process_telemetry / file_telemetry / dns_telemetry …),
     不写厂商名 —— 跟指纹守的是同一条可移植性红线。
+
+    ★`scope="alert"`:这里说的是**这一条**告警缺主语/缺行(个例)。
+      另有 `scope="deployment"`(WP9,`graph/coverage.py`)说的是**整类遥测这套部署压根没有**。
+      两者要能分开:前者可能只是这条告警特殊,后者是能力边界、该写进能力承诺里。
     """
-    attrs = {"skill": skill, "need": need, "pivot_kind": getattr(pivot, "kind", None)}
+    attrs = {"skill": skill, "need": need, "scope": "alert",
+             "pivot_kind": getattr(pivot, "kind", None)}
     if detail:
         attrs["detail"] = detail
     return Finding("_coverage.absent", attrs, polarity="neutral")

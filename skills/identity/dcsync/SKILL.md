@@ -3,6 +3,7 @@ name: dcsync
 layer: identity
 technique_ids: [T1003.006]
 description: 研判 DCSync(伪装域控拉取口令哈希)告警。当告警涉及"目录复制(GetNCChanges/DS-Replication-Get-Changes)""非域控账号发起复制""导出 krbtgt/域账号哈希"时选它。关键词 DCSync/replication/复制/GetNCChanges/DS-Replication/4662/mimikatz/secretsdump/krbtgt。
+needs: [directory_access_telemetry]
 ---
 # DCSync 研判(T1003.006)
 

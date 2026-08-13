@@ -3,6 +3,7 @@ name: adcs
 layer: identity
 technique_ids: [T1649]
 description: 研判 ADCS 证书滥用(ESC)告警。当告警涉及"证书申请/签发(CertRequest)""证书模板滥用""用他人身份取证书/自填 SAN 冒充""向 CA Web 端点 NTLM 中继(ESC8)"时选它。关键词 ADCS/certificate/证书/ESC1/ESC8/certipy/Certify/4886/4887/CA/enrollment。
+needs: [cert_request_telemetry]
 ---
 # ADCS 证书滥用研判(T1649)
 

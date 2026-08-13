@@ -3,6 +3,7 @@ name: ingress_tool_transfer
 layer: host
 technique_ids: [T1105]
 description: 研判"工具/载荷下载落地"(Ingress Tool Transfer)告警。当告警涉及"从外部下载工具/载荷到主机""certutil/bitsadmin/curl/PowerShell 下载""LOLBin 拉取远程文件""释放并执行木马/beacon"时选它。此类告警极吵、大多是正常下载,重点是降噪。关键词 ingress tool transfer/下载/certutil/bitsadmin/curl/IWR/DownloadString/mshta/载荷落地。
+needs: [process_spawn_telemetry, network_flow_telemetry, dns_query_telemetry]
 ---
 # Ingress Tool Transfer 研判(T1105)
 

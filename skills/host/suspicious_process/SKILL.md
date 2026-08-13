@@ -3,6 +3,7 @@ name: suspicious_process
 layer: host
 technique_ids: [T1059, T1059.001, T1055, T1218]
 description: 研判可疑进程/命令执行/LOLBin/恶意子进程告警。当告警涉及"异常父进程派生 shell(w3wp/services/spoolsv 生 cmd/powershell)""编码 PowerShell(-enc/EncodedCommand)""LOLBin 滥用(rundll32/mshta/regsvr32/certutil)""进程注入""可疑命令行"时选它。关键词 suspicious process/command execution/LOLBin/rundll32/mshta/regsvr32/encoded command/powershell -enc/进程注入/父子进程链。
+needs: [process_spawn_telemetry, process_access_telemetry, network_flow_telemetry]
 ---
 # 可疑进程 / LOLBin / 恶意子进程研判(T1059 / T1055 / T1218)
 

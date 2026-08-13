@@ -18,6 +18,7 @@ from .experience.consult import consult
 from .experience.exam import sediment
 from .experience.store import ExperienceCache, InMemoryExperienceStore
 from .forensics import Forensics
+from .graph import coverage
 from .graph.client import Neo4jGraph
 from .llm.qwen import QwenClient
 from .models import Alert, InvestigationResult, Verdict
@@ -134,9 +135,15 @@ def choose_investigator(skill, mode, agent_inv, recipe_inv):
 
 # ============ 流水线:取证 → 经验研判短路 / LLM 研判 → 处置 → 回流沉淀 ============
 def collect_forensics(graph, alert, seed, skill):
-    """取证阶段:有 recipe 跑出结构化 Forensics;无 recipe(agent skill)→ 空 Forensics(必落 LLM)。"""
+    """取证阶段:有 recipe 跑出结构化 Forensics;无 recipe(agent skill)→ 空 Forensics(必落 LLM)。
+
+    ★取证之后统一叠一层**部署级覆盖盲区**(WP9):这个 skill 赖以判别的整类遥测
+      这套部署压根没有时,明说"我看不到",而不是交出一份空 findings 被读成"没发现异常"。
+      放在这里而不是每个 recipe 里,是因为它与 skill 的判别逻辑无关、对所有 skill 一样。
+    """
     if skill is not None and skill.recipe is not None:
-        return Forensics.coerce(skill.recipe(graph, alert, seed))
+        fo = Forensics.coerce(skill.recipe(graph, alert, seed))
+        return coverage.annotate(fo, skill, coverage.get(graph))
     return Forensics()
 
 

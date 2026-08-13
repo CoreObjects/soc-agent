@@ -4,6 +4,7 @@ layer: network
 technique_ids: [T1571, T1090, T1041, T1048]
 description: 研判可疑外连 / 罕见进程 C2 通道 / 非标准端口 / 数据外带告警。当告警涉及"本不该联网的进程(rundll32/regsvr32/mshta)直接外连""非常用端口外连(4444/8080/1080/高位随机)""经代理跳板外连""疑似数据外带"时选它。关键词 suspicious outbound/非标准端口/non-standard port/proxy/C2 channel/rundll32 外连/data exfiltration/数据外带。
 supported_pivots: [process, endpoint]
+needs: [network_flow_telemetry, process_spawn_telemetry]
 ---
 # 可疑外连 / 罕见进程 C2 通道研判(T1571 / T1090)
 

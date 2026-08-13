@@ -3,6 +3,7 @@ name: lateral_movement
 layer: identity
 technique_ids: [T1550.002, T1550.003, T1021.001, T1021.002, T1021.006]
 description: 研判横向移动/凭据复用(PtH/PtT/异常远程登录)告警。当告警涉及"网络登录(logon type 3/9/10)""NTLM/Kerberos 凭据复用""SMB/RDP/WinRM 远程登录""金票/银票""异常账号登上罕见主机"时选它。关键词 lateral movement/横向/pass-the-hash/pass-the-ticket/PtH/PtT/4624/4768/4776/RDP/WinRM/PsExec/golden ticket。
+needs: [auth_logon_telemetry]
 ---
 # 横向移动 / PtH / PtT / 异常登录研判(T1550/T1021)
 

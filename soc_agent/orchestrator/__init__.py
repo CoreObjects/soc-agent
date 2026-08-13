@@ -7,6 +7,7 @@
 import json
 
 from ..forensics import Forensics
+from ..graph import coverage
 from ..models import LEANS, VERDICTS, Alert, InvestigationResult, Verdict
 from ..tools import FINALIZE, finalize_spec
 
@@ -270,6 +271,9 @@ class RecipeInvestigator:
         trace = []                                                  # skill 由 SkillRouter 预选传入
         if forensics is None:                                       # 流水线已取证会传进来,避免重跑 recipe
             forensics = Forensics.coerce(skill.recipe(self.graph, alert, seed))   # ★确定性取证 → 结构化
+            # ★与 cli.collect_forensics 同一处理:叠部署级覆盖盲区(WP9)。
+            #   漏掉这里会出现"走 cli 报盲区、走 orchestrator 不报"的不一致 —— 而这种不一致不会红。
+            forensics = coverage.annotate(forensics, skill, coverage.get(self.graph))
         evidence = dict(forensics.context)                          # 人读证据(喂 LLM)
         if forensics.findings:
             evidence["结构化发现(findings)"] = [f.to_dict() for f in forensics.findings]
