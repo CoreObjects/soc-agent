@@ -1,8 +1,9 @@
 {
   "$schema_note": "全场景安全告警研判知识图谱 · 单一事实源(Single Source of Truth)。v3 两层事实(实体结构 + 无损事件)+ 告警 + 经验。设计稿见 docs/graph-model/design-v3.md;事件落图映射见 docs/data-ingestion/ingest-mapping-spec.md。改模型只改此文件,并同步 soc-graph-ingest 的 cypher 白名单/映射 spec。",
-  "version": "3.1",
+  "version": "3.2",
   "status": "已落地 (v3.1 与线上 mapper/DDL 实测对账一致;强键权威在 soc-graph-ingest/ingest/keys.py,DDL 由其生成)",
   "changelog": [
+    "v3.2 (2026-08-13): ★WP9 新增 meta_nodes.Coverage(覆盖度事实)。动机:recipe 的 blind_spots 此前是**手写散文**,把「模型盲区(本体没这概念,对每个客户都成立)」与「覆盖盲区(建模了但这套部署没数据,每个客户都不同)」混成一句话 —— 接了新客户照样原样输出,既不准也不会变,「看不到什么」退化成一句永远正确因而毫无信息量的话。第二类只能**测**,测出来就得有地方放。Coverage 由扫描写入而非映射产生,因此单列 meta_nodes、不进 entities/NODE_LABELS;强键 activity;缺失项由 ACTIVITIES 闭集词表减去扫到的得出。另定义**覆盖度签名**(只由结构性事实决定、不含填充率)作经验指纹的分区键。",
     "v3.1 (2026-08-11): ★与线上实测对账(WP3)。此前是 DRAFT、多处与线上不符,已按'改声明去迁就 mapper 与 recipe、绝不反过来'的原则修正:(1) 强键三处纠正 —— Host 键 asset_id→hostname(线上 88 万事件经它绑定,重 key 是 flag day;asset_id 降为属性,新租户策略另议)、File 键 sha256→(path,host)(且删除 `file_sha256 UNIQUE` 约束:同一二进制两路径即违约、整条事务失败,是地雷)、Uri 键 (host,path)→(uri)(web_exploit 读 u.uri,反过来改键会静默清空其取证)。(2) LogonSession 澄清为**二选一键**(logon_guid 非零则用,否则 logon_id),原并列写法易误读成复合键。(3) event_node.props 补齐 39 个线上实际写入、此前从未声明的标量(recipe 正在读它们)。(4) aggregate_edges.props **删掉 count** —— 它从未被写入过,lateral_movement 读它恒得 null,曾导致每次登录都被误判(见该文件 load-bearing 注释);次数一律从事件 `sum(coalesce(e.count,1))` 算。(5) aggregate_edges.verbs 补 TARGET/CLEARED(线上已在产出)。(6) 新增 Event.activity(中立活动类,WP4 起双写;event_code 保留原生值永不重编号)。强键与 DDL 的单一权威移到 ingest/keys.py 并由其生成,scripts/check_model_sync.py 在 CI 卡漂移。",
     "v3.0 (2026-07-07): 两层事实模型,取代 v1.x 单 :Event 星型。(1) 事实分两层:①事件节点(:Event 只存 time + 少量本次标量,无损细节层)经 BY→主语、<谓语>→宾语、FROM/ON_HOST→次要参与者 连实体;②聚合关系边(一对实体·一谓语一条,带 count/first_seen/last_seen,路径查询专用,躲开笛卡尔积爆炸)。谓语在事件的宾语边上→解决'A-B 两条聚合边、事件挂着分不清谁归谁'。(2) 告警:(:Event)-[:TRIGGERED]→(:Alert)-[:INDICATES]→(:Technique),单一触发事件=唯一溯源入口;告警 payload 自带底层事件→TRIGGERED 永不落空;废弃 v1.2 的 INVOLVES/ABOUT(实体全经触发事件一跳可达)。(3) 新增经验层:(:Alert)-[:CONCLUDED]→(:Verdict)-[:LED_TO]→(:Disposition)-[:ON]→(实体),Agent 研判/处置产出写回图作历史经验(留存永久)。(4) 边命名精简、不含宾语名词(TRIGGERED 不叫 TRIGGERED_ALERT)。(5) 事实层保持纯净:pattern_key/快慢通道/相似召回机制不入事实层(Agent 运行时);研判/处置结论入图(经验层)。入图门槛不变(能解析成实体且对取证有用才入,噪声/解析不进/无用的不入)。",
     "v1.2 (2026-07-06): 告警入图(Alert 提为 L1_alert,INVOLVES/ABOUT 挂实体/观测)+ 事实节点去下游污染。【已被 v3 取代】",
@@ -60,6 +61,12 @@
     {"name": "Uri", "keys": ["uri"], "props": ["uri", "host", "path"], "note": "★键=uri(线上实况;原声明 (host,path) 与 DDL 索引一致但与 mapper 不一致,索引永远命不中)。**绝不能反过来改键**:web_exploit/recipe.py:35 读 u.uri、:68 收 uu.uri,改键会静默把 target_uri 变 null、清空 endpoints_hit、废掉带 uri binding 的指纹"},
     {"name": "Module", "keys": ["path", "host"], "fallback_key": ["sha256"], "props": ["path", "sha256", "signed"], "note": "DLL/驱动;ImageLoad 的宾语"}
   ],
+  "meta_nodes": {
+    "note": "元节点:**不是**被观测到的实体,而是对「这套部署的数据本身」的测量结果。由 soc-graph-ingest 的 `runner coverage` **扫描**写入,不经投影器 —— 所以既不在 entities 里、也不在 ontology.NODE_LABELS 里(那个闭集管的是「适配器能输出什么」,把元节点放进去等于允许某个源的文档声称自己产出了一条覆盖度事实)。对应 ontology.META_LABELS,强键同样由 ingest/keys.py 生成 DDL。",
+    "nodes": [
+      {"name": "Coverage", "keys": ["activity"], "props": ["activity", "family", "status", "sources", "events", "events_raw", "first_ms", "last_ms", "stale_days", "subjects", "fill_request_id", "fill_asset_id", "fill_principal_id", "fill_trigger_record_id", "measured_at_ms"], "note": "每个 activity 一条,**含没有数据的**(status='absent')—— 缺失由 ACTIVITIES 闭集词表减去扫到的得出,因为扫描永远看不见不存在的东西。键只有 activity:不带 tenant(一租户一图是部署边界,图身份不带租户),也不按 source 展开((源×活动)是笛卡尔积,会造出「winlogbeat 没有 http.request」这类无意义缺失;每源明细进报告不进图)。subjects 形如 [\"BY:Process\",\"FROM:IPAddress\"],读侧据此判断 pivot 解不解得出来。另有**覆盖度签名**(只由结构性事实决定、不含填充率)作经验指纹分区键 —— 填充率天天抖,拿它分区会让指纹天天冷启动"}
+    ]
+  },
   "event_node": {
     "name": "Event",
     "layer": "event",
