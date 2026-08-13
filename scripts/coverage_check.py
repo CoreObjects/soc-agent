@@ -20,8 +20,21 @@ from soc_agent.graph.client import Neo4jGraph            # noqa: E402
 from soc_agent.skills_runtime import SkillRegistry       # noqa: E402
 
 
+_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+
 def main() -> int:
-    cfg = Config.from_env()
+    # ★必须显式给 dotenv_path:`Config.from_env()` 只读 os.environ,而 `.env` 不会自动进环境。
+    #   仓里其它 7 个脚本都传了,只有我没传 —— 首跑因此拿到空 URI,炸在 neo4j 驱动里,
+    #   吐一屏 ConfigurationError 把真因埋掉。
+    cfg = Config.from_env(dotenv_path=os.path.join(_ROOT, ".env"))
+    # ★把**实际生效**的图地址打出来:调用方的 shell 头部是 grep `.env` 得来的,
+    #   与这里用的是两个来源。两者一旦不一致(首跑就是:头部有值、代码拿到空),
+    #   报告就会一边显示正确地址、一边用错的去连 —— 会撒谎的报告比没有报告更糟。
+    print(f"图(实际生效): {cfg.neo4j_uri or '(空)'}")
+    if not cfg.neo4j_uri:
+        print("❌ NEO4J_URI 为空 —— .env 没读到或没配。先确认 .env 里有 NEO4J_URI=bolt://…")
+        return 2
     graph = Neo4jGraph(cfg.neo4j_uri, cfg.neo4j_user, cfg.neo4j_password, cfg.neo4j_database)
     try:
         p = C.load(graph)

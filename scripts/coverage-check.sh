@@ -28,7 +28,11 @@ ferry_guard "$FB" "feedback: coverage-check $(date -u '+%m-%d %H:%MZ' 2>/dev/nul
   echo "主机    : $(hostname 2>/dev/null)   仓库 $(pwd)"
   echo "代码版本: $(git rev-parse --short HEAD 2>/dev/null) $(git log -1 --format=%s 2>/dev/null | cut -c1-60)"
   echo "解释器  : $PY -> $("$PY" -V 2>&1)"
-  echo "图      : $(grep -E '^NEO4J_URI=' .env 2>/dev/null | cut -d= -f2- | tr -d '\"')"
+  # ★这行是**从 .env 文本 grep 出来的**,与 Python 里实际生效的值是**两个来源**。
+  #   首跑就撞上了:这行打出了正确地址,而代码里 `Config.from_env()` 漏传 dotenv_path、
+  #   拿到的是空串 —— 报告一边显示对的、一边拿错的去连。所以 Python 会再打一行
+  #   「实际生效」,两行不一致 = 配置压根没被加载进去。
+  echo ".env 里写的: $(grep -E '^NEO4J_URI=' .env 2>/dev/null | cut -d= -f2- | tr -d '\"')"
   echo
   PYTHONUTF8=1 "$PY" -X utf8 scripts/coverage_check.py
   echo "[退出码] $?"
