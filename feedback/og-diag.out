@@ -1,7 +1,7 @@
-=== openGauss 诊断(只读) 2026-08-13 15:00:33 ===
-代码版本: b4a5c29 fix(ferry): 别把「必然失败」当成「网络抖动」去重试 —— 先 rebase 再推
+=== openGauss 诊断(只读) 2026-08-13 15:23:38 ===
+代码版本: d9e1b12 og-diag 三探:问题不是「高斯没起」,是**整个应用层重启后都没回来**
 主机: localhost.localdomain   Linux 6.6.0-45.0.0.54.oe2409.aarch64 aarch64
-开机: up 22 hours, 17 minutes
+开机: up 22 hours, 40 minutes
      最后启动:  system boot 2026-08-12 16:43
 
 --- ① 我们到底在连什么(.env 里的 OG_* )---
@@ -54,56 +54,5 @@
     k3s      /usr/local/bin/k3s
     kubectl  /usr/local/bin/kubectl
     crictl   /usr/local/bin/crictl
-  k3s 里的 pod(找 gauss/postgres/db):
-    (列不出;可能要 sudo 或 k3s 没起)
-  containerd 容器(crictl):
-    (crictl 不可用)
-  podman / docker:
-timeout: failed to run command ‘docker’: No such file or directory
-    (docker 不可用)
-
-  ★对照组:**别的服务回来了没有** —— 这条能分清「只有高斯没起」还是「整机服务都没自启」
-    (研判机上本该有 qwen vLLM 在 :8000)
-    State  Recv-Q Send-Q                          Local Address:Port  Peer Address:PortProcess
-    LISTEN 0      4096                                        *:6443             *:*          
-
---- ⑧ 两个最常见的「起不来」根因 ---
-  磁盘:
-    Filesystem                  Size  Used Avail Use% Mounted on
-    /dev/mapper/openeuler-root  787G  206G  541G  28% /
-    efivarfs                     83K   30K   54K  36% /sys/firmware/efi/efivars
-    /dev/sda2                   974M  191M  717M  21% /boot
-    /dev/sda1                   599M  6.4M  593M   2% /boot/efi
-    /dev/mapper/openeuler-home  7.0T  899G  5.8T  14% /home
-    shm                          64M     0   64M   0% /run/k3s/containerd/io.containerd.grpc.v1.cri/sandboxes/1eb91417e907ed8c28930affa53441c9e1707f8a3eb56d51bf49fa5abe6391d5/shm
-    shm                          64M     0   64M   0% /run/k3s/containerd/io.containerd.grpc.v1.cri/sandboxes/f39a04348887d7b2ce654ea81ea48585df839e86e30a44195013c1c56e645b13/shm
-  ★任一分区 100%(尤其数据目录所在的)⇒ 数据库会拒绝启动或自行停下。
-  内存 / OOM:
-                   total        used        free      shared  buff/cache   available
-    Mem:           2.0Ti       135Gi       1.6Ti        69Gi       357Gi       1.8Ti
-    Swap:          4.0Gi       7.5Mi       4.0Gi
-  内核有没有杀过它:
-    (没有 OOM 记录,或没权限读内核日志 —— 试 sudo dmesg)
-
---- ⑨ 怎么读这份报告 ---
-  · ②没人听 + ③没进程 + ⑤ systemd 里没有它 + ①开机时间很新
-      ⇒ **机器重启过,而它是手工起的、没设开机自启**。这是最常见的一种,也最好修:
-        起回来之后把它做成开机自启,否则下次重启还会静悄悄地没。
-  · ⑦日志里有 PANIC / could not write / No space left
-      ⇒ 看⑧的磁盘,多半是写满了。腾空间再起。
-  · ⑧有 OOM killed
-      ⇒ 被内核杀的。这台是 2TiB 内存,真被杀说明有别的东西在吃内存(或它自己配置过大)。
-  · ⑥有残留 postmaster.pid 但③没进程
-      ⇒ 上次是**崩的**不是干净停的;起之前先确认没有僵尸进程,再按提示清理 pid 文件。
-  · ②有人听但不是 127.0.0.1:5432(比如只听 ::1 或别的端口)
-      ⇒ 不是「没起来」,是**听错地方**,改 .env 的 OG_HOST/OG_PORT 或改 listen_addresses。
-
---- ⑩ 起它的命令(★先看完上面再执行,别照抄)---
-    sudo su - omm                     # openGauss 通常以 omm 身份管理
-    gs_ctl start -D $GAUSSDATA        # 或 gs_om -t start(集群方式装的)
-    gs_ctl query -D $GAUSSDATA        # 起完确认状态
-  验证连得上(回到普通用户):
-    ss -tln | grep 5432
-  ★起回来之后,别忘了确认经验表非空:
-    cd ~/soc-agent && bash scripts/replay-reuse.sh   # 空库它会当场停,不会再吐假基线
-=== done(本次跑到了 ⑦b 容器排查;报告里没有 ⑦b = 跑的是旧脚本)===
+  KUBECONFIG=/etc/rancher/k3s/k3s.yaml  可读:否(要 sudo)
+  ★所有 pod(不只找 gauss —— 要看的是**整个应用层回来没有**):
