@@ -164,9 +164,23 @@ def diff(old_fo, new_fo, *, new_findings=(), new_ctx=(), new_bindings=(),
 _POOL = ("MATCH (a:Alert)<-[:TRIGGERED]-(e:Event) "
          "RETURN DISTINCT a{.*} AS a ORDER BY a.arrival_ms DESC LIMIT $n")
 
+# ★按 skill 定向取样:台账里记着**每条告警当初是用哪个 skill 判的**
+#   (`(:Alert)-[:HAS_FINDING]->(:Finding {skill})`)—— 那就是这条 recipe 真正干过活的告警。
+#   不用它的话,通用池("最近 N 条告警")对冷门 skill 可能一条都不沾:
+#   kerberoast 首跑就是 1200 条里**旧版非空 0 条**、判「证据不足」,
+#   而同一时刻 replay-reuse 明确报着它有 219 条已研判告警 —— 样本明明有,是我取偏了。
+_POOL_BY_SKILL = ("MATCH (a:Alert)-[:HAS_FINDING]->(f:Finding {skill:$skill}) "
+                  "RETURN DISTINCT a{.*} AS a ORDER BY a.arrival_ms DESC LIMIT $n")
+
 
 def alert_pool(g, n) -> list:
     return [Alert.from_node(r["a"]) for r in g.run_cypher(_POOL, n=int(n))]
+
+
+def alert_pool_for(g, skill_name, n) -> list:
+    """这条 recipe **当初真的判过**的告警(来自图台账)。冷门 skill 全靠它才有样本。"""
+    return [Alert.from_node(r["a"])
+            for r in g.run_cypher(_POOL_BY_SKILL, skill=skill_name, n=int(n))]
 
 
 def check_one(g, reg, path, rev, pool, min_nonempty, allow) -> dict:
@@ -189,9 +203,18 @@ def check_one(g, reg, path, rev, pool, min_nonempty, allow) -> dict:
     if not hasattr(old, "collect"):
         return {"state": "跳过", "why": "旧版没有 collect()", "compared": 0, "nonempty": 0, "diffs": []}
 
+    # ★定向样本优先,通用池兜底(按 uid 去重、保持顺序)。
+    targeted = alert_pool_for(g, skill_name, max(min_nonempty * 4, 100))
+    seen, use = set(), []
+    for a in list(targeted) + list(pool):
+        if a.alert_uid not in seen:
+            seen.add(a.alert_uid)
+            use.append(a)
+    print(f"    样本:定向(台账里用过本 skill 的){len(targeted)} 条 + 通用池兜底 → 共 {len(use)} 条")
+
     compared = nonempty = 0
     diffs, unstable = [], []
-    for alert in pool:
+    for alert in use:
         seed = g.seed(alert)
         try:
             # ★★**把新版夹在两次旧版中间**跑:旧 → 新 → 旧。
