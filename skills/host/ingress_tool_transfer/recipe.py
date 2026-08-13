@@ -12,7 +12,7 @@ ingress.whitelisted_downloader(白)/ ingress.provisioning_noise(白)/ ingress.dr
 import re
 
 from soc_agent.forensics import Finding, Forensics
-from soc_agent.recipe_lib import decode_chain, provisioning_noise
+from soc_agent.recipe_lib import decode_chain, provisioning_noise, plus_activity
 
 # LOLBin 下载器:image 命中 certutil/bitsadmin/mshta,或 powershell 带下载动词(image 原值 = 可移植承重 key)
 _LOLBIN_IMAGE = re.compile(r"certutil|bitsadmin|mshta", re.I)
@@ -74,7 +74,11 @@ def collect(graph, alert, seed=None) -> Forensics:
         bindings["host"] = host
 
     # 触发本身:一次下载/掉文件(event_code 决定性标量进 attrs,供按"事件类型"泛化)
-    findings.append(Finding("ingress.download", {"event_code": event_code},
+    findings.append(Finding("ingress.download",
+                            # ★WP10 只加不改:`event_code` 是厂商码(指纹 canon 里已有,绝不动),
+                            #   同时带上中立活动类,让指纹自己说清"这是哪一类行为"。
+                            #   fingerprint.match() 只遍历**已存**指纹的 key ⇒ 加键对存量指纹可证明零影响。
+                            plus_activity({"event_code": event_code}, event),
                             evidence_ref=alert.alert_uid, polarity="neutral"))
 
     # 3. ★解码命令行 + 认良性噪声(把"掉可执行文件"其实是策略探针/Ansible 供给的 FP 认出来)

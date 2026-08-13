@@ -37,7 +37,8 @@ ferry_guard "$FB" "feedback: recipe-parity $(date -u '+%m-%d %H:%MZ' 2>/dev/null
       --min-nonempty "${MIN_NONEMPTY:-30}" \
       ${ALLOW_FINDINGS:+--allow-new-findings "$ALLOW_FINDINGS"} \
       ${ALLOW_CTX:+--allow-new-ctx "$ALLOW_CTX"} \
-      ${ALLOW_BINDINGS:+--allow-new-bindings "$ALLOW_BINDINGS"}
+      ${ALLOW_BINDINGS:+--allow-new-bindings "$ALLOW_BINDINGS"} \
+      ${ALLOW_ATTRS:+--allow-new-attrs "$ALLOW_ATTRS"}
   RC=$?
   echo "[退出码] $RC"
   echo

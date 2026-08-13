@@ -15,7 +15,7 @@ finding 词典(方法论,第一类):
 import re
 
 from soc_agent.forensics import Finding, Forensics
-from soc_agent.recipe_lib import bucket, decode_chain, provisioning_noise
+from soc_agent.recipe_lib import bucket, decode_chain, provisioning_noise, plus_activity
 
 # 不该派生 shell 的父进程(webshell 载体 w3wp/httpd/tomcat;被利用服务 services/spoolsv/wmiprvse/sqlservr)。
 # 原值作可移植承重 key,"是否恶意"的结论交第二类学(不硬编码良性/恶意名单)。
@@ -81,7 +81,9 @@ def collect(graph, alert, seed=None) -> Forensics:
     if event or subject:
         findings.append(Finding(
             "suspproc.process",
-            {"event_code": event.get("event_code"), "integrity_level": event.get("integrity_level")},
+            # ★WP10 只加不改:厂商码保留,同时带上中立活动类(见 ingress_tool_transfer 的说明)
+            plus_activity({"event_code": event.get("event_code"),
+                           "integrity_level": event.get("integrity_level")}, event),
             evidence_ref=aid, polarity="neutral"))
 
     # 4. ★连锁解码 EncodedCommand(主语 + 各子进程),把编码命令的真身摊开

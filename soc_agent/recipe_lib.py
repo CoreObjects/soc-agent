@@ -10,7 +10,7 @@ import re
 from soc_agent.forensics import Finding
 
 __all__ = ["decode_powershell_cmd", "decode_chain", "provisioning_noise", "security_agent",
-           "bucket", "is_machine", "coverage_absent", "probe"]
+           "bucket", "is_machine", "coverage_absent", "probe", "plus_activity"]
 
 # ---------------------------------------------------------------------------
 # 覆盖度感知(WP7):recipe 拿不到它赖以判别的那类遥测时,**明说自己瞎了**。
@@ -143,3 +143,23 @@ def security_agent(image):
         if rx.search(image):
             return name
     return None
+
+
+def plus_activity(attrs: dict, src) -> dict:
+    """给 `Finding.attrs` 补中立活动类 —— **值为空就不写这个键**(WP10)。
+
+    ★为什么不能写 `activity: None`:指纹 canon 会把它固化下来,而
+      `_attr_ok` 只校验**已存 canon 里的 key** —— 于是
+      · 现在写 None → canon 里带 `activity: None`;
+      · 将来那个 event_code 被补上映射 → 同一情形产出 `activity: 'x'` → **对不上、静默失配**。
+      缺键则相反:老指纹没这个 key 就不校验它,新老都能匹配。
+      这正是计划决策 #2 反复强调的那个坑(WP4 回填必须早于本步),
+      而**未映射的那 118 条事件今天就是 activity=null** —— 不是假想。
+
+    ★`event_code` 等原有 key **一字不动**:只加不改。
+    """
+    out = dict(attrs)
+    act = (src or {}).get("activity") if hasattr(src, "get") else None
+    if act:
+        out["activity"] = act
+    return out

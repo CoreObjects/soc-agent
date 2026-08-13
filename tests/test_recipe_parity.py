@@ -42,10 +42,14 @@ def test_undeclared_addition_is_a_diff_declared_one_is_not():
 
 
 def test_changed_finding_content_is_a_diff():
-    """finding_id 一样但 attrs 变了 —— 这是最容易被漏掉的一种:集合比对看不出来。"""
+    """finding_id 一样但 attrs 变了 —— 这是最容易被漏掉的一种:集合比对看不出来。
+
+    (WP10 要给 attrs 加 activity,比对因此细化到**逐键**:加键/删键/改值分开报,
+     所以这里断言的是「值变了」那一支。)
+    """
     a = _fo([Finding("k.x", {"bucket": "low"})])
     b = _fo([Finding("k.x", {"bucket": "high"})])
-    assert any("内容变了" in x for x in RP.diff(a, b))
+    assert any("attrs 值变了" in x for x in RP.diff(a, b))
 
 
 def test_binding_and_context_changes_are_diffs():
@@ -138,3 +142,28 @@ def test_noise_cancellation_does_not_hide_other_slots():
     b = _fo(context={"noisy": [2], "stable": ["CHANGED"]})
     d = RP.diff(a, b, ignore_slots={"context[noisy"})
     assert len(d) == 1 and "stable" in d[0]
+
+
+def test_added_attrs_key_needs_declaring_but_removed_or_changed_never_passes():
+    """★attrs **加键**可声明放行(WP10 给 Finding.attrs 加 activity);
+    但**删键、改值**一律算差异 —— 白名单只放行"新增",与全项目同一套纪律。"""
+    a = _fo([Finding("k.x", {"bucket": "low"})])
+    b = _fo([Finding("k.x", {"bucket": "low", "activity": "auth.logon"})])
+    assert any("attrs 多了未声明的" in x for x in RP.diff(a, b))
+    assert RP.diff(a, b, new_attrs=("activity",)) == []
+
+    # 删键:即使把它写进白名单也必须红
+    c = _fo([Finding("k.x", {})])
+    assert any("attrs 少了" in x for x in RP.diff(a, c, new_attrs=("bucket",)))
+
+    # 改值:同样不容
+    d = _fo([Finding("k.x", {"bucket": "high"})])
+    assert any("attrs 值变了" in x for x in RP.diff(a, d, new_attrs=("bucket",)))
+
+
+def test_polarity_change_is_caught_separately_from_attrs():
+    """polarity 决定红/白倾向 —— 它变了必须单独报,不能被 attrs 白名单顺带盖住。"""
+    a = _fo([Finding("k.x", {"n": 1}, polarity="neutral")])
+    b = _fo([Finding("k.x", {"n": 1, "activity": "x"}, polarity="red")])
+    d = RP.diff(a, b, new_attrs=("activity",))
+    assert len(d) == 1 and "非 attrs 部分变了" in d[0]

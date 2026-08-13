@@ -102,13 +102,14 @@ def slot_of(msg: str) -> str:
 
 
 def diff(old_fo, new_fo, *, new_findings=(), new_ctx=(), new_bindings=(),
-         ignore_slots=()) -> list:
+         new_attrs=(), ignore_slots=()) -> list:
     """返回 [异常差异描述]。只有**显式声明过**的新增不算差异;少任何东西一律算。
 
     `ignore_slots`:已被证明**该 recipe 自己跑两遍就不一致**的槽位 —— 那是它本身的
     不确定性,不是本次改动造成的,不该算在改动头上(但会被单独报出来)。
     """
     nf, nc, nb = set(new_findings), set(new_ctx), set(new_bindings)
+    na_ok = set(new_attrs)          # 允许**新增**到 Finding.attrs 的键
     ignore = set(ignore_slots)
     out = []
     o, n = old_fo.to_dict(), new_fo.to_dict()
@@ -122,8 +123,22 @@ def diff(old_fo, new_fo, *, new_findings=(), new_ctx=(), new_bindings=(),
     if set(nfs) - set(ofs) - nf:
         out.append(f"findings 多了未声明的 {sorted(set(nfs) - set(ofs) - nf)}")
     for fid in set(ofs) & set(nfs):
-        if ofs[fid] != nfs[fid]:
-            out.append(f"finding {fid} 内容变了")
+        o_f, n_f = ofs[fid], nfs[fid]
+        # ★attrs **加键**要能被显式声明放行(WP10 给 Finding.attrs 加 activity 就是这一类);
+        #   但**删键、改值**一律算差异 —— 白名单只放行"新增",与全项目同一套纪律。
+        oa, na = o_f.get("attrs") or {}, n_f.get("attrs") or {}
+        added = set(na) - set(oa)
+        if added - na_ok:
+            out.append(f"finding {fid} attrs 多了未声明的 {sorted(added - na_ok)}")
+        if set(oa) - set(na):
+            out.append(f"finding {fid} attrs 少了 {sorted(set(oa) - set(na))}")
+        changed = [k for k in set(oa) & set(na) if oa[k] != na[k]]
+        if changed:
+            out.append(f"finding {fid} attrs 值变了 {sorted(changed)}")
+        rest_o = {k: v for k, v in o_f.items() if k != "attrs"}
+        rest_n = {k: v for k, v in n_f.items() if k != "attrs"}
+        if rest_o != rest_n:
+            out.append(f"finding {fid} 非 attrs 部分变了(polarity/evidence_ref)")
 
     ob, nbd = o["bindings"], n["bindings"]
     if set(ob) - set(nbd):
@@ -274,6 +289,8 @@ def main() -> int:
     ap.add_argument("--allow-new-findings", default="")
     ap.add_argument("--allow-new-ctx", default="")
     ap.add_argument("--allow-new-bindings", default="")
+    ap.add_argument("--allow-new-attrs", default="",
+                    help="允许 Finding.attrs **新增**的键(如 activity);删键/改值仍一律算差异")
     args = ap.parse_args()
 
     def csv(x):
@@ -281,7 +298,8 @@ def main() -> int:
 
     allow = {"new_findings": csv(args.allow_new_findings),
              "new_ctx": csv(args.allow_new_ctx),
-             "new_bindings": csv(args.allow_new_bindings)}
+             "new_bindings": csv(args.allow_new_bindings),
+             "new_attrs": csv(args.allow_new_attrs)}
 
     paths = ([f"skills/{s.strip()}/recipe.py" if "/" in s else s.strip()
               for s in args.skills.split(",") if s.strip()]

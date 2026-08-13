@@ -8,7 +8,7 @@ privileged_account(红)/ high_value_target(红,登 DC/CA)/ fanout(扇出,红 if 
 红=攻击迹象,白=良性豁免;"哪些组合→什么结论"交第二类经验(qwen 学)。
 """
 from soc_agent.forensics import Finding, Forensics
-from soc_agent.recipe_lib import bucket
+from soc_agent.recipe_lib import bucket, plus_activity
 
 _HIGH_VALUE_ROLES = {"domain_controller", "certificate_authority"}
 _HIGH_CRIT = {"critical", "high"}
@@ -23,7 +23,8 @@ def collect(graph, alert, seed=None) -> Forensics:
         "MATCH (a:Alert {alert_uid:$aid})<-[:TRIGGERED]-(e:Event)-[:BY]->(acc:Account) "
         "OPTIONAL MATCH (e)-[:AUTHENTICATED_TO]->(h:Host) "
         "OPTIONAL MATCH (e)-[:FROM]->(ip:IPAddress) "
-        "RETURN e.event_code AS event_code, e.logon_type AS logon_type, e.outcome AS result, "
+        "RETURN e.event_code AS event_code, e.activity AS activity, "      # ★WP10 取中立活动类
+        "e.logon_type AS logon_type, e.outcome AS result, "
         "acc.sam AS acc_sam, acc.domain AS acc_domain, coalesce(acc.privileged,false) AS acc_privileged, "
         "h.hostname AS target_host, h.role AS target_role, h.criticality AS target_criticality, "
         "ip.ip AS src_ip",
@@ -47,9 +48,11 @@ def collect(graph, alert, seed=None) -> Forensics:
     if b:
         findings.append(Finding(
             "lateral.network_logon",
-            {"logon_type": b.get("logon_type"), "event_code": b.get("event_code"), "result": b.get("result"),
-             "acc_privileged": bool(b.get("acc_privileged")),
-             "target_role": target_role, "target_criticality": target_crit},
+            # ★WP10 只加不改:厂商码保留,同时带上中立活动类
+            plus_activity({"logon_type": b.get("logon_type"), "event_code": b.get("event_code"),
+                           "result": b.get("result"),
+                           "acc_privileged": bool(b.get("acc_privileged")),
+                           "target_role": target_role, "target_criticality": target_crit}, b),
             evidence_ref=aid, polarity="neutral"))
 
     if b.get("acc_privileged"):

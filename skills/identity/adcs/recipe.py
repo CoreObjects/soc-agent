@@ -13,6 +13,7 @@ requester_privileged(N,请求者本身特权=已有权限、非升权信号,仅�
 import re
 
 from soc_agent.forensics import Finding, Forensics
+from soc_agent.recipe_lib import plus_activity
 
 
 def collect(graph, alert, seed=None) -> Forensics:
@@ -24,7 +25,8 @@ def collect(graph, alert, seed=None) -> Forensics:
         "MATCH (a:Alert {alert_uid:$aid})<-[:TRIGGERED]-(e:Event)-[:BY]->(req:Account) "
         "OPTIONAL MATCH (e)-[:REQUESTED]->(ca:Service) "
         "OPTIONAL MATCH (e)-[:ON_HOST]->(h:Host) "
-        "RETURN e.event_code AS event_code, e.attributes AS attributes, e.request_id AS request_id, "
+        "RETURN e.event_code AS event_code, e.activity AS activity, "      # ★WP10 取中立活动类
+        "e.attributes AS attributes, e.request_id AS request_id, "
         "e.subject_dn AS subject_dn, "
         "req.sam AS req_sam, req.domain AS req_domain, req.upn AS req_upn, "
         "coalesce(req.privileged,false) AS req_privileged, "
@@ -44,7 +46,9 @@ def collect(graph, alert, seed=None) -> Forensics:
 
     # 触发本身:一次证书请求/签发(event_code 标量进 attrs,供指纹按 4886/4887 泛化;实例账号/CA 走 bindings 抽象)
     if b:
-        findings.append(Finding("adcs.cert_request", {"event_code": b.get("event_code")},
+        # ★WP10 只加不改:厂商码保留,同时带上中立活动类
+        findings.append(Finding("adcs.cert_request",
+                                plus_activity({"event_code": b.get("event_code")}, b),
                                 evidence_ref=aid, polarity="neutral"))
 
     # 2. 请求者估值(privileged / 属组)—— 请求者本身特权只作上下文(N),非升权信号
