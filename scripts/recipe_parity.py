@@ -301,6 +301,9 @@ def main() -> int:
                 print(f"     {d}")
             if len(r["diffs"]) > 6:
                 print(f"     …还有 {len(r['diffs']) - 6} 条(形态多半相同,先看上面这几条)")
+            # ★噪声底**无论有没有都要打**:沉默是有歧义的 ——
+            #   分不清"夹心结构吸收了漂移"还是"这一跑碰巧没漂"。
+            print(f"     噪声底(同一旧版首尾两次之差):{len(r.get('unstable') or [])} 条")
             if r.get("unstable"):
                 print(f"     ★同一份**旧代码**在测量窗口内自己就变了 {len(r['unstable'])} 条 ——"
                       f"与本次改动无关(已从判定里抵消):")
