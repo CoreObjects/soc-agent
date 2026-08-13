@@ -25,8 +25,7 @@ def collect(graph, alert, seed=None) -> Forensics:
         "MATCH (a:Alert {alert_uid:$aid})<-[:TRIGGERED]-(e:Event)-[:BY]->(req:Account) "
         "OPTIONAL MATCH (e)-[:REQUESTED]->(ca:Service) "
         "OPTIONAL MATCH (e)-[:ON_HOST]->(h:Host) "
-        "RETURN e.event_code AS event_code, e.activity AS activity, "      # ★WP10 取中立活动类
-        "e.attributes AS attributes, e.request_id AS request_id, "
+        "RETURN e.event_code AS event_code, e.attributes AS attributes, e.request_id AS request_id, "
         "e.subject_dn AS subject_dn, "
         "req.sam AS req_sam, req.domain AS req_domain, req.upn AS req_upn, "
         "coalesce(req.privileged,false) AS req_privileged, "
@@ -48,7 +47,7 @@ def collect(graph, alert, seed=None) -> Forensics:
     if b:
         # ★WP10 只加不改:厂商码保留,同时带上中立活动类
         findings.append(Finding("adcs.cert_request",
-                                plus_activity({"event_code": b.get("event_code")}, b),
+                                plus_activity({"event_code": b.get("event_code")}, (seed or {}).get("event")),
                                 evidence_ref=aid, polarity="neutral"))
 
     # 2. 请求者估值(privileged / 属组)—— 请求者本身特权只作上下文(N),非升权信号
