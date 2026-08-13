@@ -34,21 +34,41 @@ from soc_agent.experience.consult import (consult,                   # noqa: E40
 from soc_agent.graph import coverage                                 # noqa: E402
 from soc_agent.models import Alert                                   # noqa: E402
 
-# 已研判且能拿到当时 skill 的告警,按 uid 定序 —— 基线/候选必须是同一批
+# ★★按 skill **分层**抽样,不是按 uid 取前 N。
+#
+# 首跑的教训:取前 200 条,结果全落在 lateral_movement(159)+dcsync(41)两个 skill 上,
+# 而 WP10 要改的是 c2_beacon / webshell / suspicious_process 等**六条 recipe 的谓词** ——
+# 这批样本里**一条都没有**。于是我改坏 c2_beacon 的指纹,闸门照样 98.5% 绿灯放行。
+# **一个对被改对象无覆盖的闸门,等于没有闸门。**
+# (同样的错 WP7 的 pivot 闸门也犯过一次:样本没落在要断言的那条分支上。)
+#
+# 每个 skill 各取 `per_skill` 条,uid 定序保证基线/候选是同一批。
 _PICK = """
 MATCH (a:Alert)-[:CONCLUDED]->(:Verdict)
 MATCH (a)-[:HAS_FINDING]->(f:Finding)
 WITH a, head(collect(DISTINCT f.skill)) AS skill
 WHERE skill IS NOT NULL
-RETURN a.alert_uid AS uid, skill AS skill
-ORDER BY uid
-LIMIT $n
+WITH skill, a.alert_uid AS uid ORDER BY uid
+WITH skill, collect(uid) AS uids
+RETURN skill, size(uids) AS total, uids[0..$per] AS picked
+ORDER BY skill
 """
 
 
-def replay(pl, limit):
-    rows = pl.graph.run_cypher(_PICK, n=int(limit))
+def replay(pl, per_skill_cap, registry_names=()):
+    strata = pl.graph.run_cypher(_PICK, per=int(per_skill_cap))
     sig = coverage.get(pl.graph).signature
+    have = {r["skill"]: int(r["total"]) for r in strata}
+    rows = [{"uid": u, "skill": r["skill"]} for r in strata for u in (r["picked"] or [])]
+    print(f"--- 分层抽样(每 skill 最多 {per_skill_cap} 条)---")
+    for r in strata:
+        print(f"  {r['skill']:<24} 已研判 {r['total']:>5} 条 → 抽 {len(r['picked'] or [])}")
+    # ★把**闸门盖不到的 skill** 明说出来:它们没有已研判语料,这个闸门对它们零保护。
+    blind = sorted(set(registry_names or ()) - set(have))
+    if blind:
+        print(f"  ⚠ **闸门盖不到**(无已研判语料,改动它们不会被这个闸门发现):{', '.join(blind)}")
+    print(f"  合计 {len(rows)} 条")
+    print()
     per_alert, tally, per_skill = {}, {}, {}
     for i, r in enumerate(rows, 1):
         uid, skill_name = r["uid"], r["skill"]
@@ -74,7 +94,7 @@ def replay(pl, limit):
             print(f"  …已重放 {i}/{len(rows)}")
     return {"coverage_sig": sig, "partition_on": coverage_partition_enabled(),
             "total": len(rows), "tally": tally, "per_skill": per_skill,
-            "per_alert": per_alert}
+            "per_alert": per_alert, "available": have, "uncovered": blind}
 
 
 def _rate(res) -> float:
@@ -153,7 +173,8 @@ def check_corpus(exp_store) -> int:
 
 def main() -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--limit", type=int, default=500, help="重放条数(计划要求 ≥500)")
+    ap.add_argument("--per-skill", type=int, default=60,
+                    help="每个 skill 最多抽几条(★分层抽样;别用总数封顶,否则大头 skill 会吃满配额)")
     ap.add_argument("--save", help="把本次结果存成基线 JSON")
     ap.add_argument("--baseline", help="与这份基线对比;复用率下降则退出码 1")
     args = ap.parse_args()
@@ -174,7 +195,8 @@ def main() -> int:
             return rc
         # ★零副作用:全程只有 collect_forensics(只读)与 consult(只读),
         #   不碰 write_result / sediment / snapshot_case。跑多少遍系统状态都不变。
-        res = replay(pl, args.limit)
+        names = [x.name for x in pl.router.registry.all()]
+        res = replay(pl, args.per_skill, registry_names=names)
     finally:
         pl.close()
     base = None

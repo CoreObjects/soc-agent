@@ -7,7 +7,7 @@
 # 用法(在 **server2 研判机**上跑):
 #   bash scripts/replay-reuse.sh                      # 出一份基线并存盘
 #   bash scripts/replay-reuse.sh --compare            # 改完之后与基线对比;复用率下降即失败
-#   LIMIT=200 bash scripts/replay-reuse.sh            # 想快点先小样本
+#   PER_SKILL=20 bash scripts/replay-reuse.sh         # 想快点先小样本(每 skill 20 条)
 set -uo pipefail
 cd "$(dirname "$0")/.."
 # shellcheck source=scripts/_ferry.sh
@@ -26,7 +26,7 @@ MODE="${1:-}"
   echo "主机    : $(hostname 2>/dev/null)   仓库 $(pwd)"
   echo "代码版本: $(git rev-parse --short HEAD 2>/dev/null) $(git log -1 --format=%s 2>/dev/null | cut -c1-60)"
   echo "解释器  : $PY -> $("$PY" -V 2>&1)"
-  echo "条数    : ${LIMIT:-500}"
+  echo "每 skill 抽: ${PER_SKILL:-60} 条(★分层抽样,不是总数封顶)"
   echo
   if [ "$MODE" = "--compare" ]; then
     if [ ! -f "$BASE" ]; then
@@ -34,10 +34,10 @@ MODE="${1:-}"
       echo "   ★注意:基线必须是**改动之前**跑的,改完再补的基线毫无意义。"
       exit 2
     fi
-    PYTHONUTF8=1 "$PY" -X utf8 scripts/replay_reuse.py --limit "${LIMIT:-500}" --baseline "$BASE"
+    PYTHONUTF8=1 "$PY" -X utf8 scripts/replay_reuse.py --per-skill "${PER_SKILL:-60}" --baseline "$BASE"
     echo "[退出码] $?"
   else
-    PYTHONUTF8=1 "$PY" -X utf8 scripts/replay_reuse.py --limit "${LIMIT:-500}" --save "$BASE"
+    PYTHONUTF8=1 "$PY" -X utf8 scripts/replay_reuse.py --per-skill "${PER_SKILL:-60}" --save "$BASE"
     RC=$?
     echo "[退出码] $RC"
     echo
