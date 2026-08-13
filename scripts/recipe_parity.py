@@ -87,9 +87,29 @@ def _unordered(v):
     return v
 
 
-def diff(old_fo, new_fo, *, new_findings=(), new_ctx=(), new_bindings=()) -> list:
-    """返回 [异常差异描述]。只有**显式声明过**的新增不算差异;少任何东西一律算。"""
+def slot_of(msg: str) -> str:
+    """从差异描述里抽出它属于哪个「槽位」(context[X] / finding X / binding X / blind_spots)。
+
+    用来做**噪声抵消**:同一份旧代码跑两遍如果这个槽位就已经不一致,
+    那它在新旧对比里的差异也不能算到改动头上。
+    """
+    m = msg.replace(_ORDER, "")
+    for pre in ("context[", "finding ", "binding ", "findings ", "bindings "):
+        if m.startswith(pre):
+            rest = m[len(pre):]
+            return pre + (rest.split("]")[0] if pre.endswith("[") else rest.split(" ")[0])
+    return m.split(" ")[0]
+
+
+def diff(old_fo, new_fo, *, new_findings=(), new_ctx=(), new_bindings=(),
+         ignore_slots=()) -> list:
+    """返回 [异常差异描述]。只有**显式声明过**的新增不算差异;少任何东西一律算。
+
+    `ignore_slots`:已被证明**该 recipe 自己跑两遍就不一致**的槽位 —— 那是它本身的
+    不确定性,不是本次改动造成的,不该算在改动头上(但会被单独报出来)。
+    """
     nf, nc, nb = set(new_findings), set(new_ctx), set(new_bindings)
+    ignore = set(ignore_slots)
     out = []
     o, n = old_fo.to_dict(), new_fo.to_dict()
 
@@ -138,7 +158,7 @@ def diff(old_fo, new_fo, *, new_findings=(), new_ctx=(), new_bindings=()) -> lis
 
     if old_fo.blind_spots != new_fo.blind_spots:
         out.append("blind_spots 变了")
-    return out
+    return [d for d in out if slot_of(d) not in ignore]
 
 
 _POOL = ("MATCH (a:Alert)<-[:TRIGGERED]-(e:Event) "
@@ -170,21 +190,30 @@ def check_one(g, reg, path, rev, pool, min_nonempty, allow) -> dict:
         return {"state": "跳过", "why": "旧版没有 collect()", "compared": 0, "nonempty": 0, "diffs": []}
 
     compared = nonempty = 0
-    diffs = []
+    diffs, unstable = [], []
     for alert in pool:
         seed = g.seed(alert)
         try:
+            # ★同一份**旧代码**跑两遍 —— 先量这个 recipe 自己的噪声底。
+            #   真机撞到过:web_exploit 有条查询用 `base[0]` 取多行结果的第一行,
+            #   而 Cypher 不保证行序 ⇒ 同一条告警两次跑就可能不同。
+            #   不先量噪声,这种自身不确定性会被算成"改动引入的差异",冤枉改动、
+            #   而真正该修的东西(查询没有确定序)反倒被当成误报忽略掉。
             of = Forensics.coerce(old.collect(g, alert, seed))
+            of2 = Forensics.coerce(old.collect(g, alert, seed))
             nf_ = Forensics.coerce(skill.recipe(g, alert, seed))
         except Exception as e:                     # 一条炸不该毁掉整轮,但要记下来
             diffs.append(f"{alert.alert_uid}: 跑挂了 {type(e).__name__}: {e}")
             continue
         compared += 1
+        noisy = {slot_of(d) for d in diff(of, of2, **allow)}
+        if noisy:
+            unstable.append(f"{alert.alert_uid}: {sorted(noisy)}")
         # ★区分力只认"旧版真的产出过东西"的样本 —— 空对空的相等不证明任何事
         real = [f for f in of.findings if not str(f.finding_id).startswith("_")]
         if real:
             nonempty += 1
-        d = diff(of, nf_, **allow)
+        d = diff(of, nf_, ignore_slots=noisy, **allow)
         if d:
             diffs.append(f"{alert.alert_uid}: " + "; ".join(d))
         if nonempty >= min_nonempty and compared >= min_nonempty:
@@ -201,7 +230,7 @@ def check_one(g, reg, path, rev, pool, min_nonempty, allow) -> dict:
     else:
         state = "ok"
     return {"state": state, "compared": compared, "nonempty": nonempty,
-            "diffs": (hard + soft) if (hard or soft) else []}
+            "diffs": (hard + soft) if (hard or soft) else [], "unstable": unstable}
 
 
 def main() -> int:
@@ -264,6 +293,13 @@ def main() -> int:
                 print(f"     {d}")
             if len(r["diffs"]) > 6:
                 print(f"     …还有 {len(r['diffs']) - 6} 条(形态多半相同,先看上面这几条)")
+            if r.get("unstable"):
+                print(f"     ★该 recipe **自己跟自己**都不一致 {len(r['unstable'])} 条 ——"
+                      f"这是它本身的不确定性,与本次改动无关(已从上面的判定里抵消):")
+                for u in r["unstable"][:4]:
+                    print(f"        {u}")
+                print("        (值得单独修:多半是查询没有确定序,如 `base[0]` 取多行结果第一行、"
+                      "或 `collect(…)[..N]` 在无序集合上切片。)")
             if r.get("why"):
                 print(f"     {r['why']}")
             print()

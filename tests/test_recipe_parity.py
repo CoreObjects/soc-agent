@@ -108,3 +108,33 @@ def test_nested_order_difference_is_also_only_order():
     a = _fo(context={"prof": {"rules": ["1", "2"], "n": 3}})
     b = _fo(context={"prof": {"rules": ["2", "1"], "n": 3}})
     assert RP.diff(a, b)[0].startswith(RP._ORDER)
+
+
+def test_slot_of_extracts_the_changed_slot():
+    """噪声抵消靠的是"哪个槽位变了",所以槽位必须抽得准。"""
+    assert RP.slot_of("context[请求与WAF命中] 内容变了\n  旧: x") == "context[请求与WAF命中"
+    assert RP.slot_of(RP._ORDER + "context[a] 仅顺序不同(内容相同)") == "context[a"
+    assert RP.slot_of("binding account 变了: 'a' -> 'b'") == "binding account"
+    assert RP.slot_of("blind_spots 变了") == "blind_spots"
+
+
+def test_noisy_slots_are_excluded_from_the_verdict():
+    """★同一份旧代码跑两遍就已经不一致的槽位,不能算到改动头上。
+
+    真机撞到过:web_exploit 有条查询用 `base[0]` 取多行结果的第一行,而 Cypher
+    不保证行序 ⇒ 同一条告警两次跑就可能不同。不先量噪声底,这种**自身不确定性**
+    会被算成"改动引入的差异",冤枉改动;而真正该修的东西(查询没有确定序)
+    反倒被当成误报忽略掉 —— 两头都错。
+    """
+    a = _fo(context={"noisy": [1], "stable": ["x"]})
+    b = _fo(context={"noisy": [2], "stable": ["x"]})
+    assert RP.diff(a, b) != []                                   # 不抵消时算差异
+    assert RP.diff(a, b, ignore_slots={"context[noisy"}) == []   # 抵消后不算
+
+
+def test_noise_cancellation_does_not_hide_other_slots():
+    """抵消只针对**那个**槽位;别的槽位该红照样红。"""
+    a = _fo(context={"noisy": [1], "stable": ["x"]})
+    b = _fo(context={"noisy": [2], "stable": ["CHANGED"]})
+    d = RP.diff(a, b, ignore_slots={"context[noisy"})
+    assert len(d) == 1 and "stable" in d[0]
