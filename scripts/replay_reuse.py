@@ -138,7 +138,14 @@ def check_corpus(exp_store) -> int:
         print("❌ **经验库是空的** —— 这份重放量不出任何东西(空库必然 100% FALLTHROUGH)。")
         print("   最常见原因:openGauss 没起来,pipeline 降级成了内存空库(上面应有 [warn] 行)。")
         print("   语料保全闸门的前提就是有语料;拿 0% 当基线 = 之后任何改动都通过,闸门形同虚设。")
-        print("   先把 openGauss 起来(server2 本机 5432),确认经验表非空,再跑。")
+        # ★这是**重启后必然复发**的一种失败(openGauss 那个 podman 容器没有重启策略),
+        #   所以别只说"把它起来",直接给能粘贴的命令,连身份一起写清。
+        print("   ★openGauss 是 **podman 容器**(rootful,soc 用户看不到它)。宿主机一重启它就")
+        print("     停在 Exited(0) 不动 —— 这是连不上 5432 的头号原因,不用排查磁盘/OOM/配置。")
+        print("     **以 root 身份**跑:  podman start opengauss && sleep 15 && ss -tln | grep 5432")
+        print("     根治(免得下次重启再来一遍):")
+        print("       podman update --restart=always opengauss")
+        print("       systemctl enable --now podman-restart.service")
         return 2
     print(f"经验库:{n} 条经验")
     return 0
