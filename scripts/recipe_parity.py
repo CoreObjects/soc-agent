@@ -70,6 +70,23 @@ def load_old(path, rev):
     return mod
 
 
+_ORDER = "[顺序] "          # 仅顺序不同的差异前缀 —— 报出来但不判失败
+
+
+def _unordered(v):
+    """递归把列表变成**可比的无序形式**,用来判断"两边内容是否相同、只是顺序不同"。
+
+    ★只用于**分类**,不用于判等:真正的判等仍然是逐字比较。
+      这样"内容变了"照抓,而 Cypher `collect()` 的天然无序不会把闸门刷成噪声。
+    """
+    if isinstance(v, list):
+        return sorted((json.dumps(_unordered(x), sort_keys=True, default=str, ensure_ascii=False)
+                       for x in v))
+    if isinstance(v, dict):
+        return {k: _unordered(x) for k, x in v.items()}
+    return v
+
+
 def diff(old_fo, new_fo, *, new_findings=(), new_ctx=(), new_bindings=()) -> list:
     """返回 [异常差异描述]。只有**显式声明过**的新增不算差异;少任何东西一律算。"""
     nf, nc, nb = set(new_findings), set(new_ctx), set(new_bindings)
@@ -105,10 +122,19 @@ def diff(old_fo, new_fo, *, new_findings=(), new_ctx=(), new_bindings=()) -> lis
     for k in set(oc) & set(ncx):
         a = json.dumps(oc[k], sort_keys=True, default=str, ensure_ascii=False)
         b = json.dumps(ncx[k], sort_keys=True, default=str, ensure_ascii=False)
-        if a != b:
-            # ★只说"变了"没用:一个每 PR 都要跑的闸门,必须让人**当场看出变成什么**,
-            #   否则每次红了都得另外写脚本去捞 —— 首跑就卡在这。
-            out.append(f"context[{k}] 变了\n        旧: {a[:300]}\n        新: {b[:300]}")
+        if a == b:
+            continue
+        # ★只说"变了"没用:每 PR 都要跑的闸门,必须让人**当场看出变成什么**,
+        #   否则红了还得另写脚本去捞(首跑就卡在这)。
+        detail = f"\n        旧: {a[:300]}\n        新: {b[:300]}"
+        if _unordered(oc[k]) == _unordered(ncx[k]):
+            # ★**仅顺序不同**要与"内容不同"分开。Cypher 的 `collect(DISTINCT …)` 本就无序,
+            #   换一条遍历路径顺序就变 —— 拿它当失败,以后每个 PR 都会被这种噪声刷屏,
+            #   真正的差异反而被埋掉。但也**不能悄悄吞掉**:有些列表的顺序是有意义的
+            #   (时间线之类),所以照常打出来,只是不判失败,由人看一眼。
+            out.append(f"{_ORDER}context[{k}] 仅顺序不同(内容相同){detail}")
+        else:
+            out.append(f"context[{k}] 内容变了{detail}")
 
     if old_fo.blind_spots != new_fo.blind_spots:
         out.append("blind_spots 变了")
@@ -164,13 +190,18 @@ def check_one(g, reg, path, rev, pool, min_nonempty, allow) -> dict:
         if nonempty >= min_nonempty and compared >= min_nonempty:
             break
 
-    if diffs:
+    hard = [d for d in diffs if _ORDER not in d]
+    soft = [d for d in diffs if _ORDER in d]
+    if hard:
         state = "有差异"
+    elif soft and nonempty >= min_nonempty:
+        state = f"ok(但有 {len(soft)} 条**仅顺序不同**,已列出供人过目)"
     elif nonempty < min_nonempty:
         state = f"证据不足(旧版只在 {nonempty} 条上产出过东西,<{min_nonempty})"
     else:
         state = "ok"
-    return {"state": state, "compared": compared, "nonempty": nonempty, "diffs": diffs}
+    return {"state": state, "compared": compared, "nonempty": nonempty,
+            "diffs": (hard + soft) if (hard or soft) else []}
 
 
 def main() -> int:
@@ -240,6 +271,7 @@ def main() -> int:
         g.close()
 
     bad = [p for p, r in results.items() if r["state"] == "有差异"]
+    order_only = [p for p, r in results.items() if "仅顺序不同" in r["state"]]
     weak = [p for p, r in results.items() if r["state"].startswith("证据不足")]
     if bad:
         print(f"❌ **行集不一致**:{bad}")
@@ -251,7 +283,11 @@ def main() -> int:
         print("   旧版在样本上几乎没产出过东西 ⇒ 两边都在空转,零差异不证明任何事。")
         print("   加大 --pool,或换一批更可能让它干活的告警。")
         return 3
-    print("✅ 全部行集一致,且样本有区分力。")
+    if order_only:
+        print(f"ℹ️ {order_only} 只有**顺序**变了、内容逐条相同 —— 不判失败。")
+        print("   (Cypher 的 collect() 本就无序;但请扫一眼上面列出的新旧值,")
+        print("    确认那个顺序对你要表达的东西确实无所谓。)")
+    print("✅ 全部行集一致(内容层面),且样本有区分力。")
     return 0
 
 
