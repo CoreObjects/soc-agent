@@ -1,8 +1,8 @@
-=== 语料保全闸门:重放复用率 2026-08-13 06:29Z ===
+=== 语料保全闸门:重放复用率 2026-08-13 07:37Z ===
 主机    : localhost.localdomain   仓库 /home/soc/soc-agent
-代码版本: a3f1441 fix(replay-reuse): 空经验库必须当场停 —— 首跑吐出了一份"0% 复用率"的假基线
+代码版本: 21ac1d5 查明:openGauss 是 podman 容器,重启后没自启;并修三个真 bug
 解释器  : .venv312/bin/python -> Python 3.11.6
-条数    : 500
+条数    : 200
 
 [warn] openGauss 不可用,经验层降级内存(本次不持久):connection to server at "127.0.0.1", port 5432 failed: Connection refused
 	Is the server running on that host and accept
@@ -12,5 +12,5 @@
    先把 openGauss 起来(server2 本机 5432),确认经验表非空,再跑。
 [退出码] 2
 
-★这一份是**基线**。改动之后跑 `bash scripts/replay-reuse.sh --compare` 对比。
+❌ 本次**没有产出基线**(退出码 2)。先按上面的提示修好再跑,别拿这次的输出当基线。
 === done ===
