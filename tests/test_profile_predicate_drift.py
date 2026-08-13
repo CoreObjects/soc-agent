@@ -43,6 +43,44 @@ def test_where_extraction_stops_at_the_next_clause():
     assert PP._where_of("MATCH (n) RETURN n") is None
 
 
+def _plan(op, details, hits=1, children=()):
+    """造一棵 PROFILE 计划树 —— 算子名带 `@neo4j` 后缀,与驱动真实返回的一致。"""
+    return {"operatorType": f"{op}@neo4j", "dbHits": hits, "rows": 1,
+            "args": {"Details": details}, "children": list(children)}
+
+
+def test_label_scan_is_detected_despite_the_database_suffix():
+    """★首版判据写 `o == 'NodeByLabelScan'`,而驱动回的是 `'NodeByLabelScan@neo4j'`。
+
+    等号永远不成立 ⇒ 「不得退化成全标签扫」这条**从首跑起一次都没生效过**,恒 False。
+    真机报告里因此出现自相矛盾:算子链印着 `NodeByLabelScan@neo4j`,同一行写 `全标签扫=False`。
+    判据不生效比判据报错危险 —— 它长得像通过。这条测试就钉死这个后缀。
+    """
+    ops = PP._walk(_plan("NodeByLabelScan", "e:Event", 900000), [])
+    assert [o for o, _h, _r, _d in ops] == ["NodeByLabelScan"]          # 后缀已剥掉
+    assert PP.scans(ops) == [("NodeByLabelScan", "e:Event", 900000)]
+
+
+def test_only_event_label_scan_counts_as_the_disaster():
+    """扫 :Account(几十个节点)和扫 :Event(90 万)不是一回事,不能一概判死。"""
+    ev = PP._walk(_plan("NodeByLabelScan", "e:Event"), [])
+    acc = PP._walk(_plan("NodeByLabelScan", "a:Account"), [])
+    assert any("Event" in d for _o, d, _h in PP.scans(ev))
+    assert not any("Event" in d for _o, d, _h in PP.scans(acc))
+
+
+def test_index_seek_is_not_mistaken_for_a_scan():
+    """寻址算子不能被算成扫描 —— 否则闸门天天假红,很快就没人看了。"""
+    assert PP.scans(PP._walk(_plan("NodeUniqueIndexSeek", "a:Account(sam)"), [])) == []
+
+
+def test_details_falls_back_to_identifiers():
+    """老版本 Neo4j 的计划没有 args.Details —— 退回 identifiers,别把对象说明丢成空。"""
+    p = {"operatorType": "NodeByLabelScan@neo4j", "dbHits": 5, "rows": 1,
+         "identifiers": ["e"], "children": []}
+    assert PP._walk(p, [])[0][3] == "e"
+
+
 def test_unordered_makes_collect_lists_comparable():
     """`collect(DISTINCT …)` 无序 —— 判等必须按集合,否则每跑一次都可能假红。"""
     a = [{"endpoints_hit": ["/a", "/b"], "n": 2}]

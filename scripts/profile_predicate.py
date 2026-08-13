@@ -35,15 +35,49 @@ from soc_agent.config import Config                 # noqa: E402
 from soc_agent.graph.client import Neo4jGraph       # noqa: E402
 
 
+# 全表/全标签扫类算子 —— 本闸门的头号防守对象。
+_SCAN_OPS = frozenset({"NodeByLabelScan", "AllNodesScan",
+                       "DirectedRelationshipTypeScan", "UndirectedRelationshipTypeScan"})
+
+
+def _op_name(raw):
+    """算子名去掉库名后缀。
+
+    ★这行是补一个**恒假判据**的窟窿:驱动回的是 `'NodeByLabelScan@neo4j'`
+      (查具体库时规划器会带 `@<database>`),而首版判据写的是 `o == 'NodeByLabelScan'`
+      —— 等号永远不成立 ⇒ "不得退化成全标签扫"这条从首跑起**一次都没生效过**,
+      一直恒 False。它恰恰是计划里点名要防的那个风险。
+      真机报告里能直接看到自相矛盾:算子链印着 `NodeByLabelScan@neo4j`,
+      同一行却写 `全标签扫=False`。判据不生效比判据报错危险,因为它长得像通过。
+    """
+    return str(raw or "?").split("@", 1)[0]
+
+
+def _details(plan):
+    """取算子的对象说明(如 `e:Event`)—— 不然只知道"有扫描",不知道扫的是哪张标签。
+
+    :Account 全标签扫(几十个节点)和 :Event 全标签扫(90 万)是两回事,不能一概而论。
+    """
+    d = (plan.get("args") or {}).get("Details")
+    if d:
+        return str(d)
+    return " ".join(plan.get("identifiers") or [])
+
+
 def _walk(plan, out):
-    """把 PROFILE 计划树摊平成 [(算子, dbHits, rows)]。"""
+    """把 PROFILE 计划树摊平成 [(算子, dbHits, rows, 对象说明)]。"""
     if plan is None:
         return out
-    out.append((plan.get("operatorType", "?"), int(plan.get("dbHits") or 0),
-                int(plan.get("rows") or 0)))
+    out.append((_op_name(plan.get("operatorType")), int(plan.get("dbHits") or 0),
+                int(plan.get("rows") or 0), _details(plan)))
     for c in plan.get("children") or []:
         _walk(c, out)
     return out
+
+
+def scans(ops):
+    """计划里所有扫描类算子:[(算子, 对象说明, dbHits)]。"""
+    return [(o, det, h) for o, h, _r, det in ops if o in _SCAN_OPS]
 
 
 def profile(graph, cypher, **params):
@@ -52,9 +86,15 @@ def profile(graph, cypher, **params):
         rows = [r.data() for r in res]
         prof = res.consume().profile
     ops = _walk(prof, [])
-    return {"rows": rows, "ops": ops,
-            "db_hits": sum(h for _, h, _ in ops),
-            "label_scan_event": any(o == "NodeByLabelScan" and h > 0 for o, h, _ in ops)}
+    sc = scans(ops)
+    return {"rows": rows, "ops": ops, "scans": sc,
+            "db_hits": sum(h for _o, h, _r, _d in ops),
+            # ★只有扫 :Event(90 万)才算灾难;扫 :Account 之类小标签不是。
+            "label_scan_event": any("Event" in det for _o, det, _h in sc)}
+
+
+def _fmt_scans(sc):
+    return "、".join(f"{o}({det or '?'}, {h} hits)" for o, det, h in sc) or "无"
 
 
 def _unordered(v):
@@ -204,16 +244,21 @@ def main() -> int:
             print(f"--- {name} ---")
             print(f"  旧: dbHits={o['db_hits']:<8} 行={o['rows']}")
             print(f"  新: dbHits={n['db_hits']:<8} 行={n['rows']}")
-            print(f"  倍率={ratio:.2f}×   结果一致(按集合)={same}   "
-                  f"新形式出现 Event 全标签扫={n['label_scan_event']}")
+            print(f"  倍率={ratio:.2f}×   结果一致(按集合)={same}")
             if same and not exact:
                 print("     (仅列表顺序不同 —— collect(DISTINCT …) 本就无序,不判失败)")
-            print(f"  新形式算子链: {' → '.join(op for op, _, _ in n['ops'][:8])}")
+            print(f"  扫描类算子 旧: {_fmt_scans(o['scans'])}")
+            print(f"             新: {_fmt_scans(n['scans'])}")
+            print(f"  新形式算子链: {' → '.join(op for op, _h, _r, _d in n['ops'][:8])}")
             why = []
             if not same:
                 why.append("结果不一致")
-            if n["label_scan_event"]:
-                why.append("退化成全标签扫")
+            if n["label_scan_event"] and not o["label_scan_event"]:
+                why.append("新形式**新增**了 :Event 全标签扫")
+            elif n["label_scan_event"]:
+                # 两边都扫 ⇒ 不是这次放宽引入的。但绝不能因此不说 ——
+                # 它是一笔**存量**性能债,只是不该记在本次改动头上。
+                print("     ⚠ 新旧**都**扫 :Event —— 存量问题,不由本次放宽引入,但该单独修。")
             if ratio > 1.5:
                 why.append(f"dbHits 涨了 {ratio:.1f}×")
             if why:
