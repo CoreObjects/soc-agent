@@ -49,7 +49,19 @@ def collect(graph, alert, seed=None) -> Forensics:
 
     # 1. 请求者 + 目标 + 加密/票据选项
     base = graph.run_cypher(
-        "MATCH (a:Alert {alert_uid:$aid})<-[:TRIGGERED]-(e:Event {event_code:'4769'})-[:BY]->(req:Account) "
+        # ★WP10 放宽:`4769` 是 Windows 专有码,换个 Kerberos 源(Samba AD / 第三方采集器)
+        #   就再也命不中 —— 数据入了图,这里却查出零行、不报错。
+        #   ★但**不能**简单 `OR e.activity='auth.ticket_request'`:那个活动类把
+        #     4768(取 TGT)与 4769(取服务票)**合并了**,粒度不够。kerberoast 判的是
+        #     「服务票被大量索取」,一刀切会把取 TGT 也算进来 —— 真机 PROFILE 实测
+        #     total 24.5万→46万、distinct_targets 2→6。
+        #     计划里那句「6 条统一放宽成 event_code IN […] OR activity=$act」对本 recipe 是错的;
+        #     而且只查性能不查结果的话,这个语义 bug 会带着绿灯合进去。
+        #   所以配一个**中立判别位** `ticket_kind`(入图侧 WP10 新增,tgt/service):
+        #   第三方源同样填得出,而 4768/4769 这种码它们没有。
+        #   **只加不改**:存量事件没有 ticket_kind,靠 OR 前半段照常命中,行集不变。
+        "MATCH (a:Alert {alert_uid:$aid})<-[:TRIGGERED]-(e:Event)-[:BY]->(req:Account) "
+        "WHERE e.event_code='4769' OR (e.activity='auth.ticket_request' AND e.ticket_kind='service') "
         "OPTIONAL MATCH (e)-[:REQUESTED]->(tgt) "
         "RETURN req.sam AS req_sam, req.domain AS req_domain, req.type AS req_type, "
         "coalesce(req.privileged,false) AS req_privileged, "
@@ -93,7 +105,10 @@ def collect(graph, alert, seed=None) -> Forensics:
     # 3. 请求者 enc 基线(RC4 是常态还是突增)—— context,供 LLM 看
     if req_sam:
         ctx["请求者enc基线"] = graph.run_cypher(
-            "MATCH (req:Account {sam:$s})<-[:BY]-(e:Event {event_code:'4769'}) "
+            # ★放宽同上(见 §1 的说明):必须带 ticket_kind='service',
+            #   否则 4768 的取 TGT 会混进这条 enc 基线,把 RC4 占比冲淡。
+            "MATCH (req:Account {sam:$s})<-[:BY]-(e:Event) "
+            "WHERE e.event_code='4769' OR (e.activity='auth.ticket_request' AND e.ticket_kind='service') "
             "RETURN e.enc_type AS enc, sum(coalesce(e.count,1)) AS n ORDER BY n DESC", s=req_sam)
 
     # 4. ★"跨域信任 FP"豁免判定(别把真 roast 当跨域正常票)
@@ -120,7 +135,11 @@ def collect(graph, alert, seed=None) -> Forensics:
     # 5. SPN 扇出(短时去重目标数;扫描式取票信号)
     if req_sam:
         rows = graph.run_cypher(
-            "MATCH (req:Account {sam:$s})<-[:BY]-(e:Event {event_code:'4769'})-[:REQUESTED]->(t) "
+            # ★放宽同上(见 §1)。**这条就是 PROFILE 逮住语义 bug 的那一条**:
+            #   不带 ticket_kind 时 distinct_targets 2→6、total 24.5万→46万 —— 扇出直接被吹大,
+            #   而扇出正是"扫描式取票"的判据,吹大它等于凭空造出攻击信号。
+            "MATCH (req:Account {sam:$s})<-[:BY]-(e:Event)-[:REQUESTED]->(t) "
+            "WHERE e.event_code='4769' OR (e.activity='auth.ticket_request' AND e.ticket_kind='service') "
             "RETURN count(DISTINCT t) AS distinct_targets, sum(coalesce(e.count,1)) AS total_4769", s=req_sam)
         sf = rows[0] if rows else {}
         ctx["SPN扇出"] = sf

@@ -22,8 +22,14 @@ sys.path.insert(0, str(ROOT))
 from soc_agent.config import Config          # noqa: E402
 from soc_agent.graph.client import Neo4jGraph  # noqa: E402
 
-_EVENT_CODE = re.compile(r"event_code\s*:\s*'([^']+)'")
-_ALERT_SRC = re.compile(r"\bal(?:ert)?\.source\s*=\s*'([^']+)'")
+# ★两种写法都要认:
+#   · 映射字面量 `{event_code:'4769'}`
+#   · **比较式** `WHERE e.event_code='4769'`
+# WP10 把谓词从前者改成后者(为了 OR 上中立字段),只认前者的话,
+# **WP10 亲手把自己碰过的那四个字面量全从守护名单里踢了出去** —— 实测只剩 1 条。
+# 一个"新加的自动纳入守护"的哨兵,反而在最需要它的那次改动上失守,那就是白建。
+_EVENT_CODE = re.compile(r"event_code\s*(?::|=|\s==\s)\s*'([^']+)'")
+_ALERT_SRC = re.compile(r"\bal(?:ert)?\.source\s*(?::|=)\s*'([^']+)'")
 
 
 def _strip_comments(text: str) -> str:

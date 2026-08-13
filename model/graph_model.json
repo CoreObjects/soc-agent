@@ -77,7 +77,7 @@
     "scalar_leaf_props": {
       "_note": "★以下为线上 mapper 实际写入、v3.0 从未声明而 recipe 正在读的标量(WP3 实测补齐)。按 activity 分组;不同源缺字段是正常的,recipe 必须优雅降级。",
       "auth.logon": ["logon_type", "auth_package", "elevated_token", "status", "sub_status", "failure_reason"],
-      "auth.ticket_request": ["enc_type", "ticket_options", "preauth_type"],
+      "auth.ticket_request": ["enc_type", "ticket_options", "preauth_type", "ticket_kind"],
       "auth.explicit_creds": ["process_name", "target_server", "creds_sam", "creds_domain"],
       "directory.access": ["access_mask", "properties", "operation"],
       "cert.request": ["attributes", "request_id", "subject_dn", "disposition"],
