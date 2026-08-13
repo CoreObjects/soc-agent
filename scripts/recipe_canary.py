@@ -26,11 +26,22 @@ _EVENT_CODE = re.compile(r"event_code\s*:\s*'([^']+)'")
 _ALERT_SRC = re.compile(r"\bal(?:ert)?\.source\s*=\s*'([^']+)'")
 
 
+def _strip_comments(text: str) -> str:
+    """去掉 `#` 注释行再扫。
+
+    ★不去掉的话,**注释里提到的字面量会被当成真查询**。WP10 放宽 `al.source='waf'` 时,
+      我在旁边写了段解释、原样引了那条谓词 —— canary 立刻把它数成两处。
+      这次凑巧那个值确实还在用、没出假警;但注释里提一个**查询中已不存在**的字面量,
+      就会让 canary 去守一个没人用的东西,然后报"零行"假警。
+    """
+    return "\n".join(ln for ln in text.splitlines() if not ln.lstrip().startswith("#"))
+
+
 def scan_literals():
     """→ {('event_code'|'alert_source', 值): [recipe 名, …]}(按出现顺序去重)。"""
     found = defaultdict(list)
     for p in sorted((ROOT / "skills").rglob("recipe.py")):
-        text = p.read_text(encoding="utf-8")
+        text = _strip_comments(p.read_text(encoding="utf-8"))
         name = f"{p.parent.parent.name}/{p.parent.name}"
         for m in _EVENT_CODE.finditer(text):
             found[("event_code", m.group(1))].append(name)

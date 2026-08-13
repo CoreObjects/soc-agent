@@ -240,67 +240,6 @@ def test_process_branch_query_is_untouched(name, const, expect_edge):
     assert expect_edge in q
 
 
-# ------------------------------------------- 闸门脚本自身的可信度(先证明网是真的)
-
-def _parity():
-    """把 scripts/pivot_parity.py 当模块加载(它不是包的一部分)。"""
-    import importlib.util
-    p = Path(__file__).resolve().parents[1] / "scripts" / "pivot_parity.py"
-    spec = importlib.util.spec_from_file_location("pivot_parity", p)
-    m = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(m)
-    return m
-
-
-def _fo(findings=(), bindings=None, context=None, blind=""):
-    from soc_agent.forensics import Forensics
-    return Forensics(findings=list(findings), bindings=dict(bindings or {}),
-                     context=dict(context or {}), blind_spots=blind)
-
-
-def test_parity_diff_catches_real_regressions():
-    """★闸门脚本的 `diff()` 必须在**有差异时会红**,否则真机跑出的"零差异"毫无意义。
-    这里逐种弄坏一次,每种都必须被抓到;只有事先声明的三项新增才放行。"""
-    d = _parity().diff
-    base = _fo([Finding("c2.periodic_beacon", {"channel": "http", "count_bucket": "high"})],
-               {"process": "rundll32.exe"}, {"进程与目标": {"dst_ip": "1.2.3.4"}}, "盲区一句话")
-
-    assert d(base, base) == []                                        # 同一份产物必须零差异
-
-    gone = _fo([], {"process": "rundll32.exe"}, {"进程与目标": {"dst_ip": "1.2.3.4"}}, "盲区一句话")
-    assert any("findings 少了" in x for x in d(base, gone))            # 少 finding
-
-    extra = _fo(list(base.findings) + [Finding("c2.new_domain", {})],
-                base.bindings, base.context, base.blind_spots)
-    assert any("未声明" in x for x in d(base, extra))                  # 多出未声明的 finding
-
-    changed = _fo([Finding("c2.periodic_beacon", {"channel": "http", "count_bucket": "massive"})],
-                  base.bindings, base.context, base.blind_spots)
-    assert any("内容变了" in x for x in d(base, changed))               # attrs 悄悄变了
-
-    rebound = _fo(base.findings, {"process": "powershell.exe"}, base.context, base.blind_spots)
-    assert any("binding process 变了" in x for x in d(base, rebound))
-
-    ctx_changed = _fo(base.findings, base.bindings, {"进程与目标": {"dst_ip": "9.9.9.9"}},
-                      base.blind_spots)
-    assert any("context[进程与目标] 变了" in x for x in d(base, ctx_changed))
-
-    assert d(base, _fo(base.findings, base.bindings, base.context, "别的话")) != []   # 盲区措辞
-
-    # ★而事先声明过的三项新增必须放行(否则闸门会对着正确的改动一直红)
-    declared = _fo(list(base.findings) + [coverage_absent("c2_beacon", need="process_telemetry")],
-                   dict(base.bindings, src_ip="10.1.1.5"),
-                   dict(base.context, **{"主语(pivot)": {"kind": "endpoint"}}),
-                   base.blind_spots)
-    assert d(base, declared) == []
-
-
-def test_parity_can_load_a_recipe_from_git():
-    """`load_old` 真能从 git 取出历史版本并加载 —— 闸门的整个前提就是这一步。"""
-    m = _parity().load_old("skills/network/c2_beacon/recipe.py", "HEAD")
-    assert callable(getattr(m, "collect", None))
-
-
 # ------------------------------------------- 声明与实现不许漂移 / 坏 recipe 不许静默
 
 def test_skill_md_declares_the_same_pivots_the_recipe_implements():

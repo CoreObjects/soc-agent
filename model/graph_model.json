@@ -142,7 +142,7 @@
   },
   "alert_layer": {
     "nodes": [
-      {"name": "Alert", "keys": ["alert_uid"], "props": ["alert_uid", "source", "sensor", "rule_id", "rule_description", "severity", "technique_ids", "time", "ingest_time", "raw_ref", "raw"], "note": "探测器判出的告警(Wazuh soc-hids-alert-* / WAF);key=alert_uid;technique_ids=原始快照,权威以 INDICATES 边为准;raw=整条原始告警 JSON(无损,agent 路由/研判直接读,不回 ES);精简,不直接挂实体"},
+      {"name": "Alert", "keys": ["alert_uid"], "props": ["alert_uid", "source", "sensor", "detector_class", "rule_id", "rule_description", "severity", "technique_ids", "time", "ingest_time", "raw_ref", "raw"], "note": "探测器判出的告警(Wazuh soc-hids-alert-* / WAF);key=alert_uid;technique_ids=原始快照,权威以 INDICATES 边为准;raw=整条原始告警 JSON(无损,agent 路由/研判直接读,不回 ES);精简,不直接挂实体"},
       {"name": "Technique", "keys": ["attack_id"], "props": ["attack_id", "tactic"]}
     ],
     "edges": [

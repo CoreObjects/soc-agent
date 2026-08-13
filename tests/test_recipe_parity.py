@@ -61,3 +61,19 @@ def test_context_compare_is_order_stable():
     a = _fo(context={"k": {"b": 2, "a": 1}})
     b = _fo(context={"k": {"a": 1, "b": 2}})
     assert RP.diff(a, b) == []
+
+
+def test_load_old_really_pulls_a_historical_version_from_git():
+    """`load_old` 能从 git 取出历史版本并加载 —— **整个闸门的前提就是这一步**。
+
+    (原本在 test_pivot.py 里守着 WP7 的专用闸门;专用闸门退休后搬到这里,
+     免得这条前提随着那个文件一起消失。)
+    """
+    m = RP.load_old("skills/network/c2_beacon/recipe.py", "HEAD")
+    assert callable(getattr(m, "collect", None))
+
+
+def test_changed_recipes_reads_the_diff_not_a_hardcoded_list():
+    """待测集合来自 `rev..HEAD` 的真实 diff —— 写死列表就会漏掉刚改的那条。"""
+    paths = RP.changed_recipes("HEAD")          # 与自己比 → 必然为空
+    assert paths == []
