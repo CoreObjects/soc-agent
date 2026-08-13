@@ -36,19 +36,40 @@ export GIT_SSH_COMMAND="${GIT_SSH_COMMAND:-ssh -o BatchMode=yes -o ConnectTimeou
 _FERRY_T0=0
 _ferry_now() { date +%s 2>/dev/null || echo 0; }
 
+# ★不该重试的失败(确定性的,重试多少次都是同一个结果)。
+#   实测踩过两次:①落后于远端 → `! [rejected] (fetch first)`;
+#   ②root 在别人拥有的仓库里跑 git → `detected dubious ownership`。
+#   两次都是傻等 3/8/15/30 秒重试 5 遍,每遍同样失败,还让人误以为是网断了。
+#   **把确定性失败当成瞬时失败去重试,是纯浪费,而且会把人引向错误的方向。**
+_FERRY_FATAL='dubious ownership|not a git repository|not in a git directory|Permission denied \(publickey|could not read Username|Authentication failed|repository .* not found'
+
 ferry_retry() {
   # 跑一条**外部命令**(不能是 shell 函数 —— 要经 timeout 启动),失败就按退避重试。
   # ★退避不是装饰:代理抖动通常几秒到几十秒就恢复,立刻重试往往连撞几次,
   #   反而看起来像「彻底断了」。
-  local i=1 delays=($FERRY_BACKOFF) d rc now
+  # ★但只对**可能自愈**的失败重试;命中 _FERRY_FATAL 的当场停,并把修法打出来。
+  local i=1 delays=($FERRY_BACKOFF) d rc now out
   [ "$_FERRY_T0" = 0 ] && _FERRY_T0="$(_ferry_now)"
   while :; do
     if command -v timeout >/dev/null 2>&1; then
-      timeout -k 5 "$FERRY_TIMEOUT" "$@"; rc=$?
+      out="$(timeout -k 5 "$FERRY_TIMEOUT" "$@" 2>&1)"; rc=$?
     else
-      "$@"; rc=$?                                # 没有 timeout 的系统:退化成老行为
+      out="$("$@" 2>&1)"; rc=$?                  # 没有 timeout 的系统:退化成老行为
     fi
+    [ -n "$out" ] && printf '%s
+' "$out" >&2
     [ "$rc" -eq 0 ] && return 0
+    if printf '%s' "$out" | grep -qE "$_FERRY_FATAL"; then
+      echo "   ↳ ★这是**确定性失败**,重试没有意义,当场停:$*" >&2
+      case "$out" in
+        *"dubious ownership"*|*"not in a git directory"*)
+          echo "     以 root 在 $(whoami) 之外的用户拥有的仓库里跑 git 会被拒。修法(任选):" >&2
+          echo "       · 用仓库属主的身份跑本脚本;或" >&2
+          echo "       · 跑之前 export GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=safe.directory \\" >&2
+          echo "                        GIT_CONFIG_VALUE_0=\"\$(pwd)\"" >&2 ;;
+      esac
+      return 1
+    fi
     if [ "$rc" -eq 124 ] || [ "$rc" -eq 137 ]; then
       echo "   ↳ ★卡住不返回,已按 ${FERRY_TIMEOUT}s 上限掐断:$*" >&2
     fi

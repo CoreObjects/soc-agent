@@ -28,6 +28,12 @@ APP_USER="$(stat -c '%U' . 2>/dev/null || echo "$(whoami)")"
 APP_HOME="$(getent passwd "$APP_USER" 2>/dev/null | cut -d: -f6)"
 APP_HOME="${APP_HOME:-$HOME}"
 IS_ROOT=0; [ "$(id -u)" = "0" ] && IS_ROOT=1
+# ★root 在 soc 拥有的仓库里跑 git 会被 "detected dubious ownership" 全线拒绝
+#   —— 实测导致「代码版本」为空、ferry 推送连 fetch 都失败。
+#   用 GIT_CONFIG_* 环境变量临时放行(**不写 root 的全局 gitconfig**,不留痕)。
+if [ "$IS_ROOT" = "1" ]; then
+  export GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=safe.directory GIT_CONFIG_VALUE_0="$(pwd)"
+fi
 
 # ★root 跑完必须把属主还回去:否则 .git/feedback 变成 root 所有,
 #   下次以 soc 身份跑会一路权限报错 —— 用 root 查问题,不该留下新问题。
@@ -179,8 +185,10 @@ trap '_ferry_guard_fire 结束; _restore_owner' EXIT
   r screen -ls | head -5 | sed 's/^/      /' || echo "      (没有 screen 会话)"
   echo
 
-  echo "  ★对照组:**别的服务回来了没有**(上一跑答案:只有 :6443/k3s 本体在听,"
-  echo "    **qwen vLLM :8000 也没起来** ⇒ 不是高斯一个的问题,是整个应用层没回来)"
+  echo "  ★对照组(★订正:我先前据此断言「vLLM 也没起来、整个应用层没回来」——**错了**)"
+  echo "    宿主机 ss 只看得见**宿主网络命名空间**的监听;vLLM 跑在 pod 网络里(10.42.0.x),"
+  echo "    经 k3s svclb 以 lb-tcp-8001/8005 暴露 ⇒ **宿主机上本来就不会有 :8000**。"
+  echo "    以上面的 pod 列表为准,不以这一行为准。"
   r ss -tln | awk 'NR==1 || /:8000|:5432|:6443|:11434|:7687/' | head -10 | sed 's/^/    /'
   echo
 
@@ -199,9 +207,13 @@ trap '_ferry_guard_fire 结束; _restore_owner' EXIT
   echo "--- ⑨ 怎么读这份报告 ---"
   echo "  ★已经确定的(前两跑):磁盘 28% 不满、2TiB 内存无 OOM、无残留 postmaster.pid、"
   echo "    5432 无人监听、宿主机上没有任何 gaussdb 二进制、没有 omm 用户。"
-  echo "    而 **k3s is-active/is-enabled 都是 active/enabled**,却只有 :6443 在听 ——"
-  echo "    **qwen vLLM :8000 也没起来**。所以这不是「高斯一个没回来」,是"
-  echo "    **重启之后整个应用层都没回来,只有 k3s 本体自启了**。"
+  echo "  ★★已查明(2026-08-13,root 跑通 ⑦b):openGauss 是个 **podman 容器**"
+  echo "    (localhost/opengauss:7.0.0-RC3),状态 **Exited (0) 23 小时前** —— 干净退出,"
+  echo "    时间正是那次重启。同机另外三个 podman 容器(soc-eval / one-api-gateway /"
+  echo "    proxy-nginx)都 Up 22 小时回来了,**只有它没有重启策略**。"
+  echo "    ⇒ 立刻修:podman start opengauss;根治:给它加 --restart=always 或 systemd unit。"
+  echo "  ★订正:我一度据宿主机 ss 断言「vLLM 也没起来」—— 错的。vLLM pod 一直 Running,"
+  echo "    只是听在 pod 网络里,宿主机看不见。**应用层是好的,只有 opengauss 这一个没回来**。"
   echo "  · ⑦b 的 pod 列表里有 gauss/vllm 但状态不是 Running(CrashLoopBackOff/Pending/Error)"
   echo "      ⇒ 它们**试过起但起不来**,看同一节的 events,原因通常直接写在那儿。"
   echo "  · pod 列表里**压根没有**它们"
@@ -217,7 +229,10 @@ trap '_ferry_guard_fire 结束; _restore_owner' EXIT
   echo "      ⇒ 不是「没起来」,是**听错地方**,改 .env 的 OG_HOST/OG_PORT 或改 listen_addresses。"
   echo
   echo "--- ⑩ 下一步(★先看完上面再动手)---"
-  echo "  ⚠ 原来这一节写的是 `sudo su - omm` + gs_ctl —— **在这台机器上是错的**:"
+  # ★★这一行原本是 `` `sudo su - omm` `` —— 双引号里的**反引号是命令替换**,
+  #   于是一个自称"只读"的诊断脚本**真的执行了** sudo su - omm(输出里那句
+  #   "su: user omm does not exist" 就是它)。展示命令一律不用反引号。
+  echo "  ⚠ 原来这一节写的是「sudo su - omm + gs_ctl」—— **在这台机器上是错的**:"
   echo "    既没有 omm 用户、宿主机也没装 openGauss,而且 sudo 用不了(soc 无密码)。"
   echo "    正确姿势是**以 root 身份跑本脚本**,把 ⑦b 那几节的答案拿到手。"
   echo
