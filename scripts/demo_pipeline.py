@@ -1,21 +1,35 @@
-"""端到端研判流程演示:挑一条可疑进程告警,把**每一步**的输入/动作/产出全打印出来。
+"""端到端研判流程演示:把**每一步**的输入/动作/产出完整打印出来,一个字不省。
 
-★ 本脚本**不复制流水线逻辑**。
-  最容易犯的错是「为了插日志,把 run_pipeline 的步骤在演示脚本里重写一遍」——
-  那样演示的就是**我写的流程**,不是生产实际跑的流程,而且它会随生产改动悄悄漂移,
-  演示却一直显示得很好看。所以这里的做法是:**把真实函数包一层,再调用真实入口**
-  (`run_investigation`)。打印出来的每一步,都是生产这一刻真正执行的那一步。
-  哪天流水线加了一步而这里没包,输出就会少一段 —— 缺了看得见,比错了看不见强。
+★ 三条硬规矩(都是为了让人看了敢信):
 
-写入安全:默认**演示模式**,三个写入点(写图台账 / 存回归语料 / 经验沉淀)只打印
-「本应写入什么」而不真写,避免为做一次演示污染生产台账与经验库。要真写加 `--write`。
+  1. **不复制流水线逻辑**。最容易犯的错是「为了插日志,把 run_pipeline 在演示脚本里
+     重写一遍」—— 那样演示的是我写的流程,不是生产跑的流程,而且会随生产改动悄悄漂移,
+     演示却一直显示得很好看。这里的做法是**把真实函数包一层,再调用真实入口**
+     (`run_investigation`):打印出来的每一步,都是生产这一刻真正执行的那一步。
+     哪天流水线加了一步而这里没包,输出会少一段 —— 缺了看得见,比错了看不见强。
+
+  2. **不截断**。有多长打多长:告警原文、seed、取证上下文、**送进大模型的完整提示词**、
+     **大模型的完整返回**、蒸馏出的经验全文。截断过的东西没法核对,看起来就像编的。
+
+  3. **不省步骤**。大模型的每一次调用(选 skill / 研判 / 蒸馏)都单独打印提示词与返回,
+     由 `QwenClient.chat` 这一个入口统一捕获 —— 漏不掉任何一次。
+
+写入安全:默认不写生产(图台账 / 回归语料 / 经验库),只打印「本应写入什么」。
+  但**蒸馏和考试是真跑的**,只是落到一个用完即弃的临时经验库 —— 领导能看到
+  「这次研判学到了什么」,而生产经验库不被一次演示污染。要真写加 `--write`。
+
+默认**不走经验复用**:把这条告警当成没见过的,完整走深度通道。
+  经验层照常比对并把真实结论打印出来,只是随后显式声明「演示强制转深度」——
+  这样既看得到经验层确实命中了什么,也看得到完整流程。要看生产的抄近路行为加 `--reuse`。
 
 用法:
-  python scripts/demo_pipeline.py                    # 自动挑一条可疑进程告警(演示模式)
+  python scripts/demo_pipeline.py                    # 完整深度流程(默认)
+  python scripts/demo_pipeline.py --reuse            # 允许经验复用(生产实际行为)
   python scripts/demo_pipeline.py --alert-uid <uid>
-  python scripts/demo_pipeline.py --write            # 真写台账/语料/经验
+  python scripts/demo_pipeline.py --write            # 真写台账/语料/经验库
 """
 import argparse
+import dataclasses
 import json
 import os
 import sys
@@ -24,11 +38,14 @@ import time
 _ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, _ROOT)
 
-from soc_agent import cli as C                                    # noqa: E402
-from soc_agent.config import Config                               # noqa: E402
+from soc_agent import cli as C                                        # noqa: E402
+from soc_agent.config import Config                                   # noqa: E402
+from soc_agent.experience.store import InMemoryExperienceStore        # noqa: E402
+from soc_agent.llm.qwen import QwenClient                             # noqa: E402
 
 W = 100
 _step_no = [0]
+_llm_calls = [0]
 
 
 def rule(ch="-"):
@@ -48,22 +65,24 @@ def kv(label, value, indent=2):
     print(f"{' ' * indent}{label}:{value}")
 
 
-def block(label, text, indent=4):
+def full(v):
+    """完整文本化。★不截断 —— 截断过的东西没法核对,看起来就像编的。"""
+    if v is None:
+        return "(无)"
+    if isinstance(v, (dict, list)):
+        return json.dumps(v, ensure_ascii=False, indent=2, default=str)
+    if dataclasses.is_dataclass(v) and not isinstance(v, type):
+        return json.dumps(dataclasses.asdict(v), ensure_ascii=False, indent=2, default=str)
+    return str(v)
+
+
+def block(label, value, indent=4):
     print(f"{' ' * (indent - 2)}{label}:")
-    for ln in (str(text).splitlines() or [""]):
+    for ln in full(value).splitlines() or [""]:
         print(" " * indent + ln)
 
 
-def brief(v, n=200):
-    """压成一行可读文本。超长就**明说截断了多少**,不留一个看不懂的碎片。"""
-    if v is None:
-        return "(无)"
-    s = json.dumps(v, ensure_ascii=False, default=str) if isinstance(v, (dict, list)) else str(v)
-    s = " ".join(s.split())
-    return s if len(s) <= n else f"{s[:n]}…(全长 {len(s)} 字符,此处截断)"
-
-
-# ---------------------------------------------------------------- 渲染(只读)
+# ---------------------------------------------------------------- 渲染(只读、完整)
 
 def show_alert(a):
     kv("告警ID", a.alert_uid)
@@ -71,24 +90,18 @@ def show_alert(a):
     kv("规则", f"{a.rule_id} —— {a.rule_description}")
     kv("严重度", a.severity)
     kv("发生时间", a.time)
-    kv("原始告警", brief(a.raw, 300))
+    kv("ATT&CK", a.technique_ids)
+    kv("原始告警引用", a.raw_ref)
+    block("原始告警全文(入图时无损保存的那一份)", a.raw)
 
 
 def show_seed(seed):
     if not isinstance(seed, dict):
-        kv("seed", brief(seed))
+        block("seed", seed)
         return
     kv("包含的键", ", ".join(seed.keys()) or "(空)")
-    ev = seed.get("event") or {}
-    if ev:
-        print("    触发事件(这条告警由哪次行为触发):")
-        for k in ("event_code", "activity", "event_time", "image", "command_line",
-                  "parent_image", "user", "outcome"):
-            if ev.get(k) not in (None, ""):
-                print(f"      {k:<14}= {brief(ev.get(k), 160)}")
     for k, v in seed.items():
-        if k != "event":
-            print(f"    {k:<16}= {brief(v, 160)}")
+        block(f"seed[{k}]", v)
 
 
 _POLARITY = {"red": "红·攻击迹象", "white": "白·良性证伪", "neutral": "中性·事实"}
@@ -98,23 +111,24 @@ def show_forensics(f):
     kv("发现(finding)条数", len(f.findings))
     for i, fd in enumerate(f.findings, 1):
         print(f"    {i:>2}. [{_POLARITY.get(fd.polarity, fd.polarity)}] {fd.finding_id}")
-        if fd.attrs:
-            print(f"        属性 {brief(fd.attrs, 240)}")
-    kv("绑定的实体", brief(f.bindings, 240))
-    kv("上下文条目", ", ".join(f.context.keys()) or "(无)")
-    kv("已知盲区", brief(f.blind_spots, 300))
+        block("属性", fd.attrs, indent=8)
+        if fd.evidence_ref:
+            print(f"        证据引用:{fd.evidence_ref}")
+    block("绑定的实体(bindings)", f.bindings)
+    print("    上下文(context)—— 取证查到的原始证据,逐条完整列出:")
+    for k, v in (f.context or {}).items():
+        block(f"context[{k}]", v, indent=8)
+    block("已知盲区(blind_spots)", f.blind_spots)
 
 
 def show_report(r):
     kv("经验层决策", r.decision)
-    kv("命中良性发现集(白)", len(r.benign_fp_hits or []))
-    kv("命中威胁发现集(红)", len(r.threat_fp_hits or []))
-    kv("命中威胁规则", len(r.threat_rule_hits or []))
-    kv("规则实际开火", len(r.threat_fires or []))
-    if r.chosen is not None:
-        kv("选中的经验", brief(getattr(r.chosen, "exp_id", r.chosen), 200))
-    if getattr(r, "recalled", None):
-        kv("召回历史台账", f"{len(r.recalled)} 条(作为已知信息喂给大模型)")
+    block("命中的良性发现集(白)", r.benign_fp_hits)
+    block("命中的威胁发现集(红)", r.threat_fp_hits)
+    block("命中的威胁规则", r.threat_rule_hits)
+    block("规则实际开火", r.threat_fires)
+    block("选中的经验", getattr(r.chosen, "__dict__", r.chosen))
+    block("召回的历史台账(作为已知信息喂给大模型)", getattr(r, "recalled", None))
 
 
 def show_result(res):
@@ -126,31 +140,67 @@ def show_result(res):
         kv("结论", "(无 verdict)")
     else:
         kv("结论", f"{v.verdict}   倾向={v.lean}   置信={v.confidence}")
-        block("摘要", v.summary or "(无)")
-        block("依据", v.rationale or "(无)")
-        kv("缺失证据", brief(v.missing_evidence, 240))
+        block("摘要", v.summary)
+        block("依据", v.rationale)
+        block("证据引用", v.evidence_refs)
+        block("缺失证据", v.missing_evidence)
         kv("研判者", v.agent)
-    kv("ATT&CK 技战术", brief(res.techniques, 200))
-    if res.dispositions:
-        print("    处置建议(仅建议;真执行须人工审批):")
-        for d in res.dispositions:
-            print(f"      · {brief(d, 220)}")
-    else:
-        kv("处置建议", "(无 —— 非真阳,或未组装剧本)")
+        kv("verdict_id", v.verdict_id)
+    block("ATT&CK 技战术", res.techniques)
+    block("处置建议(仅建议;真执行须人工审批)", res.dispositions)
+    block("剧本(playbook)", res.playbook)
+    block("时间线", res.timeline)
+    block("研判留痕(trace)", res.trace)
 
 
 # ---------------------------------------------------------------- 探针
 
 def tap(title, doc, fn, show_out=None):
-    """包住**真实函数**:进出各打印一次。不改变它的行为,也不复制它的逻辑。"""
+    """包住**真实函数**:进出各打印一次。不改变行为,也不复制逻辑。"""
     def wrapped(*a, **kw):
         step(title, doc)
         t0 = time.time()
         out = fn(*a, **kw)
         print(f"  -- 产出(耗时 {int((time.time() - t0) * 1000)} ms)--")
-        (show_out or (lambda o: kv("返回", brief(o, 300))))(out)
+        (show_out or (lambda o: block("返回", o)))(out)
         return out
     return wrapped
+
+
+def install_llm_tap():
+    """★捕获**每一次**大模型调用的完整提示词与完整返回。
+
+    包在 `QwenClient.chat` 这一个入口上 —— 选 skill、深度研判、经验蒸馏全都走它,
+    所以漏不掉任何一次。提示词一字不改、一字不省地打出来:
+    别人要核对「模型到底看到了什么、我们有没有把答案偷偷塞给它」,只能靠这个。
+    """
+    orig = QwenClient.chat
+
+    def chat(self, messages, tools=None, tool_choice=None):
+        _llm_calls[0] += 1
+        n = _llm_calls[0]
+        print()
+        rule(">")
+        print(f">>> 送入大模型的完整提示词(第 {n} 次调用)  model={self.model}")
+        rule(">")
+        for i, m in enumerate(messages, 1):
+            print(f"  --- message[{i}]  role={m.get('role')} ---")
+            for ln in str(m.get("content", "")).splitlines() or [""]:
+                print("    " + ln)
+        if tools:
+            block("可用工具(function calling)", tools, indent=4)
+            kv("tool_choice", tool_choice, indent=2)
+        t0 = time.time()
+        resp = orig(self, messages, tools=tools, tool_choice=tool_choice)
+        ms = int((time.time() - t0) * 1000)
+        rule("<")
+        print(f"<<< 大模型完整返回(第 {n} 次调用,耗时 {ms} ms)")
+        rule("<")
+        block("返回", getattr(resp, "__dict__", resp), indent=4)
+        print()
+        return resp
+
+    QwenClient.chat = chat
 
 
 _PICK_BY_SKILL = """
@@ -159,7 +209,6 @@ RETURN DISTINCT a.alert_uid AS uid, a.rule_description AS descr,
        a.severity AS sev, a.arrival_ms AS t
 ORDER BY sev DESC, t DESC LIMIT 10
 """
-# 兜底:台账里还没有这条 skill 干过活的记录时,按「触发事件是进程创建」挑
 _PICK_BY_ACTIVITY = """
 MATCH (a:Alert)<-[:TRIGGERED]-(e:Event)
 WHERE coalesce(e.activity = 'process.spawn', false) OR coalesce(e.event_code = '1', false)
@@ -177,9 +226,9 @@ def pick_alert(pl):
                     ("触发事件是进程创建的", _PICK_BY_ACTIVITY)):
         rows = pl.graph.run_cypher(q)
         print(f"  候选来源:{name} → {len(rows)} 条")
-        for i, r in enumerate(rows[:10], 1):
+        for i, r in enumerate(rows, 1):
             print(f"    {i:>2}. sev={r.get('sev')}  {r.get('uid')}")
-            print(f"        {brief(r.get('descr'), 150)}")
+            print(f"        {r.get('descr')}")
         if rows:
             print(f"  -- 选定:{rows[0]['uid']}(严重度最高、到达最新的一条)")
             return rows[0]["uid"]
@@ -187,7 +236,7 @@ def pick_alert(pl):
     return None
 
 
-def install_taps(pl, *, write):
+def install_taps(pl, *, write, allow_reuse):
     """把流水线各步包上探针。★包的是真实函数,不是复制品。"""
     pl.graph.seed = tap(
         "取 seed(反查触发事件与相关实体)",
@@ -197,11 +246,11 @@ def install_taps(pl, *, write):
 
     pl.router.route = tap(
         "路由:选取证方法论(skill)",
-        "由模型判断这条告警该用哪套取证方法论。skill 是「该查什么、怎么判」的活模块,"
-        "按四层(身份/主机/网络/应用)组织,每层另有通用兜底。",
+        "由大模型判断这条告警该用哪套取证方法论(提示词与返回见下方完整记录)。"
+        "skill 是「该查什么、怎么判」的活模块,按四层(身份/主机/网络/应用)组织,每层另有通用兜底。",
         pl.router.route,
-        show_out=lambda s: kv("选中 skill", f"{getattr(s, 'name', None)}"
-                                            f"   ({brief(getattr(s, 'description', ''), 160)})"))
+        show_out=lambda s: (kv("选中 skill", getattr(s, "name", None)),
+                            block("该 skill 的方法论描述", getattr(s, "description", None))))
 
     C.collect_forensics = tap(
         "确定性取证(recipe)",
@@ -210,12 +259,34 @@ def install_taps(pl, *, write):
         "证据确定性,是后面经验能复用、模型不编造的前提。",
         C.collect_forensics, show_out=show_forensics)
 
-    C.consult = tap(
-        "经验层比对(第二类经验)",
-        "拿刚产出的 finding 集比对已沉淀的行为指纹与威胁规则:"
-        "**威胁指纹与威胁规则都命中 → 自动判真阳;纯良性且无威胁 → 自动判误报;"
-        "其余落大模型**。这是省算力的关键 —— 见过的情形秒出结论,不必每条都请大模型。",
-        C.consult, show_out=show_report)
+    _orig_consult = C.consult
+
+    def _consult(*a, **kw):
+        step("经验层比对(第二类经验)",
+             "拿刚产出的 finding 集比对已沉淀的行为指纹与威胁规则:"
+             "**威胁指纹与威胁规则都命中 → 自动判真阳;纯良性且无威胁 → 自动判误报;"
+             "其余落大模型**。这是省算力的关键 —— 见过的情形秒出结论,不必每条都请大模型。")
+        t0 = time.time()
+        rep = _orig_consult(*a, **kw)
+        print(f"  -- 产出(耗时 {int((time.time() - t0) * 1000)} ms)--")
+        show_report(rep)
+        if not allow_reuse and rep.decision != "FALLTHROUGH":
+            print()
+            print("  " + "!" * 60)
+            print(f"  ★演示强制:经验层的真实结论是 {rep.decision}(生产会到此为止、秒出结论)。")
+            print("    本次演示要展示完整流程,因此**把这条告警当成没见过的**:")
+            print("    清空命中项、改判 FALLTHROUGH,继续走深度研判。")
+            print("    ——这是演示口径,不是生产行为;生产的省算力能力恰恰体现在上面那个真实结论里。")
+            print("  " + "!" * 60)
+            rep.decision = "FALLTHROUGH"
+            rep.chosen = None
+            rep.benign_fp_hits = []
+            rep.threat_fp_hits = []
+            rep.threat_rule_hits = []
+            rep.threat_fires = []
+        return rep
+
+    C.consult = _consult
 
     for nm, doc in (("_reuse_tp", "命中威胁经验,直接产出真阳结论(不调用大模型)"),
                     ("_reuse_fp", "命中良性经验,直接产出误报结论(不调用大模型)")):
@@ -223,9 +294,9 @@ def install_taps(pl, *, write):
 
     C._recall_hit_ledgers = tap(
         "召回命中经验的历史台账",
-        "把「这条经验当初是从哪些告警学来的」一并取出,作为**已知信息**喂给大模型,"
-        "让它知道历史上同类情形是怎么判的、依据是什么。",
-        C._recall_hit_ledgers, show_out=lambda r: kv("召回条数", len(r or [])))
+        "把「这条经验当初是从哪些告警学来的」一并取出,作为**已知信息**喂给大模型。"
+        "(本次按「陌生告警」演示,已清空命中项,所以这里应当为空 —— 这正是它该有的表现。)",
+        C._recall_hit_ledgers, show_out=lambda r: block("召回结果", r))
 
     _orig_choose = C.choose_investigator
 
@@ -239,7 +310,8 @@ def install_taps(pl, *, write):
         inv.investigate = tap(
             "大模型研判(深度通道)",
             "把告警原文、取证证据、经验命中情况一并交给大模型,要它给出结论、置信度、"
-            "依据与缺失证据。**事实由确定性查询提供,模型只负责定性** —— 它没有机会编造证据。",
+            "依据与缺失证据。**事实由确定性查询提供,模型只负责定性** —— 完整提示词见下方,"
+            "可以逐字核对我们有没有把答案偷偷塞给它。",
             inv.investigate, show_out=show_result)
         return inv, picked
 
@@ -252,12 +324,31 @@ def install_taps(pl, *, write):
         C._compose_dispositions,
         show_out=lambda _: kv("处置", "已写入 result.dispositions(见最终结果)"))
 
+    # ---- 写入点 ----
     def _stub(title, doc, describe):
         def f(*a, **kw):
             step(title, doc)
             describe(*a, **kw)
             print("  -- 演示模式:**未真正写入**(加 --write 才写)")
         return f
+
+    _orig_sediment = C.sediment
+
+    def _sediment_demo(llm, skill, result, exp_store, case_store, **kw):
+        step("经验沉淀(蒸馏 → 考试 → 入库)",
+             "只有走了大模型这条(未命中经验)才沉淀:把本次判断**蒸馏**成行为指纹/威胁规则,"
+             "拿历史语料**考试**,过关才入库,并记下学它时的覆盖度签名。"
+             "★本次蒸馏与考试是**真跑的**(提示词与返回见下方),只是入库落到一个用完即弃的"
+             "临时库 —— 生产经验库不被一次演示污染。")
+        throwaway = InMemoryExperienceStore()
+        t0 = time.time()
+        exp, report = _orig_sediment(llm, skill, result, throwaway, case_store, **kw)
+        print(f"  -- 产出(耗时 {int((time.time() - t0) * 1000)} ms)--")
+        block("蒸馏出的经验(本次学到的东西)", getattr(exp, "__dict__", exp))
+        block("考试报告(拿历史语料回归,防止学歪)", getattr(report, "__dict__", report))
+        block("临时库里现有的经验条目", [getattr(e, "__dict__", e) for e in throwaway.all()])
+        print("  -- 演示模式:以上**未写入生产经验库**(加 --write 才写)")
+        return exp, report
 
     if write:
         pl.graph.write_result = tap(
@@ -269,51 +360,55 @@ def install_taps(pl, *, write):
             "把 finding 快照 + 结论存起来。经验入库前要拿它当考卷,防止学歪。", C.snapshot_case)
         C.sediment = tap(
             "经验沉淀(蒸馏 → 考试 → 入库)",
-            "只有走了大模型这条(未命中经验)才沉淀:把本次判断蒸馏成行为指纹/威胁规则,"
-            "**先过回归考试**再入库,并记下学它时的覆盖度签名。", C.sediment)
+            "蒸馏成行为指纹/威胁规则,先过回归考试再入库,并记下学它时的覆盖度签名。",
+            C.sediment, show_out=lambda o: block("(经验, 考试报告)", o))
     else:
         pl.graph.write_result = _stub(
             "写图台账(第三类经验)", "把本次结论落到图上,每条告警一个 verdict_id。",
-            lambda uid, res, *a, **k: (kv("将写入告警", uid),
-                                       kv("结论", getattr(res.verdict, "verdict", None))))
+            lambda uid, res, *a, **k: (kv("将写入告警", uid), block("将写入的结论", res.verdict)))
         C.snapshot_case = _stub(
             "存回归语料", "finding 快照 + 结论,用作经验入库前的考卷。",
-            lambda store, skill, res, *a, **k: kv("将存入", f"skill={skill}"))
-        C.sediment = _stub(
-            "经验沉淀(蒸馏 → 考试 → 入库)",
-            "只有走大模型这条才沉淀:蒸馏成指纹/规则,先过回归考试再入库。",
-            lambda *a, **k: kv("将沉淀", "本次结论 → 行为指纹 / 威胁规则(需先过考试)"))
+            lambda store, skill, res, *a, **k: (kv("将存入 skill", skill),
+                                                block("将存入的 findings", res.findings)))
+        C.sediment = _sediment_demo
 
 
 def main() -> int:
-    ap = argparse.ArgumentParser(description="端到端研判流程演示(每步打印输入/动作/产出)")
+    ap = argparse.ArgumentParser(description="端到端研判流程演示(每步完整打印,不截断)")
     ap.add_argument("--alert-uid", help="指定要演示的告警;不给则自动挑一条可疑进程告警")
     ap.add_argument("--mode", choices=["recipe", "auto"], default="recipe")
-    ap.add_argument("--write", action="store_true", help="真写台账/语料/经验(默认只打印不写)")
+    ap.add_argument("--reuse", action="store_true",
+                    help="允许经验复用(生产实际行为);默认关闭=把告警当没见过的,完整走深度通道")
+    ap.add_argument("--write", action="store_true", help="真写台账/语料/经验库(默认只打印不写)")
     ap.add_argument("--dotenv", default=os.path.join(_ROOT, ".env"))
     args = ap.parse_args()
 
     cfg = Config.from_env(dotenv_path=args.dotenv)
     rule("=")
-    print("AI SOC 自动研判 —— 端到端流程演示")
+    print("AI SOC 自动研判 —— 端到端流程演示(完整记录,不截断)")
     rule("=")
     kv("知识图谱", cfg.neo4j_uri)
     kv("大模型", f"{cfg.llm_model} @ {cfg.llm_api_base}")
     kv("经验库", f"openGauss {cfg.og_host}:{cfg.og_port}/{cfg.og_database}")
-    kv("运行模式", "★演示模式(不写台账、不写经验)" if not args.write else "真实写入")
+    kv("写入", "★演示模式(不写图台账、不写经验库;蒸馏与考试真跑,落临时库)"
+       if not args.write else "真实写入")
+    kv("经验复用", "★关闭 —— 把这条告警当成没见过的,完整走深度通道"
+       if not args.reuse else "开启(生产实际行为)")
     kv("研判模式", args.mode)
     print()
-    print("  流程总览:告警 → seed 回溯 → 选 skill → 确定性取证 → 经验比对")
-    print("            → 命中则秒出结论 / 未命中则大模型研判 → 组处置 → 写台账 → 沉淀经验")
+    print("  流程总览:告警 → seed 回溯 → 选 skill(大模型) → 确定性取证 → 经验层比对")
+    print("            → 召回历史台账 → 大模型研判 → 组处置剧本 → 写台账 → 蒸馏+考试沉淀经验")
+    print("  说明:大模型每一次调用的**完整提示词与完整返回**都会原样打印,可逐字核对。")
 
+    install_llm_tap()
     pl = C.build_pipeline(cfg)
     try:
         uid = args.alert_uid or pick_alert(pl)
         if not uid:
             return 3
-        install_taps(pl, write=args.write)
+        install_taps(pl, write=args.write, allow_reuse=args.reuse)
 
-        step("取告警节点", "按 alert_uid 从图里取出这条告警的全部字段(含原始告警 JSON)。")
+        step("取告警节点", "按 alert_uid 从图里取出这条告警的全部字段(含入图时无损保存的原始告警)。")
         node = pl.graph.get_alert(uid)
         if node is None:
             print(f"  ★图里没有 alert_uid={uid}")
@@ -330,12 +425,15 @@ def main() -> int:
         print("最终结果")
         rule("=")
         show_result(result)
-        kv("经验层决策", report.decision)
+        kv("经验层决策(演示口径)", report.decision)
         kv("实际走的通道", picked)
+        kv("大模型调用次数", _llm_calls[0])
         kv("端到端耗时", f"{total} ms")
         print()
-        print("  小结:确定性取证保证证据不是编的;经验层让重复情形不必再问大模型;")
-        print("        大模型只在没见过的情形上定性;处置只出计划,人审之后才动手。")
+        print("  小结:证据由确定性图查询取得,模型只负责定性 —— 它没有机会编造事实;")
+        print("        经验层让见过的情形不必再问模型(本次为演示完整流程而刻意绕开);")
+        print("        处置只出计划,过护栏、经人审之后才动手;")
+        print("        本次研判的结论会被蒸馏成新经验,过考试后入库 —— 这就是自进化那一环。")
         rule("=")
         return 0
     finally:

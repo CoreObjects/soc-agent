@@ -83,3 +83,68 @@ def test_demo_mode_is_the_default_so_a_demo_never_pollutes_production():
     src = _SCRIPT.read_text(encoding="utf-8")
     assert '"--write", action="store_true"' in src
     assert "if write:" in src and "_stub(" in src
+
+
+# --------------------------------------------------- 完整性(领导要看的就是这几条)
+
+def test_llm_tap_target_exists():
+    """★大模型调用的**唯一**入口必须叫这个名字。
+
+    提示词打印同样靠「按名字包裹」:`QwenClient.chat` 一旦改名,提示词就**静默不再打印**,
+    而演示照样跑完、看起来完整 —— 恰恰是最需要可核对的那部分没了。
+    """
+    from soc_agent.llm.qwen import QwenClient
+    assert hasattr(QwenClient, "chat")
+
+
+def test_every_llm_caller_goes_through_that_one_entry():
+    """★"漏不掉任何一次调用"这句话得能证。
+
+    全仓扫一遍:凡是调大模型的地方,都必须是 `.chat(`。
+    出现别的调用方式(如 `.complete(` / 直接 requests.post 到 /v1/chat)就说明存在旁路,
+    那样演示里就会缺一次提示词而没人知道。
+    """
+    import re
+    root = _ROOT / "soc_agent"
+    bypass = []
+    for p in root.rglob("*.py"):
+        src = p.read_text(encoding="utf-8")
+        for m in re.finditer(r"\bllm\.(\w+)\(", src):
+            if m.group(1) != "chat":
+                bypass.append(f"{p.relative_to(_ROOT)}: llm.{m.group(1)}(")
+    assert not bypass, f"存在绕过 chat() 的大模型调用,演示会漏打提示词:{bypass}"
+
+
+def test_nothing_is_truncated_in_the_demo_renderers():
+    """★不截断。截断过的东西没法核对,看起来就像编的 —— 领导明确要求「有多长就是多长」。
+
+    钉住:渲染入口是 `full()`,且脚本里不再有把展示值切短的旧 `brief()`。
+    """
+    src = _SCRIPT.read_text(encoding="utf-8")
+    assert "def full(" in src
+    assert "def brief(" not in src, "brief() 会截断展示值,已被要求移除"
+    assert "此处截断" not in src
+
+
+def test_deep_path_is_the_default_and_the_override_is_labelled():
+    """★默认把告警当没见过的、完整走深度通道;而且必须**显式标注这是演示口径**。
+
+    不标注的话,看的人会以为生产每条都请大模型 —— 那会把成本预期带偏,
+    等于用一个好看的演示误导决策。
+    """
+    src = _SCRIPT.read_text(encoding="utf-8")
+    assert '"--reuse", action="store_true"' in src          # 复用是**要显式打开**的
+    assert "演示强制" in src and "不是生产行为" in src
+    assert 'rep.decision = "FALLTHROUGH"' in src
+
+
+def test_sediment_really_runs_but_lands_in_a_throwaway_store():
+    """★蒸馏与考试**真跑**(否则「自进化」那一环只是嘴上说),但不落生产经验库。
+
+    为做一次汇报而往经验库里塞东西,是那种当时没人注意、以后查不清的污染。
+    """
+    src = _SCRIPT.read_text(encoding="utf-8")
+    assert "InMemoryExperienceStore()" in src
+    assert "_orig_sediment(" in src
+    from soc_agent.experience.store import InMemoryExperienceStore
+    assert hasattr(InMemoryExperienceStore, "all")          # 演示要把学到的东西列出来
