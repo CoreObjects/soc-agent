@@ -248,3 +248,24 @@ def test_e2e_alert_picker_uses_the_real_graph_client_api():
     assert any(p.kind is inspect.Parameter.VAR_KEYWORD for p in sig.parameters.values())
     src = (_ROOT / "scripts" / "e2e_alerts.py").read_text(encoding="utf-8")
     assert "g.run_cypher(Q)" in src and "run_cypher(Q, {})" not in src
+
+
+def test_e2e_alert_picker_builds_the_graph_client_the_production_way():
+    """★整条构造路径都要与生产一致,不是只对一个方法签名。
+
+    第一版写 `Neo4jGraph()`(它要 3 个位置参数)——**只在真机上才炸**,
+    因为本地没有图、任何"能不能连上"的问题都测不出来。
+    上一版刚在 `run_cypher` 上犯过同类错,说明钉一个方法不够,得钉构造。
+    """
+    import inspect
+
+    from soc_agent.config import Config
+    from soc_agent.graph.client import Neo4jGraph
+    src = (_ROOT / "scripts" / "e2e_alerts.py").read_text(encoding="utf-8")
+    assert "Config.from_env()" in src, "必须走与生产同一条配置入口"
+    assert "Neo4jGraph()" not in src
+    need = [n for n, p in inspect.signature(Neo4jGraph.__init__).parameters.items()
+            if n != "self" and p.default is inspect.Parameter.empty]
+    assert need, "构造签名变了?这条断言就是防它悄悄变"
+    for n in need:                                    # uri/user/password 逐个都得传进去
+        assert f"cfg.neo4j_{n}" in src or f"cfg.{n}" in src, f"没传 {n}"

@@ -44,8 +44,16 @@ WHY = {
 
 
 def rows():
+    """★用与生产同一条构造路径(`config` → `Neo4jGraph`),不自己拼参数。
+
+    第一版构造时一个参数都没传 —— 而它要 3 个位置参数,而这**只在真机上才炸**:
+    本地没有图,任何"能不能连上"的问题都测不出来。同一类错误上一版刚犯过一次
+    (`run_cypher` 传了 dict),说明光钉一个方法签名不够,得钉**整条构造路径**。
+    """
+    from soc_agent.config import Config
     from soc_agent.graph.client import Neo4jGraph
-    g = Neo4jGraph()
+    cfg = Config.from_env()
+    g = Neo4jGraph(cfg.neo4j_uri, cfg.neo4j_user, cfg.neo4j_password, cfg.neo4j_database)
     try:
         return g.run_cypher(Q)          # ★run_cypher 是 **params 不是 dict —— 传 {} 会 TypeError
     finally:
