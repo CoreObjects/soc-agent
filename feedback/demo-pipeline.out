@@ -1,6 +1,6 @@
-=== 研判流程演示 2026-08-14 06:01Z ===
+=== 研判流程演示 2026-08-14 06:14Z ===
 主机    : localhost.localdomain   仓库 /home/soc/soc-agent
-代码版本: 3b6f048 演示脚本:完整走深度流程、打印大模型完整提示词、一个字不截断
+代码版本: 876ad5a 演示补上三级漏斗的第一级:浅层(签名库前置 → 硬底线 → 浅层 LLM 分诊)
 解释器  : .venv312/bin/python -> Python 3.11.6
 
 ====================================================================================================
@@ -12,9 +12,14 @@ AI SOC 自动研判 —— 端到端流程演示(完整记录,不截断)
   写入:★演示模式(不写图台账、不写经验库;蒸馏与考试真跑,落临时库)
   经验复用:★关闭 —— 把这条告警当成没见过的,完整走深度通道
   研判模式:recipe
+  浅层(cascade):本次=开   .env 里的 SOC_CASCADE_ENABLED=关   ★两者不一致:本次为展示完整漏斗而打开(演示口径)
 
-  流程总览:告警 → seed 回溯 → 选 skill(大模型) → 确定性取证 → 经验层比对
-            → 召回历史台账 → 大模型研判 → 组处置剧本 → 写台账 → 蒸馏+考试沉淀经验
+  流程总览(三级漏斗):
+    第一级 浅层  告警 → ①签名库前置(零大模型) → ②硬底线 floor → ③浅层LLM分诊
+                  └ 只有判成误报才在此终局;判攻击/可疑一律升级(宁可多花算力,不可漏报)
+    第二级 深度  seed 回溯 → 选 skill(大模型) → 确定性取证 → 经验层比对
+                  └ 经验命中则秒出结论;未命中才请大模型
+    第三级 收尾  召回历史台账 → 大模型研判 → 组处置剧本 → 写台账 → 蒸馏+考试沉淀经验
   说明:大模型每一次调用的**完整提示词与完整返回**都会原样打印,可逐字核对。
 
 ====================================================================================================
@@ -32,10 +37,150 @@ AI SOC 自动研判 —— 端到端流程演示(完整记录,不截断)
     {"@timestamp": "2026-07-16T06:12:41.513Z", "id": "1784182361.108739364", "decoder": {"name": "windows_eventchannel"}, "manager": {"name": "e5bb7343f06d"}, "input": {"type": "log"}, "host": {"name": "f8e24743dcc1"}, "data": {"win": {"eventdata": {"utcTime": "2026-07-16 06:12:39.824", "processGuid": "{75647B18-7657-6A58-F70E-000000000E00}", "company": "Microsoft Corporation", "parentImage": "C:\\\\Windows\\\\System32\\\\WindowsPowerShell\\\\v1.0\\\\powershell.exe", "currentDirectory": "C:\\\\Users\\\\vagrant\\\\", "hashes": "MD5=097CE5761C89434367598B34FE32893B,SHA256=BA4038FD20E474C047BE8AAD5BFACDB1BFC1DDBE12F803F473B7918D8D819436,IMPHASH=CAEE994F79D85E47C06E5FA9CDEAE453", "fileVersion": "10.0.14393.206 (rs1_release.160915-0644)", "description": "Windows PowerShell", "logonGuid": "{75647B18-7657-6A58-8729-7F1300000000}", "parentProcessGuid": "{75647B18-7657-6A58-F60E-000000000E00}", "parentProcessId": "5480", "user": "ESSOS\\\\vagrant", "terminalSessionId": "0", "parentCommandLine": "PowerShell  -NoProfile -NonInteractive -ExecutionPolicy Unrestricted -EncodedCommand UABvAHcAZQByAFMAaABlAGwAbAAgAC0ATgBvAFAAcgBvAGYAaQBsAGUAIAAtAE4AbwBuAEkAbgB0AGUAcgBhAGMAdABpAHYAZQAgAC0ARQB4AGUAYwB1AHQAaQBvAG4AUABvAGwAaQBjAHkAIABVAG4AcgBlAHMAdAByAGkAYwB0AGUAZAAgAC0ARQBuAGMAbwBkAGUAZABDAG8AbQBtAGEAbgBkACAASgBnAEIAagBBAEcAZwBBAFkAdwBCAHcAQQBDADQAQQBZAHcAQgB2AEEARwAwAEEASQBBAEEAMgBBAEQAVQBBAE0AQQBBAHcAQQBEAEUAQQBJAEEAQQArAEEAQwBBAEEASgBBAEIAdQBBAEgAVQBBAGIAQQBCAHMAQQBBAG8AQQBhAFEAQgBtAEEAQwBBAEEASwBBAEEAawBBAEYAQQBBAFUAdwBCAFcAQQBHAFUAQQBjAGcAQgB6AEEARwBrAEEAYgB3AEIAdQBBAEYAUQBBAFkAUQBCAGkAQQBHAHcAQQBaAFEAQQB1AEEARgBBAEEAVQB3AEIAVwBBAEcAVQBBAGMAZwBCAHoAQQBHAGsAQQBiAHcAQgB1AEEAQwBBAEEATABRAEIAcwBBAEgAUQBBAEkAQQBCAGIAQQBGAFkAQQBaAFEAQgB5AEEASABNAEEAYQBRAEIAdgBBAEcANABBAFgAUQBBAGkAQQBEAE0AQQBMAGcAQQB3AEEAQwBJAEEASwBRAEEAZwBBAEgAcwBBAEMAZwBBAG4AQQBIAHMAQQBJAGcAQgBtAEEARwBFAEEAYQBRAEIAcwBBAEcAVQBBAFoAQQBBAGkAQQBEAG8AQQBkAEEAQgB5AEEASABVAEEAWgBRAEEAcwBBAEMASQBBAGIAUQBCAHoAQQBHAGMAQQBJAGcAQQA2AEEAQwBJAEEAUQBRAEIAdQBBAEgATQBBAGEAUQBCAGkAQQBHAHcAQQBaAFEAQQBnAEEASABJAEEAWgBRAEIAeABBAEgAVQBBAGEAUQBCAHkAQQBHAFUAQQBjAHcAQQBnAEEARgBBAEEAYgB3AEIAMwBBAEcAVQBBAGMAZwBCAFQAQQBHAGcAQQBaAFEAQgBzAEEARwB3AEEASQBBAEIAMgBBAEQATQBBAEwAZwBBAHcAQQBDAEEAQQBiAHcAQgB5AEEAQwBBAEEAYgBnAEIAbABBAEgAYwBBAFoAUQBCAHkAQQBDAEkAQQBmAFEAQQBuAEEAQQBvAEEAWgBRAEIANABBAEcAawBBAGQAQQBBAGcAQQBEAEUAQQBDAGcAQgA5AEEAQQBvAEEASgBBAEIAbABBAEgAZwBBAFoAUQBCAGoAQQBGADgAQQBkAHcAQgB5AEEARwBFAEEAYwBBAEIAdwBBAEcAVQBBAGMAZwBCAGYAQQBIAE0AQQBkAEEAQgB5AEEAQwBBAEEAUABRAEEAZwBBAEMAUQBBAGEAUQBCAHUAQQBIAEEAQQBkAFEAQgAwAEEAQwBBAEEAZgBBAEEAZwBBAEUAOABBAGQAUQBCADAAQQBDADAAQQBVAHcAQgAwAEEASABJAEEAYQBRAEIAdQBBAEcAYwBBAEMAZwBBAGsAQQBIAE0AQQBjAEEAQgBzAEEARwBrAEEAZABBAEIAZgBBAEgAQQBBAFkAUQBCAHkAQQBIAFEAQQBjAHcAQQBnAEEARAAwAEEASQBBAEEAawBBAEcAVQBBAGUAQQBCAGwAQQBHAE0AQQBYAHcAQgAzAEEASABJAEEAWQBRAEIAdwBBAEgAQQBBAFoAUQBCAHkAQQBGADgAQQBjAHcAQgAwAEEASABJAEEATABnAEIAVABBAEgAQQBBAGIAQQBCAHAAQQBIAFEAQQBLAEEAQgBBAEEAQwBnAEEASQBnAEIAZwBBAEQAQQBBAFkAQQBBAHcAQQBHAEEAQQBNAEEAQgBnAEEARABBAEEASQBnAEEAcABBAEMAdwBBAEkAQQBBAHkAQQBDAHcAQQBJAEEAQgBiAEEARgBNAEEAZABBAEIAeQBBAEcAawBBAGIAZwBCAG4AQQBGAE0AQQBjAEEAQgBzAEEARwBrAEEAZABBAEIAUABBAEgAQQBBAGQAQQBCAHAAQQBHADgAQQBiAGcAQgB6AEEARgAwAEEATwBnAEEANgBBAEYASQBBAFoAUQBCAHQAQQBHADgAQQBkAGcAQgBsAEEARQBVAEEAYgBRAEIAdwBBAEgAUQBBAGUAUQBCAEYAQQBHADQAQQBkAEEAQgB5AEEARwBrAEEAWgBRAEIAegBBAEMAawBBAEMAZwBCAEoAQQBHAFkAQQBJAEEAQQBvAEEAQwAwAEEAYgBnAEIAdgBBAEgAUQBBAEkAQQBBAGsAQQBIAE0AQQBjAEEAQgBzAEEARwBrAEEAZABBAEIAZgBBAEgAQQBBAFkAUQBCAHkAQQBIAFEAQQBjAHcAQQB1AEEARQB3AEEAWgBRAEIAdQBBAEcAYwBBAGQAQQBCAG8AQQBDAEEAQQBMAFEAQgBsAEEASABFAEEASQBBAEEAeQBBAEMAawBBAEkAQQBCADcAQQBDAEEAQQBkAEEAQgBvAEEASABJAEEAYgB3AEIAMwBBAEMAQQBBAEkAZwBCAHAAQQBHADQAQQBkAGcAQgBoAEEARwB3AEEAYQBRAEIAawBBAEMAQQBBAGMAQQBCAGgAQQBIAGsAQQBiAEEAQgB2AEEARwBFAEEAWgBBAEEAaQBBAEMAQQBBAGYAUQBBAEsAQQBGAE0AQQBaAFEAQgAwAEEAQwAwAEEAVgBnAEIAaABBAEgASQBBAGEAUQBCAGgAQQBHAEkAQQBiAEEAQgBsAEEAQwBBAEEATABRAEIATwBBAEcARQBBAGIAUQBCAGwAQQBDAEEAQQBhAGcAQgB6AEEARwA4AEEAYgBnAEIAZgBBAEgASQBBAFkAUQBCADMAQQBDAEEAQQBMAFEAQgBXAEEARwBFAEEAYgBBAEIAMQBBAEcAVQBBAEkAQQBBAGsAQQBIAE0AQQBjAEEAQgBzAEEARwBrAEEAZABBAEIAZgBBAEgAQQBBAFkAUQBCAHkAQQBIAFEAQQBjAHcAQgBiAEEARABFAEEAWABRAEEASwBBAEMAUQBBAFoAUQBCADQAQQBHAFUAQQBZAHcAQgBmAEEASABjAEEAYwBnAEIAaABBAEgAQQBBAGMAQQBCAGwAQQBIAEkAQQBJAEEAQQA5AEEAQwBBAEEAVwB3AEIAVABBAEcATQBBAGMAZwBCAHAAQQBIAEEAQQBkAEEAQgBDAEEARwB3AEEAYgB3AEIAagBBAEcAcwBBAFgAUQBBADYAQQBEAG8AQQBRAHcAQgB5AEEARwBVAEEAWQBRAEIAMABBAEcAVQBBAEsAQQBBAGsAQQBIAE0AQQBjAEEAQgBzAEEARwBrAEEAZABBAEIAZgBBAEgAQQBBAFkAUQBCAHkAQQBIAFEAQQBjAHcAQgBiAEEARABBAEEAWABRAEEAcABBAEEAbwBBAEoAZwBBAGsAQQBHAFUAQQBlAEEAQgBsAEEARwBNAEEAWAB3AEIAMwBBAEgASQBBAFkAUQBCAHcAQQBIAEEAQQBaAFEAQgB5AEEAQQA9AD0A", "product": "Microsoft® Windows® Operating System", "logonId": "0x137f2987", "integrityLevel": "High", "processId": "5364", "originalFileName": "PowerShell.EXE", "commandLine": "\\\"C:\\\\Windows\\\\System32\\\\WindowsPowerShell\\\\v1.0\\\\powershell.exe\\\" -NoProfile -NonInteractive -ExecutionPolicy Unrestricted -EncodedCommand JgBjAGgAYwBwAC4AYwBvAG0AIAA2ADUAMAAwADEAIAA+ACAAJABuAHUAbABsAAoAaQBmACAAKAAkAFAAUwBWAGUAcgBzAGkAbwBuAFQAYQBiAGwAZQAuAFAAUwBWAGUAcgBzAGkAbwBuACAALQBsAHQAIABbAFYAZQByAHMAaQBvAG4AXQAiADMALgAwACIAKQAgAHsACgAnAHsAIgBmAGEAaQBsAGUAZAAiADoAdAByAHUAZQAsACIAbQBzAGcAIgA6ACIAQQBuAHMAaQBiAGwAZQAgAHIAZQBxAHUAaQByAGUAcwAgAFAAbwB3AGUAcgBTAGgAZQBsAGwAIAB2ADMALgAwACAAbwByACAAbgBlAHcAZQByACIAfQAnAAoAZQB4AGkAdAAgADEACgB9AAoAJABlAHgAZQBjAF8AdwByAGEAcABwAGUAcgBfAHMAdAByACAAPQAgACQAaQBuAHAAdQB0ACAAfAAgAE8AdQB0AC0AUwB0AHIAaQBuAGcACgAkAHMAcABsAGkAdABfAHAAYQByAHQAcwAgAD0AIAAkAGUAeABlAGMAXwB3AHIAYQBwAHAAZQByAF8AcwB0AHIALgBTAHAAbABpAHQAKABAACgAIgBgADAAYAAwAGAAMABgADAAIgApACwAIAAyACwAIABbAFMAdAByAGkAbgBnAFMAcABsAGkAdABPAHAAdABpAG8AbgBzAF0AOgA6AFIAZQBtAG8AdgBlAEUAbQBwAHQAeQBFAG4AdAByAGkAZQBzACkACgBJAGYAIAAoAC0AbgBvAHQAIAAkAHMAcABsAGkAdABfAHAAYQByAHQAcwAuAEwAZQBuAGcAdABoACAALQBlAHEAIAAyACkAIAB7ACAAdABoAHIAbwB3ACAAIgBpAG4AdgBhAGwAaQBkACAAcABhAHkAbABvAGEAZAAiACAAfQAKAFMAZQB0AC0AVgBhAHIAaQBhAGIAbABlACAALQBOAGEAbQBlACAAagBzAG8AbgBfAHIAYQB3ACAALQBWAGEAbAB1AGUAIAAkAHMAcABsAGkAdABfAHAAYQByAHQAcwBbADEAXQAKACQAZQB4AGUAYwBfAHcAcgBhAHAAcABlAHIAIAA9ACAAWwBTAGMAcgBpAHAAdABCAGwAbwBjAGsAXQA6ADoAQwByAGUAYQB0AGUAKAAkAHMAcABsAGkAdABfAHAAYQByAHQAcwBbADAAXQApAAoAJgAkAGUAeABlAGMAXwB3AHIAYQBwAHAAZQByAA==", "parentUser": "ESSOS\\\\vagrant", "image": "C:\\\\Windows\\\\System32\\\\WindowsPowerShell\\\\v1.0\\\\powershell.exe"}, "system": {"version": "5", "eventRecordID": "724341", "threadID": "2688", "keywords": "0x8000000000000000", "message": "\"Process Create:\r\nRuleName: -\r\nUtcTime: 2026-07-16 06:12:39.824\r\nProcessGuid: {75647B18-7657-6A58-F70E-000000000E00}\r\nProcessId: 5364\r\nImage: C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe\r\nFileVersion: 10.0.14393.206 (rs1_release.160915-0644)\r\nDescription: Windows PowerShell\r\nProduct: Microsoft® Windows® Operating System\r\nCompany: Microsoft Corporation\r\nOriginalFileName: PowerShell.EXE\r\nCommandLine: \"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe\" -NoProfile -NonInteractive -ExecutionPolicy Unrestricted -EncodedCommand JgBjAGgAYwBwAC4AYwBvAG0AIAA2ADUAMAAwADEAIAA+ACAAJABuAHUAbABsAAoAaQBmACAAKAAkAFAAUwBWAGUAcgBzAGkAbwBuAFQAYQBiAGwAZQAuAFAAUwBWAGUAcgBzAGkAbwBuACAALQBsAHQAIABbAFYAZQByAHMAaQBvAG4AXQAiADMALgAwACIAKQAgAHsACgAnAHsAIgBmAGEAaQBsAGUAZAAiADoAdAByAHUAZQAsACIAbQBzAGcAIgA6ACIAQQBuAHMAaQBiAGwAZQAgAHIAZQBxAHUAaQByAGUAcwAgAFAAbwB3AGUAcgBTAGgAZQBsAGwAIAB2ADMALgAwACAAbwByACAAbgBlAHcAZQByACIAfQAnAAoAZQB4AGkAdAAgADEACgB9AAoAJABlAHgAZQBjAF8AdwByAGEAcABwAGUAcgBfAHMAdAByACAAPQAgACQAaQBuAHAAdQB0ACAAfAAgAE8AdQB0AC0AUwB0AHIAaQBuAGcACgAkAHMAcABsAGkAdABfAHAAYQByAHQAcwAgAD0AIAAkAGUAeABlAGMAXwB3AHIAYQBwAHAAZQByAF8AcwB0AHIALgBTAHAAbABpAHQAKABAACgAIgBgADAAYAAwAGAAMABgADAAIgApACwAIAAyACwAIABbAFMAdAByAGkAbgBnAFMAcABsAGkAdABPAHAAdABpAG8AbgBzAF0AOgA6AFIAZQBtAG8AdgBlAEUAbQBwAHQAeQBFAG4AdAByAGkAZQBzACkACgBJAGYAIAAoAC0AbgBvAHQAIAAkAHMAcABsAGkAdABfAHAAYQByAHQAcwAuAEwAZQBuAGcAdABoACAALQBlAHEAIAAyACkAIAB7ACAAdABoAHIAbwB3ACAAIgBpAG4AdgBhAGwAaQBkACAAcABhAHkAbABvAGEAZAAiACAAfQAKAFMAZQB0AC0AVgBhAHIAaQBhAGIAbABlACAALQBOAGEAbQBlACAAagBzAG8AbgBfAHIAYQB3ACAALQBWAGEAbAB1AGUAIAAkAHMAcABsAGkAdABfAHAAYQByAHQAcwBbADEAXQAKACQAZQB4AGUAYwBfAHcAcgBhAHAAcABlAHIAIAA9ACAAWwBTAGMAcgBpAHAAdABCAGwAbwBjAGsAXQA6ADoAQwByAGUAYQB0AGUAKAAkAHMAcABsAGkAdABfAHAAYQByAHQAcwBbADAAXQApAAoAJgAkAGUAeABlAGMAXwB3AHIAYQBwAHAAZQByAA==\r\nCurrentDirectory: C:\\Users\\vagrant\\\r\nUser: ESSOS\\vagrant\r\nLogonGuid: {75647B18-7657-6A58-8729-7F1300000000}\r\nLogonId: 0x137F2987\r\nTerminalSessionId: 0\r\nIntegrityLevel: High\r\nHashes: MD5=097CE5761C89434367598B34FE32893B,SHA256=BA4038FD20E474C047BE8AAD5BFACDB1BFC1DDBE12F803F473B7918D8D819436,IMPHASH=CAEE994F79D85E47C06E5FA9CDEAE453\r\nParentProcessGuid: {75647B18-7657-6A58-F60E-000000000E00}\r\nParentProcessId: 5480\r\nParentImage: C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe\r\nParentCommandLine: PowerShell  -NoProfile -NonInteractive -ExecutionPolicy Unrestricted -EncodedCommand UABvAHcAZQByAFMAaABlAGwAbAAgAC0ATgBvAFAAcgBvAGYAaQBsAGUAIAAtAE4AbwBuAEkAbgB0AGUAcgBhAGMAdABpAHYAZQAgAC0ARQB4AGUAYwB1AHQAaQBvAG4AUABvAGwAaQBjAHkAIABVAG4AcgBlAHMAdAByAGkAYwB0AGUAZAAgAC0ARQBuAGMAbwBkAGUAZABDAG8AbQBtAGEAbgBkACAASgBnAEIAagBBAEcAZwBBAFkAdwBCAHcAQQBDADQAQQBZAHcAQgB2AEEARwAwAEEASQBBAEEAMgBBAEQAVQBBAE0AQQBBAHcAQQBEAEUAQQBJAEEAQQArAEEAQwBBAEEASgBBAEIAdQBBAEgAVQBBAGIAQQBCAHMAQQBBAG8AQQBhAFEAQgBtAEEAQwBBAEEASwBBAEEAawBBAEYAQQBBAFUAdwBCAFcAQQBHAFUAQQBjAGcAQgB6AEEARwBrAEEAYgB3AEIAdQBBAEYAUQBBAFkAUQBCAGkAQQBHAHcAQQBaAFEAQQB1AEEARgBBAEEAVQB3AEIAVwBBAEcAVQBBAGMAZwBCAHoAQQBHAGsAQQBiAHcAQgB1AEEAQwBBAEEATABRAEIAcwBBAEgAUQBBAEkAQQBCAGIAQQBGAFkAQQBaAFEAQgB5AEEASABNAEEAYQBRAEIAdgBBAEcANABBAFgAUQBBAGkAQQBEAE0AQQBMAGcAQQB3AEEAQwBJAEEASwBRAEEAZwBBAEgAcwBBAEMAZwBBAG4AQQBIAHMAQQBJAGcAQgBtAEEARwBFAEEAYQBRAEIAcwBBAEcAVQBBAFoAQQBBAGkAQQBEAG8AQQBkAEEAQgB5AEEASABVAEEAWgBRAEEAcwBBAEMASQBBAGIAUQBCAHoAQQBHAGMAQQBJAGcAQQA2AEEAQwBJAEEAUQBRAEIAdQBBAEgATQBBAGEAUQBCAGkAQQBHAHcAQQBaAFEAQQBnAEEASABJAEEAWgBRAEIAeABBAEgAVQBBAGEAUQBCAHkAQQBHAFUAQQBjAHcAQQBnAEEARgBBAEEAYgB3AEIAMwBBAEcAVQBBAGMAZwBCAFQAQQBHAGcAQQBaAFEAQgBzAEEARwB3AEEASQBBAEIAMgBBAEQATQBBAEwAZwBBAHcAQQBDAEEAQQBiAHcAQgB5AEEAQwBBAEEAYgBnAEIAbABBAEgAYwBBAFoAUQBCAHkAQQBDAEkAQQBmAFEAQQBuAEEAQQBvAEEAWgBRAEIANABBAEcAawBBAGQAQQBBAGcAQQBEAEUAQQBDAGcAQgA5AEEAQQBvAEEASgBBAEIAbABBAEgAZwBBAFoAUQBCAGoAQQBGADgAQQBkAHcAQgB5AEEARwBFAEEAYwBBAEIAdwBBAEcAVQBBAGMAZwBCAGYAQQBIAE0AQQBkAEEAQgB5AEEAQwBBAEEAUABRAEEAZwBBAEMAUQBBAGEAUQBCAHUAQQBIAEEAQQBkAFEAQgAwAEEAQwBBAEEAZgBBAEEAZwBBAEUAOABBAGQAUQBCADAAQQBDADAAQQBVAHcAQgAwAEEASABJAEEAYQBRAEIAdQBBAEcAYwBBAEMAZwBBAGsAQQBIAE0AQQBjAEEAQgBzAEEARwBrAEEAZABBAEIAZgBBAEgAQQBBAFkAUQBCAHkAQQBIAFEAQQBjAHcAQQBnAEEARAAwAEEASQBBAEEAawBBAEcAVQBBAGUAQQBCAGwAQQBHAE0AQQBYAHcAQgAzAEEASABJAEEAWQBRAEIAdwBBAEgAQQBBAFoAUQBCAHkAQQBGADgAQQBjAHcAQgAwAEEASABJAEEATABnAEIAVABBAEgAQQBBAGIAQQBCAHAAQQBIAFEAQQBLAEEAQgBBAEEAQwBnAEEASQBnAEIAZwBBAEQAQQBBAFkAQQBBAHcAQQBHAEEAQQBNAEEAQgBnAEEARABBAEEASQBnAEEAcABBAEMAdwBBAEkAQQBBAHkAQQBDAHcAQQBJAEEAQgBiAEEARgBNAEEAZABBAEIAeQBBAEcAawBBAGIAZwBCAG4AQQBGAE0AQQBjAEEAQgBzAEEARwBrAEEAZABBAEIAUABBAEgAQQBBAGQAQQBCAHAAQQBHADgAQQBiAGcAQgB6AEEARgAwAEEATwBnAEEANgBBAEYASQBBAFoAUQBCAHQAQQBHADgAQQBkAGcAQgBsAEEARQBVAEEAYgBRAEIAdwBBAEgAUQBBAGUAUQBCAEYAQQBHADQAQQBkAEEAQgB5AEEARwBrAEEAWgBRAEIAegBBAEMAawBBAEMAZwBCAEoAQQBHAFkAQQBJAEEAQQBvAEEAQwAwAEEAYgBnAEIAdgBBAEgAUQBBAEkAQQBBAGsAQQBIAE0AQQBjAEEAQgBzAEEARwBrAEEAZABBAEIAZgBBAEgAQQBBAFkAUQBCAHkAQQBIAFEAQQBjAHcAQQB1AEEARQB3AEEAWgBRAEIAdQBBAEcAYwBBAGQAQQBCAG8AQQBDAEEAQQBMAFEAQgBsAEEASABFAEEASQBBAEEAeQBBAEMAawBBAEkAQQBCADcAQQBDAEEAQQBkAEEAQgBvAEEASABJAEEAYgB3AEIAMwBBAEMAQQBBAEkAZwBCAHAAQQBHADQAQQBkAGcAQgBoAEEARwB3AEEAYQBRAEIAawBBAEMAQQBBAGMAQQBCAGgAQQBIAGsAQQBiAEEAQgB2AEEARwBFAEEAWgBBAEEAaQBBAEMAQQBBAGYAUQBBAEsAQQBGAE0AQQBaAFEAQgAwAEEAQwAwAEEAVgBnAEIAaABBAEgASQBBAGEAUQBCAGgAQQBHAEkAQQBiAEEAQgBsAEEAQwBBAEEATABRAEIATwBBAEcARQBBAGIAUQBCAGwAQQBDAEEAQQBhAGcAQgB6AEEARwA4AEEAYgBnAEIAZgBBAEgASQBBAFkAUQBCADMAQQBDAEEAQQBMAFEAQgBXAEEARwBFAEEAYgBBAEIAMQBBAEcAVQBBAEkAQQBBAGsAQQBIAE0AQQBjAEEAQgBzAEEARwBrAEEAZABBAEIAZgBBAEgAQQBBAFkAUQBCAHkAQQBIAFEAQQBjAHcAQgBiAEEARABFAEEAWABRAEEASwBBAEMAUQBBAFoAUQBCADQAQQBHAFUAQQBZAHcAQgBmAEEASABjAEEAYwBnAEIAaABBAEgAQQBBAGMAQQBCAGwAQQBIAEkAQQBJAEEAQQA5AEEAQwBBAEEAVwB3AEIAVABBAEcATQBBAGMAZwBCAHAAQQBIAEEAQQBkAEEAQgBDAEEARwB3AEEAYgB3AEIAagBBAEcAcwBBAFgAUQBBADYAQQBEAG8AQQBRAHcAQgB5AEEARwBVAEEAWQBRAEIAMABBAEcAVQBBAEsAQQBBAGsAQQBIAE0AQQBjAEEAQgBzAEEARwBrAEEAZABBAEIAZgBBAEgAQQBBAFkAUQBCAHkAQQBIAFEAQQBjAHcAQgBiAEEARABBAEEAWABRAEEAcABBAEEAbwBBAEoAZwBBAGsAQQBHAFUAQQBlAEEAQgBsAEEARwBNAEEAWAB3AEIAMwBBAEgASQBBAFkAUQBCAHcAQQBIAEEAQQBaAFEAQgB5AEEAQQA9AD0A\r\nParentUser: ESSOS\\vagrant\"", "computer": "meereen.essos.local", "providerName": "Microsoft-Windows-Sysmon", "opcode": "0", "level": "4", "processID": "5088", "providerGuid": "{5770385F-C22A-43E0-BF4C-06F5698FFBD9}", "systemTime": "2026-07-16T06:12:39.826731300Z", "task": "1", "eventID": "1", "channel": "Microsoft-Windows-Sysmon/Operational", "severityValue": "INFORMATION"}}}, "timestamp": "2026-07-16T06:12:41.236+0000", "ecs": {"version": "1.12.0"}, "log": {"offset": 60359890, "file": {"path": "/logs/wazuh/alerts.json"}}, "location": "EventChannel", "log_type": "hids_alert", "log_source": "wazuh", "agent": {"ip": "192.168.56.12", "type": "filebeat", "version": "7.17.22", "hostname": "f8e24743dcc1", "ephemeral_id": "d5d271ec-e831-42dd-9d03-45d8ccd7a05b", "id": "002", "name": "meereen"}, "rule": {"level": 12, "description": "Powershell.exe spawned a powershell process which executed a base64 encoded command", "id": "92057", "mitre": {"id": ["T1059.001"], "tactic": ["Execution"], "technique": ["PowerShell"]}, "firedtimes": 7, "mail": true, "groups": ["sysmon", "sysmon_eid1_detections", "windows"]}}
 
 ====================================================================================================
-【第 2 步】取 seed(反查触发事件与相关实体)
+【第 2 步】① 签名库前置(零大模型)
+  作用:三级漏斗的第一级:拿告警自身的 payload 特征去查已沉淀的签名库。命中误报签名 → 直接复用结论、**一次大模型都不调**;命中攻击签名 → 不短路、强制升级。这一级存在的意义就是省算力:重复的噪声不该每条都惊动模型。
+====================================================================================================
+  签名库命中:
+    {
+      "skill": "wazuh",
+      "kind": "payload",
+      "verdict": "false_positive",
+      "fingerprint": {},
+      "rule": {
+        "conditions": [
+          {
+            "path": "rule_description",
+            "op": "eq",
+            "value": "Powershell.exe spawned a powershell process which executed a base64 encoded command"
+          },
+          {
+            "path": "data.win.eventdata.commandLine",
+            "op": "contains",
+            "value": "EncodedCommand"
+          },
+          {
+            "path": "data.win.eventdata.image",
+            "op": "basename_eq",
+            "value": "powershell.exe"
+          }
+        ],
+        "verdict": "false_positive",
+        "note": "PowerShell执行Base64编码命令但解码后为版本检查和参数解析脚本，无恶意行为特征"
+      },
+      "playbook": [],
+      "status": "active",
+      "hit_count": 48,
+      "override_count": 0,
+      "origin_case_id": "782d667cfeb299dfdf22ddf267f3996510f0c6a733270c7f3299d8ccefe6e6d2",
+      "origin_verdict_id": "9b6dfc8c1054449cb82e7756974a241f",
+      "note": "PowerShell执行Base64编码命令但解码后为版本检查和参数解析脚本，无恶意行为特征",
+      "created_by": "qwen3.5-27b",
+      "created_at": "2026-07-29 06:35:28.846317+00:00",
+      "coverage_sig": "",
+      "exp_id": "32d2878d46d943f991cb66218d68230c"
+    }
+  ★演示强制:命中了也不复用,当作没见过,继续往下走(演示口径,非生产行为)。
+
+====================================================================================================
+【第 3 步】② 硬底线 floor(确定性强制升级)
+  作用:在浅层判断之前的确定性兜底:某些「漏了就是灾难」的类型可以在这里无条件升级到深度。★当前是**空底线**(恒 False)—— 2026-07-23 有意退成这样:原本按高危技战术前缀强制升级,但那些(Kerberoast/DCSync/ADCS)恰恰是浅层凭签名就能直判的,强制升级反而挡住了这条快路。升不升全交浅层 LLM 判断,钩子保留以便日后按需补。
+====================================================================================================
+  是否强制升级:False
+
+====================================================================================================
+【第 4 步】③ 浅层 LLM 分诊(轻量,不取证、不查图)
+  作用:只把告警自身(含原文)喂给模型,让它判两件事:needs_deep(要不要深度取证)与 verdict。★决策口径是**不对称**的:只有判成 false_positive 才允许在此终局;判 true_positive 或 suspicious 一律升级 —— 宁可多花算力,不可漏报。完整提示词与返回见下方。
+====================================================================================================
+
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+>>> 送入大模型的完整提示词(第 1 次调用)  model=qwen3.5-9b
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+  --- message[1]  role=system ---
+    你是 SOC 一线告警分诊器。只给你**这一条告警的原文和元数据**(payload/签名/规则/内容都在里面)。
+    
+    核心原则:**只有当'深度取证(查主机行为/进程链/登录序列/该实体台账)能提供改变结论的信息'时,升级才有意义。** 光凭告警自身就能定'是攻击还是良性'、深度取证只是补细节(扇出/估值/落地)的,直接判、别升级。
+    
+    1) 告警自身的签名/内容/payload 就足以定性 → 给 verdict、needs_deep=false:
+       · 良性(false_positive):证书申请字段无效/缺失报错;已知代理/供给工具例行操作(Ansible win_copy、Wazuh 代理);PowerShell 策略自检(__PSScriptPolicyTest)。
+       · 攻击(true_positive):RC4 加密的 Kerberoast 取票;非域控机器账号发起的 DCSync/目录复制;WAF 拦下的明确 SQLi/XSS 注入串;已知恶意工具/载荷签名。
+       —— 这类升级到深度也只补扇出/估值等细节,不改'攻击/良性'的结论,**不必升级**。
+    2) 必须重建**主机行为 / 进程父子链 / 登录序列 / 跨层落地**才能定的 → needs_deep=true(verdict="suspicious"):
+       · 一条网络登录,不知源/会话/该账号基线,无法区分正常 vs 横向;
+       · 可疑进程要看父子链、命令行上下文才知恶意与否;
+       · webshell/上传要看后端是否落地(写文件/派生进程/外连)。
+    3) 真拿不准 → needs_deep=true。别硬判。
+    
+    调用 shallow_triage 工具给出 needs_deep + verdict(+confidence/rationale),不要多余解释。
+  --- message[2]  role=user ---
+    {"alert_uid": "18ddaefbde8931f3066cdd70a53bb0b04d15c3f4f8cbefce624e760df50008b2", "rule_description": "Powershell.exe spawned a powershell process which executed a base64 encoded command", "source": "wazuh", "sensor": "wazuh-hids", "severity": 12, "technique_ids": ["T1059.001"], "raw": "{\"@timestamp\": \"2026-07-16T06:12:41.513Z\", \"id\": \"1784182361.108739364\", \"decoder\": {\"name\": \"windows_eventchannel\"}, \"manager\": {\"name\": \"e5bb7343f06d\"}, \"input\": {\"type\": \"log\"}, \"host\": {\"name\": \"f8e24743dcc1\"}, \"data\": {\"win\": {\"eventdata\": {\"utcTime\": \"2026-07-16 06:12:39.824\", \"processGuid\": \"{75647B18-7657-6A58-F70E-000000000E00}\", \"company\": \"Microsoft Corporation\", \"parentImage\": \"C:\\\\\\\\Windows\\\\\\\\System32\\\\\\\\WindowsPowerShell\\\\\\\\v1.0\\\\\\\\powershell.exe\", \"currentDirectory\": \"C:\\\\\\\\Users\\\\\\\\vagrant\\\\\\\\\", \"hashes\": \"MD5=097CE5761C89434367598B34FE32893B,SHA256=BA4038FD20E474C047BE8AAD5BFACDB1BFC1DDBE12F803F473B7918D8D819436,IMPHASH=CAEE994F79D85E47C06E5FA9CDEAE453\", \"fileVersion\": \"10.0.14393.206 (rs1_release.160915-0644)\", \"description\": \"Windows PowerShell\", \"logonGuid\": \"{75647B18-7657-6A58-8729-7F1300000000}\", \"parentProcessGuid\": \"{75647B18-7657-6A58-F60E-000000000E00}\", \"parentProcessId\": \"5480\", \"user\": \"ESSOS\\\\\\\\vagrant\", \"terminalSessionId\": \"0\", \"parentCommandLine\": \"PowerShell  -NoProfile -NonInteractive -ExecutionPolicy Unrestricted -EncodedCommand UABvAHcAZQByAFMAaABlAGwAbAAgAC0ATgBvAFAAcgBvAGYAaQBsAGUAIAAtAE4AbwBuAEkAbgB0AGUAcgBhAGMAdABpAHYAZQAgAC0ARQB4AGUAYwB1AHQAaQBvAG4AUABvAGwAaQBjAHkAIABVAG4AcgBlAHMAdAByAGkAYwB0AGUAZAAgAC0ARQBuAGMAbwBkAGUAZABDAG8AbQBtAGEAbgBkACAASgBnAEIAagBBAEcAZwBBAFkAdwBCAHcAQQBDADQAQQBZAHcAQgB2AEEARwAwAEEASQBBAEEAMgBBAEQAVQBBAE0AQQBBAHcAQQBEAEUAQQBJAEEAQQArAEEAQwBBAEEASgBBAEIAdQBBAEgAVQBBAGIAQQBCAHMAQQBBAG8AQQBhAFEAQgBtAEEAQwBBAEEASwBBAEEAawBBAEYAQQBBAFUAdwBCAFcAQQBHAFUAQQBjAGcAQgB6AEEARwBrAEEAYgB3AEIAdQBBAEYAUQBBAFkAUQBCAGkAQQBHAHcAQQBaAFEAQQB1AEEARgBBAEEAVQB3AEIAVwBBAEcAVQBBAGMAZwBCAHoAQQBHAGsAQQBiAHcAQgB1AEEAQwBBAEEATABRAEIAcwBBAEgAUQBBAEkAQQBCAGIAQQBGAFkAQQBaAFEAQgB5AEEASABNAEEAYQBRAEIAdgBBAEcANABBAFgAUQBBAGkAQQBEAE0AQQBMAGcAQQB3AEEAQwBJAEEASwBRAEEAZwBBAEgAcwBBAEMAZwBBAG4AQQBIAHMAQQBJAGcAQgBtAEEARwBFAEEAYQBRAEIAcwBBAEcAVQBBAFoAQQBBAGkAQQBEAG8AQQBkAEEAQgB5AEEASABVAEEAWgBRAEEAcwBBAEMASQBBAGIAUQBCAHoAQQBHAGMAQQBJAGcAQQA2AEEAQwBJAEEAUQBRAEIAdQBBAEgATQBBAGEAUQBCAGkAQQBHAHcAQQBaAFEAQQBnAEEASABJAEEAWgBRAEIAeABBAEgAVQBBAGEAUQBCAHkAQQBHAFUAQQBjAHcAQQBnAEEARgBBAEEAYgB3AEIAMwBBAEcAVQBBAGMAZwBCAFQAQQBHAGcAQQBaAFEAQgBzAEEARwB3AEEASQBBAEIAMgBBAEQATQBBAEwAZwBBAHcAQQBDAEEAQQBiAHcAQgB5AEEAQwBBAEEAYgBnAEIAbABBAEgAYwBBAFoAUQBCAHkAQQBDAEkAQQBmAFEAQQBuAEEAQQBvAEEAWgBRAEIANABBAEcAawBBAGQAQQBBAGcAQQBEAEUAQQBDAGcAQgA5AEEAQQBvAEEASgBBAEIAbABBAEgAZwBBAFoAUQBCAGoAQQBGADgAQQBkAHcAQgB5AEEARwBFAEEAYwBBAEIAdwBBAEcAVQBBAGMAZwBCAGYAQQBIAE0AQQBkAEEAQgB5AEEAQwBBAEEAUABRAEEAZwBBAEMAUQBBAGEAUQBCAHUAQQBIAEEAQQBkAFEAQgAwAEEAQwBBAEEAZgBBAEEAZwBBAEUAOABBAGQAUQBCADAAQQBDADAAQQBVAHcAQgAwAEEASABJAEEAYQBRAEIAdQBBAEcAYwBBAEMAZwBBAGsAQQBIAE0AQQBjAEEAQgBzAEEARwBrAEEAZABBAEIAZgBBAEgAQQBBAFkAUQBCAHkAQQBIAFEAQQBjAHcAQQBnAEEARAAwAEEASQBBAEEAawBBAEcAVQBBAGUAQQBCAGwAQQBHAE0AQQBYAHcAQgAzAEEASABJAEEAWQBRAEIAdwBBAEgAQQBBAFoAUQBCAHkAQQBGADgAQQBjAHcAQgAwAEEASABJAEEATABnAEIAVABBAEgAQQBBAGIAQQBCAHAAQQBIAFEAQQBLAEEAQgBBAEEAQwBnAEEASQBnAEIAZwBBAEQAQQBBAFkAQQBBAHcAQQBHAEEAQQBNAEEAQgBnAEEARABBAEEASQBnAEEAcABBAEMAdwBBAEkAQQBBAHkAQQBDAHcAQQBJAEEAQgBiAEEARgBNAEEAZABBAEIAeQBBAEcAawBBAGIAZwBCAG4AQQBGAE0AQQBjAEEAQgBzAEEARwBrAEEAZABBAEIAUABBAEgAQQBBAGQAQQBCAHAAQQBHADgAQQBiAGcAQgB6AEEARgAwAEEATwBnAEEANgBBAEYASQBBAFoAUQBCAHQAQQBHADgAQQBkAGcAQgBsAEEARQBVAEEAYgBRAEIAdwBBAEgAUQBBAGUAUQBCAEYAQQBHADQAQQBkAEEAQgB5AEEARwBrAEEAWgBRAEIAegBBAEMAawBBAEMAZwBCAEoAQQBHAFkAQQBJAEEAQQBvAEEAQwAwAEEAYgBnAEIAdgBBAEgAUQBBAEkAQQBBAGsAQQBIAE0AQQBjAEEAQgBzAEEARwBrAEEAZABBAEIAZgBBAEgAQQBBAFkAUQBCAHkAQQBIAFEAQQBjAHcAQQB1AEEARQB3AEEAWgBRAEIAdQBBAEcAYwBBAGQAQQBCAG8AQQBDAEEAQQBMAFEAQgBsAEEASABFAEEASQBBAEEAeQBBAEMAawBBAEkAQQBCADcAQQBDAEEAQQBkAEEAQgBvAEEASABJAEEAYgB3AEIAMwBBAEMAQQBBAEkAZwBCAHAAQQBHADQAQQBkAGcAQgBoAEEARwB3AEEAYQBRAEIAawBBAEMAQQBBAGMAQQBCAGgAQQBIAGsAQQBiAEEAQgB2AEEARwBFAEEAWgBBAEEAaQBBAEMAQQBBAGYAUQBBAEsAQQBGAE0AQQBaAFEAQgAwAEEAQwAwAEEAVgBnAEIAaABBAEgASQBBAGEAUQBCAGgAQQBHAEkAQQBiAEEAQgBsAEEAQwBBAEEATABRAEIATwBBAEcARQBBAGIAUQBCAGwAQQBDAEEAQQBhAGcAQgB6AEEARwA4AEEAYgBnAEIAZgBBAEgASQBBAFkAUQBCADMAQQBDAEEAQQBMAFEAQgBXAEEARwBFAEEAYgBBAEIAMQBBAEcAVQBBAEkAQQBBAGsAQQBIAE0AQQBjAEEAQgBzAEEARwBrAEEAZABBAEIAZgBBAEgAQQBBAFkAUQBCAHkAQQBIAFEAQQBjAHcAQgBiAEEARABFAEEAWABRAEEASwBBAEMAUQBBAFoAUQBCADQAQQBHAFUAQQBZAHcAQgBmAEEASABjAEEAYwBnAEIAaABBAEgAQQBBAGMAQQBCAGwAQQBIAEkAQQBJAEEAQQA5AEEAQwBBAEEAVwB3AEIAVABBAEcATQBBAGMAZwBCAHAAQQBIAEEAQQBkAEEAQgBDAEEARwB3AEEAYgB3AEIAagBBAEcAcwBBAFgAUQBBADYAQQBEAG8AQQBRAHcAQgB5AEEARwBVAEEAWQBRAEIAMABBAEcAVQBBAEsAQQBBAGsAQQBIAE0AQQBjAEEAQgBzAEEARwBrAEEAZABBAEIAZgBBAEgAQQBBAFkAUQBCAHkAQQBIAFEAQQBjAHcAQgBiAEEARABBAEEAWABRAEEAcABBAEEAbwBBAEoAZwBBAGsAQQBHAFUAQQBlAEEAQgBsAEEARwBNAEEAWAB3AEIAMwBBAEgASQBBAFkAUQBCAHcAQQBIAEEAQQBaAFEAQgB5AEEAQQA9AD0A\", \"product\": \"Microsoft® Windows® Operating System\", \"logonId\": \"0x137f2987\", \"integrityLevel\": \"High\", \"processId\": \"5364\", \"originalFileName\": \"PowerShell.EXE\", \"commandLine\": \"\\\\\\\"C:\\\\\\\\Windows\\\\\\\\System32\\\\\\\\WindowsPowerShell\\\\\\\\v1.0\\\\\\\\powershell.exe\\\\\\\" -NoProfile -NonInteractive -ExecutionPolicy Unrestricted -EncodedCommand JgBjAGgAYwBwAC4AYwBvAG0AIAA2ADUAMAAwADEAIAA+ACAAJABuAHUAbABsAAoAaQBmACAAKAAkAFAAUwBWAGUAcgBzAGkAbwBuAFQAYQBiAGwAZQAuAFAAUwBWAGUAcgBzAGkAbwBuACAALQBsAHQAIABbAFYAZQByAHMAaQBvAG4AXQAiADMALgAwACIAKQAgAHsACgAnAHsAIgBmAGEAaQBsAGUAZAAiADoAdAByAHUAZQAsACIAbQBzAGcAIgA6ACIAQQBuAHMAaQBiAGwAZQAgAHIAZQBxAHUAaQByAGUAcwAgAFAAbwB3AGUAcgBTAGgAZQBsAGwAIAB2ADMALgAwACAAbwByACAAbgBlAHcAZQByACIAfQAnAAoAZQB4AGkAdAAgADEACgB9AAoAJABlAHgAZQBjAF8AdwByAGEAcABwAGUAcgBfAHMAdAByACAAPQAgACQAaQBuAHAAdQB0ACAAfAAgAE8AdQB0AC0AUwB0AHIAaQBuAGcACgAkAHMAcABsAGkAdABfAHAAYQByAHQAcwAgAD0AIAAkAGUAeABlAGMAXwB3AHIAYQBwAHAAZQByAF8AcwB0AHIALgBTAHAAbABpAHQAKABAACgAIgBgADAAYAAwAGAAMABgADAAIgApACwAIAAyACwAIABbAFMAdAByAGkAbgBnAFMAcABsAGkAdABPAHAAdABpAG8AbgBzAF0AOgA6AFIAZQBtAG8AdgBlAEUAbQBwAHQAeQBFAG4AdAByAGkAZQBzACkACgBJAGYAIAAoAC0AbgBvAHQAIAAkAHMAcABsAGkAdABfAHAAYQByAHQAcwAuAEwAZQBuAGcAdABoACAALQBlAHEAIAAyACkAIAB7ACAAdABoAHIAbwB3ACAAIgBpAG4AdgBhAGwAaQBkACAAcABhAHkAbABvAGEAZAAiACAAfQAKAFMAZQB0AC0AVgBhAHIAaQBhAGIAbABlACAALQBOAGEAbQBlACAAagBzAG8AbgBfAHIAYQB3ACAALQBWAGEAbAB1AGUAIAAkAHMAcABsAGkAdABfAHAAYQByAHQAcwBbADEAXQAKACQAZQB4AGUAYwBfAHcAcgBhAHAAcABlAHIAIAA9ACAAWwBTAGMAcgBpAHAAdABCAGwAbwBjAGsAXQA6ADoAQwByAGUAYQB0AGUAKAAkAHMAcABsAGkAdABfAHAAYQByAHQAcwBbADAAXQApAAoAJgAkAGUAeABlAGMAXwB3AHIAYQBwAHAAZQByAA==\", \"parentUser\": \"ESSOS\\\\\\\\vagrant\", \"image\": \"C:\\\\\\\\Windows\\\\\\\\System32\\\\\\\\WindowsPowerShell\\\\\\\\v1.0\\\\\\\\powershell.exe\"}, \"system\": {\"version\": \"5\", \"eventRecordID\": \"724341\", \"threadID\": \"2688\", \"keywords\": \"0x8000000000000000\", \"message\": \"\\\"Process Create:\\r\\nRuleName: -\\r\\nUtcTime: 2026-07-16 06:12:39.824\\r\\nProcessGuid: {75647B18-7657-6A58-F70E-000000000E00}\\r\\nProcessId: 5364\\r\\nImage: C:\\\\Windows\\\\System32\\\\WindowsPowerShell\\\\v1.0\\\\powershell.exe\\r\\nFileVersion: 10.0.14393.206 (rs1_release.160915-0644)\\r\\nDescription: Windows PowerShell\\r\\nProduct: Microsoft® Windows® Operating System\\r\\nCompany: Microsoft Corporation\\r\\nOriginalFileName: PowerShell.EXE\\r\\nCommandLine: \\\"C:\\\\Windows\\\\System32\\\\WindowsPowerShell\\\\v1.0\\\\powershell.exe\\\" -NoProfile -NonInteractive -ExecutionPolicy Unrestricted -EncodedCommand JgBjAGgAYwBwAC4AYwBvAG0AIAA2ADUAMAAwADEAIAA+ACAAJABuAHUAbABsAAoAaQBmACAAKAAkAFAAUwBWAGUAcgBzAGkAbwBuAFQAYQBiAGwAZQAuAFAAUwBWAGUAcgBzAGkAbwBuACAALQBsAHQAIABbAFYAZQByAHMAaQBvAG4AXQAiADMALgAwACIAKQAgAHsACgAnAHsAIgBmAGEAaQBsAGUAZAAiADoAdAByAHUAZQAsACIAbQBzAGcAIgA6ACIAQQBuAHMAaQBiAGwAZQAgAHIAZQBxAHUAaQByAGUAcwAgAFAAbwB3AGUAcgBTAGgAZQBsAGwAIAB2ADMALgAwACAAbwByACAAbgBlAHcAZQByACIAfQAnAAoAZQB4AGkAdAAgADEACgB9AAoAJABlAHgAZQBjAF8AdwByAGEAcABwAGUAcgBfAHMAdAByACAAPQAgACQAaQBuAHAAdQB0ACAAfAAgAE8AdQB0AC0AUwB0AHIAaQBuAGcACgAkAHMAcABsAGkAdABfAHAAYQByAHQAcwAgAD0AIAAkAGUAeABlAGMAXwB3AHIAYQBwAHAAZQByAF8AcwB0AHIALgBTAHAAbABpAHQAKABAACgAIgBgADAAYAAwAGAAMABgADAAIgApACwAIAAyACwAIABbAFMAdAByAGkAbgBnAFMAcABsAGkAdABPAHAAdABpAG8AbgBzAF0AOgA6AFIAZQBtAG8AdgBlAEUAbQBwAHQAeQBFAG4AdAByAGkAZQBzACkACgBJAGYAIAAoAC0AbgBvAHQAIAAkAHMAcABsAGkAdABfAHAAYQByAHQAcwAuAEwAZQBuAGcAdABoACAALQBlAHEAIAAyACkAIAB7ACAAdABoAHIAbwB3ACAAIgBpAG4AdgBhAGwAaQBkACAAcABhAHkAbABvAGEAZAAiACAAfQAKAFMAZQB0AC0AVgBhAHIAaQBhAGIAbABlACAALQBOAGEAbQBlACAAagBzAG8AbgBfAHIAYQB3ACAALQBWAGEAbAB1AGUAIAAkAHMAcABsAGkAdABfAHAAYQByAHQAcwBbADEAXQAKACQAZQB4AGUAYwBfAHcAcgBhAHAAcABlAHIAIAA9ACAAWwBTAGMAcgBpAHAAdABCAGwAbwBjAGsAXQA6ADoAQwByAGUAYQB0AGUAKAAkAHMAcABsAGkAdABfAHAAYQByAHQAcwBbADAAXQApAAoAJgAkAGUAeABlAGMAXwB3AHIAYQBwAHAAZQByAA==\\r\\nCurrentDirectory: C:\\\\Users\\\\vagrant\\\\\\r\\nUser: ESSOS\\\\vagrant\\r\\nLogonGuid: {75647B18-7657-6A58-8729-7F1300000000}\\r\\nLogonId: 0x137F2987\\r\\nTerminalSessionId: 0\\r\\nIntegrityLevel: High\\r\\nHashes: MD5=097CE5761C89434367598B34FE32893B,SHA256=BA4038FD20E474C047BE8AAD5BFACDB1BFC1DDBE12F803F473B7918D8D819436,IMPHASH=CAEE994F79D85E47C06E5FA9CDEAE453\\r\\nParentProcessGuid: {75647B18-7657-6A58-F60E-000000000E00}\\r\\nParentProcessId: 5480\\r\\nParentImage: C:\\\\Windows\\\\System32\\\\WindowsPowerShell\\\\v1.0\\\\powershell.exe\\r\\nParentCommandLine: PowerShell  -NoProfile -NonInteractive -ExecutionPolicy Unrestricted -EncodedCommand UABvAHcAZQByAFMAaABlAGwAbAAgAC0ATgBvAFAAcgBvAGYAaQBsAGUAIAAtAE4AbwBuAEkAbgB0AGUAcgBhAGMAdABpAHYAZQAgAC0ARQB4AGUAYwB1AHQAaQBvAG4AUABvAGwAaQBjAHkAIABVAG4AcgBlAHMAdAByAGkAYwB0AGUAZAAgAC0ARQBuAGMAbwBkAGUAZABDAG8AbQBtAGEAbgBkACAASgBnAEIAagBBAEcAZwBBAFkAdwBCAHcAQQBDADQAQQBZAHcAQgB2AEEARwAwAEEASQBBAEEAMgBBAEQAVQBBAE0AQQBBAHcAQQBEAEUAQQBJAEEAQQArAEEAQwBBAEEASgBBAEIAdQBBAEgAVQBBAGIAQQBCAHMAQQBBAG8AQQBhAFEAQgBtAEEAQwBBAEEASwBBAEEAawBBAEYAQQBBAFUAdwBCAFcAQQBHAFUAQQBjAGcAQgB6AEEARwBrAEEAYgB3AEIAdQBBAEYAUQBBAFkAUQBCAGkAQQBHAHcAQQBaAFEAQQB1AEEARgBBAEEAVQB3AEIAVwBBAEcAVQBBAGMAZwBCAHoAQQBHAGsAQQBiAHcAQgB1AEEAQwBBAEEATABRAEIAcwBBAEgAUQBBAEkAQQBCAGIAQQBGAFkAQQBaAFEAQgB5AEEASABNAEEAYQBRAEIAdgBBAEcANABBAFgAUQBBAGkAQQBEAE0AQQBMAGcAQQB3AEEAQwBJAEEASwBRAEEAZwBBAEgAcwBBAEMAZwBBAG4AQQBIAHMAQQBJAGcAQgBtAEEARwBFAEEAYQBRAEIAcwBBAEcAVQBBAFoAQQBBAGkAQQBEAG8AQQBkAEEAQgB5AEEASABVAEEAWgBRAEEAcwBBAEMASQBBAGIAUQBCAHoAQQBHAGMAQQBJAGcAQQA2AEEAQwBJAEEAUQBRAEIAdQBBAEgATQBBAGEAUQBCAGkAQQBHAHcAQQBaAFEAQQBnAEEASABJAEEAWgBRAEIAeABBAEgAVQBBAGEAUQBCAHkAQQBHAFUAQQBjAHcAQQBnAEEARgBBAEEAYgB3AEIAMwBBAEcAVQBBAGMAZwBCAFQAQQBHAGcAQQBaAFEAQgBzAEEARwB3AEEASQBBAEIAMgBBAEQATQBBAEwAZwBBAHcAQQBDAEEAQQBiAHcAQgB5AEEAQwBBAEEAYgBnAEIAbABBAEgAYwBBAFoAUQBCAHkAQQBDAEkAQQBmAFEAQQBuAEEAQQBvAEEAWgBRAEIANABBAEcAawBBAGQAQQBBAGcAQQBEAEUAQQBDAGcAQgA5AEEAQQBvAEEASgBBAEIAbABBAEgAZwBBAFoAUQBCAGoAQQBGADgAQQBkAHcAQgB5AEEARwBFAEEAYwBBAEIAdwBBAEcAVQBBAGMAZwBCAGYAQQBIAE0AQQBkAEEAQgB5AEEAQwBBAEEAUABRAEEAZwBBAEMAUQBBAGEAUQBCAHUAQQBIAEEAQQBkAFEAQgAwAEEAQwBBAEEAZgBBAEEAZwBBAEUAOABBAGQAUQBCADAAQQBDADAAQQBVAHcAQgAwAEEASABJAEEAYQBRAEIAdQBBAEcAYwBBAEMAZwBBAGsAQQBIAE0AQQBjAEEAQgBzAEEARwBrAEEAZABBAEIAZgBBAEgAQQBBAFkAUQBCAHkAQQBIAFEAQQBjAHcAQQBnAEEARAAwAEEASQBBAEEAawBBAEcAVQBBAGUAQQBCAGwAQQBHAE0AQQBYAHcAQgAzAEEASABJAEEAWQBRAEIAdwBBAEgAQQBBAFoAUQBCAHkAQQBGADgAQQBjAHcAQgAwAEEASABJAEEATABnAEIAVABBAEgAQQBBAGIAQQBCAHAAQQBIAFEAQQBLAEEAQgBBAEEAQwBnAEEASQBnAEIAZwBBAEQAQQBBAFkAQQBBAHcAQQBHAEEAQQBNAEEAQgBnAEEARABBAEEASQBnAEEAcABBAEMAdwBBAEkAQQBBAHkAQQBDAHcAQQBJAEEAQgBiAEEARgBNAEEAZABBAEIAeQBBAEcAawBBAGIAZwBCAG4AQQBGAE0AQQBjAEEAQgBzAEEARwBrAEEAZABBAEIAUABBAEgAQQBBAGQAQQBCAHAAQQBHADgAQQBiAGcAQgB6AEEARgAwAEEATwBnAEEANgBBAEYASQBBAFoAUQBCAHQAQQBHADgAQQBkAGcAQgBsAEEARQBVAEEAYgBRAEIAdwBBAEgAUQBBAGUAUQBCAEYAQQBHADQAQQBkAEEAQgB5AEEARwBrAEEAWgBRAEIAegBBAEMAawBBAEMAZwBCAEoAQQBHAFkAQQBJAEEAQQBvAEEAQwAwAEEAYgBnAEIAdgBBAEgAUQBBAEkAQQBBAGsAQQBIAE0AQQBjAEEAQgBzAEEARwBrAEEAZABBAEIAZgBBAEgAQQBBAFkAUQBCAHkAQQBIAFEAQQBjAHcAQQB1AEEARQB3AEEAWgBRAEIAdQBBAEcAYwBBAGQAQQBCAG8AQQBDAEEAQQBMAFEAQgBsAEEASABFAEEASQBBAEEAeQBBAEMAawBBAEkAQQBCADcAQQBDAEEAQQBkAEEAQgBvAEEASABJAEEAYgB3AEIAMwBBAEMAQQBBAEkAZwBCAHAAQQBHADQAQQBkAGcAQgBoAEEARwB3AEEAYQBRAEIAawBBAEMAQQBBAGMAQQBCAGgAQQBIAGsAQQBiAEEAQgB2AEEARwBFAEEAWgBBAEEAaQBBAEMAQQBBAGYAUQBBAEsAQQBGAE0AQQBaAFEAQgAwAEEAQwAwAEEAVgBnAEIAaABBAEgASQBBAGEAUQBCAGgAQQBHAEkAQQBiAEEAQgBsAEEAQwBBAEEATABRAEIATwBBAEcARQBBAGIAUQBCAGwAQQBDAEEAQQBhAGcAQgB6AEEARwA4AEEAYgBnAEIAZgBBAEgASQBBAFkAUQBCADMAQQBDAEEAQQBMAFEAQgBXAEEARwBFAEEAYgBBAEIAMQBBAEcAVQBBAEkAQQBBAGsAQQBIAE0AQQBjAEEAQgBzAEEARwBrAEEAZABBAEIAZgBBAEgAQQBBAFkAUQBCAHkAQQBIAFEAQQBjAHcAQgBiAEEARABFAEEAWABRAEEASwBBAEMAUQBBAFoAUQBCADQAQQBHAFUAQQBZAHcAQgBmAEEASABjAEEAYwBnAEIAaABBAEgAQQBBAGMAQQBCAGwAQQBIAEkAQQBJAEEAQQA5AEEAQwBBAEEAVwB3AEIAVABBAEcATQBBAGMAZwBCAHAAQQBIAEEAQQBkAEEAQgBDAEEARwB3AEEAYgB3AEIAagBBAEcAcwBBAFgAUQBBADYAQQBEAG8AQQBRAHcAQgB5AEEARwBVAEEAWQBRAEIAMABBAEcAVQBBAEsAQQBBAGsAQQBIAE0AQQBjAEEAQgBzAEEARwBrAEEAZABBAEIAZgBBAEgAQQBBAFkAUQBCAHkAQQBIAFEAQQBjAHcAQgBiAEEARABBAEEAWABRAEEAcABBAEEAbwBBAEoAZwBBAGsAQQBHAFUAQQBlAEEAQgBsAEEARwBNAEEAWAB3AEIAMwBBAEgASQBBAFkAUQBCAHcAQQBIAEEAQQBaAFEAQgB5AEEAQQA9AD0A\\r\\nParentUser: ESSOS\\\\vagrant\\\"\", \"computer\": \"meereen.essos.local\", \"providerName\": \"Microsoft-Windows-Sysmon\", \"opcode\": \"0\", \"level\": \"4\", \"processID\": \"5088\", \"providerGuid\": \"{5770385F-C22A-43E0-BF4C-06F5698FFBD9}\", \"systemTime\": \"2026-07-16T06:12:39.826731300Z\", \"task\": \"1\", \"eventID\": \"1\", \"channel\": \"Microsoft-Windows-Sysmon/Operational\", \"severityValue\": \"INFORMATION\"}}}, \"timestamp\": \"2026-07-16T06:12:41.236+0000\", \"ecs\": {\"version\": \"1.12.0\"}, \"log\": {\"offset\": 60359890, \"file\": {\"path\": \"/logs/wazuh/alerts.json\"}}, \"location\": \"EventChannel\", \"log_type\": \"hids_alert\", \"log_source\": \"wazuh\", \"agent\": {\"ip\": \"192.168.56.12\", \"type\": \"filebeat\", \"version\": \"7.17.22\", \"hostname\": \"f8e24743dcc1\", \"ephemeral_id\": \"d5d271ec-e831-42dd-9d03-45d8ccd7a05b\", \"id\": \"002\", \"name\": \"meereen\"}, \"rule\": {\"level\": 12, \"description\": \"Powershell.exe spawned a powershell process which executed a base64 encoded command\", \"id\": \"92057\", \"mitre\": {\"id\": [\"T1059.001\"], \"tactic\": [\"Execution\"], \"technique\": [\"PowerShell\"]}, \"firedtimes\": 7, \"mail\": true, \"groups\": [\"sysmon\", \"sysmon_eid1_detections\", \"windows\"]}}"}
+  可用工具(function calling):
+    [
+      {
+        "type": "function",
+        "function": {
+          "name": "shallow_triage",
+          "description": "浅层分诊:据这条告警自身的 payload/签名判 needs_deep + verdict(不取证、不查图)。",
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "needs_deep": {
+                "type": "boolean",
+                "description": "true=需深度研判(要重建主机行为/进程链/登录序列才能定);false=光凭告警就能终局"
+              },
+              "verdict": {
+                "type": "string",
+                "enum": [
+                  "true_positive",
+                  "false_positive",
+                  "suspicious"
+                ],
+                "description": "needs_deep=false 时给 true_positive/false_positive;true 时给 suspicious"
+              },
+              "confidence": {
+                "type": "number",
+                "description": "0~1"
+              },
+              "rationale": {
+                "type": "string",
+                "description": "一句话依据"
+              }
+            },
+            "required": [
+              "needs_deep",
+              "verdict"
+            ]
+          }
+        }
+      }
+    ]
+  tool_choice:required
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+<<< 大模型完整返回(第 1 次调用,耗时 4966 ms)
+<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+  返回:
+    {
+      "tool_calls": [
+        "ToolCall(id='chatcmpl-tool-aaa127321326bc85', name='shallow_triage', arguments={'needs_deep': True, 'verdict': 'suspicious', 'confidence': 0.8, 'rationale': '告警仅显示 PowerShell 执行了 Base64 编码命令，缺乏父子进程链上下文、登录会话来源及该账号基线，无法区分是恶意执行还是正常运维/脚本任务，必须重建行为链才能定性。'})"
+      ],
+      "content": "",
+      "finish_reason": null
+    }
+
+  -- 产出 --
+  浅层分诊结果:
+    {
+      "needs_deep": true,
+      "verdict": "suspicious",
+      "confidence": 0.8,
+      "rationale": "告警仅显示 PowerShell 执行了 Base64 编码命令，缺乏父子进程链上下文、登录会话来源及该账号基线，无法区分是恶意执行还是正常运维/脚本任务，必须重建行为链才能定性。"
+    }
+  → 路由:升级到深度研判
+
+====================================================================================================
+【第 5 步】取 seed(反查触发事件与相关实体)
   作用:拿告警回溯它的触发事件,以及事件牵扯到的进程/账号/主机等实体。这是后续所有取证的起点,也是知识图谱相对于纯日志的第一处增益。
 ====================================================================================================
-  -- 产出(耗时 241 ms)--
+  -- 产出(耗时 237 ms)--
   包含的键:event, subject, related
   seed[event]:
     {
@@ -75,7 +220,7 @@ AI SOC 自动研判 —— 端到端流程演示(完整记录,不截断)
           "role": "domain_controller",
           "first_seen": "2026-07-02T02:32:06.422Z",
           "has_adcs": true,
-          "last_seen": "2026-08-14T05:59:52.284Z",
+          "last_seen": "2026-08-14T06:09:52.595Z",
           "domain": "essos.local",
           "criticality": "critical",
           "is_dc": true
@@ -100,12 +245,12 @@ AI SOC 自动研判 —— 端到端流程演示(完整记录,不截断)
     ]
 
 ====================================================================================================
-【第 3 步】路由:选取证方法论(skill)
+【第 6 步】路由:选取证方法论(skill)
   作用:由大模型判断这条告警该用哪套取证方法论(提示词与返回见下方完整记录)。skill 是「该查什么、怎么判」的活模块,按四层(身份/主机/网络/应用)组织,每层另有通用兜底。
 ====================================================================================================
 
 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
->>> 送入大模型的完整提示词(第 1 次调用)  model=qwen3.5-27b
+>>> 送入大模型的完整提示词(第 2 次调用)  model=qwen3.5-27b
 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
   --- message[1]  role=system ---
     你是 SOC 告警分派器。据【告警描述 + 触发它的底层事件】选**最匹配的一个**研判 skill;拿不准就选对应大类的 generic_* 兜底;都明显不像选 none。
@@ -194,27 +339,27 @@ AI SOC 自动研判 —— 端到端流程演示(完整记录,不截断)
     ]
   tool_choice:required
 <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-<<< 大模型完整返回(第 1 次调用,耗时 17294 ms)
+<<< 大模型完整返回(第 2 次调用,耗时 15125 ms)
 <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
   返回:
     {
       "tool_calls": [
-        "ToolCall(id='chatcmpl-tool-86668a859653c0a7', name='select_skill', arguments={'name': 'suspicious_process', 'reason': \"告警描述明确指出 PowerShell 进程派生了另一个 PowerShell 进程并执行了 Base64 编码命令（-EncodedCommand），这属于典型的可疑进程行为。解码后的命令显示其执行了 payload 处理逻辑，符合 suspicious_process 技能中'编码 PowerShell(-enc/EncodedCommand)'和'可疑命令行'的关键词特征。\"})"
+        "ToolCall(id='chatcmpl-tool-a6ea226094018bfb', name='select_skill', arguments={'name': 'suspicious_process', 'reason': '告警显示 PowerShell 进程派生了另一个 PowerShell 进程，并执行了 Base64 编码的命令（-EncodedCommand），这属于可疑进程行为。解码后的命令包含执行 payload 的逻辑，符合 suspicious_process 的判定标准（编码 PowerShell、可疑命令行、父子进程链）。'})"
       ],
       "content": "",
       "finish_reason": null
     }
 
-  -- 产出(耗时 17295 ms)--
+  -- 产出(耗时 15126 ms)--
   选中 skill:suspicious_process
   该 skill 的方法论描述:
     研判可疑进程/命令执行/LOLBin/恶意子进程告警。当告警涉及"异常父进程派生 shell(w3wp/services/spoolsv 生 cmd/powershell)""编码 PowerShell(-enc/EncodedCommand)""LOLBin 滥用(rundll32/mshta/regsvr32/certutil)""进程注入""可疑命令行"时选它。关键词 suspicious process/command execution/LOLBin/rundll32/mshta/regsvr32/encoded command/powershell -enc/进程注入/父子进程链。
 
 ====================================================================================================
-【第 4 步】确定性取证(recipe)
+【第 7 步】确定性取证(recipe)
   作用:★这一步不问大模型:用写死的图查询把证据取出来 —— 进程血缘、命令行、落地文件、外连、账号基线……产出结构化 finding(红=攻击迹象 / 白=良性证伪 / 中性=事实)。证据确定性,是后面经验能复用、模型不编造的前提。
 ====================================================================================================
-  -- 产出(耗时 602 ms)--
+  -- 产出(耗时 614 ms)--
   发现(finding)条数:2
      1. [中性·事实] suspproc.process
       属性:
@@ -290,10 +435,10 @@ AI SOC 自动研判 —— 端到端流程演示(完整记录,不截断)
     进程 EXE 签名/是否 LOLBin 原版、完整性级别/Token 提权、注入子行为细节 —— 未建模;已解码命令与噪声标签见 context
 
 ====================================================================================================
-【第 5 步】经验层比对(第二类经验)
+【第 8 步】经验层比对(第二类经验)
   作用:拿刚产出的 finding 集比对已沉淀的行为指纹与威胁规则:**威胁指纹与威胁规则都命中 → 自动判真阳;纯良性且无威胁 → 自动判误报;其余落大模型**。这是省算力的关键 —— 见过的情形秒出结论,不必每条都请大模型。
 ====================================================================================================
-  -- 产出(耗时 3 ms)--
+  -- 产出(耗时 1 ms)--
   经验层决策:AUTO_FP
   命中的良性发现集(白):
     [
@@ -347,7 +492,7 @@ AI SOC 自动研判 —— 端到端流程演示(完整记录,不截断)
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 ====================================================================================================
-【第 6 步】召回命中经验的历史台账
+【第 9 步】召回命中经验的历史台账
   作用:把「这条经验当初是从哪些告警学来的」一并取出,作为**已知信息**喂给大模型。(本次按「陌生告警」演示,已清空命中项,所以这里应当为空 —— 这正是它该有的表现。)
 ====================================================================================================
   -- 产出(耗时 0 ms)--
@@ -355,19 +500,19 @@ AI SOC 自动研判 —— 端到端流程演示(完整记录,不截断)
     {}
 
 ====================================================================================================
-【第 7 步】选研判器
+【第 10 步】选研判器
   作用:取证已完成,这一步决定由谁下结论:recipe 模式=确定性证据 + 大模型定性(默认,稳);auto 模式=大模型自主规划查询(对比用)。
 ====================================================================================================
   模式:recipe
   研判器:RecipeInvestigator
 
 ====================================================================================================
-【第 8 步】大模型研判(深度通道)
+【第 11 步】大模型研判(深度通道)
   作用:把告警原文、取证证据、经验命中情况一并交给大模型,要它给出结论、置信度、依据与缺失证据。**事实由确定性查询提供,模型只负责定性** —— 完整提示词见下方,可以逐字核对我们有没有把答案偷偷塞给它。
 ====================================================================================================
 
 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
->>> 送入大模型的完整提示词(第 2 次调用)  model=qwen3.5-27b
+>>> 送入大模型的完整提示词(第 3 次调用)  model=qwen3.5-27b
 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
   --- message[1]  role=system ---
     你是资深 SOC 研判分析师,只依据给你的证据判断,不臆造。
@@ -653,36 +798,35 @@ AI SOC 自动研判 —— 端到端流程演示(完整记录,不截断)
     ]
   tool_choice:required
 <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-<<< 大模型完整返回(第 2 次调用,耗时 31348 ms)
+<<< 大模型完整返回(第 3 次调用,耗时 25953 ms)
 <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
   返回:
     {
       "tool_calls": [
-        "ToolCall(id='chatcmpl-tool-85b315628ef4bc6c', name='finalize_verdict', arguments={'verdict': 'false_positive', 'confidence': 1.0, 'summary': 'Ansible 配置管理工具触发的 PowerShell 执行包装器，属于已知良性噪声', 'rationale': \"解码后的命令明确显示为 Ansible 的 exec_wrapper 脚本，包含版本检查和 payload 解析逻辑。证据中的'供给/自检噪声'标签已确认为 ansible_exec_wrapper，符合误报场景中的'Ansible 配管供给'特征。\", 'evidence_refs': ['解码后命令(逐层).主语[0]', '供给/自检噪声', '结构化发现(findings)[1]'], 'missing_evidence': [], 'pattern': 'ansible_exec_wrapper'})"
+        "ToolCall(id='chatcmpl-tool-9a5a9005b1ad2c3f', name='finalize_verdict', arguments={'verdict': 'false_positive', 'confidence': 1.0, 'summary': 'Ansible 配置管理工具的正常 PowerShell 执行包装器，非恶意活动。', 'rationale': \"解码后的命令明确显示为 Ansible 的 exec_wrapper 脚本，包含版本检查和 JSON 输出格式，符合 Ansible 在 Windows 上执行任务的典型行为。证据中的'供给/自检噪声'标签也确认了这是 Ansible 配管供给的良性行为。\", 'evidence_refs': ['解码后命令(逐层)', '供给/自检噪声: ansible_exec_wrapper'], 'missing_evidence': [], 'pattern': 'ansible_exec_wrapper'})"
       ],
       "content": "",
       "finish_reason": null
     }
 
-  -- 产出(耗时 32142 ms)--
+  -- 产出(耗时 26653 ms)--
   研判路径:B
   使用的 skill:suspicious_process
   耗时:None ms
   结论:false_positive   倾向=None   置信=1.0
   摘要:
-    Ansible 配置管理工具触发的 PowerShell 执行包装器，属于已知良性噪声
+    Ansible 配置管理工具的正常 PowerShell 执行包装器，非恶意活动。
   依据:
-    解码后的命令明确显示为 Ansible 的 exec_wrapper 脚本，包含版本检查和 payload 解析逻辑。证据中的'供给/自检噪声'标签已确认为 ansible_exec_wrapper，符合误报场景中的'Ansible 配管供给'特征。
+    解码后的命令明确显示为 Ansible 的 exec_wrapper 脚本，包含版本检查和 JSON 输出格式，符合 Ansible 在 Windows 上执行任务的典型行为。证据中的'供给/自检噪声'标签也确认了这是 Ansible 配管供给的良性行为。
   证据引用:
     [
-      "解码后命令(逐层).主语[0]",
-      "供给/自检噪声",
-      "结构化发现(findings)[1]"
+      "解码后命令(逐层)",
+      "供给/自检噪声: ansible_exec_wrapper"
     ]
   缺失证据:
     []
   研判者:qwen3.5-27b
-  verdict_id:bfada3cb0d474ef3aaeacf5c6bfae13a
+  verdict_id:ebedebca265c4acebf58e9820efacd45
   ATT&CK 技战术:
     []
   处置建议(仅建议;真执行须人工审批):
@@ -770,7 +914,7 @@ AI SOC 自动研判 —— 端到端流程演示(完整记录,不截断)
     ]
 
 ====================================================================================================
-【第 9 步】写图台账(第三类经验)
+【第 12 步】写图台账(第三类经验)
   作用:把本次结论落到图上,每条告警一个 verdict_id。
 ====================================================================================================
   将写入告警:18ddaefbde8931f3066cdd70a53bb0b04d15c3f4f8cbefce624e760df50008b2
@@ -779,22 +923,21 @@ AI SOC 自动研判 —— 端到端流程演示(完整记录,不截断)
       "verdict": "false_positive",
       "lean": null,
       "confidence": 1.0,
-      "summary": "Ansible 配置管理工具触发的 PowerShell 执行包装器，属于已知良性噪声",
-      "rationale": "解码后的命令明确显示为 Ansible 的 exec_wrapper 脚本，包含版本检查和 payload 解析逻辑。证据中的'供给/自检噪声'标签已确认为 ansible_exec_wrapper，符合误报场景中的'Ansible 配管供给'特征。",
+      "summary": "Ansible 配置管理工具的正常 PowerShell 执行包装器，非恶意活动。",
+      "rationale": "解码后的命令明确显示为 Ansible 的 exec_wrapper 脚本，包含版本检查和 JSON 输出格式，符合 Ansible 在 Windows 上执行任务的典型行为。证据中的'供给/自检噪声'标签也确认了这是 Ansible 配管供给的良性行为。",
       "evidence_refs": [
-        "解码后命令(逐层).主语[0]",
-        "供给/自检噪声",
-        "结构化发现(findings)[1]"
+        "解码后命令(逐层)",
+        "供给/自检噪声: ansible_exec_wrapper"
       ],
       "missing_evidence": [],
       "agent": "qwen3.5-27b",
       "investigated_at": null,
-      "verdict_id": "bfada3cb0d474ef3aaeacf5c6bfae13a"
+      "verdict_id": "ebedebca265c4acebf58e9820efacd45"
     }
   -- 演示模式:**未真正写入**(加 --write 才写)
 
 ====================================================================================================
-【第 10 步】存回归语料
+【第 13 步】存回归语料
   作用:finding 快照 + 结论,用作经验入库前的考卷。
 ====================================================================================================
   将存入 skill:suspicious_process
@@ -806,12 +949,12 @@ AI SOC 自动研判 —— 端到端流程演示(完整记录,不截断)
   -- 演示模式:**未真正写入**(加 --write 才写)
 
 ====================================================================================================
-【第 11 步】经验沉淀(蒸馏 → 考试 → 入库)
+【第 14 步】经验沉淀(蒸馏 → 考试 → 入库)
   作用:只有走了大模型这条(未命中经验)才沉淀:把本次判断**蒸馏**成行为指纹/威胁规则,拿历史语料**考试**,过关才入库,并记下学它时的覆盖度签名。★本次蒸馏与考试是**真跑的**(提示词与返回见下方),只是入库落到一个用完即弃的临时库 —— 生产经验库不被一次演示污染。
 ====================================================================================================
 
 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
->>> 送入大模型的完整提示词(第 3 次调用)  model=qwen3.5-27b
+>>> 送入大模型的完整提示词(第 4 次调用)  model=qwen3.5-27b
 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
   --- message[1]  role=system ---
     你是 SOC 经验蒸馏器。给你一次【已完成】的研判(规范发现 findings + 结论 + 依据 + 方法论)。
@@ -856,7 +999,7 @@ AI SOC 自动研判 —— 端到端流程演示(完整记录,不截断)
     本次研判:
     {
       "verdict": "false_positive",
-      "rationale": "解码后的命令明确显示为 Ansible 的 exec_wrapper 脚本，包含版本检查和 payload 解析逻辑。证据中的'供给/自检噪声'标签已确认为 ansible_exec_wrapper，符合误报场景中的'Ansible 配管供给'特征。",
+      "rationale": "解码后的命令明确显示为 Ansible 的 exec_wrapper 脚本，包含版本检查和 JSON 输出格式，符合 Ansible 在 Windows 上执行任务的典型行为。证据中的'供给/自检噪声'标签也确认了这是 Ansible 配管供给的良性行为。",
       "findings": [
         {
           "finding_id": "suspproc.process",
@@ -917,18 +1060,18 @@ AI SOC 自动研判 —— 端到端流程演示(完整记录,不截断)
     ]
   tool_choice:required
 <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-<<< 大模型完整返回(第 3 次调用,耗时 10981 ms)
+<<< 大模型完整返回(第 4 次调用,耗时 10374 ms)
 <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
   返回:
     {
       "tool_calls": [
-        "ToolCall(id='chatcmpl-tool-9b2f2c9af1447388', name='distill_experience', arguments={'decisive_finding_ids': ['suspproc.provisioning_noise'], 'note': 'Ansible 配管环境中的 exec_wrapper 脚本是典型良性噪声，命中该标签即可直接判定误报'})"
+        "ToolCall(id='chatcmpl-tool-8f423fc69a6d53c0', name='distill_experience', arguments={'decisive_finding_ids': ['suspproc.provisioning_noise'], 'note': 'Ansible 配管供给的 exec_wrapper 脚本是典型良性噪声，命中该标签即可直接判定误报'})"
       ],
       "content": "",
       "finish_reason": null
     }
 
-  -- 产出(耗时 10987 ms)--
+  -- 产出(耗时 10376 ms)--
   蒸馏出的经验(本次学到的东西):
     {
       "skill": "suspicious_process",
@@ -953,12 +1096,12 @@ AI SOC 自动研判 —— 端到端流程演示(完整记录,不截断)
       "hit_count": 0,
       "override_count": 0,
       "origin_case_id": "18ddaefbde8931f3066cdd70a53bb0b04d15c3f4f8cbefce624e760df50008b2",
-      "origin_verdict_id": "bfada3cb0d474ef3aaeacf5c6bfae13a",
-      "note": "Ansible 配管环境中的 exec_wrapper 脚本是典型良性噪声，命中该标签即可直接判定误报",
+      "origin_verdict_id": "ebedebca265c4acebf58e9820efacd45",
+      "note": "Ansible 配管供给的 exec_wrapper 脚本是典型良性噪声，命中该标签即可直接判定误报",
       "created_by": "qwen3.5-27b",
       "created_at": null,
       "coverage_sig": "821229922c273556",
-      "exp_id": "6abc4539e23f40f0befae8477b7041b9"
+      "exp_id": "8f44ea86df4d4a6baf965862a6290d12"
     }
   考试报告(拿历史语料回归,防止学歪):
     {
@@ -990,12 +1133,12 @@ AI SOC 自动研判 —— 端到端流程演示(完整记录,不截断)
         "hit_count": 0,
         "override_count": 0,
         "origin_case_id": "18ddaefbde8931f3066cdd70a53bb0b04d15c3f4f8cbefce624e760df50008b2",
-        "origin_verdict_id": "bfada3cb0d474ef3aaeacf5c6bfae13a",
-        "note": "Ansible 配管环境中的 exec_wrapper 脚本是典型良性噪声，命中该标签即可直接判定误报",
+        "origin_verdict_id": "ebedebca265c4acebf58e9820efacd45",
+        "note": "Ansible 配管供给的 exec_wrapper 脚本是典型良性噪声，命中该标签即可直接判定误报",
         "created_by": "qwen3.5-27b",
         "created_at": null,
         "coverage_sig": "821229922c273556",
-        "exp_id": "6abc4539e23f40f0befae8477b7041b9"
+        "exp_id": "8f44ea86df4d4a6baf965862a6290d12"
       }
     ]
   -- 演示模式:以上**未写入生产经验库**(加 --write 才写)
@@ -1008,19 +1151,18 @@ AI SOC 自动研判 —— 端到端流程演示(完整记录,不截断)
   耗时:None ms
   结论:false_positive   倾向=None   置信=1.0
   摘要:
-    Ansible 配置管理工具触发的 PowerShell 执行包装器，属于已知良性噪声
+    Ansible 配置管理工具的正常 PowerShell 执行包装器，非恶意活动。
   依据:
-    解码后的命令明确显示为 Ansible 的 exec_wrapper 脚本，包含版本检查和 payload 解析逻辑。证据中的'供给/自检噪声'标签已确认为 ansible_exec_wrapper，符合误报场景中的'Ansible 配管供给'特征。
+    解码后的命令明确显示为 Ansible 的 exec_wrapper 脚本，包含版本检查和 JSON 输出格式，符合 Ansible 在 Windows 上执行任务的典型行为。证据中的'供给/自检噪声'标签也确认了这是 Ansible 配管供给的良性行为。
   证据引用:
     [
-      "解码后命令(逐层).主语[0]",
-      "供给/自检噪声",
-      "结构化发现(findings)[1]"
+      "解码后命令(逐层)",
+      "供给/自检噪声: ansible_exec_wrapper"
     ]
   缺失证据:
     []
   研判者:qwen3.5-27b
-  verdict_id:bfada3cb0d474ef3aaeacf5c6bfae13a
+  verdict_id:ebedebca265c4acebf58e9820efacd45
   ATT&CK 技战术:
     []
   处置建议(仅建议;真执行须人工审批):
@@ -1108,8 +1250,8 @@ AI SOC 自动研判 —— 端到端流程演示(完整记录,不截断)
     ]
   经验层决策(演示口径):FALLTHROUGH
   实际走的通道:recipe
-  大模型调用次数:3
-  端到端耗时:61410 ms
+  大模型调用次数:4
+  端到端耗时:58325 ms
 
   小结:证据由确定性图查询取得,模型只负责定性 —— 它没有机会编造事实;
         经验层让见过的情形不必再问模型(本次为演示完整流程而刻意绕开);
