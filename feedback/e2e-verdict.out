@@ -1,0 +1,20 @@
+=== 端到端【第 2 步】对演练图跑完整研判 2026-08-14 09:30Z ===
+主机    : localhost.localdomain   仓库 /home/soc/soc-agent
+代码版本: 4b5d3c4 端到端第 2 步:对演练图跑完整研判(复用 demo_pipeline,不另写精简版)
+解释器  : .venv312/bin/python -> Python 3.11.6
+目标图  : bolt://10.185.93.0:7689   ★已硬拒绝 7687/7688
+口径    : 不写台账/不写经验库(演示口径);蒸馏与考试真跑但落用完即弃的临时库
+
+########## [1] 演练图里有哪些告警,每条值得验什么 ##########
+Traceback (most recent call last):
+  File "/home/soc/soc-agent/scripts/e2e_alerts.py", line 82, in <module>
+    sys.exit(main())
+             ^^^^^^
+  File "/home/soc/soc-agent/scripts/e2e_alerts.py", line 62, in main
+    rs = rows()
+         ^^^^^^
+  File "/home/soc/soc-agent/scripts/e2e_alerts.py", line 48, in rows
+    g = Neo4jGraph()
+        ^^^^^^^^^^^^
+TypeError: Neo4jGraph.__init__() missing 3 required positional arguments: 'uri', 'user', and 'password'
+!! 取不到告警(退出码 1)。图里没有 :Alert?先确认第 1 步跑完且图没被拆。
