@@ -213,3 +213,38 @@ def test_run_investigation_still_branches_on_that_field():
     import inspect
     from soc_agent import cli
     assert "cascade_enabled" in inspect.getsource(cli.run_investigation)
+
+
+# --------------------------------------------------- 端到端第 2 步(对演练图跑研判)
+
+def test_e2e_verdict_refuses_the_production_and_shadow_graphs():
+    """★演练数据绝不能进生产图或影子图。
+
+    这条硬拒绝不是客气话:本仓真吃过亏 —— tap 验证的环境变量残留在 shell 里,
+    金丝雀往影子写、生产图空,差点误判成 Kafka 坏了。所以拒绝要写在脚本里,不是靠人记着。
+    """
+    src = (_ROOT / "scripts" / "e2e-verdict.sh").read_text(encoding="utf-8")
+    for bad in ("*7687*", "*7688*"):
+        assert bad in src and "拒绝" in src
+    assert "*7689*" in src                                   # 只放行演练图
+
+
+def test_e2e_verdict_reuses_the_demo_pipeline_instead_of_a_slimmed_copy():
+    """★复用 demo_pipeline(它包的是生产真实函数、打印完整提示词、不截断)。
+
+    为一次验证另写"精简版流水线",验的就是一条生产不走的路 —— 本仓一路踩的就是这个。
+    """
+    src = (_ROOT / "scripts" / "e2e-verdict.sh").read_text(encoding="utf-8")
+    assert "scripts/demo_pipeline.py" in src
+    assert "--write" not in src.split("RUN=(")[-1].split("[3] 小结")[0]   # 默认不写生产
+
+
+def test_e2e_alert_picker_uses_the_real_graph_client_api():
+    """`run_cypher` 是 `**params` 不是 dict —— 传 {} 会 TypeError,而那只在真机上才炸。"""
+    import inspect
+
+    from soc_agent.graph.client import Neo4jGraph
+    sig = inspect.signature(Neo4jGraph.run_cypher)
+    assert any(p.kind is inspect.Parameter.VAR_KEYWORD for p in sig.parameters.values())
+    src = (_ROOT / "scripts" / "e2e_alerts.py").read_text(encoding="utf-8")
+    assert "g.run_cypher(Q)" in src and "run_cypher(Q, {})" not in src
