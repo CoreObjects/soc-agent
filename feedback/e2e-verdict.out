@@ -1,6 +1,6 @@
-=== 端到端【第 2 步】对演练图跑完整研判 2026-08-14 10:02Z ===
+=== 端到端【第 2 步】对演练图跑完整研判 2026-08-14 10:20Z ===
 主机    : localhost.localdomain   仓库 /home/soc/soc-agent
-代码版本: a70edfd 修:e2e 选靶器按生产那条路径构造图客户端(真机才炸的那类错,连犯两次)
+代码版本: ad8f11c feedback: e2e-verdict 08-14 10:02Z
 解释器  : .venv312/bin/python -> Python 3.11.6
 目标图  : bolt://10.185.93.0:7689   ★已硬拒绝 7687/7688
 口径    : 不写台账/不写经验库(演示口径);蒸馏与考试真跑但落用完即弃的临时库
@@ -157,12 +157,12 @@ AI SOC 自动研判 —— 端到端流程演示(完整记录,不截断)
     ]
   tool_choice:required
 <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-<<< 大模型完整返回(第 1 次调用,耗时 2852 ms)
+<<< 大模型完整返回(第 1 次调用,耗时 2662 ms)
 <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
   返回:
     {
       "tool_calls": [
-        "ToolCall(id='chatcmpl-tool-9cbb23ade526fd55', name='shallow_triage', arguments={'needs_deep': False, 'verdict': 'true_positive', 'confidence': 0.95, 'rationale': 'FortiGate 防火墙明确拦截了针对 Apache Struts 的 OGNL 代码执行攻击载荷，特征匹配度高，无需深度取证即可定性为攻击。'})"
+        "ToolCall(id='chatcmpl-tool-8672041a7ed7e8f1', name='shallow_triage', arguments={'needs_deep': False, 'verdict': 'true_positive', 'confidence': 0.95, 'rationale': 'FortiGate 防火墙IPS明确拦截了Apache Struts OGNL代码执行攻击，特征签名匹配且动作已阻断，无需深度取证即可定性为攻击。'})"
       ],
       "content": "",
       "finish_reason": null
@@ -174,7 +174,7 @@ AI SOC 自动研判 —— 端到端流程演示(完整记录,不截断)
       "needs_deep": false,
       "verdict": "true_positive",
       "confidence": 0.95,
-      "rationale": "FortiGate 防火墙明确拦截了针对 Apache Struts 的 OGNL 代码执行攻击载荷，特征匹配度高，无需深度取证即可定性为攻击。"
+      "rationale": "FortiGate 防火墙IPS明确拦截了Apache Struts OGNL代码执行攻击，特征签名匹配且动作已阻断，无需深度取证即可定性为攻击。"
     }
   ★演示强制:浅层本可在此终局,但演示要展示完整漏斗,故改判需要升级(演示口径,非生产行为)。
   → 路由:升级到深度研判
@@ -183,12 +183,12 @@ AI SOC 自动研判 —— 端到端流程演示(完整记录,不截断)
 【第 5 步】取 seed(反查触发事件与相关实体)
   作用:拿告警回溯它的触发事件,以及事件牵扯到的进程/账号/主机等实体。这是后续所有取证的起点,也是知识图谱相对于纯日志的第一处增益。
 ====================================================================================================
-  -- 产出(耗时 372 ms)--
+  -- 产出(耗时 319 ms)--
   包含的键:event, subject, related
   seed[event]:
     {
       "device_product": "FortiGate",
-      "ingest_time": 1786699296007,
+      "ingest_time": 1786702710067,
       "device_action": "block",
       "activity": "network.flow",
       "event_count": 1,
@@ -292,7 +292,7 @@ AI SOC 自动研判 —— 端到端流程演示(完整记录,不截断)
       "severity": 14,
       "触发它的底层事件": {
         "device_product": "FortiGate",
-        "ingest_time": 1786699296007,
+        "ingest_time": 1786702710067,
         "device_action": "block",
         "activity": "network.flow",
         "event_count": 1,
@@ -357,18 +357,18 @@ AI SOC 自动研判 —— 端到端流程演示(完整记录,不截断)
     ]
   tool_choice:required
 <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-<<< 大模型完整返回(第 2 次调用,耗时 13705 ms)
+<<< 大模型完整返回(第 2 次调用,耗时 12993 ms)
 <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
   返回:
     {
       "tool_calls": [
-        "ToolCall(id='chatcmpl-tool-9c3f8e1ca2256997', name='select_skill', arguments={'name': 'web_exploit', 'reason': '告警明确标识为Apache Struts远程代码执行尝试（Apache.Struts.OGNL.Code.Execution），属于典型的Web应用漏洞利用攻击，符合web_exploit skill的判定标准（涉及RCE/OWASP Top10攻击特征）'})"
+        "ToolCall(id='chatcmpl-tool-88f8fcbb77a8d1dd', name='select_skill', arguments={'name': 'web_exploit', 'reason': '告警明确标识为Apache Struts远程代码执行尝试（Apache.Struts.OGNL.Code.Execution），属于典型的Web应用漏洞利用攻击，符合web_exploit skill的判定标准（涉及RCE/OWASP Top10攻击特征）。'})"
       ],
       "content": "",
       "finish_reason": null
     }
 
-  -- 产出(耗时 13705 ms)--
+  -- 产出(耗时 12994 ms)--
   选中 skill:web_exploit
   该 skill 的方法论描述:
     研判 Web 攻击 / WAF 命中告警(SQL 注入、XSS、路径遍历/LFI/RFI、命令注入/RCE)。当告警来自 WAF/ModSecurity/CRS、涉及"SQLi/XSS/目录遍历/文件包含/命令注入/OWASP Top10 攻击特征"时选它。关键词 WAF/ModSecurity/CRS/SQL injection/SQLi/XSS/path traversal/LFI/RFI/command injection/RCE/OWASP/942/941/930/932。
@@ -377,7 +377,7 @@ AI SOC 自动研判 —— 端到端流程演示(完整记录,不截断)
 【第 7 步】确定性取证(recipe)
   作用:★这一步不问大模型:用写死的图查询把证据取出来 —— 进程血缘、命令行、落地文件、外连、账号基线……产出结构化 finding(红=攻击迹象 / 白=良性证伪 / 中性=事实)。证据确定性,是后面经验能复用、模型不编造的前提。
 ====================================================================================================
-  -- 产出(耗时 792 ms)--
+  -- 产出(耗时 775 ms)--
   发现(finding)条数:3
      1. [中性·事实] webexploit.waf_hit
       属性:
@@ -723,26 +723,26 @@ AI SOC 自动研判 —— 端到端流程演示(完整记录,不截断)
     ]
   tool_choice:required
 <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-<<< 大模型完整返回(第 3 次调用,耗时 39199 ms)
+<<< 大模型完整返回(第 3 次调用,耗时 35716 ms)
 <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
   返回:
     {
       "tool_calls": [
-        "ToolCall(id='chatcmpl-tool-8f04f380d9ca9aa5', name='finalize_verdict', arguments={'verdict': 'true_positive', 'confidence': 0.7, 'summary': 'WAF检测到Apache Struts远程代码执行尝试，请求已被拦截，未造成实际影响。', 'rationale': 'WAF规则18433检测到Apache Struts OGNL代码执行尝试，请求已被拦截（outcome=blocked），未造成实际影响。源IP无其他WAF告警记录，无法判断是否为扫描行为。由于缺乏payload和后端主机遥测数据，无法确认攻击是否成功，但根据WAF拦截结果判断为尝试性攻击。', 'evidence_refs': ['b0ed9dfd55c234b2258f3c70513f6037ee4d49b4c579d8ae7c3fbf0c873fb081'], 'missing_evidence': ['payload内容', '后端主机遥测数据', '源IP信誉信息']})"
+        "ToolCall(id='chatcmpl-tool-95968fea079aa36b', name='finalize_verdict', arguments={'verdict': 'false_positive', 'confidence': 0.9, 'summary': 'WAF已拦截Apache Struts远程代码执行尝试，攻击未到达后端', 'rationale': \"根据证据，WAF已拦截该请求（outcome=blocked），攻击未到达后端。源IP无其他WAF告警记录，无跨层落地证据。根据方法论原则1，CRS签名命中仅证明'有人试了'，但WAF拦截表明攻击未成功。\", 'evidence_refs': ['b0ed9dfd55c234b2258f3c70513f6037ee4d49b4c579d8ae7c3fbf0c873fb081'], 'missing_evidence': ['payload内容', 'target_uri', 'target_service'], 'pattern': 'Apache Struts OGNL代码执行尝试'})"
       ],
       "content": "",
       "finish_reason": null
     }
 
-  -- 产出(耗时 39460 ms)--
+  -- 产出(耗时 35977 ms)--
   研判路径:B
   使用的 skill:web_exploit
   耗时:None ms
-  结论:true_positive   倾向=None   置信=0.7
+  结论:false_positive   倾向=None   置信=0.9
   摘要:
-    WAF检测到Apache Struts远程代码执行尝试，请求已被拦截，未造成实际影响。
+    WAF已拦截Apache Struts远程代码执行尝试，攻击未到达后端
   依据:
-    WAF规则18433检测到Apache Struts OGNL代码执行尝试，请求已被拦截（outcome=blocked），未造成实际影响。源IP无其他WAF告警记录，无法判断是否为扫描行为。由于缺乏payload和后端主机遥测数据，无法确认攻击是否成功，但根据WAF拦截结果判断为尝试性攻击。
+    根据证据，WAF已拦截该请求（outcome=blocked），攻击未到达后端。源IP无其他WAF告警记录，无跨层落地证据。根据方法论原则1，CRS签名命中仅证明'有人试了'，但WAF拦截表明攻击未成功。
   证据引用:
     [
       "b0ed9dfd55c234b2258f3c70513f6037ee4d49b4c579d8ae7c3fbf0c873fb081"
@@ -750,11 +750,11 @@ AI SOC 自动研判 —— 端到端流程演示(完整记录,不截断)
   缺失证据:
     [
       "payload内容",
-      "后端主机遥测数据",
-      "源IP信誉信息"
+      "target_uri",
+      "target_service"
     ]
   研判者:qwen3.5-27b
-  verdict_id:3e18bd407c87448d95ca3189084eb889
+  verdict_id:34f045d773f64ba0ba316c947e279194
   ATT&CK 技战术:
     []
   处置建议(仅建议;真执行须人工审批):
@@ -802,158 +802,33 @@ AI SOC 自动研判 —— 端到端流程演示(完整记录,不截断)
     ]
 
 ====================================================================================================
-【第 12 步】组装处置剧本
-  作用:结论为真阳时,由 composer 把靶场开放的**基础处置原语**组装成计划(禁用账号/隔离主机/杀进程…)。★agent 不碰机器权限,只出计划;计划先过 NEVER-TOUCH 护栏,再经人工审批才执行。
-====================================================================================================
-
->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
->>> 送入大模型的完整提示词(第 4 次调用)  model=qwen3.5-27b
->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-  --- message[1]  role=system ---
-    你是 SOC 处置编排器。研判已完成,现在只做一件事:从下面**可用处置原语**里挑选并排序,组装成对本次攻击的响应计划。只能调用列出的原语(不发明动作、不写脚本);每个原语参数**绑定到实体角色**(用下面 entity_frame 里的角色名),或必要时给字面量。破坏性动作前可先 collect_artifact 取证。
-    
-    ## 可用处置原语(接口文档)
-    - add_to_group(identity;必填参数:sam,group;风险:high;需人审)：把账号加入一个组(典型：加入隔离/受限组做遏制)
-    - block_domain(network;必填参数:fqdn;风险:high;需人审)：阻断一个域名解析(GOAD 上 DC DNS sinkhole；真设备在 SWG/代理)
-    - block_ip(network;必填参数:ip;风险:high;需人审)：在网关封禁一个源 IP(app 层，宿主 nft/iptables DOCKER-USER)
-    - block_port(network;必填参数:hostname,port;风险:high;需人审)：在主机上封禁一个端口(isolate_host 的窄变体)
-    - collect_artifact(endpoint;必填参数:hostname;风险:low;可自动)：只读取证(进程树/文件样本/注册表导出)，非变更，可前置于破坏性步骤
-    - disable_account(identity;必填参数:sam;风险:high;需人审)：禁用一个 AD 用户账号(拒绝登录；已签发 TGT 到期前仍有效)
-    - disable_computer_account(identity;必填参数:hostname;风险:high;需人审)：禁用一个计算机账号(被攻陷主机凭据≠用户禁用)
-    - expire_password(identity;必填参数:sam;风险:high;需人审)：强制账号下次登录改密(比 reset 温和，不改现有口令)
-    - isolate_host(endpoint;必填参数:hostname;风险:high;需人审)：隔离主机(除 mgmt 外全阻的防火墙规则组，=EDR 隔离)
-    - kill_process(endpoint;必填参数:process_guid;风险:high;需人审)：结束一个进程(PID 由 Sysmon process_guid 解析)
-    - quarantine_file(endpoint;必填参数:sha256;风险:high;需人审)：隔离一个文件(移入隔离区+ACL 拒绝，记原路径+sha256)
-    - remove_from_group(identity;必填参数:sam,group;风险:high;需人审)：把账号移出一个组(典型：从特权组剥离做遏制)
-    - reset_password(identity;必填参数:sam;风险:high;需人审)：重置账号口令为一个新的已知口令
-    - revoke_kerberos(identity;必填参数:hostname;风险:high;需人审)：清除主机上的 Kerberos 票缓存(klist purge)
-    - revoke_sessions(identity;必填参数:sam;风险:high;需人审)：强制注销账号在主机上的活动会话
-    
-    ## 可绑定的实体角色(entity_frame)
-    {"ip": "203.0.113.90"}
-  --- message[2]  role=user ---
-    研判结论:
-    {
-      "verdict": "true_positive",
-      "lean": null,
-      "confidence": 0.7,
-      "rationale": "WAF规则18433检测到Apache Struts OGNL代码执行尝试，请求已被拦截（outcome=blocked），未造成实际影响。源IP无其他WAF告警记录，无法判断是否为扫描行为。由于缺乏payload和后端主机遥测数据，无法确认攻击是否成功，但根据WAF拦截结果判断为尝试性攻击。",
-      "entity_roles": [
-        "ip"
-      ]
-    }
-  可用工具(function calling):
-    [
-      {
-        "type": "function",
-        "function": {
-          "name": "compose_response",
-          "description": "组装对本次攻击的有序响应计划;每步选一个原语并把参数绑到实体角色/字面量。",
-          "parameters": {
-            "type": "object",
-            "properties": {
-              "steps": {
-                "type": "array",
-                "items": {
-                  "type": "object",
-                  "properties": {
-                    "primitive": {
-                      "type": "string",
-                      "enum": [
-                        "add_to_group",
-                        "block_domain",
-                        "block_ip",
-                        "block_port",
-                        "collect_artifact",
-                        "disable_account",
-                        "disable_computer_account",
-                        "expire_password",
-                        "isolate_host",
-                        "kill_process",
-                        "quarantine_file",
-                        "remove_from_group",
-                        "reset_password",
-                        "revoke_kerberos",
-                        "revoke_sessions"
-                      ]
-                    },
-                    "params": {
-                      "type": "object",
-                      "description": "参数名→绑定。绑角色:{\"role\":\"<角色>\"}(角色取自 ip);或字面量:{\"value\": ...}"
-                    },
-                    "risk": {
-                      "type": "string",
-                      "enum": [
-                        "low",
-                        "high"
-                      ]
-                    },
-                    "on_failure": {
-                      "type": "string",
-                      "enum": [
-                        "abort",
-                        "continue",
-                        "rollback_all"
-                      ]
-                    }
-                  },
-                  "required": [
-                    "primitive"
-                  ]
-                }
-              }
-            },
-            "required": [
-              "steps"
-            ]
-          }
-        }
-      }
-    ]
-  tool_choice:required
-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-<<< 大模型完整返回(第 4 次调用,耗时 8987 ms)
-<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-  返回:
-    {
-      "tool_calls": [
-        "ToolCall(id='chatcmpl-tool-9ef8c06a2b7c19b0', name='compose_response', arguments={'steps': [{'primitive': 'block_ip', 'params': {'ip': {'role': 'ip'}}, 'risk': 'high', 'on_failure': 'abort'}]})"
-      ],
-      "content": "",
-      "finish_reason": null
-    }
-
-  -- 产出(耗时 8988 ms)--
-  处置:已写入 result.dispositions(见最终结果)
-
-====================================================================================================
-【第 13 步】写图台账(第三类经验)
+【第 12 步】写图台账(第三类经验)
   作用:把本次结论落到图上,每条告警一个 verdict_id。
 ====================================================================================================
   将写入告警:b0ed9dfd55c234b2258f3c70513f6037ee4d49b4c579d8ae7c3fbf0c873fb081
   将写入的结论:
     {
-      "verdict": "true_positive",
+      "verdict": "false_positive",
       "lean": null,
-      "confidence": 0.7,
-      "summary": "WAF检测到Apache Struts远程代码执行尝试，请求已被拦截，未造成实际影响。",
-      "rationale": "WAF规则18433检测到Apache Struts OGNL代码执行尝试，请求已被拦截（outcome=blocked），未造成实际影响。源IP无其他WAF告警记录，无法判断是否为扫描行为。由于缺乏payload和后端主机遥测数据，无法确认攻击是否成功，但根据WAF拦截结果判断为尝试性攻击。",
+      "confidence": 0.9,
+      "summary": "WAF已拦截Apache Struts远程代码执行尝试，攻击未到达后端",
+      "rationale": "根据证据，WAF已拦截该请求（outcome=blocked），攻击未到达后端。源IP无其他WAF告警记录，无跨层落地证据。根据方法论原则1，CRS签名命中仅证明'有人试了'，但WAF拦截表明攻击未成功。",
       "evidence_refs": [
         "b0ed9dfd55c234b2258f3c70513f6037ee4d49b4c579d8ae7c3fbf0c873fb081"
       ],
       "missing_evidence": [
         "payload内容",
-        "后端主机遥测数据",
-        "源IP信誉信息"
+        "target_uri",
+        "target_service"
       ],
       "agent": "qwen3.5-27b",
       "investigated_at": null,
-      "verdict_id": "3e18bd407c87448d95ca3189084eb889"
+      "verdict_id": "34f045d773f64ba0ba316c947e279194"
     }
   -- 演示模式:**未真正写入**(加 --write 才写)
 
 ====================================================================================================
-【第 14 步】存回归语料
+【第 13 步】存回归语料
   作用:finding 快照 + 结论,用作经验入库前的考卷。
 ====================================================================================================
   将存入 skill:web_exploit
@@ -966,18 +841,17 @@ AI SOC 自动研判 —— 端到端流程演示(完整记录,不截断)
   -- 演示模式:**未真正写入**(加 --write 才写)
 
 ====================================================================================================
-【第 15 步】经验沉淀(蒸馏 → 考试 → 入库)
+【第 14 步】经验沉淀(蒸馏 → 考试 → 入库)
   作用:只有走了大模型这条(未命中经验)才沉淀:把本次判断**蒸馏**成行为指纹/威胁规则,拿历史语料**考试**,过关才入库,并记下学它时的覆盖度签名。★本次蒸馏与考试是**真跑的**(提示词与返回见下方),只是入库落到一个用完即弃的临时库 —— 生产经验库不被一次演示污染。
 ====================================================================================================
 
 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
->>> 送入大模型的完整提示词(第 5 次调用)  model=qwen3.5-27b
+>>> 送入大模型的完整提示词(第 4 次调用)  model=qwen3.5-27b
 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
   --- message[1]  role=system ---
     你是 SOC 经验蒸馏器。给你一次【已完成】的研判(规范发现 findings + 结论 + 依据 + 方法论)。
     1) 选出定性据以成立的【决定性发现子集】(=指纹),只挑真正支撑结论的,别塞无关项。
-    2) 这是【真威胁】:再用受限 DSL 写一条【威胁判定规则】,作用于 findings、能确定性复现本次定性,抓本质(如'RC4 取票 且 高价值目标 且 非机器账号非跨域')。
-    受限 DSL 算子:{"exists":"finding_id"} / {"eq|gt|gte|lt|lte":["fid:attr",值]} / {"in":["fid:attr",[值...]]} / {"same_source":["fid_a:attr","fid_b:attr"]} / {"and|or|not":...}。只用下面出现过的 finding_id;抓攻击本质,别过拟合具体账号/IP/主机。
+    2) 这是【误报】:不写规则,只把导致这次误报的良性/业务发现挑进决定性子集(=误报业务指纹)。
     
     ## 方法论(skill: web_exploit)
     # Web 攻击 / WAF 命中研判(T1190)
@@ -1011,8 +885,8 @@ AI SOC 自动研判 —— 端到端流程演示(完整记录,不截断)
   --- message[2]  role=user ---
     本次研判:
     {
-      "verdict": "true_positive",
-      "rationale": "WAF规则18433检测到Apache Struts OGNL代码执行尝试，请求已被拦截（outcome=blocked），未造成实际影响。源IP无其他WAF告警记录，无法判断是否为扫描行为。由于缺乏payload和后端主机遥测数据，无法确认攻击是否成功，但根据WAF拦截结果判断为尝试性攻击。",
+      "verdict": "false_positive",
+      "rationale": "根据证据，WAF已拦截该请求（outcome=blocked），攻击未到达后端。源IP无其他WAF告警记录，无跨层落地证据。根据方法论原则1，CRS签名命中仅证明'有人试了'，但WAF拦截表明攻击未成功。",
       "findings": [
         {
           "finding_id": "webexploit.waf_hit",
@@ -1081,23 +955,23 @@ AI SOC 自动研判 —— 端到端流程演示(完整记录,不截断)
     ]
   tool_choice:required
 <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-<<< 大模型完整返回(第 5 次调用,耗时 18789 ms)
+<<< 大模型完整返回(第 4 次调用,耗时 11321 ms)
 <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
   返回:
     {
       "tool_calls": [
-        "ToolCall(id='chatcmpl-tool-9f8bc1e51f295d3f', name='distill_experience', arguments={'decisive_finding_ids': ['webexploit.waf_hit', 'webexploit.blocked_attempt'], 'rule': {'and': [{'exists': 'webexploit.waf_hit'}, {'exists': 'webexploit.blocked_attempt'}, {'eq': ['webexploit.waf_hit:outcome', 'blocked']}]}, 'note': 'WAF拦截的Struts OGNL攻击尝试，通过blocked状态确认未造成实际影响'})"
+        "ToolCall(id='chatcmpl-tool-84d784ba5e69a87d', name='distill_experience', arguments={'decisive_finding_ids': ['webexploit.waf_hit', 'webexploit.blocked_attempt'], 'note': 'WAF拦截的CRS规则命中属于尝试而非成功攻击，需结合拦截状态判断'})"
       ],
       "content": "",
       "finish_reason": null
     }
 
-  -- 产出(耗时 18791 ms)--
+  -- 产出(耗时 11323 ms)--
   蒸馏出的经验(本次学到的东西):
     {
       "skill": "web_exploit",
-      "kind": "threat",
-      "verdict": "true_positive",
+      "kind": "benign_fp",
+      "verdict": "false_positive",
       "fingerprint": {
         "finding_ids": [
           "webexploit.blocked_attempt",
@@ -1116,58 +990,30 @@ AI SOC 自动研判 —— 端到端流程演示(完整记录,不截断)
           "webexploit.waf_hit": 1.0
         }
       },
-      "rule": {
-        "and": [
-          {
-            "exists": "webexploit.waf_hit"
-          },
-          {
-            "exists": "webexploit.blocked_attempt"
-          },
-          {
-            "eq": [
-              "webexploit.waf_hit:outcome",
-              "blocked"
-            ]
-          }
-        ]
-      },
-      "playbook": [
-        {
-          "order": 1,
-          "primitive": "block_ip",
-          "params": {
-            "ip": {
-              "source": "entity_role",
-              "role": "ip"
-            }
-          },
-          "risk": "high",
-          "on_failure": "abort"
-        }
-      ],
+      "rule": null,
+      "playbook": [],
       "status": "active",
       "hit_count": 0,
       "override_count": 0,
       "origin_case_id": "b0ed9dfd55c234b2258f3c70513f6037ee4d49b4c579d8ae7c3fbf0c873fb081",
-      "origin_verdict_id": "3e18bd407c87448d95ca3189084eb889",
-      "note": "WAF拦截的Struts OGNL攻击尝试，通过blocked状态确认未造成实际影响",
+      "origin_verdict_id": "34f045d773f64ba0ba316c947e279194",
+      "note": "WAF拦截的CRS规则命中属于尝试而非成功攻击，需结合拦截状态判断",
       "created_by": "qwen3.5-27b",
       "created_at": null,
       "coverage_sig": "",
-      "exp_id": "4a134b5290a6425c9705b2ecf74b8757"
+      "exp_id": "4110e4373998429f80452290676847fa"
     }
   考试报告(拿历史语料回归,防止学歪):
     {
       "reason": "passed",
-      "checked_adversary": 2
+      "checked_adversary": 0
     }
   临时库里现有的经验条目:
     [
       {
         "skill": "web_exploit",
-        "kind": "threat",
-        "verdict": "true_positive",
+        "kind": "benign_fp",
+        "verdict": "false_positive",
         "fingerprint": {
           "finding_ids": [
             "webexploit.blocked_attempt",
@@ -1186,46 +1032,18 @@ AI SOC 自动研判 —— 端到端流程演示(完整记录,不截断)
             "webexploit.waf_hit": 1.0
           }
         },
-        "rule": {
-          "and": [
-            {
-              "exists": "webexploit.waf_hit"
-            },
-            {
-              "exists": "webexploit.blocked_attempt"
-            },
-            {
-              "eq": [
-                "webexploit.waf_hit:outcome",
-                "blocked"
-              ]
-            }
-          ]
-        },
-        "playbook": [
-          {
-            "order": 1,
-            "primitive": "block_ip",
-            "params": {
-              "ip": {
-                "source": "entity_role",
-                "role": "ip"
-              }
-            },
-            "risk": "high",
-            "on_failure": "abort"
-          }
-        ],
+        "rule": null,
+        "playbook": [],
         "status": "active",
         "hit_count": 0,
         "override_count": 0,
         "origin_case_id": "b0ed9dfd55c234b2258f3c70513f6037ee4d49b4c579d8ae7c3fbf0c873fb081",
-        "origin_verdict_id": "3e18bd407c87448d95ca3189084eb889",
-        "note": "WAF拦截的Struts OGNL攻击尝试，通过blocked状态确认未造成实际影响",
+        "origin_verdict_id": "34f045d773f64ba0ba316c947e279194",
+        "note": "WAF拦截的CRS规则命中属于尝试而非成功攻击，需结合拦截状态判断",
         "created_by": "qwen3.5-27b",
         "created_at": null,
         "coverage_sig": "",
-        "exp_id": "4a134b5290a6425c9705b2ecf74b8757"
+        "exp_id": "4110e4373998429f80452290676847fa"
       }
     ]
   -- 演示模式:以上**未写入生产经验库**(加 --write 才写)
@@ -1236,11 +1054,11 @@ AI SOC 自动研判 —— 端到端流程演示(完整记录,不截断)
   研判路径:B
   使用的 skill:web_exploit
   耗时:None ms
-  结论:true_positive   倾向=None   置信=0.7
+  结论:false_positive   倾向=None   置信=0.9
   摘要:
-    WAF检测到Apache Struts远程代码执行尝试，请求已被拦截，未造成实际影响。
+    WAF已拦截Apache Struts远程代码执行尝试，攻击未到达后端
   依据:
-    WAF规则18433检测到Apache Struts OGNL代码执行尝试，请求已被拦截（outcome=blocked），未造成实际影响。源IP无其他WAF告警记录，无法判断是否为扫描行为。由于缺乏payload和后端主机遥测数据，无法确认攻击是否成功，但根据WAF拦截结果判断为尝试性攻击。
+    根据证据，WAF已拦截该请求（outcome=blocked），攻击未到达后端。源IP无其他WAF告警记录，无跨层落地证据。根据方法论原则1，CRS签名命中仅证明'有人试了'，但WAF拦截表明攻击未成功。
   证据引用:
     [
       "b0ed9dfd55c234b2258f3c70513f6037ee4d49b4c579d8ae7c3fbf0c873fb081"
@@ -1248,32 +1066,17 @@ AI SOC 自动研判 —— 端到端流程演示(完整记录,不截断)
   缺失证据:
     [
       "payload内容",
-      "后端主机遥测数据",
-      "源IP信誉信息"
+      "target_uri",
+      "target_service"
     ]
   研判者:qwen3.5-27b
-  verdict_id:3e18bd407c87448d95ca3189084eb889
+  verdict_id:34f045d773f64ba0ba316c947e279194
   ATT&CK 技战术:
     []
   处置建议(仅建议;真执行须人工审批):
-    [
-      "Disposition(action='block_ip', target='203.0.113.90', target_kind='ip', params={'ip': '203.0.113.90'}, risk='high', status='proposed', simulated=False, by='auto', rollback_handle=None, decided_at=None, disposition_id='ee905ed2c5e74a00accb9efcd748a1a2')"
-    ]
+    []
   剧本(playbook):
-    [
-      {
-        "order": 1,
-        "primitive": "block_ip",
-        "params": {
-          "ip": {
-            "source": "entity_role",
-            "role": "ip"
-          }
-        },
-        "risk": "high",
-        "on_failure": "abort"
-      }
-    ]
+    []
   时间线:
     []
   研判留痕(trace):
@@ -1315,8 +1118,8 @@ AI SOC 自动研判 —— 端到端流程演示(完整记录,不截断)
     ]
   经验层决策(演示口径):FALLTHROUGH
   实际走的通道:recipe
-  大模型调用次数:5
-  端到端耗时:85230 ms
+  大模型调用次数:4
+  端到端耗时:64327 ms
 
   小结:证据由确定性图查询取得,模型只负责定性 —— 它没有机会编造事实;
         经验层让见过的情形不必再问模型(本次为演示完整流程而刻意绕开);
@@ -1442,12 +1245,12 @@ AI SOC 自动研判 —— 端到端流程演示(完整记录,不截断)
     ]
   tool_choice:required
 <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-<<< 大模型完整返回(第 1 次调用,耗时 2959 ms)
+<<< 大模型完整返回(第 1 次调用,耗时 2761 ms)
 <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
   返回:
     {
       "tool_calls": [
-        "ToolCall(id='chatcmpl-tool-aaa8be3b75afca35', name='shallow_triage', arguments={'needs_deep': True, 'verdict': 'suspicious', 'confidence': 0.7, 'rationale': '防火墙IPS拦截了可疑外连，但仅凭阻断记录无法确认是真实恶意流量还是误报，需结合主机进程链、登录序列及该IP基线进行深度研判。'})"
+        "ToolCall(id='chatcmpl-tool-be204f25e478584d', name='shallow_triage', arguments={'needs_deep': True, 'verdict': 'suspicious', 'confidence': 0.7, 'rationale': '防火墙IPS拦截了可疑外连，但仅凭阻断日志无法确认是真实攻击还是误报，需结合主机进程链、登录序列及该IP基线进行深度研判。'})"
       ],
       "content": "",
       "finish_reason": null
@@ -1459,7 +1262,7 @@ AI SOC 自动研判 —— 端到端流程演示(完整记录,不截断)
       "needs_deep": true,
       "verdict": "suspicious",
       "confidence": 0.7,
-      "rationale": "防火墙IPS拦截了可疑外连，但仅凭阻断记录无法确认是真实恶意流量还是误报，需结合主机进程链、登录序列及该IP基线进行深度研判。"
+      "rationale": "防火墙IPS拦截了可疑外连，但仅凭阻断日志无法确认是真实攻击还是误报，需结合主机进程链、登录序列及该IP基线进行深度研判。"
     }
   → 路由:升级到深度研判
 
@@ -1467,12 +1270,12 @@ AI SOC 自动研判 —— 端到端流程演示(完整记录,不截断)
 【第 5 步】取 seed(反查触发事件与相关实体)
   作用:拿告警回溯它的触发事件,以及事件牵扯到的进程/账号/主机等实体。这是后续所有取证的起点,也是知识图谱相对于纯日志的第一处增益。
 ====================================================================================================
-  -- 产出(耗时 127 ms)--
+  -- 产出(耗时 136 ms)--
   包含的键:event, subject, related
   seed[event]:
     {
       "device_product": "FortiGate",
-      "ingest_time": 1786699296007,
+      "ingest_time": 1786702710067,
       "device_action": "drop",
       "activity": "network.flow",
       "event_count": 1,
@@ -1576,7 +1379,7 @@ AI SOC 自动研判 —— 端到端流程演示(完整记录,不截断)
       "severity": 12,
       "触发它的底层事件": {
         "device_product": "FortiGate",
-        "ingest_time": 1786699296007,
+        "ingest_time": 1786702710067,
         "device_action": "drop",
         "activity": "network.flow",
         "event_count": 1,
@@ -1641,18 +1444,18 @@ AI SOC 自动研判 —— 端到端流程演示(完整记录,不截断)
     ]
   tool_choice:required
 <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-<<< 大模型完整返回(第 2 次调用,耗时 19409 ms)
+<<< 大模型完整返回(第 2 次调用,耗时 12834 ms)
 <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
   返回:
     {
       "tool_calls": [
-        "ToolCall(id='chatcmpl-tool-86ee5a0c9dbfaae3', name='select_skill', arguments={'name': 'suspicious_outbound', 'reason': \"告警明确标识为'Trojan.Generic.Outbound'，消息为'suspicious outbound connection blocked'，涉及内部主机(10.20.30.5)向外部IP(203.0.113.77)的443端口发起可疑外连并被防火墙阻断，符合suspicious_outbound技能定义的可疑外连/数据外带场景。\"})"
+        "ToolCall(id='chatcmpl-tool-bb36eaaa4ff7b6be', name='select_skill', arguments={'name': 'suspicious_outbound', 'reason': \"告警明确标识为'Trojan.Generic.Outbound'，消息为'suspicious outbound connection blocked'，属于防火墙拦截的可疑外连行为，符合suspicious_outbound skill的判定标准。\"})"
       ],
       "content": "",
       "finish_reason": null
     }
 
-  -- 产出(耗时 19410 ms)--
+  -- 产出(耗时 12835 ms)--
   选中 skill:suspicious_outbound
   该 skill 的方法论描述:
     研判可疑外连 / 罕见进程 C2 通道 / 非标准端口 / 数据外带告警。当告警涉及"本不该联网的进程(rundll32/regsvr32/mshta)直接外连""非常用端口外连(4444/8080/1080/高位随机)""经代理跳板外连""疑似数据外带"时选它。关键词 suspicious outbound/非标准端口/non-standard port/proxy/C2 channel/rundll32 外连/data exfiltration/数据外带。
@@ -1661,7 +1464,7 @@ AI SOC 自动研判 —— 端到端流程演示(完整记录,不截断)
 【第 7 步】确定性取证(recipe)
   作用:★这一步不问大模型:用写死的图查询把证据取出来 —— 进程血缘、命令行、落地文件、外连、账号基线……产出结构化 finding(红=攻击迹象 / 白=良性证伪 / 中性=事实)。证据确定性,是后面经验能复用、模型不编造的前提。
 ====================================================================================================
-  -- 产出(耗时 849 ms)--
+  -- 产出(耗时 880 ms)--
   发现(finding)条数:3
      1. [中性·事实] _coverage.absent
       属性:
@@ -2018,26 +1821,26 @@ AI SOC 自动研判 —— 端到端流程演示(完整记录,不截断)
     ]
   tool_choice:required
 <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-<<< 大模型完整返回(第 3 次调用,耗时 66208 ms)
+<<< 大模型完整返回(第 3 次调用,耗时 60992 ms)
 <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
   返回:
     {
       "tool_calls": [
-        "ToolCall(id='chatcmpl-tool-8b50f30a9b973912', name='finalize_verdict', arguments={'verdict': 'suspicious', 'lean': 'malicious', 'confidence': 0.65, 'summary': '内网主机10.20.30.5在2小时内对外部IP 203.0.113.77:443发起133次TCP连接，被防火墙IPS规则阻断。缺乏进程级遥测数据，无法确认是否为LOLBin或恶意进程，但高频外连行为符合C2通信特征。', 'rationale': \"1. 高频外连：2小时内133次连接，呈现持续性通信模式，符合C2心跳或数据外传特征；2. 目标为外部IP，端口443虽为常见HTTPS端口，但结合IPS规则'Trojan.Generic.Outbound'触发，表明流量特征异常；3. 缺乏进程信息（image/command_line/parent/account），无法排除LOLBin（如rundll32/mshta）或恶意软件可能；4. 无已知良性噪声匹配，无历史经验佐证为正常业务。\", 'evidence_refs': ['8b97e13247214725e650a7eb4b21256aea85ad809ba413a841cec22d5bffe762', 'outbound.repetitive', 'outbound.connection'], 'missing_evidence': ['发起进程的image和command_line（判定LOLBin或恶意软件）', '目标IP 203.0.113.77的信誉情报（是否已知恶意）', '连接字节量和时长（区分扫描与稳定通道）', '代理后真实目标（若经代理）']})"
+        "ToolCall(id='chatcmpl-tool-b50def026c19e965', name='finalize_verdict', arguments={'verdict': 'suspicious', 'lean': 'malicious', 'confidence': 0.65, 'summary': '内网主机10.20.30.5在2小时内对外部IP 203.0.113.77:443发起133次TCP连接，被防火墙IPS规则3021（Trojan.Generic.Outbound）阻断。缺乏进程级遥测数据，无法确认是否为LOLBin或恶意进程，但高频外连行为符合C2通道特征。', 'rationale': '1. 高频外连：2小时内133次连接，符合C2心跳或数据外传模式；2. 防火墙IPS已识别为特洛伊木马外连行为并阻断；3. 缺乏进程信息（image/command_line）无法证伪良性场景（如代理/业务端口）；4. 目标IP信誉未知，无法排除恶意基础设施。', 'evidence_refs': ['8b97e13247214725e650a7eb4b21256aea85ad809ba413a841cec22d5bffe762', 'outbound.repetitive', 'outbound.connection'], 'missing_evidence': ['发起进程image和command_line（判定LOLBin或良性客户端）', '目标IP 203.0.113.77的信誉情报', '连接字节量/时长（区分扫描与稳定通道）', '是否经过代理（T1090跳板）']})"
       ],
       "content": "",
       "finish_reason": null
     }
 
-  -- 产出(耗时 66337 ms)--
+  -- 产出(耗时 61128 ms)--
   研判路径:B
   使用的 skill:suspicious_outbound
   耗时:None ms
   结论:suspicious   倾向=malicious   置信=0.65
   摘要:
-    内网主机10.20.30.5在2小时内对外部IP 203.0.113.77:443发起133次TCP连接，被防火墙IPS规则阻断。缺乏进程级遥测数据，无法确认是否为LOLBin或恶意进程，但高频外连行为符合C2通信特征。
+    内网主机10.20.30.5在2小时内对外部IP 203.0.113.77:443发起133次TCP连接，被防火墙IPS规则3021（Trojan.Generic.Outbound）阻断。缺乏进程级遥测数据，无法确认是否为LOLBin或恶意进程，但高频外连行为符合C2通道特征。
   依据:
-    1. 高频外连：2小时内133次连接，呈现持续性通信模式，符合C2心跳或数据外传特征；2. 目标为外部IP，端口443虽为常见HTTPS端口，但结合IPS规则'Trojan.Generic.Outbound'触发，表明流量特征异常；3. 缺乏进程信息（image/command_line/parent/account），无法排除LOLBin（如rundll32/mshta）或恶意软件可能；4. 无已知良性噪声匹配，无历史经验佐证为正常业务。
+    1. 高频外连：2小时内133次连接，符合C2心跳或数据外传模式；2. 防火墙IPS已识别为特洛伊木马外连行为并阻断；3. 缺乏进程信息（image/command_line）无法证伪良性场景（如代理/业务端口）；4. 目标IP信誉未知，无法排除恶意基础设施。
   证据引用:
     [
       "8b97e13247214725e650a7eb4b21256aea85ad809ba413a841cec22d5bffe762",
@@ -2046,13 +1849,13 @@ AI SOC 自动研判 —— 端到端流程演示(完整记录,不截断)
     ]
   缺失证据:
     [
-      "发起进程的image和command_line（判定LOLBin或恶意软件）",
-      "目标IP 203.0.113.77的信誉情报（是否已知恶意）",
-      "连接字节量和时长（区分扫描与稳定通道）",
-      "代理后真实目标（若经代理）"
+      "发起进程image和command_line（判定LOLBin或良性客户端）",
+      "目标IP 203.0.113.77的信誉情报",
+      "连接字节量/时长（区分扫描与稳定通道）",
+      "是否经过代理（T1090跳板）"
     ]
   研判者:qwen3.5-27b
-  verdict_id:bbb6f6a43a004934a375d5f7f78807a7
+  verdict_id:66064b62d0e9463fa30891625a91e285
   ATT&CK 技战术:
     []
   处置建议(仅建议;真执行须人工审批):
@@ -2114,22 +1917,22 @@ AI SOC 自动研判 —— 端到端流程演示(完整记录,不截断)
       "verdict": "suspicious",
       "lean": "malicious",
       "confidence": 0.65,
-      "summary": "内网主机10.20.30.5在2小时内对外部IP 203.0.113.77:443发起133次TCP连接，被防火墙IPS规则阻断。缺乏进程级遥测数据，无法确认是否为LOLBin或恶意进程，但高频外连行为符合C2通信特征。",
-      "rationale": "1. 高频外连：2小时内133次连接，呈现持续性通信模式，符合C2心跳或数据外传特征；2. 目标为外部IP，端口443虽为常见HTTPS端口，但结合IPS规则'Trojan.Generic.Outbound'触发，表明流量特征异常；3. 缺乏进程信息（image/command_line/parent/account），无法排除LOLBin（如rundll32/mshta）或恶意软件可能；4. 无已知良性噪声匹配，无历史经验佐证为正常业务。",
+      "summary": "内网主机10.20.30.5在2小时内对外部IP 203.0.113.77:443发起133次TCP连接，被防火墙IPS规则3021（Trojan.Generic.Outbound）阻断。缺乏进程级遥测数据，无法确认是否为LOLBin或恶意进程，但高频外连行为符合C2通道特征。",
+      "rationale": "1. 高频外连：2小时内133次连接，符合C2心跳或数据外传模式；2. 防火墙IPS已识别为特洛伊木马外连行为并阻断；3. 缺乏进程信息（image/command_line）无法证伪良性场景（如代理/业务端口）；4. 目标IP信誉未知，无法排除恶意基础设施。",
       "evidence_refs": [
         "8b97e13247214725e650a7eb4b21256aea85ad809ba413a841cec22d5bffe762",
         "outbound.repetitive",
         "outbound.connection"
       ],
       "missing_evidence": [
-        "发起进程的image和command_line（判定LOLBin或恶意软件）",
-        "目标IP 203.0.113.77的信誉情报（是否已知恶意）",
-        "连接字节量和时长（区分扫描与稳定通道）",
-        "代理后真实目标（若经代理）"
+        "发起进程image和command_line（判定LOLBin或良性客户端）",
+        "目标IP 203.0.113.77的信誉情报",
+        "连接字节量/时长（区分扫描与稳定通道）",
+        "是否经过代理（T1090跳板）"
       ],
       "agent": "qwen3.5-27b",
       "investigated_at": null,
-      "verdict_id": "bbb6f6a43a004934a375d5f7f78807a7"
+      "verdict_id": "66064b62d0e9463fa30891625a91e285"
     }
   -- 演示模式:**未真正写入**(加 --write 才写)
 
@@ -2169,9 +1972,9 @@ AI SOC 自动研判 —— 端到端流程演示(完整记录,不截断)
   耗时:None ms
   结论:suspicious   倾向=malicious   置信=0.65
   摘要:
-    内网主机10.20.30.5在2小时内对外部IP 203.0.113.77:443发起133次TCP连接，被防火墙IPS规则阻断。缺乏进程级遥测数据，无法确认是否为LOLBin或恶意进程，但高频外连行为符合C2通信特征。
+    内网主机10.20.30.5在2小时内对外部IP 203.0.113.77:443发起133次TCP连接，被防火墙IPS规则3021（Trojan.Generic.Outbound）阻断。缺乏进程级遥测数据，无法确认是否为LOLBin或恶意进程，但高频外连行为符合C2通道特征。
   依据:
-    1. 高频外连：2小时内133次连接，呈现持续性通信模式，符合C2心跳或数据外传特征；2. 目标为外部IP，端口443虽为常见HTTPS端口，但结合IPS规则'Trojan.Generic.Outbound'触发，表明流量特征异常；3. 缺乏进程信息（image/command_line/parent/account），无法排除LOLBin（如rundll32/mshta）或恶意软件可能；4. 无已知良性噪声匹配，无历史经验佐证为正常业务。
+    1. 高频外连：2小时内133次连接，符合C2心跳或数据外传模式；2. 防火墙IPS已识别为特洛伊木马外连行为并阻断；3. 缺乏进程信息（image/command_line）无法证伪良性场景（如代理/业务端口）；4. 目标IP信誉未知，无法排除恶意基础设施。
   证据引用:
     [
       "8b97e13247214725e650a7eb4b21256aea85ad809ba413a841cec22d5bffe762",
@@ -2180,13 +1983,13 @@ AI SOC 自动研判 —— 端到端流程演示(完整记录,不截断)
     ]
   缺失证据:
     [
-      "发起进程的image和command_line（判定LOLBin或恶意软件）",
-      "目标IP 203.0.113.77的信誉情报（是否已知恶意）",
-      "连接字节量和时长（区分扫描与稳定通道）",
-      "代理后真实目标（若经代理）"
+      "发起进程image和command_line（判定LOLBin或良性客户端）",
+      "目标IP 203.0.113.77的信誉情报",
+      "连接字节量/时长（区分扫描与稳定通道）",
+      "是否经过代理（T1090跳板）"
     ]
   研判者:qwen3.5-27b
-  verdict_id:bbb6f6a43a004934a375d5f7f78807a7
+  verdict_id:66064b62d0e9463fa30891625a91e285
   ATT&CK 技战术:
     []
   处置建议(仅建议;真执行须人工审批):
@@ -2240,7 +2043,7 @@ AI SOC 自动研判 —— 端到端流程演示(完整记录,不截断)
   经验层决策(演示口径):FALLTHROUGH
   实际走的通道:recipe
   大模型调用次数:3
-  端到端耗时:89946 ms
+  端到端耗时:78017 ms
 
   小结:证据由确定性图查询取得,模型只负责定性 —— 它没有机会编造事实;
         经验层让见过的情形不必再问模型(本次为演示完整流程而刻意绕开);
@@ -2366,12 +2169,12 @@ AI SOC 自动研判 —— 端到端流程演示(完整记录,不截断)
     ]
   tool_choice:required
 <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-<<< 大模型完整返回(第 1 次调用,耗时 2865 ms)
+<<< 大模型完整返回(第 1 次调用,耗时 2655 ms)
 <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
   返回:
     {
       "tool_calls": [
-        "ToolCall(id='chatcmpl-tool-8bf3261fbc9aa5c0', name='shallow_triage', arguments={'needs_deep': False, 'verdict': 'true_positive', 'confidence': 0.95, 'rationale': '告警明确显示防火墙拦截了访问疑似C2域名（cdn.example-c2.net/beacon）的HTTPS流量，特征符合恶意通信，无需深度取证即可定性。'})"
+        "ToolCall(id='chatcmpl-tool-9a75188971366137', name='shallow_triage', arguments={'needs_deep': False, 'verdict': 'true_positive', 'confidence': 0.95, 'rationale': '告警明确显示防火墙拦截了访问疑似C2域名（cdn.example-c2.net/beacon）的流量，特征符合恶意行为，无需深度取证即可定性。'})"
       ],
       "content": "",
       "finish_reason": null
@@ -2383,7 +2186,7 @@ AI SOC 自动研判 —— 端到端流程演示(完整记录,不截断)
       "needs_deep": false,
       "verdict": "true_positive",
       "confidence": 0.95,
-      "rationale": "告警明确显示防火墙拦截了访问疑似C2域名（cdn.example-c2.net/beacon）的HTTPS流量，特征符合恶意通信，无需深度取证即可定性。"
+      "rationale": "告警明确显示防火墙拦截了访问疑似C2域名（cdn.example-c2.net/beacon）的流量，特征符合恶意行为，无需深度取证即可定性。"
     }
   ★演示强制:浅层本可在此终局,但演示要展示完整漏斗,故改判需要升级(演示口径,非生产行为)。
   → 路由:升级到深度研判
@@ -2392,12 +2195,12 @@ AI SOC 自动研判 —— 端到端流程演示(完整记录,不截断)
 【第 5 步】取 seed(反查触发事件与相关实体)
   作用:拿告警回溯它的触发事件,以及事件牵扯到的进程/账号/主机等实体。这是后续所有取证的起点,也是知识图谱相对于纯日志的第一处增益。
 ====================================================================================================
-  -- 产出(耗时 136 ms)--
+  -- 产出(耗时 130 ms)--
   包含的键:event, subject, related
   seed[event]:
     {
       "device_product": "FortiGate",
-      "ingest_time": 1786699296007,
+      "ingest_time": 1786702710067,
       "device_action": "block",
       "activity": "http.request",
       "source": "cef-syslog",
@@ -2513,7 +2316,7 @@ AI SOC 自动研判 —— 端到端流程演示(完整记录,不截断)
       "severity": 9,
       "触发它的底层事件": {
         "device_product": "FortiGate",
-        "ingest_time": 1786699296007,
+        "ingest_time": 1786702710067,
         "device_action": "block",
         "activity": "http.request",
         "source": "cef-syslog",
@@ -2579,18 +2382,18 @@ AI SOC 自动研判 —— 端到端流程演示(完整记录,不截断)
     ]
   tool_choice:required
 <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-<<< 大模型完整返回(第 2 次调用,耗时 12989 ms)
+<<< 大模型完整返回(第 2 次调用,耗时 12902 ms)
 <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
   返回:
     {
       "tool_calls": [
-        "ToolCall(id='chatcmpl-tool-8c3230bf6c9270b9', name='select_skill', arguments={'name': 'c2_beacon', 'reason': '告警显示访问了恶意网站，URL中包含/beacon?id=7f3a，这是典型的C2信标通信特征。FortiGate防火墙拦截了该请求，表明存在可疑的周期性外连行为。'})"
+        "ToolCall(id='chatcmpl-tool-8a8b32f6e78b61cd', name='select_skill', arguments={'name': 'c2_beacon', 'reason': '告警显示访问了恶意网站，URL中包含/beacon?id=7f3a，这是典型的C2信标通信特征。FortiGate防火墙拦截了该请求，表明存在可疑的周期性外连行为。'})"
       ],
       "content": "",
       "finish_reason": null
     }
 
-  -- 产出(耗时 12989 ms)--
+  -- 产出(耗时 12903 ms)--
   选中 skill:c2_beacon
   该 skill 的方法论描述:
     研判 C2 信标 / DNS beacon / 周期性外连告警。当告警涉及"进程周期性回连某 IP/域(信标节律)""DNS 隧道/DGA 域名""可疑/低信誉/新注册域外连""HTTP(S) 心跳式外连"时选它。关键词 C2/beacon/信标/DNS tunneling/DGA/callback/periodic connection/命令控制/心跳。
@@ -2599,7 +2402,7 @@ AI SOC 自动研判 —— 端到端流程演示(完整记录,不截断)
 【第 7 步】确定性取证(recipe)
   作用:★这一步不问大模型:用写死的图查询把证据取出来 —— 进程血缘、命令行、落地文件、外连、账号基线……产出结构化 finding(红=攻击迹象 / 白=良性证伪 / 中性=事实)。证据确定性,是后面经验能复用、模型不编造的前提。
 ====================================================================================================
-  -- 产出(耗时 656 ms)--
+  -- 产出(耗时 546 ms)--
   发现(finding)条数:1
      1. [中性·事实] _coverage.absent
       属性:
@@ -2915,18 +2718,18 @@ AI SOC 自动研判 —— 端到端流程演示(完整记录,不截断)
     ]
   tool_choice:required
 <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-<<< 大模型完整返回(第 3 次调用,耗时 41150 ms)
+<<< 大模型完整返回(第 3 次调用,耗时 40261 ms)
 <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
   返回:
     {
       "tool_calls": [
-        "ToolCall(id='chatcmpl-tool-8f2cfb5c82368f7f', name='finalize_verdict', arguments={'verdict': 'suspicious', 'lean': 'malicious', 'confidence': 0.7, 'summary': '防火墙拦截到内网主机访问恶意网站分类的URL，但缺乏进程级证据链', 'rationale': '1. 防火墙明确拦截了访问恶意网站分类的请求（FortiGate webfilter:blocked）\\n2. URL路径包含典型C2特征（/beacon?id=7f3a）\\n3. 但缺乏发起进程信息（无image/command_line），无法确认是否为恶意软件行为\\n4. 无历史经验比对，无法排除误报可能', 'evidence_refs': ['CEF:0|Fortinet|FortiGate|v7.4.3|00033|webfilter:blocked', 'request=https://cdn.example-c2.net/beacon?id=7f3a', 'msg=Category blocked: Malicious Websites'], 'missing_evidence': ['发起进程信息（image/command_line）', '目标域名信誉情报', '历史访问模式']})"
+        "ToolCall(id='chatcmpl-tool-aa8c531a3fc7750f', name='finalize_verdict', arguments={'verdict': 'suspicious', 'lean': 'malicious', 'confidence': 0.7, 'summary': '防火墙拦截到内网主机访问恶意网站分类的URL，但缺乏进程级证据链', 'rationale': \"1. 目标URL 'cdn.example-c2.net/beacon?id=7f3a' 具有典型C2信标特征(路径含beacon+参数化ID)\\n2. 防火墙明确分类为'Malicious Websites'并执行阻断\\n3. 缺失关键证据：无发起进程信息(image/command_line为空)，无法确认是否为恶意软件或用户行为\\n4. 无历史经验比对，域名新鲜度/信誉情报缺失\", 'evidence_refs': ['CEF请求URL: https://cdn.example-c2.net/beacon?id=7f3a', '防火墙分类: Malicious Websites', '阻断动作: act=block'], 'missing_evidence': ['发起进程镜像路径(image)', '进程命令行(command_line)', '域名信誉情报(reputation)', '域名首次出现时间(first_seen)']})"
       ],
       "content": "",
       "finish_reason": null
     }
 
-  -- 产出(耗时 41151 ms)--
+  -- 产出(耗时 40262 ms)--
   研判路径:B
   使用的 skill:c2_beacon
   耗时:None ms
@@ -2934,24 +2737,25 @@ AI SOC 自动研判 —— 端到端流程演示(完整记录,不截断)
   摘要:
     防火墙拦截到内网主机访问恶意网站分类的URL，但缺乏进程级证据链
   依据:
-    1. 防火墙明确拦截了访问恶意网站分类的请求（FortiGate webfilter:blocked）
-    2. URL路径包含典型C2特征（/beacon?id=7f3a）
-    3. 但缺乏发起进程信息（无image/command_line），无法确认是否为恶意软件行为
-    4. 无历史经验比对，无法排除误报可能
+    1. 目标URL 'cdn.example-c2.net/beacon?id=7f3a' 具有典型C2信标特征(路径含beacon+参数化ID)
+    2. 防火墙明确分类为'Malicious Websites'并执行阻断
+    3. 缺失关键证据：无发起进程信息(image/command_line为空)，无法确认是否为恶意软件或用户行为
+    4. 无历史经验比对，域名新鲜度/信誉情报缺失
   证据引用:
     [
-      "CEF:0|Fortinet|FortiGate|v7.4.3|00033|webfilter:blocked",
-      "request=https://cdn.example-c2.net/beacon?id=7f3a",
-      "msg=Category blocked: Malicious Websites"
+      "CEF请求URL: https://cdn.example-c2.net/beacon?id=7f3a",
+      "防火墙分类: Malicious Websites",
+      "阻断动作: act=block"
     ]
   缺失证据:
     [
-      "发起进程信息（image/command_line）",
-      "目标域名信誉情报",
-      "历史访问模式"
+      "发起进程镜像路径(image)",
+      "进程命令行(command_line)",
+      "域名信誉情报(reputation)",
+      "域名首次出现时间(first_seen)"
     ]
   研判者:qwen3.5-27b
-  verdict_id:a3f20fa308704caf978611baa28a28f3
+  verdict_id:7f0451d38f014b60b4e8ffea0e5e5d29
   ATT&CK 技战术:
     []
   处置建议(仅建议;真执行须人工审批):
@@ -3009,20 +2813,21 @@ AI SOC 自动研判 —— 端到端流程演示(完整记录,不截断)
       "lean": "malicious",
       "confidence": 0.7,
       "summary": "防火墙拦截到内网主机访问恶意网站分类的URL，但缺乏进程级证据链",
-      "rationale": "1. 防火墙明确拦截了访问恶意网站分类的请求（FortiGate webfilter:blocked）\n2. URL路径包含典型C2特征（/beacon?id=7f3a）\n3. 但缺乏发起进程信息（无image/command_line），无法确认是否为恶意软件行为\n4. 无历史经验比对，无法排除误报可能",
+      "rationale": "1. 目标URL 'cdn.example-c2.net/beacon?id=7f3a' 具有典型C2信标特征(路径含beacon+参数化ID)\n2. 防火墙明确分类为'Malicious Websites'并执行阻断\n3. 缺失关键证据：无发起进程信息(image/command_line为空)，无法确认是否为恶意软件或用户行为\n4. 无历史经验比对，域名新鲜度/信誉情报缺失",
       "evidence_refs": [
-        "CEF:0|Fortinet|FortiGate|v7.4.3|00033|webfilter:blocked",
-        "request=https://cdn.example-c2.net/beacon?id=7f3a",
-        "msg=Category blocked: Malicious Websites"
+        "CEF请求URL: https://cdn.example-c2.net/beacon?id=7f3a",
+        "防火墙分类: Malicious Websites",
+        "阻断动作: act=block"
       ],
       "missing_evidence": [
-        "发起进程信息（image/command_line）",
-        "目标域名信誉情报",
-        "历史访问模式"
+        "发起进程镜像路径(image)",
+        "进程命令行(command_line)",
+        "域名信誉情报(reputation)",
+        "域名首次出现时间(first_seen)"
       ],
       "agent": "qwen3.5-27b",
       "investigated_at": null,
-      "verdict_id": "a3f20fa308704caf978611baa28a28f3"
+      "verdict_id": "7f0451d38f014b60b4e8ffea0e5e5d29"
     }
   -- 演示模式:**未真正写入**(加 --write 才写)
 
@@ -3062,24 +2867,25 @@ AI SOC 自动研判 —— 端到端流程演示(完整记录,不截断)
   摘要:
     防火墙拦截到内网主机访问恶意网站分类的URL，但缺乏进程级证据链
   依据:
-    1. 防火墙明确拦截了访问恶意网站分类的请求（FortiGate webfilter:blocked）
-    2. URL路径包含典型C2特征（/beacon?id=7f3a）
-    3. 但缺乏发起进程信息（无image/command_line），无法确认是否为恶意软件行为
-    4. 无历史经验比对，无法排除误报可能
+    1. 目标URL 'cdn.example-c2.net/beacon?id=7f3a' 具有典型C2信标特征(路径含beacon+参数化ID)
+    2. 防火墙明确分类为'Malicious Websites'并执行阻断
+    3. 缺失关键证据：无发起进程信息(image/command_line为空)，无法确认是否为恶意软件或用户行为
+    4. 无历史经验比对，域名新鲜度/信誉情报缺失
   证据引用:
     [
-      "CEF:0|Fortinet|FortiGate|v7.4.3|00033|webfilter:blocked",
-      "request=https://cdn.example-c2.net/beacon?id=7f3a",
-      "msg=Category blocked: Malicious Websites"
+      "CEF请求URL: https://cdn.example-c2.net/beacon?id=7f3a",
+      "防火墙分类: Malicious Websites",
+      "阻断动作: act=block"
     ]
   缺失证据:
     [
-      "发起进程信息（image/command_line）",
-      "目标域名信誉情报",
-      "历史访问模式"
+      "发起进程镜像路径(image)",
+      "进程命令行(command_line)",
+      "域名信誉情报(reputation)",
+      "域名首次出现时间(first_seen)"
     ]
   研判者:qwen3.5-27b
-  verdict_id:a3f20fa308704caf978611baa28a28f3
+  verdict_id:7f0451d38f014b60b4e8ffea0e5e5d29
   ATT&CK 技战术:
     []
   处置建议(仅建议;真执行须人工审批):
@@ -3128,7 +2934,7 @@ AI SOC 自动研判 —— 端到端流程演示(完整记录,不截断)
   经验层决策(演示口径):FALLTHROUGH
   实际走的通道:recipe
   大模型调用次数:3
-  端到端耗时:58075 ms
+  端到端耗时:56762 ms
 
   小结:证据由确定性图查询取得,模型只负责定性 —— 它没有机会编造事实;
         经验层让见过的情形不必再问模型(本次为演示完整流程而刻意绕开);
@@ -3254,12 +3060,12 @@ AI SOC 自动研判 —— 端到端流程演示(完整记录,不截断)
     ]
   tool_choice:required
 <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-<<< 大模型完整返回(第 1 次调用,耗时 3807 ms)
+<<< 大模型完整返回(第 1 次调用,耗时 2868 ms)
 <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
   返回:
     {
       "tool_calls": [
-        "ToolCall(id='chatcmpl-tool-afd5acd80bf1df96', name='shallow_triage', arguments={'needs_deep': True, 'verdict': 'suspicious', 'confidence': 0.8, 'rationale': '外部IP对内部主机进行端口扫描，虽属攻击行为特征，但需深度取证确认源IP身份（是否误报/授权）、扫描目的及后续是否伴随攻击载荷。'})"
+        "ToolCall(id='chatcmpl-tool-8ca2d867686e4d74', name='shallow_triage', arguments={'needs_deep': True, 'verdict': 'suspicious', 'confidence': 0.85, 'rationale': '外部IP对内部主机进行端口扫描，虽属攻击行为特征，但无法仅凭此告警区分是自动化扫描、误报还是真实攻击，需结合主机行为、进程链及登录序列进行深度研判。'})"
       ],
       "content": "",
       "finish_reason": null
@@ -3270,8 +3076,8 @@ AI SOC 自动研判 —— 端到端流程演示(完整记录,不截断)
     {
       "needs_deep": true,
       "verdict": "suspicious",
-      "confidence": 0.8,
-      "rationale": "外部IP对内部主机进行端口扫描，虽属攻击行为特征，但需深度取证确认源IP身份（是否误报/授权）、扫描目的及后续是否伴随攻击载荷。"
+      "confidence": 0.85,
+      "rationale": "外部IP对内部主机进行端口扫描，虽属攻击行为特征，但无法仅凭此告警区分是自动化扫描、误报还是真实攻击，需结合主机行为、进程链及登录序列进行深度研判。"
     }
   → 路由:升级到深度研判
 
@@ -3279,11 +3085,11 @@ AI SOC 自动研判 —— 端到端流程演示(完整记录,不截断)
 【第 5 步】取 seed(反查触发事件与相关实体)
   作用:拿告警回溯它的触发事件,以及事件牵扯到的进程/账号/主机等实体。这是后续所有取证的起点,也是知识图谱相对于纯日志的第一处增益。
 ====================================================================================================
-  -- 产出(耗时 124 ms)--
+  -- 产出(耗时 135 ms)--
   包含的键:event, subject, related
   seed[event]:
     {
-      "ingest_time": 1786699293712,
+      "ingest_time": 1786702707976,
       "notice_sub": "remote",
       "activity": "network.flow",
       "conn_uid": "Cntc00000683xZeekUid",
@@ -3369,7 +3175,7 @@ AI SOC 自动研判 —— 端到端流程演示(完整记录,不截断)
       "sensor": "zeek-sensor-01",
       "severity": null,
       "触发它的底层事件": {
-        "ingest_time": 1786699293712,
+        "ingest_time": 1786702707976,
         "notice_sub": "remote",
         "activity": "network.flow",
         "conn_uid": "Cntc00000683xZeekUid",
@@ -3429,18 +3235,18 @@ AI SOC 自动研判 —— 端到端流程演示(完整记录,不截断)
     ]
   tool_choice:required
 <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-<<< 大模型完整返回(第 2 次调用,耗时 11224 ms)
+<<< 大模型完整返回(第 2 次调用,耗时 10799 ms)
 <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
   返回:
     {
       "tool_calls": [
-        "ToolCall(id='chatcmpl-tool-9de7a7a364ffbec0', name='select_skill', arguments={'name': 'generic_network', 'reason': '告警描述为端口扫描行为（Scan::Port_Scan），属于网络层通用安全事件，没有更专门的skill匹配此类扫描行为，因此选择generic_network作为兜底。'})"
+        "ToolCall(id='chatcmpl-tool-a8c7c253924bd4b8', name='select_skill', arguments={'name': 'generic_network', 'reason': '告警描述为端口扫描行为（Scan::Port_Scan），属于网络层通用安全事件，没有更专门的skill匹配此类扫描行为，因此选择generic_network作为兜底'})"
       ],
       "content": "",
       "finish_reason": null
     }
 
-  -- 产出(耗时 11224 ms)--
+  -- 产出(耗时 10800 ms)--
   选中 skill:generic_network
   该 skill 的方法论描述:
     网络层通用研判兜底(没有更专门 skill 匹配该网络/外连告警类型时用)。
@@ -3449,7 +3255,7 @@ AI SOC 自动研判 —— 端到端流程演示(完整记录,不截断)
 【第 7 步】确定性取证(recipe)
   作用:★这一步不问大模型:用写死的图查询把证据取出来 —— 进程血缘、命令行、落地文件、外连、账号基线……产出结构化 finding(红=攻击迹象 / 白=良性证伪 / 中性=事实)。证据确定性,是后面经验能复用、模型不编造的前提。
 ====================================================================================================
-  -- 产出(耗时 583 ms)--
+  -- 产出(耗时 590 ms)--
   发现(finding)条数:0
   绑定的实体(bindings):
     {}
@@ -3457,7 +3263,7 @@ AI SOC 自动研判 —— 端到端流程演示(完整记录,不截断)
       context[触发事件与主语/主机]:
         {
           "event": {
-            "ingest_time": 1786699293712,
+            "ingest_time": 1786702707976,
             "notice_sub": "remote",
             "activity": "network.flow",
             "conn_uid": "Cntc00000683xZeekUid",
@@ -3678,7 +3484,7 @@ AI SOC 自动研判 —— 端到端流程演示(完整记录,不截断)
       "证据": {
         "触发事件与主语/主机": {
           "event": {
-            "ingest_time": 1786699293712,
+            "ingest_time": 1786702707976,
             "notice_sub": "remote",
             "activity": "network.flow",
             "conn_uid": "Cntc00000683xZeekUid",
@@ -3805,26 +3611,26 @@ AI SOC 自动研判 —— 端到端流程演示(完整记录,不截断)
     ]
   tool_choice:required
 <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-<<< 大模型完整返回(第 3 次调用,耗时 44737 ms)
+<<< 大模型完整返回(第 3 次调用,耗时 44846 ms)
 <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
   返回:
     {
       "tool_calls": [
-        "ToolCall(id='chatcmpl-tool-81b951813d649261', name='finalize_verdict', arguments={'verdict': 'true_positive', 'confidence': 0.9, 'summary': '外部IP 203.0.113.90在40秒内对内部主机10.20.30.5扫描至少30个端口，符合端口扫描攻击特征', 'rationale': 'Zeek传感器检测到203.0.113.90在短时间窗口(0m40s)内对目标主机发起大量端口连接尝试(≥30个唯一端口)，该行为模式与ATT&CK T1046网络发现技术高度吻合。无已知良性解释(如正常业务轮询)，且扫描行为具有明显攻击特征。', 'evidence_refs': ['event:b597b62eb0d50251147e45d8d51fc9c2039eca2f6a06082d57cf45de1e685577', 'ip:203.0.113.90', 'ip:10.20.30.5']})"
+        "ToolCall(id='chatcmpl-tool-be139ec0bce37660', name='finalize_verdict', arguments={'verdict': 'true_positive', 'confidence': 0.9, 'summary': '外部IP 203.0.113.90在40秒内对内部主机10.20.30.5扫描至少30个端口，符合端口扫描攻击特征。', 'rationale': 'Zeek传感器检测到203.0.113.90在短时间窗口（0m40s）内对目标主机发起大量端口连接尝试（≥30个唯一端口），触发Scan::Port_Scan规则。该行为不符合正常业务通信模式，且源IP为外部地址，目标为内部网络资产，具备明确攻击意图特征。', 'evidence_refs': ['event:b597b62eb0d50251147e45d8d51fc9c2039eca2f6a06082d57cf45de1e685577', 'ip:203.0.113.90', 'ip:10.20.30.5']})"
       ],
       "content": "",
       "finish_reason": null
     }
 
-  -- 产出(耗时 44862 ms)--
+  -- 产出(耗时 44982 ms)--
   研判路径:B
   使用的 skill:generic_network
   耗时:None ms
   结论:true_positive   倾向=None   置信=0.9
   摘要:
-    外部IP 203.0.113.90在40秒内对内部主机10.20.30.5扫描至少30个端口，符合端口扫描攻击特征
+    外部IP 203.0.113.90在40秒内对内部主机10.20.30.5扫描至少30个端口，符合端口扫描攻击特征。
   依据:
-    Zeek传感器检测到203.0.113.90在短时间窗口(0m40s)内对目标主机发起大量端口连接尝试(≥30个唯一端口)，该行为模式与ATT&CK T1046网络发现技术高度吻合。无已知良性解释(如正常业务轮询)，且扫描行为具有明显攻击特征。
+    Zeek传感器检测到203.0.113.90在短时间窗口（0m40s）内对目标主机发起大量端口连接尝试（≥30个唯一端口），触发Scan::Port_Scan规则。该行为不符合正常业务通信模式，且源IP为外部地址，目标为内部网络资产，具备明确攻击意图特征。
   证据引用:
     [
       "event:b597b62eb0d50251147e45d8d51fc9c2039eca2f6a06082d57cf45de1e685577",
@@ -3834,7 +3640,7 @@ AI SOC 自动研判 —— 端到端流程演示(完整记录,不截断)
   缺失证据:
     []
   研判者:qwen3.5-27b
-  verdict_id:d8993dff68c246eba7abde51245c5920
+  verdict_id:5ab032ed9d9e414dbb0629c19a36f3d0
   ATT&CK 技战术:
     []
   处置建议(仅建议;真执行须人工审批):
@@ -3862,7 +3668,7 @@ AI SOC 自动研判 —— 端到端流程演示(完整记录,不截断)
       },
       {
         "tool": "llm_input",
-        "content": "待研判告警 + 已备齐证据:\n{\n  \"alert\": {\n    \"alert_uid\": \"25caa0192167055e65984d17e348b193e88436786b81c6fa66e20280cb6ec490\",\n    \"rule_id\": \"Scan::Port_Scan\",\n    \"technique_ids\": [\n      \"T1046\"\n    ],\n    \"time\": \"2026-08-14T09:20:40.000Z\"\n  },\n  \"证据\": {\n    \"触发事件与主语/主机\": {\n      \"event\": {\n        \"ingest_time\": 1786699293712,\n        \"notice_sub\": \"remote\",\n        \"activity\": \"network.flow\",\n        \"conn_uid\": \"Cntc00000683xZeekUid\",\n        \"source\": \"zeek\",\n        \"ref_scheme\": \"file_path_line\",\n        \"event_uid\": \"b597b62eb0d50251147e45d8d51fc9c2039eca2f6a06082d57cf45de1e685577\",\n        \"src_port\": 49813,\n        \"event_code\": \"notice\",\n        \"dst_port\": 445,\n        \"raw_ref\": \"zeek.jsonl:311\",\n        \"sensor\": \"zeek-sensor-01\",\n        \"event_time\": \"2026-08-14T09:20:40.000Z\"\n      },\n      \"subject\": {\n        \"labels\": [\n          \"IPAddress\"\n        ],\n        \"props\": {\n          \"first_seen\": \"2026-08-14T09:20:00.000Z\",\n          \"last_seen\": \"2026-08-14T09:23:20.000Z\",\n          \"ip\": \"203.0.113.90\"\n        }\n      },\n      \"host\": null\n    },\n    \"宾语与次要参与者\": [\n      {\n        \"related\": [\n          {\n            \"rel\": \"CONNECTED_TO\",\n            \"labels\": [\n              \"IPAddress\"\n            ],\n            \"props\": {\n              \"first_seen\": \"2026-08-14 09:00:00\",\n              \"last_seen\": \"2026-08-14T11:24:00.000Z\",\n              \"ip\": \"10.20.30.5\"\n            }\n          },\n          {\n            \"rel\": \"FROM\",\n            \"labels\": [\n              \"IPAddress\"\n            ],\n            \"props\": {\n              \"first_seen\": \"2026-08-14T09:20:00.000Z\",\n              \"last_seen\": \"2026-08-14T09:23:20.000Z\",\n              \"ip\": \"203.0.113.90\"\n            }\n          }\n        ]\n      }\n    ],\n    \"经验比对(已知)\": \"已知经验比对:无历史经验命中,据证据从头研判。\"\n  },\n  \"原始告警(原文)\": \"{\\\"_path\\\": \\\"notice\\\", \\\"_write_ts\\\": \\\"2026-08-14T09:20:42.000Z\\\", \\\"ts\\\": \\\"2026-08-14T09:20:40.000Z\\\", \\\"uid\\\": \\\"Cntc00000683xZeekUid\\\", \\\"id.orig_h\\\": \\\"203.0.113.90\\\", \\\"id.orig_p\\\": 49813, \\\"id.resp_h\\\": \\\"10.20.30.5\\\", \\\"id.resp_p\\\": 445, \\\"fuid\\\": \\\"\\\", \\\"note\\\": \\\"Scan::Port_Scan\\\", \\\"msg\\\": \\\"203.0.113.90 scanned at least 30 unique ports of host 10.20.30.5 in 0m40s\\\", \\\"sub\\\": \\\"remote\\\", \\\"src\\\": \\\"203.0.113.90\\\", \\\"dst\\\": \\\"10.20.30.5\\\", \\\"peer_descr\\\": \\\"zeek-sensor-01\\\", \\\"actions\\\": [\\\"Notice::ACTION_LOG\\\"], \\\"suppress_for\\\": 3600.0}\"\n}"
+        "content": "待研判告警 + 已备齐证据:\n{\n  \"alert\": {\n    \"alert_uid\": \"25caa0192167055e65984d17e348b193e88436786b81c6fa66e20280cb6ec490\",\n    \"rule_id\": \"Scan::Port_Scan\",\n    \"technique_ids\": [\n      \"T1046\"\n    ],\n    \"time\": \"2026-08-14T09:20:40.000Z\"\n  },\n  \"证据\": {\n    \"触发事件与主语/主机\": {\n      \"event\": {\n        \"ingest_time\": 1786702707976,\n        \"notice_sub\": \"remote\",\n        \"activity\": \"network.flow\",\n        \"conn_uid\": \"Cntc00000683xZeekUid\",\n        \"source\": \"zeek\",\n        \"ref_scheme\": \"file_path_line\",\n        \"event_uid\": \"b597b62eb0d50251147e45d8d51fc9c2039eca2f6a06082d57cf45de1e685577\",\n        \"src_port\": 49813,\n        \"event_code\": \"notice\",\n        \"dst_port\": 445,\n        \"raw_ref\": \"zeek.jsonl:311\",\n        \"sensor\": \"zeek-sensor-01\",\n        \"event_time\": \"2026-08-14T09:20:40.000Z\"\n      },\n      \"subject\": {\n        \"labels\": [\n          \"IPAddress\"\n        ],\n        \"props\": {\n          \"first_seen\": \"2026-08-14T09:20:00.000Z\",\n          \"last_seen\": \"2026-08-14T09:23:20.000Z\",\n          \"ip\": \"203.0.113.90\"\n        }\n      },\n      \"host\": null\n    },\n    \"宾语与次要参与者\": [\n      {\n        \"related\": [\n          {\n            \"rel\": \"CONNECTED_TO\",\n            \"labels\": [\n              \"IPAddress\"\n            ],\n            \"props\": {\n              \"first_seen\": \"2026-08-14 09:00:00\",\n              \"last_seen\": \"2026-08-14T11:24:00.000Z\",\n              \"ip\": \"10.20.30.5\"\n            }\n          },\n          {\n            \"rel\": \"FROM\",\n            \"labels\": [\n              \"IPAddress\"\n            ],\n            \"props\": {\n              \"first_seen\": \"2026-08-14T09:20:00.000Z\",\n              \"last_seen\": \"2026-08-14T09:23:20.000Z\",\n              \"ip\": \"203.0.113.90\"\n            }\n          }\n        ]\n      }\n    ],\n    \"经验比对(已知)\": \"已知经验比对:无历史经验命中,据证据从头研判。\"\n  },\n  \"原始告警(原文)\": \"{\\\"_path\\\": \\\"notice\\\", \\\"_write_ts\\\": \\\"2026-08-14T09:20:42.000Z\\\", \\\"ts\\\": \\\"2026-08-14T09:20:40.000Z\\\", \\\"uid\\\": \\\"Cntc00000683xZeekUid\\\", \\\"id.orig_h\\\": \\\"203.0.113.90\\\", \\\"id.orig_p\\\": 49813, \\\"id.resp_h\\\": \\\"10.20.30.5\\\", \\\"id.resp_p\\\": 445, \\\"fuid\\\": \\\"\\\", \\\"note\\\": \\\"Scan::Port_Scan\\\", \\\"msg\\\": \\\"203.0.113.90 scanned at least 30 unique ports of host 10.20.30.5 in 0m40s\\\", \\\"sub\\\": \\\"remote\\\", \\\"src\\\": \\\"203.0.113.90\\\", \\\"dst\\\": \\\"10.20.30.5\\\", \\\"peer_descr\\\": \\\"zeek-sensor-01\\\", \\\"actions\\\": [\\\"Notice::ACTION_LOG\\\"], \\\"suppress_for\\\": 3600.0}\"\n}"
       }
     ]
 
@@ -3883,8 +3689,8 @@ AI SOC 自动研判 —— 端到端流程演示(完整记录,不截断)
       "verdict": "true_positive",
       "lean": null,
       "confidence": 0.9,
-      "summary": "外部IP 203.0.113.90在40秒内对内部主机10.20.30.5扫描至少30个端口，符合端口扫描攻击特征",
-      "rationale": "Zeek传感器检测到203.0.113.90在短时间窗口(0m40s)内对目标主机发起大量端口连接尝试(≥30个唯一端口)，该行为模式与ATT&CK T1046网络发现技术高度吻合。无已知良性解释(如正常业务轮询)，且扫描行为具有明显攻击特征。",
+      "summary": "外部IP 203.0.113.90在40秒内对内部主机10.20.30.5扫描至少30个端口，符合端口扫描攻击特征。",
+      "rationale": "Zeek传感器检测到203.0.113.90在短时间窗口（0m40s）内对目标主机发起大量端口连接尝试（≥30个唯一端口），触发Scan::Port_Scan规则。该行为不符合正常业务通信模式，且源IP为外部地址，目标为内部网络资产，具备明确攻击意图特征。",
       "evidence_refs": [
         "event:b597b62eb0d50251147e45d8d51fc9c2039eca2f6a06082d57cf45de1e685577",
         "ip:203.0.113.90",
@@ -3893,7 +3699,7 @@ AI SOC 自动研判 —— 端到端流程演示(完整记录,不截断)
       "missing_evidence": [],
       "agent": "qwen3.5-27b",
       "investigated_at": null,
-      "verdict_id": "d8993dff68c246eba7abde51245c5920"
+      "verdict_id": "5ab032ed9d9e414dbb0629c19a36f3d0"
     }
   -- 演示模式:**未真正写入**(加 --write 才写)
 
@@ -3929,9 +3735,9 @@ AI SOC 自动研判 —— 端到端流程演示(完整记录,不截断)
   耗时:None ms
   结论:true_positive   倾向=None   置信=0.9
   摘要:
-    外部IP 203.0.113.90在40秒内对内部主机10.20.30.5扫描至少30个端口，符合端口扫描攻击特征
+    外部IP 203.0.113.90在40秒内对内部主机10.20.30.5扫描至少30个端口，符合端口扫描攻击特征。
   依据:
-    Zeek传感器检测到203.0.113.90在短时间窗口(0m40s)内对目标主机发起大量端口连接尝试(≥30个唯一端口)，该行为模式与ATT&CK T1046网络发现技术高度吻合。无已知良性解释(如正常业务轮询)，且扫描行为具有明显攻击特征。
+    Zeek传感器检测到203.0.113.90在短时间窗口（0m40s）内对目标主机发起大量端口连接尝试（≥30个唯一端口），触发Scan::Port_Scan规则。该行为不符合正常业务通信模式，且源IP为外部地址，目标为内部网络资产，具备明确攻击意图特征。
   证据引用:
     [
       "event:b597b62eb0d50251147e45d8d51fc9c2039eca2f6a06082d57cf45de1e685577",
@@ -3941,7 +3747,7 @@ AI SOC 自动研判 —— 端到端流程演示(完整记录,不截断)
   缺失证据:
     []
   研判者:qwen3.5-27b
-  verdict_id:d8993dff68c246eba7abde51245c5920
+  verdict_id:5ab032ed9d9e414dbb0629c19a36f3d0
   ATT&CK 技战术:
     []
   处置建议(仅建议;真执行须人工审批):
@@ -3969,13 +3775,13 @@ AI SOC 自动研判 —— 端到端流程演示(完整记录,不截断)
       },
       {
         "tool": "llm_input",
-        "content": "待研判告警 + 已备齐证据:\n{\n  \"alert\": {\n    \"alert_uid\": \"25caa0192167055e65984d17e348b193e88436786b81c6fa66e20280cb6ec490\",\n    \"rule_id\": \"Scan::Port_Scan\",\n    \"technique_ids\": [\n      \"T1046\"\n    ],\n    \"time\": \"2026-08-14T09:20:40.000Z\"\n  },\n  \"证据\": {\n    \"触发事件与主语/主机\": {\n      \"event\": {\n        \"ingest_time\": 1786699293712,\n        \"notice_sub\": \"remote\",\n        \"activity\": \"network.flow\",\n        \"conn_uid\": \"Cntc00000683xZeekUid\",\n        \"source\": \"zeek\",\n        \"ref_scheme\": \"file_path_line\",\n        \"event_uid\": \"b597b62eb0d50251147e45d8d51fc9c2039eca2f6a06082d57cf45de1e685577\",\n        \"src_port\": 49813,\n        \"event_code\": \"notice\",\n        \"dst_port\": 445,\n        \"raw_ref\": \"zeek.jsonl:311\",\n        \"sensor\": \"zeek-sensor-01\",\n        \"event_time\": \"2026-08-14T09:20:40.000Z\"\n      },\n      \"subject\": {\n        \"labels\": [\n          \"IPAddress\"\n        ],\n        \"props\": {\n          \"first_seen\": \"2026-08-14T09:20:00.000Z\",\n          \"last_seen\": \"2026-08-14T09:23:20.000Z\",\n          \"ip\": \"203.0.113.90\"\n        }\n      },\n      \"host\": null\n    },\n    \"宾语与次要参与者\": [\n      {\n        \"related\": [\n          {\n            \"rel\": \"CONNECTED_TO\",\n            \"labels\": [\n              \"IPAddress\"\n            ],\n            \"props\": {\n              \"first_seen\": \"2026-08-14 09:00:00\",\n              \"last_seen\": \"2026-08-14T11:24:00.000Z\",\n              \"ip\": \"10.20.30.5\"\n            }\n          },\n          {\n            \"rel\": \"FROM\",\n            \"labels\": [\n              \"IPAddress\"\n            ],\n            \"props\": {\n              \"first_seen\": \"2026-08-14T09:20:00.000Z\",\n              \"last_seen\": \"2026-08-14T09:23:20.000Z\",\n              \"ip\": \"203.0.113.90\"\n            }\n          }\n        ]\n      }\n    ],\n    \"经验比对(已知)\": \"已知经验比对:无历史经验命中,据证据从头研判。\"\n  },\n  \"原始告警(原文)\": \"{\\\"_path\\\": \\\"notice\\\", \\\"_write_ts\\\": \\\"2026-08-14T09:20:42.000Z\\\", \\\"ts\\\": \\\"2026-08-14T09:20:40.000Z\\\", \\\"uid\\\": \\\"Cntc00000683xZeekUid\\\", \\\"id.orig_h\\\": \\\"203.0.113.90\\\", \\\"id.orig_p\\\": 49813, \\\"id.resp_h\\\": \\\"10.20.30.5\\\", \\\"id.resp_p\\\": 445, \\\"fuid\\\": \\\"\\\", \\\"note\\\": \\\"Scan::Port_Scan\\\", \\\"msg\\\": \\\"203.0.113.90 scanned at least 30 unique ports of host 10.20.30.5 in 0m40s\\\", \\\"sub\\\": \\\"remote\\\", \\\"src\\\": \\\"203.0.113.90\\\", \\\"dst\\\": \\\"10.20.30.5\\\", \\\"peer_descr\\\": \\\"zeek-sensor-01\\\", \\\"actions\\\": [\\\"Notice::ACTION_LOG\\\"], \\\"suppress_for\\\": 3600.0}\"\n}"
+        "content": "待研判告警 + 已备齐证据:\n{\n  \"alert\": {\n    \"alert_uid\": \"25caa0192167055e65984d17e348b193e88436786b81c6fa66e20280cb6ec490\",\n    \"rule_id\": \"Scan::Port_Scan\",\n    \"technique_ids\": [\n      \"T1046\"\n    ],\n    \"time\": \"2026-08-14T09:20:40.000Z\"\n  },\n  \"证据\": {\n    \"触发事件与主语/主机\": {\n      \"event\": {\n        \"ingest_time\": 1786702707976,\n        \"notice_sub\": \"remote\",\n        \"activity\": \"network.flow\",\n        \"conn_uid\": \"Cntc00000683xZeekUid\",\n        \"source\": \"zeek\",\n        \"ref_scheme\": \"file_path_line\",\n        \"event_uid\": \"b597b62eb0d50251147e45d8d51fc9c2039eca2f6a06082d57cf45de1e685577\",\n        \"src_port\": 49813,\n        \"event_code\": \"notice\",\n        \"dst_port\": 445,\n        \"raw_ref\": \"zeek.jsonl:311\",\n        \"sensor\": \"zeek-sensor-01\",\n        \"event_time\": \"2026-08-14T09:20:40.000Z\"\n      },\n      \"subject\": {\n        \"labels\": [\n          \"IPAddress\"\n        ],\n        \"props\": {\n          \"first_seen\": \"2026-08-14T09:20:00.000Z\",\n          \"last_seen\": \"2026-08-14T09:23:20.000Z\",\n          \"ip\": \"203.0.113.90\"\n        }\n      },\n      \"host\": null\n    },\n    \"宾语与次要参与者\": [\n      {\n        \"related\": [\n          {\n            \"rel\": \"CONNECTED_TO\",\n            \"labels\": [\n              \"IPAddress\"\n            ],\n            \"props\": {\n              \"first_seen\": \"2026-08-14 09:00:00\",\n              \"last_seen\": \"2026-08-14T11:24:00.000Z\",\n              \"ip\": \"10.20.30.5\"\n            }\n          },\n          {\n            \"rel\": \"FROM\",\n            \"labels\": [\n              \"IPAddress\"\n            ],\n            \"props\": {\n              \"first_seen\": \"2026-08-14T09:20:00.000Z\",\n              \"last_seen\": \"2026-08-14T09:23:20.000Z\",\n              \"ip\": \"203.0.113.90\"\n            }\n          }\n        ]\n      }\n    ],\n    \"经验比对(已知)\": \"已知经验比对:无历史经验命中,据证据从头研判。\"\n  },\n  \"原始告警(原文)\": \"{\\\"_path\\\": \\\"notice\\\", \\\"_write_ts\\\": \\\"2026-08-14T09:20:42.000Z\\\", \\\"ts\\\": \\\"2026-08-14T09:20:40.000Z\\\", \\\"uid\\\": \\\"Cntc00000683xZeekUid\\\", \\\"id.orig_h\\\": \\\"203.0.113.90\\\", \\\"id.orig_p\\\": 49813, \\\"id.resp_h\\\": \\\"10.20.30.5\\\", \\\"id.resp_p\\\": 445, \\\"fuid\\\": \\\"\\\", \\\"note\\\": \\\"Scan::Port_Scan\\\", \\\"msg\\\": \\\"203.0.113.90 scanned at least 30 unique ports of host 10.20.30.5 in 0m40s\\\", \\\"sub\\\": \\\"remote\\\", \\\"src\\\": \\\"203.0.113.90\\\", \\\"dst\\\": \\\"10.20.30.5\\\", \\\"peer_descr\\\": \\\"zeek-sensor-01\\\", \\\"actions\\\": [\\\"Notice::ACTION_LOG\\\"], \\\"suppress_for\\\": 3600.0}\"\n}"
       }
     ]
   经验层决策(演示口径):FALLTHROUGH
   实际走的通道:recipe
   大模型调用次数:3
-  端到端耗时:60865 ms
+  端到端耗时:59658 ms
 
   小结:证据由确定性图查询取得,模型只负责定性 —— 它没有机会编造事实;
         经验层让见过的情形不必再问模型(本次为演示完整流程而刻意绕开);
