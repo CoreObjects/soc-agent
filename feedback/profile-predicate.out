@@ -1,6 +1,6 @@
-=== 谓词放宽的执行计划体检(只读) 2026-08-13 12:37Z ===
+=== 谓词放宽的执行计划体检(只读) 2026-08-14 01:19Z ===
 主机    : localhost.localdomain   仓库 /home/soc/soc-agent
-代码版本: 7d9400c docs(profile-predicate): 把两次「闸门没生效」的教训写进脚本头
+代码版本: 167546e feedback: profile-predicate 08-13 12:37Z
 解释器  : .venv312/bin/python -> Python 3.11.6
 
 图: bolt://10.185.93.0:7687  库=None
@@ -13,8 +13,8 @@
   waf_ip: {'ip': '192.168.56.1'}
 
 --- lateral_movement 登录基线计数 ---
-  旧: dbHits=1738717  行=[{'logins': 204108}]
-  新: dbHits=1741925  行=[{'logins': 204108}]
+  旧: dbHits=1776914  行=[{'logins': 207148}]
+  新: dbHits=1780122  行=[{'logins': 207148}]
   倍率=1.00×   结果一致(按集合)=True
   扫描类算子 旧: 无
              新: 无
@@ -22,8 +22,8 @@
   ✅ 放宽没有代价
 
 --- kerberoast 该账号取票扇出 ---
-  旧: dbHits=1633070  行=[{'distinct_targets': 2, 'total_4769': 245656}]
-  新: dbHits=1989384  行=[{'distinct_targets': 2, 'total_4769': 245656}]
+  旧: dbHits=1667650  行=[{'distinct_targets': 2, 'total_4769': 248316}]
+  新: dbHits=2031564  行=[{'distinct_targets': 2, 'total_4769': 248316}]
   倍率=1.22×   结果一致(按集合)=True
   扫描类算子 旧: NodeByLabelScan(req:Account, 74 hits)
              新: NodeByLabelScan(req:Account, 74 hits)
@@ -40,9 +40,9 @@
   ✅ 放宽没有代价
 
 --- web_exploit 源IP的WAF打击画像 ---
-  旧: dbHits=444868   行=[{'waf_alerts': 304, 'distinct_crs_rules': 3, 'sample_rules': ['920350', '942100', '941390'], 'endpoints_hit': ['/static/app.js', '/api/v1/items/42', '/health', '/products', '/search', '/about', '/static/app.css', '/products/', '/orders', '/api/v1/items', '/nonexistent-page', '/docs/guide', '/index.html', '/', '/vulnerabilities/sqli/']}]
-  新: dbHits=414356   行=[{'waf_alerts': 304, 'distinct_crs_rules': 3, 'sample_rules': ['920350', '942100', '941390'], 'endpoints_hit': ['/about', '/', '/index.html', '/docs/guide', '/api/v1/items', '/products', '/health', '/products/', '/static/app.js', '/search', '/api/v1/items/42', '/orders', '/nonexistent-page', '/static/app.css', '/vulnerabilities/sqli/']}]
-  倍率=0.93×   结果一致(按集合)=True
+  旧: dbHits=452596   行=[{'waf_alerts': 304, 'distinct_crs_rules': 3, 'sample_rules': ['920350', '942100', '941390'], 'endpoints_hit': ['/static/app.js', '/api/v1/items/42', '/health', '/products', '/search', '/about', '/static/app.css', '/products/', '/orders', '/api/v1/items', '/nonexistent-page', '/docs/guide', '/index.html', '/', '/vulnerabilities/sqli/']}]
+  新: dbHits=423604   行=[{'waf_alerts': 304, 'distinct_crs_rules': 3, 'sample_rules': ['920350', '942100', '941390'], 'endpoints_hit': ['/about', '/', '/index.html', '/docs/guide', '/api/v1/items', '/products', '/health', '/products/', '/static/app.js', '/search', '/api/v1/items/42', '/orders', '/nonexistent-page', '/static/app.css', '/vulnerabilities/sqli/']}]
+  倍率=0.94×   结果一致(按集合)=True
      (仅列表顺序不同 —— collect(DISTINCT …) 本就无序,不判失败)
   扫描类算子 旧: NodeByLabelScan(uu:Uri, 16 hits)
              新: 无
