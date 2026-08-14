@@ -3,10 +3,13 @@
 背景:多条 PowerShell 告警的决定性证据(编码命令、脚本块)如果不先解码/识别就交给 LLM,
 模型要么幻觉、要么把配管工具(Ansible 等)的正常供给活动当攻击误判。这里用确定性代码先解出来、认出来。
 纯逻辑、可单测、不碰图/LLM;多个 recipe 复用。
+(唯一的例外是 `security_agent` —— 它的名单 WP10 起是每租户声明式的,
+ 落在 `sec_agents.py` 里惰性读文件;本模块只做转发,自己仍不碰 I/O。)
 """
 import base64
 import re
 
+from soc_agent import sec_agents
 from soc_agent.forensics import Finding
 
 __all__ = ["decode_powershell_cmd", "decode_chain", "provisioning_noise", "security_agent",
@@ -121,28 +124,19 @@ def provisioning_noise(text):
     return "; ".join(hits) if hits else None
 
 
-# 已知安全/监控代理:这类进程"访问 LSASS / 读进程 / 大量外连"多为自身遥测/完整性检查,是头号 FP。
-# ★绝不能因它自身触发的告警去 kill/隔离该代理或其主机(=戳瞎监控)。
-_SEC_AGENTS = [
-    (re.compile(r"wazuh-agent|ossec-agent", re.I), "Wazuh/OSSEC HIDS 代理"),
-    (re.compile(r"MsMpEng\.exe|NisSrv\.exe|MpDefenderCoreService", re.I), "Microsoft Defender"),
-    (re.compile(r"Sysmon6?4?\.exe", re.I), "Sysmon 传感器"),
-    (re.compile(r"winlogbeat|filebeat|elastic-agent", re.I), "Elastic/Beats 采集器"),
-    (re.compile(r"MsSense\.exe|SenseIR\.exe", re.I), "Microsoft Defender for Endpoint"),
-    (re.compile(r"CSFalcon", re.I), "CrowdStrike Falcon"),
-    (re.compile(r"xagt\.exe", re.I), "Trellix/FireEye"),
-    (re.compile(r"SentinelAgent|SentinelServiceHost", re.I), "SentinelOne"),
-]
-
-
 def security_agent(image):
-    """image/路径命中已知安全/监控代理 → 返回产品名,否则 None。命中即"自身遥测"强证伪信号。"""
+    """image/路径命中已知安全/监控代理 → 返回产品名,否则 None。命中即"自身遥测"强证伪信号。
+
+    ★WP10:名单从这里的 8 条硬编码正则改成**每租户声明式**(见 `soc_agent/sec_agents.py`)。
+      换个客户就换一批 EDR —— 客户自己的 agent 不在名单里,它的进程会全程出现在进程
+      遥测里却拿不到白极性豁免,而且**处置层的 NEVER-TOUCH 硬拒也保护不到它**
+      (系统可能提议 kill 掉客户的 EDR = 戳瞎监控)。
+      内置默认仍是原来那 8 条(pattern / name / 顺序逐字不变),GOAD 行为按定义不变;
+      任何加载失败一律回退到内置,**绝不回退成空**(空名单在处置侧是危险,不是保守)。
+    """
     if not image:
         return None
-    for rx, name in _SEC_AGENTS:
-        if rx.search(image):
-            return name
-    return None
+    return sec_agents.effective().match(image)
 
 
 def plus_activity(attrs: dict, src) -> dict:

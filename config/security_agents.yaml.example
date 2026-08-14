@@ -1,0 +1,33 @@
+# 每租户「安全/监控代理」声明。
+#
+# 用法:复制成 config/security_agents.yaml(或用 SOC_SECURITY_AGENTS_FILE 指到别处)。
+# **不写这个文件是常态** —— 不写就只用内置名单,不报错、不算问题。
+#
+# 这份名单同时喂两个下游,方向相反,填之前先明白:
+#   ① 研判侧:命中 → white 极性 finding(「这是代理自身遥测」,头号 FP 证伪信号)。
+#      填多了 → 真攻击被白掉;填少了 → 你自己的 EDR 天天被当攻击。
+#   ② 处置侧:命中 → NEVER-TOUCH 硬拒,系统不许 kill/隔离这个进程。
+#      填少了 → 系统可能提议把你的 EDR 自己杀掉 = 戳瞎监控。
+#
+# ★接新客户时**必须**填的就是这里:客户的 EDR 型号不在内置 8 条里
+#   (内置只有 Wazuh/OSSEC、Defender、Sysmon、Beats、MDE、CrowdStrike、Trellix、SentinelOne),
+#   不声明的话上面两条保护它一条都拿不到。
+
+version: 1
+
+# 追加自己的代理。追加在内置**之后**(顺序即优先级,首个命中即返回)。
+agents:
+  - name: "Acme EDR"                  # ★这个名字会进 Finding.attrs、进经验指纹。
+                                      #   定下来就**别再改** —— 改名 = 静默作废已沉淀的相关指纹。
+    match:                            # 正则(大小写不敏感),对 image/路径**全串**搜索
+      - "AcmeSensor\\.exe"
+      - "acme-agentd"
+
+  # 同名条目 = **就地替换**内置项:改模式但保住名字 ⇒ 老指纹仍然对得上。
+  # - name: "CrowdStrike Falcon"
+  #   match: ["CsAgent\\.exe"]
+
+# 关掉某条内置项(按 name)。典型场景:本环境根本不跑 CrowdStrike,
+# 不想让攻击者把马命名成 CSFalcon 白蹭一个证伪信号。
+# ★这是**削弱护栏**的动作,会在诊断输出里留痕。
+disable_builtin: []
