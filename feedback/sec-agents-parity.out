@@ -1,0 +1,35 @@
+=== 安全代理名单:真机逐条等价(只读) 2026-08-14 01:33Z ===
+主机    : localhost.localdomain   仓库 /home/soc/soc-agent
+代码版本: 7d2473e WP10: security_agent 名单改成每租户声明式(内置=原 8 条,逐字不变)
+解释器  : .venv312/bin/python -> Python 3.11.6
+租户声明: config/security_agents.yaml(默认路径)
+
+图: bolt://10.185.93.0:7687  库=None
+安全/监控代理名单:8 条(来源:内置(未提供租户声明))
+  · Wazuh/OSSEC HIDS 代理
+  · Microsoft Defender
+  · Sysmon 传感器
+  · Elastic/Beats 采集器
+  · Microsoft Defender for Endpoint
+  · CrowdStrike Falcon
+  · Trellix/FireEye
+  · SentinelOne
+
+--- 从图 schema 发现的 image 类属性(不写死,免得静默少捞)---
+  Process.image
+
+--- 从图里捞到的 distinct image 值 ---
+  Process.image: 338
+  合计去重后: 338
+
+--- 命中分布(旧实现;用来确认语料里**确实有**代理进程,否则等价是空跑)---
+  Elastic/Beats 采集器: 1 条,例:C:\winlogbeat-7.17.22-windows-x86_64\winlogbeat.exe
+  Microsoft Defender: 17 条,例:C:\Program Files\Windows Defender\MsMpEng.exe
+  Sysmon 传感器: 2 条,例:C:\Windows\Sysmon64.exe
+  Wazuh/OSSEC HIDS 代理: 3 条,例:C:\Program Files (x86)\ossec-agent\active-response\bin\restart-wazuh.exe
+
+✅ 逐条等价:338 条真实 image 上,新旧实现返回的**名字串**完全一致。
+[退出码] 0
+
+✅ 通过:真实 image 上新旧返回的名字串逐条一致,且语料里确实有代理进程。
+=== done ===
