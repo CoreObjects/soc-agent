@@ -148,3 +148,68 @@ def test_sediment_really_runs_but_lands_in_a_throwaway_store():
     assert "_orig_sediment(" in src
     from soc_agent.experience.store import InMemoryExperienceStore
     assert hasattr(InMemoryExperienceStore, "all")          # 演示要把学到的东西列出来
+
+
+# --------------------------------------------------- 浅层(三级漏斗第一级)
+
+CASCADE_TAPS = ["sig_consult", "force_deep", "shallow_triage", "_sig_learn"]
+
+
+@pytest.mark.parametrize("name", CASCADE_TAPS)
+def test_cascade_tap_targets_exist(name):
+    """★浅层三步的挂载点必须存在。
+
+    浅层是三级漏斗的第一级(签名库前置 → 硬底线 → 浅层 LLM 分诊),
+    首版演示**整级都没出现** —— 因为它由 `SOC_CASCADE_ENABLED` 控制、默认关,
+    而脚本既没打开它、也没打印这个开关状态,等于把一整级藏起来了。
+    这条钉住:名字改了就红,不会再悄悄少一级。
+    """
+    from soc_agent.cascade import run
+    assert hasattr(run, name), f"演示脚本要包 cascade.run.{name},但它不存在(改过名?)"
+
+
+def test_cascade_taps_patch_the_module_that_actually_calls_them():
+    """★必须打到 `cascade.run` 的命名空间上,不是打到定义处的模块。
+
+    `run.py` 用的是 `from .signature import sig_consult` / `from .floor import force_deep`,
+    也就是**导入期就把函数绑进自己的命名空间**了。去补 signature.py / floor.py 是**没用的** ——
+    补了不报错,浅层照跑,只是探针一次都不触发,演示又少一级而看不出来。
+    """
+    src = _SCRIPT.read_text(encoding="utf-8")
+    for name in ("sig_consult", "force_deep", "shallow_triage"):
+        assert f"CAS.{name} = " in src, f"{name} 必须打在 cascade.run(别名 CAS)上"
+    from soc_agent.cascade import run
+    import soc_agent.cascade.signature as sig
+    import soc_agent.cascade.floor as floor
+    assert run.sig_consult is sig.sig_consult          # 同一对象 ⇒ 必须补 run 这一侧
+    assert run.force_deep is floor.force_deep
+
+
+def test_shallow_tier_is_on_by_default_and_the_env_value_is_printed():
+    """★演示默认打开浅层,并且**同时打印 .env 里的真实配置**。
+
+    浅层生产可能是关的。只显示"开"而不显示"配置里是关的",看的人会以为生产就这么跑 ——
+    和强制不走复用却不标注是同一类误导。
+    """
+    src = _SCRIPT.read_text(encoding="utf-8")
+    assert '"--cascade", choices=["on", "off", "env"], default="on"' in src
+    assert "SOC_CASCADE_ENABLED" in src
+    assert "两者不一致" in src and "演示口径" in src
+    assert "pl.cascade_enabled = use_cascade" in src
+
+
+def test_shallow_terminal_is_forced_to_escalate_unless_reuse():
+    """★浅层判成误报本可就地终局 —— 演示要展示完整漏斗,必须强制升级并标注。"""
+    src = _SCRIPT.read_text(encoding="utf-8")
+    assert "needs_deep=True" in src
+    assert "演示要展示完整漏斗" in src
+
+
+def test_run_investigation_still_branches_on_that_field():
+    """★演示是靠改 `pl.cascade_enabled` 打开浅层的 —— 生产的分支依据必须还是这个字段。
+
+    哪天 run_investigation 换成读别的开关,这条会红;否则演示会**静默退回只走深度**。
+    """
+    import inspect
+    from soc_agent import cli
+    assert "cascade_enabled" in inspect.getsource(cli.run_investigation)

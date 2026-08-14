@@ -18,13 +18,19 @@
   但**蒸馏和考试是真跑的**,只是落到一个用完即弃的临时经验库 —— 领导能看到
   「这次研判学到了什么」,而生产经验库不被一次演示污染。要真写加 `--write`。
 
-默认**不走经验复用**:把这条告警当成没见过的,完整走深度通道。
-  经验层照常比对并把真实结论打印出来,只是随后显式声明「演示强制转深度」——
-  这样既看得到经验层确实命中了什么,也看得到完整流程。要看生产的抄近路行为加 `--reuse`。
+默认**不抄任何近路**:三处短路(签名库复用 / 浅层直接终局 / 经验层复用)都照常执行并把
+  **真实结论原样打印**,随后显式声明「演示强制继续」,把这条告警当成没见过的走完整条漏斗。
+  只强制不标注的话,看的人会以为生产每条都请大模型 —— 那会把成本预期带偏。
+  要看生产实际的抄近路行为:`--reuse`。
+
+默认**打开浅层**(`--cascade on`):浅层由 `SOC_CASCADE_ENABLED` 控制、生产可能是关的,
+  但它是三级漏斗的第一级,汇报要看完整流程就得展示。头部会同时打印
+  「本次用的」与「.env 里配的」,不一致时明确标注是演示口径。
 
 用法:
-  python scripts/demo_pipeline.py                    # 完整深度流程(默认)
-  python scripts/demo_pipeline.py --reuse            # 允许经验复用(生产实际行为)
+  python scripts/demo_pipeline.py                    # 完整三级漏斗(默认)
+  python scripts/demo_pipeline.py --reuse            # 允许各级短路(生产实际行为)
+  python scripts/demo_pipeline.py --cascade env      # 浅层按 .env 实际配置
   python scripts/demo_pipeline.py --alert-uid <uid>
   python scripts/demo_pipeline.py --write            # 真写台账/语料/经验库
 """
@@ -39,6 +45,7 @@ _ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, _ROOT)
 
 from soc_agent import cli as C                                        # noqa: E402
+from soc_agent.cascade import run as CAS                              # noqa: E402
 from soc_agent.config import Config                                   # noqa: E402
 from soc_agent.experience.store import InMemoryExperienceStore        # noqa: E402
 from soc_agent.llm.qwen import QwenClient                             # noqa: E402
@@ -324,6 +331,64 @@ def install_taps(pl, *, write, allow_reuse):
         C._compose_dispositions,
         show_out=lambda _: kv("处置", "已写入 result.dispositions(见最终结果)"))
 
+    # ---- 浅层(cascade 第一级):签名库 → 硬底线 → 浅层 LLM 分诊 ----
+    _orig_sig = CAS.sig_consult
+
+    def _sig(*a, **kw):
+        step("① 签名库前置(零大模型)",
+             "三级漏斗的第一级:拿告警自身的 payload 特征去查已沉淀的签名库。"
+             "命中误报签名 → 直接复用结论、**一次大模型都不调**;命中攻击签名 → 不短路、强制升级。"
+             "这一级存在的意义就是省算力:重复的噪声不该每条都惊动模型。")
+        hit = _orig_sig(*a, **kw)
+        block("签名库命中", getattr(hit, "__dict__", hit))
+        if hit is not None and not allow_reuse:
+            print("  ★演示强制:命中了也不复用,当作没见过,继续往下走(演示口径,非生产行为)。")
+            return None
+        return hit
+
+    CAS.sig_consult = _sig
+
+    _orig_floor = CAS.force_deep
+
+    def _floor(*a, **kw):
+        step("② 硬底线 floor(确定性强制升级)",
+             "在浅层判断之前的确定性兜底:某些「漏了就是灾难」的类型可以在这里无条件升级到深度。"
+             "★当前是**空底线**(恒 False)—— 2026-07-23 有意退成这样:原本按高危技战术前缀强制升级,"
+             "但那些(Kerberoast/DCSync/ADCS)恰恰是浅层凭签名就能直判的,强制升级反而挡住了这条快路。"
+             "升不升全交浅层 LLM 判断,钩子保留以便日后按需补。")
+        v = _orig_floor(*a, **kw)
+        kv("是否强制升级", v)
+        return v
+
+    CAS.force_deep = _floor
+
+    _orig_shallow = CAS.shallow_triage
+
+    def _shallow(llm, alert):
+        step("③ 浅层 LLM 分诊(轻量,不取证、不查图)",
+             "只把告警自身(含原文)喂给模型,让它判两件事:needs_deep(要不要深度取证)与 verdict。"
+             "★决策口径是**不对称**的:只有判成 false_positive 才允许在此终局;"
+             "判 true_positive 或 suspicious 一律升级 —— 宁可多花算力,不可漏报。"
+             "完整提示词与返回见下方。")
+        out = _orig_shallow(llm, alert)
+        print("  -- 产出 --")
+        block("浅层分诊结果", out)
+        if not allow_reuse and not out.get("needs_deep"):
+            print("  ★演示强制:浅层本可在此终局,但演示要展示完整漏斗,故改判需要升级"
+                  "(演示口径,非生产行为)。")
+            out = dict(out, needs_deep=True)
+        kv("→ 路由", "升级到深度研判" if out.get("needs_deep") else "浅层终局")
+        return out
+
+    CAS.shallow_triage = _shallow
+
+    def _no_sig_learn(*a, **kw):
+        step("浅层终局后的签名蒸馏", "浅层判定误报终局时,从 payload 蒸出签名入库,下次同类零大模型。")
+        print("  -- 演示模式:**未写入签名库**(加 --write 才写)")
+
+    if not write:
+        CAS._sig_learn = _no_sig_learn
+
     # ---- 写入点 ----
     def _stub(title, doc, describe):
         def f(*a, **kw):
@@ -380,6 +445,9 @@ def main() -> int:
     ap.add_argument("--reuse", action="store_true",
                     help="允许经验复用(生产实际行为);默认关闭=把告警当没见过的,完整走深度通道")
     ap.add_argument("--write", action="store_true", help="真写台账/语料/经验库(默认只打印不写)")
+    ap.add_argument("--cascade", choices=["on", "off", "env"], default="on",
+                    help="三级漏斗的浅层(签名库+浅层LLM分诊)。on=演示完整漏斗(默认);"
+                         "env=按 .env 里的 SOC_CASCADE_ENABLED;off=只走深度")
     ap.add_argument("--dotenv", default=os.path.join(_ROOT, ".env"))
     args = ap.parse_args()
 
@@ -395,13 +463,23 @@ def main() -> int:
     kv("经验复用", "★关闭 —— 把这条告警当成没见过的,完整走深度通道"
        if not args.reuse else "开启(生产实际行为)")
     kv("研判模式", args.mode)
+    env_cascade = bool(getattr(cfg, "cascade_enabled", False))
+    use_cascade = env_cascade if args.cascade == "env" else (args.cascade == "on")
+    kv("浅层(cascade)", f"本次={'开' if use_cascade else '关'}   "
+                        f".env 里的 SOC_CASCADE_ENABLED={'开' if env_cascade else '关'}"
+       + ("   ★两者不一致:本次为展示完整漏斗而打开(演示口径)" if use_cascade != env_cascade else ""))
     print()
-    print("  流程总览:告警 → seed 回溯 → 选 skill(大模型) → 确定性取证 → 经验层比对")
-    print("            → 召回历史台账 → 大模型研判 → 组处置剧本 → 写台账 → 蒸馏+考试沉淀经验")
+    print("  流程总览(三级漏斗):")
+    print("    第一级 浅层  告警 → ①签名库前置(零大模型) → ②硬底线 floor → ③浅层LLM分诊")
+    print("                  └ 只有判成误报才在此终局;判攻击/可疑一律升级(宁可多花算力,不可漏报)")
+    print("    第二级 深度  seed 回溯 → 选 skill(大模型) → 确定性取证 → 经验层比对")
+    print("                  └ 经验命中则秒出结论;未命中才请大模型")
+    print("    第三级 收尾  召回历史台账 → 大模型研判 → 组处置剧本 → 写台账 → 蒸馏+考试沉淀经验")
     print("  说明:大模型每一次调用的**完整提示词与完整返回**都会原样打印,可逐字核对。")
 
     install_llm_tap()
     pl = C.build_pipeline(cfg)
+    pl.cascade_enabled = use_cascade      # ★run_investigation 就是据这个字段二选一
     try:
         uid = args.alert_uid or pick_alert(pl)
         if not uid:

@@ -11,6 +11,10 @@
 #     所以「自进化」那一环有实物可看,而生产经验库不被一次演示污染。要真写:WRITE=1
 #   · **不截断** —— 告警原文、取证上下文、**送入大模型的完整提示词与完整返回**,
 #     一字不省地打出来,可以逐字核对我们有没有把答案偷偷塞给模型。
+#   · **打开浅层** —— 三级漏斗的第一级(签名库前置 → 硬底线 floor → 浅层 LLM 分诊)
+#     由 SOC_CASCADE_ENABLED 控制、生产可能是关的。汇报要看完整流程就得展示,
+#     所以演示默认打开,并**同时打印 .env 里的真实配置**,不一致时明确标注是演示口径。
+#     要按 .env 实际配置跑:CASCADE=env   只走深度:CASCADE=off
 #
 # 用法(soc 身份,server2):
 #   cd ~/soc-agent && git fetch origin && git reset --hard origin/main && \
@@ -37,6 +41,7 @@ ferry_guard "$FB" "feedback: demo-pipeline $(date -u '+%m-%d %H:%MZ' 2>/dev/null
       ${ALERT_UID:+--alert-uid "$ALERT_UID"} \
       ${MODE:+--mode "$MODE"} \
       ${REUSE:+--reuse} \
+      ${CASCADE:+--cascade "$CASCADE"} \
       ${WRITE:+--write}
   RC=$?
   echo
