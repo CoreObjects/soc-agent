@@ -24,8 +24,84 @@ def _connect(cfg):
     # ★任何查询/写入 15s 不返回就报错(psycopg2 默认无超时,遇锁/坏连接会无限挂)。经验读写本该毫秒级。
     with conn.cursor() as cur:
         cur.execute("SET statement_timeout = 15000")
+        # ★★openGauss 有 `session_timeout`,**默认 600 秒**(PostgreSQL 没有这个参数)。
+        #   poller 是常驻进程,只要 10 分钟没做经验读写,服务端就把这条会话掐掉。
+        #   会话级关掉它;这是双保险 —— 真正的保障是下面 LiveConn 的自动重连。
+        try:
+            cur.execute("SET session_timeout = 0")
+        except Exception:                  # 别的 PG 兼容库没这个参数 —— 不是错,跳过
+            conn.rollback()
     conn.commit()
     return conn
+
+
+class LiveConn:
+    """**带健康检查 + 自动重连**的连接门面。看起来像 psycopg2 连接(cursor/commit/…),
+    所以下面所有 Store **一行都不用改**。
+
+    ★为什么必须有它(这是生产上"高斯经常连不上"的真因):
+      原来 `open_stores` 在**进程启动时连一次**,三个 Store 共用那一条连接用一辈子,
+      而全模块**没有任何**重连/健康检查/InterfaceError 处理(改之前 grep 命中数 = 0)。
+      配上 openGauss 那个 600 秒 `session_timeout`,后果是:
+      poller 启动后只要有 10 分钟没做经验读写,连接就被服务端掐掉,
+      **此后每一次经验读写都抛 `InterfaceError: connection already closed`,直到有人重启 poller**。
+
+    ★而它一直没被发现,是因为**它的表现和"没有匹配的经验"一模一样** ——
+      经验层查不到就走大模型,链路照常出结论,只是复用永远命中不了、蒸馏也永远落不了地。
+      对得上现网的数字:`experience` 只有 28 行(约等于启动后头 10 分钟写进去的那些),
+      而 `cases` 有 10.3 万(那是批处理脚本写的,每次新进程新连接,不受影响)。
+
+    ★重连失败**大声抛**,不静默降级 —— 静默降级正是上面那个"查不到 == 没有"的老问题。
+    """
+
+    def __init__(self, cfg):
+        self._cfg = cfg
+        self._conn = None
+        self.reconnects = 0          # 可观测:被掐掉过几次(现网这个数应该 > 0)
+
+    def _live(self):
+        if self._conn is None:
+            self._conn = _connect(self._cfg)
+            return self._conn
+        try:
+            with self._conn.cursor() as cur:      # 本地 SELECT 1,亚毫秒;经验读写频率低,值得每次探
+                cur.execute("SELECT 1")
+            return self._conn
+        except Exception:
+            try:
+                self._conn.close()
+            except Exception:
+                pass
+            self._conn = None
+            self._conn = _connect(self._cfg)      # 连不上就抛 —— 大声,不静默
+            self.reconnects += 1
+            return self._conn
+
+    # --- 让它长得像一条连接(Store 代码零改动) ---
+    def cursor(self, *a, **kw):
+        return self._live().cursor(*a, **kw)
+
+    def commit(self):
+        if self._conn is not None:
+            self._conn.commit()
+
+    def rollback(self):
+        if self._conn is not None:
+            try:
+                self._conn.rollback()
+            except Exception:
+                pass
+
+    def close(self):
+        if self._conn is not None:
+            try:
+                self._conn.close()
+            finally:
+                self._conn = None
+
+    @property
+    def closed(self):
+        return self._conn is None or getattr(self._conn, "closed", 1)
 
 
 def ddl(schema) -> list:
@@ -192,7 +268,9 @@ class OpenGaussPayloadCaseStore:
 
 def open_stores(cfg):
     """连接 openGauss + 建表,返回 (ExperienceStore, CaseStore, PayloadCaseStore)。失败抛异常 → 降级 InMemory。"""
-    conn = _connect(cfg)
+    # ★用 LiveConn 而不是裸连接:常驻进程 + openGauss 600 秒 session_timeout =
+    #   一条永不重连的长连接必然会死,而死后的表现与"没有匹配的经验"无法区分。
+    conn = LiveConn(cfg)
     ensure_schema(conn, cfg.og_schema)
     return (OpenGaussExperienceStore(conn, cfg.og_schema), OpenGaussCaseStore(conn, cfg.og_schema),
             OpenGaussPayloadCaseStore(conn, cfg.og_schema))
