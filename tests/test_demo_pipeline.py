@@ -269,3 +269,28 @@ def test_e2e_alert_picker_builds_the_graph_client_the_production_way():
     assert need, "构造签名变了?这条断言就是防它悄悄变"
     for n in need:                                    # uri/user/password 逐个都得传进去
         assert f"cfg.neo4j_{n}" in src or f"cfg.{n}" in src, f"没传 {n}"
+
+
+def test_every_config_load_passes_dotenv_path():
+    """★全仓扫:凡是 `Config.from_env(...)` 都必须显式给 `dotenv_path`。
+
+    `from_env()` **只读 os.environ**,`.env` 不会自动进环境(config.py:81)。
+    不给的后果**不是报错**:靠 shell 显式 export 的变量(NEO4J_* 之类)照常生效,
+    而只写在 `.env` 里的(`OG_*` 那六行)全部取空 ⇒ `has_experience=False`
+    ⇒ **经验层整个降级成"永远走大模型"**,一声不响。
+    我据此还误判过"经验库从来没接上"(实际库里有 10.3 万案例 + 28 条指纹)。
+
+    ★这条纪律仓库里本来就写着(scripts/coverage_check.py:27 的注释),
+      但注释挡不住下一个人 —— 所以做成测试。
+    """
+    import re
+    bad = []
+    for root in (_ROOT / "soc_agent", _ROOT / "scripts"):
+        for f in root.rglob("*.py"):
+            for lineno, ln in enumerate(f.read_text(encoding="utf-8").splitlines(), 1):
+                if ln.lstrip().startswith("#"):
+                    continue          # ★注释里提到它不算(讲这条纪律的注释就有好几处)
+                m = re.search(r"Config\.from_env\(([^)]*)", ln)
+                if m and "dotenv_path" not in m.group(1):
+                    bad.append(f"{f.relative_to(_ROOT)}:{lineno}")
+    assert not bad, f"这些地方没给 dotenv_path,`.env` 里的配置会静默取空:{bad}"

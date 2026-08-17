@@ -52,7 +52,13 @@ def rows():
     """
     from soc_agent.config import Config
     from soc_agent.graph.client import Neo4jGraph
-    cfg = Config.from_env()
+    # ★必须显式给 dotenv_path:`Config.from_env()` **只读 os.environ**,`.env` 不会自动进环境。
+    #   仓库里早有这条注释(scripts/coverage_check.py:27),我没读就犯了。
+    #   后果不是报错:靠 shell 显式 export 的变量(NEO4J_*)照常生效,而只写在 .env 里的
+    #   (OG_* 那六行)全部取空 ⇒ `has_experience=False` ⇒ 经验层整个降级成「永远走大模型」,
+    #   一声不响。上一轮 e2e 那 4 条告警全部 FALLTHROUGH,一部分原因就是这个。
+    cfg = Config.from_env(dotenv_path=os.path.join(
+        os.path.dirname(os.path.dirname(os.path.abspath(__file__))), ".env"))
     g = Neo4jGraph(cfg.neo4j_uri, cfg.neo4j_user, cfg.neo4j_password, cfg.neo4j_database)
     try:
         return g.run_cypher(Q)          # ★run_cypher 是 **params 不是 dict —— 传 {} 会 TypeError
