@@ -54,7 +54,9 @@ EXEC = sys.argv[1] == "1"
 TABLES = ("experience", "cases", "payload_cases")
 try:
     from soc_agent.config import Config
-    cfg = Config.from_env()
+    # ★必须传 dotenv_path:不传的话 .env 里的 OG_* 全取空 ⇒ 会误判成库没配、没东西要清。
+    # 上一版就是这么把清空这一步整个跳过去的(而库里其实有 10.3 万案例 + 28 条指纹)。
+    cfg = Config.from_env(dotenv_path=".env")
     print(f"OG_HOST={cfg.og_host or '(空)'} OG_PORT={cfg.og_port} "
           f"OG_DATABASE={cfg.og_database} OG_USER={cfg.og_user}")
     if not cfg.og_host:
