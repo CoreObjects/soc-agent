@@ -22,6 +22,12 @@ def load_model(path=None) -> dict:
 def _fmt_keys(entity: dict) -> str:
     keys = entity.get("keys") or []
     s = "(" + ",".join(keys) + ")" if keys else "-"
+    # ★alt_keys 必须喂给 LLM:它是**部署级二选一**的另一种键形状(Host 的 asset_id、
+    #   Process 的 (asset_id,pid,start_time)、LogonSession 的 logon_id)。
+    #   只在 JSON 里声明却不写进 schema 文本,等于换了键形态的部署里 LLM 仍按
+    #   process_guid 写 Cypher —— 查不到,而且不报错。
+    for alt in entity.get("alt_keys") or []:
+        s += " 或(" + ",".join(alt) + ")"
     fb = entity.get("fallback_key")
     if fb:
         s += " 兜底(" + ",".join(fb) + ")"
