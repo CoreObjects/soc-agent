@@ -1,6 +1,6 @@
-=== 经验库清空 (dry-run:只备份+报数) 2026-08-17 11:27Z ===
+=== 经验库清空 ★★ EXECUTE ★★ 2026-08-17 11:31Z ===
 主机    : localhost.localdomain   仓库 /home/soc/soc-agent
-代码版本: 5469ccc graph_model v3.3:补齐 Host/Process 已实现但模型侧落后的第二种键形状
+代码版本: 0bbccd2 feedback: og-wipe 08-17 11:27Z
 解释器  : .venv312/bin/python -> Python 3.11.6
 
 OG: soc_agent@127.0.0.1:5432/soc schema=soc
@@ -10,10 +10,16 @@ OG: soc_agent@127.0.0.1:5432/soc schema=soc
    soc.cases            102723 行
    soc.payload_cases    28 行
 
-★备份 → backup/experience-20260817-112729Z.json   72243126 字节
+★备份 → backup/experience-20260817-113122Z.json   72243126 字节
 
-[dry-run] 没清。确认备份没问题后:bash scripts/og-wipe.sh --execute
+已清:experience 28 行、cases 102723 行(payload_cases 一并清)
+-- 复核(都应为 0)--
+   soc.experience       0 行
+   soc.cases            0 行
+   soc.payload_cases    0 行
+
+✅ 经验库已清空(备份在 backup/,不进 git)
 
 [退出码] 0
-ℹ dry-run 完成。看过备份没问题再加 --execute。
+✅ 清完了。★接下来才起 poller —— 它一起来就会开始写新经验。
 === done ===
