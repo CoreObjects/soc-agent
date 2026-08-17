@@ -1,0 +1,43 @@
+=== 经验层接上(soc + TCP,不碰 podman/root) 2026-08-17 08:35Z ===
+主机    : localhost.localdomain   仓库 /home/soc/soc-agent
+代码版本: 3cf7c3e 经验层接上:soc + TCP 直连 openGauss,能自动做的全自动做
+解释器  : .venv312/bin/python -> Python 3.11.6
+
+-- .env 里 OG_* 现状(密码隐去)--
+   OG_HOST=127.0.0.1
+   OG_PORT=5432
+   OG_DATABASE=soc
+   OG_USER=soc_agent
+   OG_PASSWORD=<隐去>
+   OG_SCHEMA=soc
+-- 端口在不在(不用 podman,直接看监听)--
+   LISTEN 0      4096                                127.0.0.1:5432       0.0.0.0:*          
+
+目标: soc_agent@127.0.0.1:5432/soc  schema=soc
+
+-- 逐个试密码/用户(连上即停)--
+   ✅ 连上了: user=soc_agent db=soc  密码来源=.env 的 OG_PASSWORD
+
+-- 库 / 用户 / schema 在不在 --
+   数据库: ['omm', 'postgres', 'soc', 'template0', 'template1']
+   目标库 'soc' 存在: True
+   角色: ['soc_agent']
+   目标用户 'soc_agent' 存在: True
+
+-- 三张经验表 --
+   soc.cases              102723 行
+   soc.payload_cases      28 行
+   soc.experience         28 行
+
+.env 已经是对的,没改
+
+-- 建表 / 自检(走 soc-agent 自己的路径)--
+   has_experience = False
+   调用 opengauss.ensure_schema()
+   !! TypeError: ensure_schema() missing 2 required positional arguments: 'conn' and 'schema'
+
+[退出码] 0
+✅ 经验层接上了(.env 已写好、表已就位)。
+   ★这一步的意义:在此之前 OG_HOST 是空的 ⇒ 经验层整个降级成「永远走大模型」,
+     第一级签名复用(省算力那一级)一直是死的、沉淀也没地方落。
+=== done ===
