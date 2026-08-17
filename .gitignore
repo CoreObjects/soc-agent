@@ -33,3 +33,4 @@ Thumbs.db
 *.log
 skills.zip
 backup/
+.env.bak-*
