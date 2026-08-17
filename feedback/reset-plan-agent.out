@@ -1,0 +1,32 @@
+=== 【Phase 0 / server2】只读盘点 2026-08-17 07:45Z ===
+主机    : localhost.localdomain   仓库 /home/soc/soc-agent
+代码版本: c81a5f1 Phase 0:server2 侧只读盘点(经验库 + 台账 + poller)+ 强制备份
+解释器  : .venv312/bin/python -> Python 3.11.6
+★只读 + 一份备份;不清任何东西
+
+########## [1] openGauss 活着吗 ##########
+   (没找到容器)
+
+########## [2] 经验库有什么(★删了不可逆)##########
+   !! 连不上或缺依赖:OperationalError: connection to server at "127.0.0.1", port 5432 failed: fe_sendauth: no password supplied
+   
+      ★若是 Exited(0):podman start opengauss(宿主重启后的头号原因,别排查磁盘/OOM)
+
+########## [3] 备份(清空之前必须有这一份)##########
+   ⚠ 容器里没有 gs_dump/pg_dump —— ★备份拿不到,Phase 2 清经验库这一步先停
+   (备份**不进 git**:见 .gitignore;它留在 server2 本地)
+
+########## [4] 研判台账(图里那一份,同样不可逆)##########
+   图 = bolt://10.185.93.0:7687
+   告警总数                       273902
+   已研判(有 verdict_id)          0
+   处置台账                       0
+
+########## [5] poller 在跑吗(Phase 1 停完必须为空)##########
+   (无)
+-- crontab --
+   (空)
+
+★结论要人看的两个数:①经验库总行数 ②备份文件是否非空。
+  备份为空 ⇒ **不要进 Phase 2**。
+=== done ===
