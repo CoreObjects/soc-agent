@@ -1,0 +1,35 @@
+=== 清空重置(server2 侧) (dry-run,不动手) 2026-08-17 08:08Z ===
+主机    : localhost.localdomain   仓库 /home/soc/soc-agent
+代码版本: 6e46bae server2 侧清空重置:停 poller + 备份经验库 + 清经验库(默认 dry-run)
+解释器  : .venv312/bin/python -> Python 3.11.6
+
+########## [1] 停 poller(靶场重建图之后它拿旧密码会一直连不上)##########
+-- 我们自己的 poller --
+   (无)
+   ★注意:上一轮 pgrep 匹配到的 973 edac-poller 是**内核 EDAC 进程**,不是我们的,别动。
+   [dry-run] pkill -f 'soc_agent' || true
+-- crontab --
+   (空)
+
+########## [2] 经验库:先量再备份(★备份不用 gs_dump,直接 dump 行)##########
+   OG_HOST=(空) OG_PORT=5432 OG_DATABASE=soc OG_USER=soc
+   !! OG_HOST 为空 ⇒ 经验层本来就降级成「永远走 LLM」,没有东西要清。
+   (备份落 backup/,已加进 .gitignore,不进 git)
+
+########## [3] 要**人手**改的两处 ##########
+   ① .env 的 NEO4J_PASSWORD 改成靶场 reset-go.sh --execute 打出来的**新密码**
+      当前 .env 里是:NEO4J_PASSWORD=<已隐去>
+      核对连通:PYTHONPATH=. .venv312/bin/python -c "from soc_agent.config import Config;
+                from soc_agent.graph.client import Neo4jGraph as G;
+                c=Config.from_env();g=G(c.neo4j_uri,c.neo4j_user,c.neo4j_password,c.neo4j_database);
+                print(g.run_cypher('RETURN 1 AS ok'))"
+   ② 等靶场那边灌进一批数据、图里有 :Alert 了,再起 poller
+
+########## [4] 起 poller(★冷启动:经验库空了,命中率必然 0)##########
+   经验库清空之后,第一级签名复用命中率 **0** ⇒ 每条告警都会走到大模型。
+   所以**先 2 并发**,看住 vLLM 负载再往上加;头几十条结论要人抽查
+   (没有历史台账可召回,深度研判少一层输入)。
+   用稳定入口(别新造 wrapper):
+     bash scripts/poller-fix-restart.sh 300 2
+   ★现在**先不要起** —— 图还是空的,起了只会空转。等靶场灌上数据。
+=== done ===
