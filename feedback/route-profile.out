@@ -1,6 +1,6 @@
 === route-profile  2026-08-18 11:17Z ===
 主机    : localhost.localdomain   仓库 /home/soc/soc-agent
-代码版本: 5bd4a3f feedback: ledger-stats 08-18 10:48Z
+代码版本: 0d93e83 feedback: route-profile 08-18 11:17Z
 解释器  : .venv312/bin/python -> Python 3.11.6
 
 ########## [1] 估值:能省多少 ##########
@@ -14,7 +14,7 @@
                       摊到 216039 条告警 ≈ 0.0001 次/条
 
 ########## [2] 逐键定性(只能用已研判、且走过路由的告警)##########
-  可用样本 2814 / 告警 216039  (1.3%)
+  可用样本 2818 / 告警 216039  (1.3%)
   ★样本就这么多,别过度解读。path=S(签名复用/浅层终局)的告警没走过路由,
     本来就不该进这个样本;图刚重置过,已研判量还小。
   ★门槛:样本 < 4 记 insufficient;判 ambiguous 要**次数和比例都够**(少数派 ≥2 次 且 ≥5%)。
@@ -28,7 +28,7 @@
 
   逐键明细(按覆盖告警数降序,前 40):
     定性               样本        覆盖     误路由  键                                        skill 分布
-    eligible       2162    122637       —  r|wazuh|wazuh-hids|100805                lateral_movement(2162)
+    eligible       2166    122637       —  r|wazuh|wazuh-hids|100805                lateral_movement(2166)
     insufficient      0     52120       —  r|wazuh|wazuh-hids|92213                 —(无样本)
     eligible        648     37390       —  r|wazuh|wazuh-hids|100807                dcsync(648)
     insufficient      1      2343       —  r|wazuh|wazuh-hids|100802                lsass_dump(1)
@@ -47,6 +47,9 @@
 ########## [4] 结论 ##########
   估值判据:能算出键的告警 100.0%  (阈值 60%)  → PASS ✅
   建议播成负例的键:0 个
+
+########## [5] 播种(只播负例)##########
+  没有定性为 ambiguous 的键,不播。
 
 [退出码] 0   (0=估值判据 PASS / 1=FAIL,别当报错 / 2=图里没告警)
 ★PASS —— 可以进 Phase 1。若 [4] 列了 ambiguous 键,等表建好后跑一次:
