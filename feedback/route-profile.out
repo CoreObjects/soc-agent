@@ -1,0 +1,54 @@
+=== route-profile  2026-08-18 11:17Z ===
+主机    : localhost.localdomain   仓库 /home/soc/soc-agent
+代码版本: 5bd4a3f feedback: ledger-stats 08-18 10:48Z
+解释器  : .venv312/bin/python -> Python 3.11.6
+
+########## [1] 估值:能省多少 ##########
+  告警总数            216039
+  能算出键            216039  (100.0%)   ← 可被记住的路由调用上限
+    ├ r| 级(rule_id)    216039  (100.0%)
+    └ t| 级(technique)  0  (0.0%)
+  两级键全落空(兜底)  0  (0.0%)   ← 永远走 LLM
+  不同键数            10   键基数/告警数 = 0.005%
+  学习成本            ≈ 20 次 LLM(每键 2 次:candidate 门要不同告警确认一次)
+                      摊到 216039 条告警 ≈ 0.0001 次/条
+
+########## [2] 逐键定性(只能用已研判、且走过路由的告警)##########
+  可用样本 2814 / 告警 216039  (1.3%)
+  ★样本就这么多,别过度解读。path=S(签名复用/浅层终局)的告警没走过路由,
+    本来就不该进这个样本;图刚重置过,已研判量还小。
+  ★门槛:样本 < 4 记 insufficient;判 ambiguous 要**次数和比例都够**(少数派 ≥2 次 且 ≥5%)。
+    次数够但比例极低 → skewed:**仍可 memo**,代价是「预计误路由率」= 少数派占比(逐条列在下面)。
+    ★这类键的运行时稀疏复核指望不上(少数派占 0.2% 时复核撞上它的概率也是 0.2%),
+      所以是留是弃只能看着下面的数字由人定。
+    eligible          2 个键,覆盖告警   160027  ( 74.1%)  可安全 memo
+    ambiguous         0 个键,覆盖告警        0  (  0.0%)  ★天生有歧义 → --seed 播成负例
+    skewed            0 个键,覆盖告警        0  (  0.0%)  长尾偏斜 → 仍可 memo,代价见逐条的「误路由」
+    insufficient      8 个键,覆盖告警    56012  ( 25.9%)  证据不足 → 交给运行时 candidate 门
+
+  逐键明细(按覆盖告警数降序,前 40):
+    定性               样本        覆盖     误路由  键                                        skill 分布
+    eligible       2162    122637       —  r|wazuh|wazuh-hids|100805                lateral_movement(2162)
+    insufficient      0     52120       —  r|wazuh|wazuh-hids|92213                 —(无样本)
+    eligible        648     37390       —  r|wazuh|wazuh-hids|100807                dcsync(648)
+    insufficient      1      2343       —  r|wazuh|wazuh-hids|100802                lsass_dump(1)
+    insufficient      0       800       —  r|wazuh|wazuh-hids|92900                 —(无样本)
+    insufficient      0       300       —  r|waf|modsecurity-crs|920350             —(无样本)
+    insufficient      0       222       —  r|wazuh|wazuh-hids|92201                 —(无样本)
+    insufficient      3       183       —  r|wazuh|wazuh-hids|100801                kerberoast(3)
+    insufficient      0        42       —  r|wazuh|wazuh-hids|60112                 —(无样本)
+    insufficient      0         2       —  r|wazuh|wazuh-hids|60602                 —(无样本)
+
+########## [3] rule_id 稳不稳(第一级键的地基)##########
+  没有 rule_id 的告警  0  (0.0%)   ← 这些退到 technique 级
+  rule_id 唯一值数     10
+  ★若这个数与告警数同量级,说明 rule_id 自己也含变量(像 rule_description 那样),第一级键就废了。当前 = 告警数的 0.005%
+
+########## [4] 结论 ##########
+  估值判据:能算出键的告警 100.0%  (阈值 60%)  → PASS ✅
+  建议播成负例的键:0 个
+
+[退出码] 0   (0=估值判据 PASS / 1=FAIL,别当报错 / 2=图里没告警)
+★PASS —— 可以进 Phase 1。若 [4] 列了 ambiguous 键,等表建好后跑一次:
+  bash scripts/route-profile.sh --seed
+=== done ===
