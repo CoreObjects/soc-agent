@@ -16,6 +16,7 @@ from .disposition import policy_from_graph
 from .experience.cases import InMemoryCaseStore, snapshot_case
 from .experience.consult import consult
 from .experience.exam import sediment
+from .experience.route_memo import InMemoryRouteMemoStore
 from .experience.store import ExperienceCache, InMemoryExperienceStore
 from .forensics import Forensics
 from .graph import coverage
@@ -109,15 +110,21 @@ def render_trace(result) -> str:
     return "\n".join(lines)
 
 
-def build(config: Config):
-    """装配真客户端 + LLM skill 路由 + 两种研判器(recipe 确定性 / auto 自主)。"""
+def build(config: Config, memo_store=None):
+    """装配真客户端 + LLM skill 路由 + 两种研判器(recipe 确定性 / auto 自主)。
+
+    `memo_store` = 路由记忆库;不传 → 路由每条都走 LLM(= 加记忆层之前的行为)。
+    """
     graph = Neo4jGraph(config.neo4j_uri, config.neo4j_user, config.neo4j_password, config.neo4j_database)
     llm = QwenClient(base_url=config.llm_api_base, model=config.llm_model, api_key=config.llm_api_key,
                      timeout=config.llm_timeout)
     schema = graph_schema()
     registry = SkillRegistry(config.skills_dir)
     policy = policy_from_graph(graph)      # 处置护栏:图里 DC/CA 主机自动进 NEVER-TOUCH(补图第二弹的收现)
-    router = SkillRouter(llm=llm, registry=registry, agent_name=config.llm_model)
+    # ★memo_store=None(默认)= 路由每条都问 LLM,与加记忆层之前**逐字节同行为**。
+    #   batch_investigate / verify_all 这类不开经验库的脚本走的就是这条,不受影响。
+    router = SkillRouter(llm=llm, registry=registry, agent_name=config.llm_model,
+                         memo_store=memo_store)
     agent_inv = AgentInvestigator(
         llm=llm, toolbox=default_toolbox(graph), schema=schema, registry=registry,
         agent_name=config.llm_model, max_iterations=config.max_iterations, policy=policy)
@@ -168,6 +175,7 @@ class Pipeline:
     llm_timeout: int = 600              # 单次 LLM 超时(秒);同时用来抬 openJiuwen 工作流执行超时(默认才 60,qwen 慢会超)
     payload_corpus: object = None       # 浅层判例语料库(payload 签名反例回归);openGauss 或内存
     shallow_llm: object = None           # 浅层分诊专用 client(小模型 9b);None → cascade 回退用 self.llm
+    route_memo_store: object = None      # 路由记忆库(告警特征→skill);None → 路由每条都走 LLM(=旧行为)
 
     def close(self):
         self.graph.close()
@@ -196,27 +204,36 @@ class _Locked:
 
 
 def _open_stores(config):
-    """经验/案例库:og_enabled 且连得上 → openGauss(缓存包);否则降级内存(经验层≈永远走 LLM)。
-    ★三库套 _Locked 共享一把锁(openGauss 三库共用一条连接;并发下必须串行访问)。"""
+    """经验/案例/判例/路由记忆库:og_enabled 且连得上 → openGauss(缓存包);
+    否则降级内存(经验层≈永远走 LLM、路由永远走 LLM —— 零 regression)。
+
+    ★**四**库套 _Locked 共享一把锁(openGauss 四库共用一条连接;并发下必须串行访问)。
+      新加的 route_memo 也必须进这把锁 —— 它和其余三库是同一条 psycopg2 连接,
+      漏套锁的表现不是报错,是并发下偶发的游标错乱。
+    """
     lock = threading.RLock()
     if config.og_enabled:
         try:
             from .experience.opengauss import open_stores
-            exp, case, pcorpus = open_stores(config)
-            return _Locked(ExperienceCache(exp), lock), _Locked(case, lock), _Locked(pcorpus, lock)
+            exp, case, pcorpus, memo = open_stores(config)
+            return (_Locked(ExperienceCache(exp), lock), _Locked(case, lock),
+                    _Locked(pcorpus, lock), _Locked(memo, lock))
         except Exception as e:                      # 连不上/缺 psycopg2 → 降级,不影响慢研判
             print(f"[warn] openGauss 不可用,经验层降级内存(本次不持久):{str(e)[:120]}")
     from .cascade.signature import InMemoryPayloadCaseStore
     return (_Locked(ExperienceCache(InMemoryExperienceStore()), lock),
-            _Locked(InMemoryCaseStore(), lock), _Locked(InMemoryPayloadCaseStore(), lock))
+            _Locked(InMemoryCaseStore(), lock), _Locked(InMemoryPayloadCaseStore(), lock),
+            _Locked(InMemoryRouteMemoStore(), lock))
 
 
 def build_pipeline(config: Config) -> "Pipeline":
     """装配完整流水线(在 build 之上加 composer + 经验/案例库)。"""
-    graph, router, agent_inv, recipe_inv = build(config)
+    # ★先开库再 build:router 要在构造时就拿到路由记忆库(不在构造后偷偷挂属性 ——
+    #   那样 build() 单独被调用时,router 有没有记忆就取决于调用者记不记得补一句)。
+    exp_store, case_store, payload_corpus, route_memo_store = _open_stores(config)
+    graph, router, agent_inv, recipe_inv = build(config, memo_store=route_memo_store)
     iface = default_interface()
     composer = Composer(agent_inv.llm, iface=iface, agent_name=config.llm_model)
-    exp_store, case_store, payload_corpus = _open_stores(config)
     # 双模型漏斗:浅层分诊用小模型(SHALLOW_LLM_MODEL,如 9b),升级后深度仍用 llm_model(如 27b)。
     # 未配 / 与深度同模型 → 直接复用深度 client(零行为变化,不多开连接)。
     shallow_model = config.shallow_llm_model or config.llm_model
@@ -229,7 +246,7 @@ def build_pipeline(config: Config) -> "Pipeline":
                     cascade_enabled=config.cascade_enabled, llm_base=config.llm_api_base,
                     llm_model=config.llm_model, llm_key=config.llm_api_key,
                     llm_timeout=config.llm_timeout, payload_corpus=payload_corpus,
-                    shallow_llm=shallow_llm)
+                    shallow_llm=shallow_llm, route_memo_store=route_memo_store)
 
 
 def _reuse_tp(pl, alert, forensics, chosen):

@@ -38,9 +38,9 @@ from soc_agent.experience.store import Experience
 from soc_agent.experience.cases import Case
 from soc_agent.forensics import Finding
 try:
-    exp_store, case_store, corpus = open_stores(cfg)   # 连接 + 建表(experience/cases/payload_cases)
-    print("  [OK] 连接 + 建表(%s.experience / %s.cases / %s.payload_cases)"
-          % (cfg.og_schema, cfg.og_schema, cfg.og_schema))
+    from soc_agent.experience.opengauss import WIPE_TABLES
+    exp_store, case_store, corpus, memo_store = open_stores(cfg)      # 连接 + 建表
+    print("  [OK] 连接 + 建表(%s)" % "、".join("%s.%s" % (cfg.og_schema, t) for t in WIPE_TABLES))
     e = Experience(skill="__probe__", kind="threat", verdict="true_positive",
                    fingerprint={"finding_ids": ["x"]}, rule={"exists": "x"},
                    playbook=[{"order": 1, "primitive": "disable_account"}])
@@ -51,16 +51,30 @@ try:
                         findings=[Finding("kerberoast.rc4_requested", {"enc_type": "0x17"})]))
     cs = case_store.by_skill("__probe__")
     ok_case = len(cs) == 1 and cs[0].finding_ids() == {"kerberoast.rc4_requested"}
+    # 路由记忆往返:★upsert 走的是"UPDATE 命中就算、否则 INSERT"(不赌 ON CONFLICT 方言),
+    #   bump_hit 用 RETURNING 拿自增后的值 —— 这两处都是方言相关,必须在真库上验一次。
+    from soc_agent.experience.route_memo import RouteMemo
+    memo_store.upsert(RouteMemo(route_key="__probe__", skill="kerberoast", status="candidate"))
+    memo_store.upsert(RouteMemo(route_key="__probe__", skill="kerberoast", status="active",
+                                confirm_count=2, origin_alert_uid="probe1"))
+    h1, h2 = memo_store.bump_hit("__probe__"), memo_store.bump_hit("__probe__")
+    m = memo_store.lookup("__probe__")
+    ok_memo = (m is not None and m.status == "active" and m.skill == "kerberoast"
+               and m.confirm_count == 2 and (h1, h2) == (1, 2) and m.hit_count == 2)
     # 清理探针行(直连 DELETE;不污染真库)
     with exp_store.conn.cursor() as cur:
         cur.execute("DELETE FROM %s.experience WHERE skill='__probe__'" % cfg.og_schema)
         cur.execute("DELETE FROM %s.cases WHERE skill='__probe__'" % cfg.og_schema)
+        cur.execute("DELETE FROM %s.route_memo WHERE route_key='__probe__'" % cfg.og_schema)
     exp_store.conn.commit()
+    ok_all = ok_exp and ok_case and ok_memo
     print("  [%s] 经验读写往返(rule/fingerprint 无损):%s" % ("PASS" if ok_exp else "FAIL", ok_exp))
     print("  [%s] 案例读写往返(findings 无损):%s" % ("PASS" if ok_case else "FAIL", ok_case))
-    print("  [DONE] 探针行已清理。openGauss 驱动 + schema + 读写全通 → Phase 6 可直接用。"
-          if (ok_exp and ok_case) else "  [DONE] 有 FAIL,见上。")
-    sys.exit(0 if (ok_exp and ok_case) else 1)
+    print("  [%s] 路由记忆往返(upsert 覆盖 + bump_hit RETURNING 自增):%s"
+          % ("PASS" if ok_memo else "FAIL", ok_memo))
+    print("  [DONE] 探针行已清理。openGauss 驱动 + schema + 读写全通。"
+          if ok_all else "  [DONE] 有 FAIL,见上。")
+    sys.exit(0 if ok_all else 1)
 except Exception as ex:
     import traceback
     print("  [FAIL] %s: %s" % (type(ex).__name__, ex))

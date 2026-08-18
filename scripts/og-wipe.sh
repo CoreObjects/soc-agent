@@ -39,7 +39,10 @@ import datetime, json, os, sys
 
 EXEC = sys.argv[1] == "1"
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__))) if "__file__" in dir() else "."
-TABLES = ("experience", "cases", "payload_cases")
+# ★表清单从 opengauss 模块 import,**不在这里硬编码**。
+#   以前这里和 wipe() 各写一份:加一张表只改 wipe() 的话,备份和清后复核都会漏掉它 ——
+#   于是新表**没备份就被删了**,而且输出看起来一切正常。
+from soc_agent.experience.opengauss import WIPE_TABLES as TABLES
 
 from soc_agent.config import Config
 # ★必须传 dotenv_path。不传的话 .env 里的 OG_* 全取空 ⇒ 会误判成"库没配、没东西要清"
@@ -87,8 +90,8 @@ if not EXEC:
 
 # ---- 用现成的 wipe(reset_pristine 用的就是它),不手写 TRUNCATE ----
 from soc_agent.experience import opengauss as OG
-ne, nc = OG.wipe(cfg)
-print(f"\n已清:experience {ne} 行、cases {nc} 行(payload_cases 一并清)")
+cleared = OG.wipe(cfg)                     # {表名: 清前行数}
+print("\n已清:" + "、".join(f"{t} {n} 行" for t, n in cleared.items()))
 
 con = psycopg2.connect(host=cfg.og_host, port=cfg.og_port, dbname=cfg.og_database,
                        user=cfg.og_user, password=cfg.og_password, connect_timeout=10)

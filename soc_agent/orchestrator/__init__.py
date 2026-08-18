@@ -6,6 +6,8 @@
 """
 import json
 
+from ..experience.route_memo import (TERMINAL_STATUSES, advance, route_key,
+                                     should_verify)
 from ..forensics import Forensics
 from ..graph import coverage
 from ..models import LEANS, VERDICTS, Alert, InvestigationResult, Verdict
@@ -46,17 +48,79 @@ class SkillRouter:
     选出的 skill 交给 recipe/auto 研判。
     """
 
-    def __init__(self, llm, registry, agent_name="agent"):
+    def __init__(self, llm, registry, agent_name="agent", memo_store=None):
         self.llm = llm
         self.registry = registry
         self.agent_name = agent_name
+        # 路由记忆库(见 experience/route_memo.py)。★None = 每条都问 LLM,
+        #   与加记忆层之前**逐字节同行为** —— 这是回滚位,也是不开经验库的脚本走的路。
+        self.memo_store = memo_store
+        self._memo_warned = False
+
+    # ---- 路由记忆:同一个问题别问 21 万遍 ----
+    def _by_name(self, name):
+        return self.registry.by_name(name) if name else None
+
+    def _memo_fail(self, e):
+        """记忆库出问题**绝不能让研判停摆** —— 它是优化,不是依赖。降级成"每条都问 LLM"。"""
+        if not self._memo_warned:
+            self._memo_warned = True
+            print(f"[warn] 路由记忆库不可用,本进程降级为每条都走 LLM 路由:{str(e)[:120]}")
 
     def route(self, alert, seed=None):
-        """★泛化路由(可移植):只据【告警描述 + 触发它的底层事件】让 LLM 选 skill,**不依赖 technique_id/rule_id**
-        (真设备未必给)。候选含 generic_*,拿不准就落该类兜底;都不像选 none。"""
+        """★泛化路由(可移植):只据【告警描述 + 触发它的底层事件】让 LLM 选 skill。
+
+        ★关于"不依赖 technique_id/rule_id":那说的是**没有它们也要能工作**(算不出键就回退 LLM),
+          不是"有也不用"。路由记忆的键就建在它们上面 —— 键的**值**由 LLM 运行时学出来,
+          换环境清表重学,不是硬编码映射。
+
+        三条路:active 记忆命中 → 零 LLM;命中且到稀疏复核点 → 照常用记忆值、顺带问一次比对;
+        未命中/终态键 → 问 LLM,并按状态机推进记忆(第一次只建 candidate,**不复用**)。
+        """
         skills = self.registry.all()                 # 含 generic:让 LLM 泛化选,不做 technique→层推断
         if not skills:
             return None
+
+        key = None
+        if self.memo_store is not None:
+            try:
+                key = route_key(alert, seed)
+                memo = self.memo_store.lookup(key) if key else None
+                if memo is not None and memo.reusable:
+                    remembered = self._by_name(memo.skill)
+                    # ★记住的 skill 在 registry 里已经不存在了(改名/删了)⇒ 当未命中处理,
+                    #   让下面的 LLM 重判并推进状态机。这正是设计里说的"registry 变更"漂移。
+                    if remembered is not None or memo.skill is None:
+                        n = self.memo_store.bump_hit(key)
+                        if not should_verify(n):
+                            return remembered                          # ← 零 LLM
+                        # 稀疏复核:不阻塞,先照常用记忆值,同一轮顺带问一次 LLM 比对
+                        observed = self._route_llm(alert, seed, skills)
+                        oname = observed.name if observed is not None else None
+                        m2, act = advance(memo, key, oname, alert.alert_uid, created_by=self.agent_name)
+                        self.memo_store.upsert(m2)
+                        # 复核不一致 ⇒ 这次用 LLM 的新答案(记忆已 override/archived)
+                        return observed if act in ("override", "archived") else remembered
+                if memo is not None and memo.status in TERMINAL_STATUSES:
+                    key = None                       # 终态:恒走 LLM,也别再写表
+            except Exception as e:                   # 库抖动/表没建 → 降级,不影响研判
+                self._memo_fail(e)
+                key = None
+
+        observed = self._route_llm(alert, seed, skills)
+        if key is not None:
+            try:
+                cur = self.memo_store.lookup(key)
+                m2, _ = advance(cur, key, observed.name if observed is not None else None,
+                                alert.alert_uid, created_by=self.agent_name)
+                self.memo_store.upsert(m2)
+            except Exception as e:
+                self._memo_fail(e)
+        return observed
+
+    def _route_llm(self, alert, seed, skills):
+        """问 LLM 选 skill(记忆层之前的原逻辑,一字未改)。候选含 generic_*,
+        拿不准就落该类兜底;都不像选 none。"""
         catalog = "\n".join(f"- {s.name}: {s.description or '(无描述)'}" for s in skills)
         names = [s.name for s in skills]
         ev = (seed or {}).get("event") if isinstance(seed, dict) else None    # 触发它的底层遥测事件(标准、可移植)

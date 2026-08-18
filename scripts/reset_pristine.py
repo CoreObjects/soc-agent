@@ -76,8 +76,8 @@ finally:
 if cfg.og_enabled:
     try:
         from soc_agent.experience.opengauss import wipe
-        ne, nc = wipe(cfg)
-        print("openGauss 经验库:experience %d → 0;cases %d → 0" % (ne, nc))
+        before = wipe(cfg)                      # {表名: 清前行数} —— 加表不必再改这里
+        print("openGauss 已清:" + "、".join("%s %d → 0" % (t, n) for t, n in before.items()))
     except Exception as e:
         print("⚠️ openGauss 清理失败(经验库未清,不影响图台账):%s" % str(e)[:120])
 else:

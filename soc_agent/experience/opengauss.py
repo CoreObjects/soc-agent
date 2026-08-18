@@ -10,11 +10,16 @@ from uuid import uuid4
 
 from ..forensics import Finding
 from .cases import Case, CaseStore
+from .route_memo import RouteMemo, RouteMemoStore
 from .store import EXP_STATUSES, Experience, ExperienceStore
 
 _EXP_COLS = ("exp_id, skill, kind, verdict, fingerprint, rule, playbook, status, "
              "hit_count, override_count, origin_case_id, origin_verdict_id, note, created_by, created_at, "
              "coverage_sig")
+
+_MEMO_COLS = ("memo_id, route_key, skill, status, confirm_count, disagree_count, hit_count, "
+              "verify_count, override_count, relearn_count, origin_alert_uid, created_by, "
+              "created_at, updated_at")
 
 
 def _connect(cfg):
@@ -132,7 +137,32 @@ def ddl(schema) -> list:
               verdict varchar(32) NOT NULL, raw text, rule_description text, rule_id varchar(128),
               severity varchar(64), technique_ids text, created_at timestamptz DEFAULT now())""",
         f"CREATE INDEX IF NOT EXISTS ix_pcases_source ON {schema}.payload_cases(source)",
+        # 路由记忆(见 route_memo.py):告警特征 → skill。
+        # ★status 默认 **candidate** —— 第一次 LLM 的答案不许直接被复用,
+        #   要另一条**不同的**告警确认过才转 active。
+        f"""CREATE TABLE IF NOT EXISTS {schema}.route_memo (
+              memo_id varchar(64) PRIMARY KEY,
+              route_key varchar(256) NOT NULL,
+              skill varchar(128),
+              status varchar(16) NOT NULL DEFAULT 'candidate',
+              confirm_count integer NOT NULL DEFAULT 1,
+              disagree_count integer NOT NULL DEFAULT 0,
+              hit_count integer NOT NULL DEFAULT 0,
+              verify_count integer NOT NULL DEFAULT 0,
+              override_count integer NOT NULL DEFAULT 0,
+              relearn_count integer NOT NULL DEFAULT 0,
+              origin_alert_uid varchar(128),
+              created_by varchar(128), created_at timestamptz DEFAULT now(),
+              updated_at timestamptz DEFAULT now())""",
+        f"CREATE UNIQUE INDEX IF NOT EXISTS ux_route_memo_key ON {schema}.route_memo(route_key)",
+        f"CREATE INDEX IF NOT EXISTS ix_route_memo_status ON {schema}.route_memo(status)",
     ]
+
+
+# ★重置要动的表 —— **单一来源**。
+#   `wipe()` 与 `scripts/og-wipe.sh`(备份 + 清后复核)以前各自硬编码一份清单。
+#   加一张表若只改一处,后果是**备份漏掉新表、却照样把它删了**,而且一声不响。
+WIPE_TABLES = ("experience", "cases", "payload_cases", "route_memo")
 
 
 def ensure_schema(conn, schema) -> None:
@@ -140,6 +170,15 @@ def ensure_schema(conn, schema) -> None:
         for stmt in ddl(schema):
             cur.execute(stmt)
     conn.commit()
+
+
+def _row_to_memo(row) -> RouteMemo:
+    (memo_id, rk, skill, status, cc, dc, hc, vc, oc, rc, oau, cb, ca, ua) = row
+    return RouteMemo(route_key=rk, skill=skill, status=status, confirm_count=cc or 0,
+                     disagree_count=dc or 0, hit_count=hc or 0, verify_count=vc or 0,
+                     override_count=oc or 0, relearn_count=rc or 0, origin_alert_uid=oau,
+                     created_by=cb, created_at=str(ca) if ca else None,
+                     updated_at=str(ua) if ua else None, memo_id=memo_id)
 
 
 def _row_to_exp(row) -> Experience:
@@ -266,29 +305,93 @@ class OpenGaussPayloadCaseStore:
                 for (uid, src, vd, raw, rd, rid, sev, tj) in rows]
 
 
+class OpenGaussRouteMemoStore(RouteMemoStore):
+    """路由记忆库(openGauss)。
+
+    ★写路径是 **UPDATE 命中就算,否则 INSERT** —— 不赌 `ON CONFLICT` 方言(见模块文档)。
+      正确性依赖"单写者":poller 是单进程,三库共用一条连接且被 `cli._Locked` 的同一把锁串行。
+      web 侧只读 experience(`web/deps.py` 取 `[0]`),不碰这张表。
+    """
+
+    def __init__(self, conn, schema):
+        self.conn = conn
+        self.t = f"{schema}.route_memo"
+
+    def lookup(self, route_key_: str):
+        if not route_key_:
+            return None
+        with self.conn.cursor() as cur:
+            cur.execute(f"SELECT {_MEMO_COLS} FROM {self.t} WHERE route_key=%s", (route_key_,))
+            row = cur.fetchone()
+        return _row_to_memo(row) if row else None
+
+    def upsert(self, memo: RouteMemo) -> None:
+        # ★UPDATE 里**故意不写 hit_count** —— 不是漏了。命中计数只由 `bump_hit` 原子自增;
+        #   这里的 memo 对象是 bump 之前读出来的,把它的旧 hit_count 写回去
+        #   会把期间所有并发命中一笔勾销(16 并发下每轮都在丢)。
+        with self.conn.cursor() as cur:
+            cur.execute(
+                f"UPDATE {self.t} SET skill=%s, status=%s, confirm_count=%s, disagree_count=%s, "
+                "verify_count=%s, override_count=%s, relearn_count=%s, origin_alert_uid=%s, "
+                "updated_at=now() WHERE route_key=%s",
+                (memo.skill, memo.status, memo.confirm_count, memo.disagree_count,
+                 memo.verify_count, memo.override_count, memo.relearn_count,
+                 memo.origin_alert_uid, memo.route_key))
+            if cur.rowcount == 0:
+                cur.execute(
+                    f"INSERT INTO {self.t} (memo_id,route_key,skill,status,confirm_count,"
+                    "disagree_count,hit_count,verify_count,override_count,relearn_count,"
+                    "origin_alert_uid,created_by) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
+                    (memo.memo_id, memo.route_key, memo.skill, memo.status, memo.confirm_count,
+                     memo.disagree_count, memo.hit_count, memo.verify_count, memo.override_count,
+                     memo.relearn_count, memo.origin_alert_uid, memo.created_by))
+        self.conn.commit()
+
+    def bump_hit(self, route_key_: str) -> int:
+        """★返回**自增之后**的值:调用方拿它判要不要稀疏复核。
+        用 RETURNING 一次往返拿到,别先 UPDATE 再 SELECT(那中间会漏计并发命中)。"""
+        with self.conn.cursor() as cur:
+            cur.execute(f"UPDATE {self.t} SET hit_count=hit_count+1 WHERE route_key=%s "
+                        "RETURNING hit_count", (route_key_,))
+            row = cur.fetchone()
+        self.conn.commit()
+        return int(row[0]) if row else 0
+
+    def all(self) -> list:
+        with self.conn.cursor() as cur:
+            cur.execute(f"SELECT {_MEMO_COLS} FROM {self.t}")
+            rows = cur.fetchall()
+        return [_row_to_memo(r) for r in rows]
+
+
 def open_stores(cfg):
-    """连接 openGauss + 建表,返回 (ExperienceStore, CaseStore, PayloadCaseStore)。失败抛异常 → 降级 InMemory。"""
+    """连接 openGauss + 建表,返回 (Experience, Case, PayloadCase, RouteMemo) 四个 Store。
+    失败抛异常 → 调用方降级 InMemory。"""
     # ★用 LiveConn 而不是裸连接:常驻进程 + openGauss 600 秒 session_timeout =
     #   一条永不重连的长连接必然会死,而死后的表现与"没有匹配的经验"无法区分。
     conn = LiveConn(cfg)
     ensure_schema(conn, cfg.og_schema)
     return (OpenGaussExperienceStore(conn, cfg.og_schema), OpenGaussCaseStore(conn, cfg.og_schema),
-            OpenGaussPayloadCaseStore(conn, cfg.og_schema))
+            OpenGaussPayloadCaseStore(conn, cfg.og_schema),
+            OpenGaussRouteMemoStore(conn, cfg.og_schema))
 
 
 def wipe(cfg):
-    """清空经验库 + 案例库(reset_pristine 用)。返回 (exp_before, cases_before)。"""
+    """清空 `WIPE_TABLES` 里的全部表(reset_pristine / og-wipe 用)。返回 `{表名: 清前行数}`。
+
+    ★返回 dict 而不是定长元组:以前是 `(ne, nc)`,加一张表就得改所有调用方的解包 ——
+      而漏改的那一处不会报错,只会把新表的行数悄悄算成别的表的。
+    """
     conn = _connect(cfg)
     ensure_schema(conn, cfg.og_schema)                     # 确保表在(否则 count 报错)
     s = cfg.og_schema
+    before = {}
     with conn.cursor() as cur:
-        cur.execute(f"SELECT count(*) FROM {s}.experience")
-        ne = cur.fetchone()[0]
-        cur.execute(f"SELECT count(*) FROM {s}.cases")
-        nc = cur.fetchone()[0]
-        cur.execute(f"DELETE FROM {s}.experience")
-        cur.execute(f"DELETE FROM {s}.cases")
-        cur.execute(f"DELETE FROM {s}.payload_cases")
+        for t in WIPE_TABLES:
+            cur.execute(f"SELECT count(*) FROM {s}.{t}")
+            before[t] = cur.fetchone()[0]
+        for t in WIPE_TABLES:
+            cur.execute(f"DELETE FROM {s}.{t}")
     conn.commit()
     conn.close()
-    return ne, nc
+    return before
