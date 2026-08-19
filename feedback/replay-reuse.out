@@ -1,35 +1,39 @@
-=== 语料保全闸门:重放复用率 2026-08-13 12:06Z ===
+=== 语料保全闸门:重放复用率 2026-08-19 01:27Z ===
 主机    : localhost.localdomain   仓库 /home/soc/soc-agent
-代码版本: 6d6c7da feedback: recipe-parity 08-13 12:02Z
+代码版本: 85def09 Phase 3:浅层分诊从"路由之前"下沉到"经验比对之后"
 解释器  : .venv312/bin/python -> Python 3.11.6
 每 skill 抽: 60 条(★分层抽样,不是总数封顶)
 
-经验库:28 条经验
---- 原样重放基线样本(145 条,不重新抽样)---
+经验库:11 条经验
+--- 分层抽样(每 skill 最多 60 条)---
+  dcsync                   已研判  3673 条 → 抽 60
+  kerberoast               已研判    20 条 → 抽 20
+  lateral_movement         已研判 12200 条 → 抽 60
+  lsass_dump               已研判     1 条 → 抽 1
+  ⚠ **闸门盖不到**(无已研判语料,改动它们不会被这个闸门发现):adcs, c2_beacon, generic_application, generic_host, generic_identity, generic_network, ingress_tool_transfer, registry_persistence, suspicious_outbound, suspicious_process, web_exploit, webshell
+  合计 141 条
 
-  …已重放 25/145
-  …已重放 50/145
-  …已重放 75/145
-  …已重放 100/145
-  …已重放 125/145
+  …已重放 25/141
+  …已重放 50/141
+  …已重放 75/141
+  …已重放 100/141
+  …已重放 125/141
 
---- 重放 145 条(覆盖度签名 821229922c273556;分区开关 关)---
-  AUTO_FP      85
+--- 重放 141 条(覆盖度签名 (未测);分区开关 关)---
+  AUTO_FP      81
   FALLTHROUGH  60
-  ★自动复用率 = 58.6%
+  ★自动复用率 = 57.4%
 
   按 skill:
-    dcsync                   28/30  (93%)
-    ingress_tool_transfer    17/30  (57%)
-    kerberoast               0/30  (0%)
-    lateral_movement         30/30  (100%)
-    lsass_dump               0/15  (0%)
-    suspicious_process       10/10  (100%)
+    dcsync                   0/60  (0%)
+    kerberoast               20/20  (100%)
+    lateral_movement         60/60  (100%)
+    lsass_dump               1/1  (100%)
 
---- 与基线对比(基线 145 条,复用率 58.6%)---
-  翻转 0 条:丢掉复用 0 / 新增复用 0
-  复用率 58.6% → 58.6%(变化 -0.0%)
+  (没给基线 —— 这一份就是基线,用 --save 存下来,改完之后 --baseline 对比)
 
-  ✅ 复用率未下降,语料保全闸门通过。
+  基线已存:feedback/replay-reuse.baseline.json
 [退出码] 0
+
+★这一份是**基线**。改动之后跑 `bash scripts/replay-reuse.sh --compare` 对比。
 === done ===
