@@ -1,28 +1,29 @@
-=== route-memo-stats  2026-08-18 11:37Z ===
+=== route-memo-stats  2026-08-19 02:16Z ===
 主机    : localhost.localdomain   仓库 /home/soc/soc-agent
-代码版本: 63a715a feedback: poller-fix-restart
+代码版本: 04610e7 feedback: ledger-stats 08-19 02:14Z
 
 ########## [1] 省了多少(这是记忆层的全部意义)##########
-  零 LLM 命中总数   471   ← 省掉的深度模型路由调用次数
-  图里告警总数      216175
-  覆盖率            0.2%(命中数/告警数;poller 才跑到哪算到哪,不是稳态值)
-  条目数            2   学习成本 ≈ 4 次 LLM
+  零 LLM 命中总数   14110   ← 省掉的深度模型路由调用次数
+  图里告警总数      222366
+  覆盖率            6.3%(命中数/告警数;poller 才跑到哪算到哪,不是稳态值)
+  条目数            3   学习成本 ≈ 6 次 LLM
 
 ########## [2] 学得稳不稳 ##########
-  active            2   已转正,命中即零 LLM
+  active            3   已转正,命中即零 LLM
   candidate         0   学习中(还没被复用过)
   archived          0   曾稳定后漂了,允许重学
   ambiguous         0   ★天生有歧义 → 去给 route_key() 加区分字段
   unstable          0   ★重学 3 轮仍震荡 → 查环境变了什么
   candidate 转正率  100.0%(转正需 2 条**不同**告警给出同一答案)
-  稀疏复核          做了 12 次,不一致 0 次 → 一致率 100.0%
+  稀疏复核          做了 15 次,不一致 0 次 → 一致率 100.0%
 
 ########## [3] ★学不动的键(必须逐条看,别只看计数)##########
   没有。所有键要么已转正、要么还在学。
 
 ########## [4] 命中最多的键(前 30)##########
-         367 次  lateral_movement         r|wazuh|wazuh-hids|100805
-         104 次  dcsync                   r|wazuh|wazuh-hids|100807
+       10826 次  lateral_movement         r|wazuh|wazuh-hids|100805
+        3269 次  dcsync                   r|wazuh|wazuh-hids|100807
+          15 次  kerberoast               r|wazuh|wazuh-hids|100801
 
 [退出码] 0   (2=OG_HOST 没配,记忆层在内存里、没什么可统计)
 === done ===
