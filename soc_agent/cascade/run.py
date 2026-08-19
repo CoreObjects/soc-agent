@@ -12,7 +12,7 @@ from .floor import force_deep
 from .prompt import SHALLOW_PROMPT
 from .signature import payload_case_of, sig_consult, sig_sediment
 
-__all__ = ["run_cascade", "run_shallow", "alert_view", "shallow_triage"]
+__all__ = ["run_cascade", "run_shallow", "alert_view", "shallow_triage", "shallow_gate"]
 
 _SHALLOW_TRIAGE = "shallow_triage"
 
@@ -61,9 +61,44 @@ def shallow_triage(llm, alert) -> dict:
             "rationale": "浅层无有效工具输出 → 保守升级"}
 
 
+def shallow_gate(pl, alert, forensics=None, report=None):
+    """浅层分诊(9b)作为**经验比对之后、深度之前**的一道筛子。
+
+    返回 `(result, picked)` 表示终局(只终局 false_positive —— 决策 A);返回 `None` 表示"判不动,升级"。
+    签名同 `run_pipeline` 的 `triage` 钩子;`forensics`/`report` 目前不用,留着是因为
+    取证之后其实可以把 findings 一起喂给浅层让它判得更准 —— 那是改提示词、改行为,另算。
+
+    ★**为什么挪到这里**:它原本在路由**之前**跑,而它对"经验层能不能命中"一无所知 ——
+      判 needs_deep=true 升级,经验层紧接着把这条短路了,那次 9b 从头到尾没影响任何结论。
+      真机实测这样的告警占 56.9%(path=A)。挪到经验比对之后,经验命中的告警**全程零 LLM**。
+      代价是浅层能终局的那批(约 26%)现在要先付一次取证(纯图 I/O、零 LLM)—— 净赚,但不是零成本。
+    """
+    from ..models import InvestigationResult, Verdict
+
+    shallow = shallow_triage(getattr(pl, "shallow_llm", None) or pl.llm, alert)
+    if shallow.get("needs_deep") or shallow.get("verdict") != "false_positive":
+        return None                                          # 非 FP → 升级深度
+    v = Verdict(verdict="false_positive", confidence=float(shallow.get("confidence") or 0.0),
+                summary="浅层直判(未升级,false_positive)", rationale=shallow.get("rationale") or "",
+                agent=pl.agent_name)
+    # ★skill 仍留空、findings 仍不带:与重排之前逐字节一致。
+    #   现在其实**知道** skill 了(路由已经跑过),但带上它会让台账多出 HAS_FINDING,
+    #   进而改变 `replay-reuse.sh` 的抽样口径 —— 那是另一件事,不混在重排里做。
+    result = InvestigationResult(alert_uid=alert.alert_uid, path="S", verdict=v, skill=None)
+    sig_store = getattr(pl, "exp_store", None)
+    if sig_store is not None:                                # 浅层 FP 终局 → 从 payload 蒸签名入库 + 记语料
+        _sig_learn(pl, sig_store, getattr(pl, "payload_corpus", None), alert, result)
+    return result, "浅层直判(未升级)"
+
+
 def run_cascade(pl, alert_uid, mode="recipe"):
-    """签名库前置(FP 零 qwen 复用)→ 浅层 LLM 分诊 → 决策A(只 FP 终局,余升级)→ 升级跑深度 run_pipeline。
-    返回 (result, report, picked)。全 Python,可多线程并发(每 worker 独立 pipeline)。"""
+    """签名库前置(FP 零 qwen 复用)→ 交给 run_pipeline,浅层分诊作为它的 triage 钩子下沉到经验比对之后。
+
+    成本阶梯(每一步都比下一步便宜):
+        签名库(0) → seed(0) → 路由记忆(0) → 取证(0) → 经验比对(0) → 浅层(9b) → 深度(27b)
+
+    返回 (result, report, picked)。全 Python,可多线程并发(每 worker 独立 pipeline)。
+    """
     from ..cli import AlertNotFound, run_pipeline        # 懒导入,避 cli<->cascade 循环
     from ..experience.consult import MatchReport
     from ..models import InvestigationResult, Verdict
@@ -89,22 +124,9 @@ def run_cascade(pl, alert_uid, mode="recipe"):
     if tp_sig:
         sig_store.bump_hit(hit.exp_id)                       # TP 签名命中也记一次(观测),但走深度
 
-    # ★浅层分诊(除非签名/floor 已强制升级)——决策 A:只终局 false_positive,其余(TP/suspicious/needs_deep)升级
-    if not (tp_sig or force_deep(alert, pl.policy)):
-        shallow = shallow_triage(getattr(pl, "shallow_llm", None) or pl.llm, alert)
-        if not shallow.get("needs_deep") and shallow.get("verdict") == "false_positive":
-            v = Verdict(verdict="false_positive", confidence=float(shallow.get("confidence") or 0.0),
-                        summary="浅层直判(未升级,false_positive)", rationale=shallow.get("rationale") or "",
-                        agent=pl.agent_name)
-            result = InvestigationResult(alert_uid=alert_uid, path="S", verdict=v, skill=None)
-            pl.graph.write_result(alert_uid, result)
-            if sig_store is not None:                        # 浅层 FP 终局 → 从 payload 蒸签名入库 + 记语料
-                _sig_learn(pl, sig_store, getattr(pl, "payload_corpus", None), alert, result)
-            return result, MatchReport(decision="SHALLOW_TERMINAL"), "浅层直判(未升级)"
-        # 非 FP → 落到下面升级深度
-
-    # ★升级深度:直接跑现有 run_pipeline(纯 Python,worker 线程并行)
-    return run_pipeline(pl, alert_uid, mode)
+    # ★TP 签名 / floor 命中 ⇒ **不给浅层机会**,直接一路到深度(与重排之前的语义一致)。
+    triage = None if (tp_sig or force_deep(alert, pl.policy)) else shallow_gate
+    return run_pipeline(pl, alert_uid, mode, triage=triage)
 
 
 def run_shallow(pl, alert_uid, sig_store=None, sig_corpus=None, shallow_fn=None):

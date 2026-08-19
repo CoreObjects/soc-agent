@@ -308,8 +308,19 @@ def _recall_hit_ledgers(graph, report):
     return out
 
 
-def run_pipeline(pl, alert_uid, mode="recipe"):
-    """跑一条告警的完整流水线。返回 (result, report, picked)。"""
+def run_pipeline(pl, alert_uid, mode="recipe", triage=None):
+    """跑一条告警的完整流水线。返回 (result, report, picked)。
+
+    `triage(pl, alert, forensics, report) -> (result, picked) | None`
+        **经验比对没命中之后、上深度之前**的一道可选筛子(cascade 的浅层分诊走这里)。
+        返回终局结果就到此为止;返回 None 表示"我判不动,升级"。
+        ★不传 = 完全是加这道钩子之前的流水线,一字不差。
+
+    ★成本阶梯(每一步都比下一步便宜,所以顺序不能乱):
+        签名库(0) → seed(0) → 路由记忆(0) → 取证(0) → 经验比对(0) → 浅层(9b) → 深度(27b)
+      浅层原本在**路由之前**跑,而它对"经验层能不能命中"一无所知 —— 判 needs_deep=true 升级,
+      经验层紧接着把这条短路了,那次 9b 从头到尾没影响任何结论。实测这样的告警占 56.9%。
+    """
     node = pl.graph.get_alert(alert_uid)
     if node is None:
         raise AlertNotFound(f"图里没有 alert_uid={alert_uid} 的 :Alert")
@@ -325,7 +336,19 @@ def run_pipeline(pl, alert_uid, mode="recipe"):
     elif report.decision == "AUTO_FP":
         result, picked = _reuse_fp(pl, alert, forensics, report.chosen), "经验复用(AUTO_FP)"
         pl.exp_store.bump_hit(report.chosen.exp_id)
-    else:                                                                       # FALLTHROUGH → LLM 研判
+    else:                                                                       # FALLTHROUGH → 还得往下走
+        if triage is not None:                                                 # ★浅层分诊(9b):比深度便宜,先试
+            triaged = triage(pl, alert, forensics, report)
+            if triaged is not None:
+                result, picked = triaged
+                # ★与重排之前**逐字节一致**:只写台账,不进案例语料、不沉淀第二类经验。
+                #   浅层终局的 result 没有 findings —— 存进语料只是些永远不会点火的空壳;
+                #   而 sediment 会再烧一次 27b 去蒸馏,正好和这次重排要省的东西相反。
+                #   改 decision 顺带让下面的 sediment 守卫自然跳过(它只认 FALLTHROUGH),
+                #   同时保住 report 里"命中了哪些经验"的清单 —— 比原来那个空 report 更全。
+                report.decision = "SHALLOW_TERMINAL"
+                pl.graph.write_result(alert_uid, result)
+                return result, report, picked
         report.recalled = _recall_hit_ledgers(pl.graph, report)                # 命中经验来源告警的图台账 → 喂 LLM
         inv, picked = choose_investigator(skill, mode, pl.agent_inv, pl.recipe_inv)
         result = inv.investigate(alert, seed=seed, skill=skill, forensics=forensics, match_report=report)

@@ -27,11 +27,17 @@ try:
     pct = (100.0 * tot / total) if total else 0.0
     print(f"进度:已研判 {tot} / 未研判(积压){backlog} / 毒告警跳过 {poison}  —— 完成 {pct:.1f}%")
     print("★积压=0 即存量研判完(之后只随新入图告警慢慢涨)\n")
-    print("verdict × path 分布(S=浅层终局 / A=经验复用 / B=深度LLM):")
+    # ★path=S 里其实是**两种**东西,成本差一个数量级,必须分开看:
+    #     method=reuse → 签名库复用,**零 LLM**
+    #     method=llm   → 浅层 9b 直判(新 payload 还要再花一次 27b 蒸签名,见 _sig_learn)
+    #   只按 path 分组会把它们糊成一个数,而"到底省了多少"完全取决于这个比例。
+    print("verdict × path × method(S=浅层 / A=经验复用 / B=深度LLM;reuse=零LLM复用):")
     for r in g.run_cypher("MATCH (a:Alert)-[c:CONCLUDED]->(v:Verdict) "
-                          "RETURN v.verdict AS verdict, coalesce(c.path,v.path) AS path, count(*) AS n "
+                          "RETURN v.verdict AS verdict, coalesce(c.path,v.path) AS path, "
+                          "coalesce(c.method,'?') AS method, count(*) AS n "
                           "ORDER BY n DESC"):
-        print(f"  {str(r['verdict']):16} path={str(r['path']):3}  {r['n']}")
+        print(f"  {str(r['verdict']):16} path={str(r['path']):3} "
+              f"method={str(r['method']):6}  {r['n']}")
     print("\n处置 Disposition 状态(排除 __no_op__ 占位;★manual 应全 proposed=待处置):")
     rows = g.run_cypher("MATCH (d:Disposition) WHERE d.step_key<>'__no_op__' "
                         "RETURN d.status AS status, count(*) AS n ORDER BY n DESC")
