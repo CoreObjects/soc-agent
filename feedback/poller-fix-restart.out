@@ -1,4 +1,4 @@
-=== poller-fix-restart  TMO=300 CONC=16  2026-08-18 11:18Z ===
+=== poller-fix-restart  TMO=300 CONC=16  2026-08-19 01:30Z ===
 -- .env 现值(深/浅模型 + 超时 + 并发)--
 LLM_MODEL=qwen3.5-27b
 POLLER_CONCURRENCY=16
@@ -6,13 +6,14 @@ LLM_TIMEOUT=300
 SHALLOW_LLM_MODEL=qwen3.5-9b
 -- 强杀旧 poller(清掉卡死的 worker)--
 -- 起新 poller(新 QwenClient:每次新连接、读超时 300s)--
-  PID=1945064
+  PID=2047768
 -- 180s 进度验证(深度研判是多轮 agent、每条几分钟,窗口必须够长才准)--
-  180s 内:新研判 93 条,新增毒告警 0  → 约 31.0/分钟
+  180s 内:新研判 133 条,新增毒告警 0  → 约 44.3/分钟
   ✅ 在动(数字在涨)
 -- 日志末尾 --
 # 处置模式=manual(manual=只生成待处置不执行 / auto=自动执行)  并发=16  appliance=on  cascade=on
 # poller 启动  并发=16 批=50 轮询间隔=10.0s 毒告警上限=3 模式=recipe
-# 取批 50 条(积压 212228);research 中…
-# 取批 50 条(积压 212190);research 中…
+# 取批 50 条(积压 200572);research 中…
+# 取批 50 条(积压 200529);research 中…
+# 取批 50 条(积压 200487);research 中…
 === done ===
