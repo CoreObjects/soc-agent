@@ -103,6 +103,50 @@ def load_cases(case_store, uids):
     return out
 
 
+_DOMAINS = "MATCH (d:Domain) RETURN d.netbios AS netbios, d.fqdn AS fqdn, d.dc AS dc ORDER BY d.netbios"
+_DC_HOSTS = ("MATCH (h:Host) WHERE coalesce(h.is_dc,false) "
+             "RETURN h.hostname AS hostname ORDER BY h.hostname LIMIT 20")
+_STUCK_ACTORS = """
+MATCH (a:Alert)-[c:CONCLUDED]->(v:Verdict {verdict:'suspicious'})
+WHERE coalesce(c.path, v.path) = 'B'
+MATCH (e:Event)-[:TRIGGERED]->(a)
+MATCH (e)-[:BY]->(actor:Account)
+RETURN actor.sam AS sam, actor.domain AS domain, count(*) AS n ORDER BY n DESC LIMIT 15
+"""
+
+
+def dcsync_gap(graph):
+    """`dcsync.actor_is_dc` 零点火 → 逐环节定位断在哪。
+
+    recipe 里 `actor_dc = actor_machine and _actor_is_dc(actor_sam, dc_host)`,而 `dc_host` 来自
+    `MATCH (d:Domain {netbios: actor.domain}) RETURN d.dc`。要点火得四环全通:
+      ① actor.domain 有值 → ② 图里有 :Domain{netbios=该值} → ③ 该节点 dc 有值 → ④ 短名比对上
+    **任何一环断了结果都是"0 次点火",而且都不报错** —— 所以必须逐环节看,不能猜。
+    """
+    print("########## [6] ★`dcsync.actor_is_dc` 零点火 —— 断在哪一环 ##########")
+    doms = graph.run_cypher(_DOMAINS)
+    print(f"  ② 图里的 :Domain 节点({len(doms)} 个):")
+    if not doms:
+        print("     (一个都没有)← 断在这:recipe 的 Domain 查询必然空,dc_host 恒 None")
+    for d in doms:
+        flag = "" if d.get("dc") else "   ← ③ 断在这:dc 属性为空"
+        print(f"     netbios={str(d.get('netbios')):16} fqdn={str(d.get('fqdn')):32} "
+              f"dc={d.get('dc')}{flag}")
+
+    hosts = [r["hostname"] for r in graph.run_cypher(_DC_HOSTS)]
+    print(f"  ★替代数据源:带 is_dc=true 的 :Host({len(hosts)} 台):{hosts or '(无)'}")
+    if hosts and not any(d.get("dc") for d in doms):
+        print("     ⇒ 图里**其实知道**哪些主机是 DC(policy_from_graph 的 NEVER-TOUCH 就靠它),")
+        print("       只是 dcsync recipe 走的是 Domain.dc 这条空路。改比对目标即可,不用补采集。")
+
+    print("  ① 卡住的告警里,发起复制的账号(actor.sam / actor.domain):")
+    for r in graph.run_cypher(_STUCK_ACTORS):
+        dm = r.get("domain")
+        flag = "   ← ① 断在这:账号没带域" if not dm else ""
+        print(f"     {r['n']:>7}  sam={str(r['sam']):22} domain={dm}{flag}")
+    print("  ④ 若 ①②③ 都有值却仍不点火 ⇒ 是短名归一没对上(netbios 大小写 / FQDN vs 短名)。")
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(description="深度通道的学习产出 + sediment 收敛率(只读)")
     ap.add_argument("--dotenv", default=os.path.join(_ROOT, ".env"))
@@ -191,12 +235,17 @@ def main(argv=None):
         print("    是 recipe 那句**无条件**的 blind_spots 在否决它(把声明改成条件性的即可);")
         print("    ★**白 finding 压根没点火** ⇒ 图里缺建模(如 Domain.dc 为空,")
         print("      recipe 比不出 'actor 是不是本域 DC')⇒ 那是入图侧的事。")
-        cur_skill = None
+        cur_skill, fired = None, set()
         for r in graph.run_cypher(_SUSP_FINDINGS):
             if r["skill"] != cur_skill:
                 cur_skill = r["skill"]
                 print(f"    -- {cur_skill} --")
+            fired.add(r["fid"])
             print(f"       {r['n']:>7}  [{str(r['pol']):7}] {r['fid']}")
+        print()
+
+        if "dcsync.replication_request" in fired and "dcsync.actor_is_dc" not in fired:
+            dcsync_gap(graph)
         return 0
     finally:
         graph.close()
