@@ -40,10 +40,19 @@ time.sleep(60)
 t1, b1, p1 = snap()
 print(f"  T1(+60s): 已研判 {t1} / 积压 {b1} / 毒告警 {p1}")
 done, poison = t1 - t0, p1 - p0
+net = b0 - b1                       # ★净消耗 = 积压自己的下降量
+arrived = done - net                # 窗口内新入图的告警(推出来的,不用另查)
 print(f"  → 60s 内新研判 {done} 条(其中新增毒告警 {poison})≈ {done}/分钟")
-if done > 0:
-    eta_h = b1 / done / 60
-    print(f"  → 按此速率清完 {b1} 积压 ≈ {eta_h:.1f} 小时;想更快就调大并发(poller-stop.sh N)")
+print(f"  → 同期新入图 {arrived} 条 ⇒ **净消耗 {net}/分钟**")
+# ★ETA 必须按**净消耗**算,不能按研判速率算。
+#   设窗口内完成 D、新到 N,则 b1-b0 = N-D,故净消耗 D-N = b0-b1 —— 就是积压的下降量。
+#   老公式写的是 b1/done(拿研判速率当净速率),等于假装没有新告警进来,
+#   会系统性低估:2026-08-19 实测它报 67.8 小时,真实 81 小时。
+if net > 0:
+    print(f"  → 按净速率清完 {b1} 积压 ≈ {b1 / net / 60:.1f} 小时"
+          f"(若按研判速率算会是 {b1 / done / 60:.1f} 小时 —— 那个数**偏乐观**,别用)")
+elif done > 0:
+    print(f"  ⚠ 研判了 {done} 条但积压没降(新入图 {arrived} 条 ≥ 研判速度)→ 积压清不完,先看入图速率")
 else:
     print("  ⚠ 60s 一条没动 → 要么全卡在慢 LLM、要么 LLM/openGauss 不通(看下面日志末尾)")
 g.close()
