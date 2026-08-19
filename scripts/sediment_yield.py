@@ -56,6 +56,28 @@ RETURN count(*) AS total,
        sum(CASE WHEN size(coalesce(c.missing_evidence, [])) = 0 THEN 1 ELSE 0 END) AS empty
 """
 
+# ★卡在 suspicious 的是哪些 skill —— 按 Finding.skill 归属
+_SUSP_BY_SKILL = """
+MATCH (a:Alert)-[c:CONCLUDED]->(v:Verdict {verdict:'suspicious'})
+WHERE coalesce(c.path, v.path) = 'B'
+OPTIONAL MATCH (a)-[:HAS_FINDING]->(f:Finding)
+WITH a, head(collect(DISTINCT f.skill)) AS skill
+RETURN coalesce(skill, '(无 finding)') AS skill, count(*) AS n ORDER BY n DESC
+"""
+
+# ★★决定性的一问:这些卡住的告警,recipe 到底给出了哪些 finding?
+#   若"头号良性"那类白 finding **点火了**却仍judge suspicious ⇒ 数据齐、结论也齐,
+#     是那句**无条件**的 blind_spots 在否决它(改声明即可);
+#   若压根没点火 ⇒ 是图里缺建模(如 Domain.dc 为空,recipe 比不出"actor 是不是本域 DC")。
+#   两种诊断指向完全不同的修法,不测就只能猜。
+_SUSP_FINDINGS = """
+MATCH (a:Alert)-[c:CONCLUDED]->(v:Verdict {verdict:'suspicious'})
+WHERE coalesce(c.path, v.path) = 'B'
+MATCH (a)-[:HAS_FINDING]->(f:Finding)
+RETURN f.skill AS skill, f.finding_id AS fid, coalesce(f.polarity,'?') AS pol, count(*) AS n
+ORDER BY skill, n DESC
+"""
+
 
 def _pct(a, b):
     return (100.0 * a / b) if b else 0.0
@@ -156,6 +178,25 @@ def main(argv=None):
         print(f"  missing_evidence 频次(前 {args.top});这就是'要能结案还缺什么'的清单:")
         for r in graph.run_cypher(_MISSING, lim=args.top):
             print(f"    {r['n']:>7}  {r['missing']}")
+        print()
+
+        print("########## [4] 卡在 suspicious 的是哪些 skill ##########")
+        for r in graph.run_cypher(_SUSP_BY_SKILL):
+            print(f"    {str(r['skill']):26} {r['n']:>7}  ({_pct(r['n'], n_susp):5.1f}%)")
+        print()
+
+        print("########## [5] ★这些卡住的告警,recipe 到底给出了什么 finding ##########")
+        print("  白(white)=良性豁免 / 红(red)=攻击迹象 / 中性(neutral)=触发本身")
+        print("  ★读法:**白 finding 点火了却仍判 suspicious** ⇒ 数据和结论都齐了,")
+        print("    是 recipe 那句**无条件**的 blind_spots 在否决它(把声明改成条件性的即可);")
+        print("    ★**白 finding 压根没点火** ⇒ 图里缺建模(如 Domain.dc 为空,")
+        print("      recipe 比不出 'actor 是不是本域 DC')⇒ 那是入图侧的事。")
+        cur_skill = None
+        for r in graph.run_cypher(_SUSP_FINDINGS):
+            if r["skill"] != cur_skill:
+                cur_skill = r["skill"]
+                print(f"    -- {cur_skill} --")
+            print(f"       {r['n']:>7}  [{str(r['pol']):7}] {r['fid']}")
         return 0
     finally:
         graph.close()
