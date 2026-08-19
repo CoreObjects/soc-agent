@@ -1,12 +1,13 @@
-=== ledger-stats  2026-08-18 11:41Z ===
-进度:已研判 4608 / 未研判(积压)211596 / 毒告警跳过 1  —— 完成 2.1%
+=== ledger-stats  2026-08-19 02:14Z ===
+进度:已研判 22749 / 未研判(积压)199596 / 毒告警跳过 8  —— 完成 10.2%
 ★积压=0 即存量研判完(之后只随新入图告警慢慢涨)
 
-verdict × path 分布(S=浅层终局 / A=经验复用 / B=深度LLM):
-  false_positive   path=A    2621
-  false_positive   path=S    1192
-  suspicious       path=B    781
-  false_positive   path=B    14
+verdict × path × method(S=浅层 / A=经验复用 / B=深度LLM;reuse=零LLM复用):
+  false_positive   path=A   method=reuse   12973
+  false_positive   path=S   method=reuse   5846
+  suspicious       path=B   method=llm     3903
+  false_positive   path=B   method=llm     14
+  false_positive   path=S   method=llm     13
 
 处置 Disposition 状态(排除 __no_op__ 占位;★manual 应全 proposed=待处置):
   (无真处置步骤)
