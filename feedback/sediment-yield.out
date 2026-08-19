@@ -1,12 +1,12 @@
-=== sediment-yield  2026-08-19 03:05Z ===
+=== sediment-yield  2026-08-19 03:26Z ===
 主机    : localhost.localdomain   仓库 /home/soc/soc-agent
-代码版本: 0ecc49c sediment-yield 探针:先量分母,再谈收敛率
+代码版本: aedb143 sediment-yield 补第 4/5 段:卡住的告警到底拿到了什么 finding
 
 ########## [1] 谁会走到 sediment 的 LLM ##########
-  path=B(真跑了深度研判)总数  4098
-    suspicious          4084  ( 99.7%)  ★distill 第51行直接 return,**零 LLM**
+  path=B(真跑了深度研判)总数  4194
+    suspicious          4180  ( 99.7%)  ★distill 第51行直接 return,**零 LLM**
     false_positive        14  (  0.3%)  会往下走
-  ⇒ 可能烧 LLM 蒸馏的分母 = 14  (0.34%)
+  ⇒ 可能烧 LLM 蒸馏的分母 = 14  (0.33%)
   ★分母这么小 ⇒ 「把收敛检查提到 distill 之前」这个优化**不值得做**。
 
 ########## [2] 收敛率(只在上面那个分母里量)##########
@@ -19,37 +19,51 @@
     按 skill:lateral_movement=12、kerberoast=1、lsass_dump=1
 
 ########## [3] ★真正的问题:最贵的通道学到了什么 ##########
-  深度研判 4098 条,其中 suspicious 4084  (99.7%)
+  深度研判 4194 条,其中 suspicious 4180  (99.7%)
   ★suspicious **不沉淀经验**(distill 第51行)⇒ 这部分 27b 花完之后,
     经验库一条也没长。dcsync 那类'复用率 0%'的 skill,根源多半就在这。
-  suspicious 里 missing_evidence **空着**的:0/4084  (0.0%)
+  suspicious 里 missing_evidence **空着**的:0/4180  (0.0%)
     ★空的最麻烦:模型说'存疑'却没说缺什么 —— 既结不了案,也指不出补什么遥测。
   missing_evidence 频次(前 25);这就是'要能结案还缺什么'的清单:
-       1251  前置ACL修改记录(5136事件)
-       1095  复制范围是否含krbtgt
-        861  复制范围(是否含krbtgt)
-        761  DC/授权同步账号权威白名单
-        661  前置ACL修改事件(5136)
-        443  actor是否为授权同步账号(如Entra Connect)
-        339  前置ACL修改记录
-        309  DC/同步账号权威白名单
-        292  复制操作的具体范围(是否含krbtgt)
-        261  授予复制权的前置ACL修改(5136事件)
-        251  复制操作的具体范围(是否包含krbtgt)
-        240  复制范围(是否含krbtgt/全域)
-        236  actor是否为授权复制伙伴的基线数据
-        178  授权同步账号白名单
-        172  actor是否为授权同步/备份账号
+       1286  前置ACL修改记录(5136事件)
+       1122  复制范围是否含krbtgt
+        883  复制范围(是否含krbtgt)
+        778  DC/授权同步账号权威白名单
+        669  前置ACL修改事件(5136)
+        453  actor是否为授权同步账号(如Entra Connect)
+        347  前置ACL修改记录
+        319  DC/同步账号权威白名单
+        296  复制操作的具体范围(是否含krbtgt)
+        268  授予复制权的前置ACL修改(5136事件)
+        254  复制操作的具体范围(是否包含krbtgt)
+        247  复制范围(是否含krbtgt/全域)
+        242  actor是否为授权复制伙伴的基线数据
+        182  授权同步账号白名单
+        179  actor是否为授权同步/备份账号
         170  复制范围是否包含krbtgt
-        160  复制范围是否包含krbtgt账号
-        129  actor是否为授权同步账号的白名单标记
+        165  复制范围是否包含krbtgt账号
+        130  actor是否为授权同步账号的白名单标记
         114  跨域信任关系(TRUSTS边)
-        105  复制范围详情(是否含krbtgt)
-        104  授予复制权限的ACL修改事件(5136)
+        110  授予复制权限的ACL修改事件(5136)
+        109  复制范围详情(是否含krbtgt)
          99  前置ACL修改记录(事件5136)
-         92  账号授权状态(是否为合法备份/同步账号)
-         84  授予复制权限的ACL修改记录(5136事件)
-         73  账号授权状态(是否为合法备份/同步服务)
+         93  账号授权状态(是否为合法备份/同步账号)
+         86  授予复制权限的ACL修改记录(5136事件)
+         76  账号授权状态(是否为合法备份/同步服务)
+
+########## [4] 卡在 suspicious 的是哪些 skill ##########
+    dcsync                        4180  (100.0%)
+
+########## [5] ★这些卡住的告警,recipe 到底给出了什么 finding ##########
+  白(white)=良性豁免 / 红(red)=攻击迹象 / 中性(neutral)=触发本身
+  ★读法:**白 finding 点火了却仍判 suspicious** ⇒ 数据和结论都齐了,
+    是 recipe 那句**无条件**的 blind_spots 在否决它(把声明改成条件性的即可);
+    ★**白 finding 压根没点火** ⇒ 图里缺建模(如 Domain.dc 为空,
+      recipe 比不出 'actor 是不是本域 DC')⇒ 那是入图侧的事。
+    -- dcsync --
+          4180  [neutral] dcsync.replication_request
+          4180  [white  ] dcsync.actor_is_machine
+           119  [red    ] dcsync.get_changes_all
 
 [退出码] 0
 === done ===
