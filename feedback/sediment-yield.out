@@ -1,12 +1,12 @@
-=== sediment-yield  2026-08-19 03:26Z ===
+=== sediment-yield  2026-08-19 06:09Z ===
 主机    : localhost.localdomain   仓库 /home/soc/soc-agent
-代码版本: aedb143 sediment-yield 补第 4/5 段:卡住的告警到底拿到了什么 finding
+代码版本: b55c2d8 sediment-yield 补第 6 段:actor_is_dc 零点火,逐环节定位断在哪
 
 ########## [1] 谁会走到 sediment 的 LLM ##########
-  path=B(真跑了深度研判)总数  4194
-    suspicious          4180  ( 99.7%)  ★distill 第51行直接 return,**零 LLM**
+  path=B(真跑了深度研判)总数  4922
+    suspicious          4908  ( 99.7%)  ★distill 第51行直接 return,**零 LLM**
     false_positive        14  (  0.3%)  会往下走
-  ⇒ 可能烧 LLM 蒸馏的分母 = 14  (0.33%)
+  ⇒ 可能烧 LLM 蒸馏的分母 = 14  (0.28%)
   ★分母这么小 ⇒ 「把收敛检查提到 distill 之前」这个优化**不值得做**。
 
 ########## [2] 收敛率(只在上面那个分母里量)##########
@@ -19,40 +19,40 @@
     按 skill:lateral_movement=12、kerberoast=1、lsass_dump=1
 
 ########## [3] ★真正的问题:最贵的通道学到了什么 ##########
-  深度研判 4194 条,其中 suspicious 4180  (99.7%)
+  深度研判 4922 条,其中 suspicious 4908  (99.7%)
   ★suspicious **不沉淀经验**(distill 第51行)⇒ 这部分 27b 花完之后,
     经验库一条也没长。dcsync 那类'复用率 0%'的 skill,根源多半就在这。
-  suspicious 里 missing_evidence **空着**的:0/4180  (0.0%)
+  suspicious 里 missing_evidence **空着**的:0/4908  (0.0%)
     ★空的最麻烦:模型说'存疑'却没说缺什么 —— 既结不了案,也指不出补什么遥测。
   missing_evidence 频次(前 25);这就是'要能结案还缺什么'的清单:
-       1286  前置ACL修改记录(5136事件)
-       1122  复制范围是否含krbtgt
-        883  复制范围(是否含krbtgt)
-        778  DC/授权同步账号权威白名单
-        669  前置ACL修改事件(5136)
-        453  actor是否为授权同步账号(如Entra Connect)
-        347  前置ACL修改记录
-        319  DC/同步账号权威白名单
-        296  复制操作的具体范围(是否含krbtgt)
-        268  授予复制权的前置ACL修改(5136事件)
-        254  复制操作的具体范围(是否包含krbtgt)
-        247  复制范围(是否含krbtgt/全域)
-        242  actor是否为授权复制伙伴的基线数据
-        182  授权同步账号白名单
-        179  actor是否为授权同步/备份账号
-        170  复制范围是否包含krbtgt
-        165  复制范围是否包含krbtgt账号
-        130  actor是否为授权同步账号的白名单标记
-        114  跨域信任关系(TRUSTS边)
-        110  授予复制权限的ACL修改事件(5136)
-        109  复制范围详情(是否含krbtgt)
-         99  前置ACL修改记录(事件5136)
-         93  账号授权状态(是否为合法备份/同步账号)
-         86  授予复制权限的ACL修改记录(5136事件)
-         76  账号授权状态(是否为合法备份/同步服务)
+       1521  前置ACL修改记录(5136事件)
+       1312  复制范围是否含krbtgt
+       1052  复制范围(是否含krbtgt)
+        908  DC/授权同步账号权威白名单
+        758  前置ACL修改事件(5136)
+        528  actor是否为授权同步账号(如Entra Connect)
+        407  前置ACL修改记录
+        401  DC/同步账号权威白名单
+        356  复制操作的具体范围(是否含krbtgt)
+        317  授予复制权的前置ACL修改(5136事件)
+        304  复制操作的具体范围(是否包含krbtgt)
+        286  复制范围(是否含krbtgt/全域)
+        278  actor是否为授权复制伙伴的基线数据
+        209  actor是否为授权同步/备份账号
+        208  授权同步账号白名单
+        203  复制范围是否包含krbtgt账号
+        192  复制范围是否包含krbtgt
+        149  actor是否为授权同步账号的白名单标记
+        135  授予复制权限的ACL修改事件(5136)
+        130  跨域信任关系(TRUSTS边)
+        119  复制范围详情(是否含krbtgt)
+        115  前置ACL修改记录(事件5136)
+        105  账号授权状态(是否为合法备份/同步账号)
+        104  授予复制权限的ACL修改记录(5136事件)
+         93  复制范围详情
 
 ########## [4] 卡在 suspicious 的是哪些 skill ##########
-    dcsync                        4180  (100.0%)
+    dcsync                        4908  (100.0%)
 
 ########## [5] ★这些卡住的告警,recipe 到底给出了什么 finding ##########
   白(white)=良性豁免 / 红(red)=攻击迹象 / 中性(neutral)=触发本身
@@ -61,9 +61,33 @@
     ★**白 finding 压根没点火** ⇒ 图里缺建模(如 Domain.dc 为空,
       recipe 比不出 'actor 是不是本域 DC')⇒ 那是入图侧的事。
     -- dcsync --
-          4180  [neutral] dcsync.replication_request
-          4180  [white  ] dcsync.actor_is_machine
-           119  [red    ] dcsync.get_changes_all
+          4908  [neutral] dcsync.replication_request
+          4908  [white  ] dcsync.actor_is_machine
+           139  [red    ] dcsync.get_changes_all
+
+########## [6] ★`dcsync.actor_is_dc` 零点火 —— 断在哪一环 ##########
+  ② 图里的 :Domain 节点(15 个):
+     netbios=None             fqdn=castelblack                      dc=None   ← ③ 断在这:dc 属性为空
+     netbios=None             fqdn=winterfell.north.sevenkingdoms.local dc=None   ← ③ 断在这:dc 属性为空
+     netbios=None             fqdn=kingslanding.sevenkingdoms.local dc=None   ← ③ 断在这:dc 属性为空
+     netbios=None             fqdn=winterfell                       dc=None   ← ③ 断在这:dc 属性为空
+     netbios=None             fqdn=WINTERFELL                       dc=None   ← ③ 断在这:dc 属性为空
+     netbios=None             fqdn=CASTELBLACK                      dc=None   ← ③ 断在这:dc 属性为空
+     netbios=None             fqdn=kingslanding                     dc=None   ← ③ 断在这:dc 属性为空
+     netbios=None             fqdn=KINGSLANDING                     dc=None   ← ③ 断在这:dc 属性为空
+     netbios=None             fqdn=www.msftconnecttest.com          dc=None   ← ③ 断在这:dc 属性为空
+     netbios=None             fqdn=wpad                             dc=None   ← ③ 断在这:dc 属性为空
+     netbios=None             fqdn=north.sevenkingdoms.local        dc=None   ← ③ 断在这:dc 属性为空
+     netbios=None             fqdn=essos.local                      dc=None   ← ③ 断在这:dc 属性为空
+     netbios=None             fqdn=braavos.essos.local              dc=None   ← ③ 断在这:dc 属性为空
+     netbios=None             fqdn=castelblack.north.sevenkingdoms.local dc=None   ← ③ 断在这:dc 属性为空
+     netbios=None             fqdn=meereen.essos.local              dc=None   ← ③ 断在这:dc 属性为空
+  ★替代数据源:带 is_dc=true 的 :Host(0 台):(无)
+  ① 卡住的告警里,发起复制的账号(actor.sam / actor.domain):
+        2903  sam=kingslanding$          domain=SEVENKINGDOMS
+         224  sam=winterfell$            domain=NORTH
+          44  sam=meereen$               domain=ESSOS
+  ④ 若 ①②③ 都有值却仍不点火 ⇒ 是短名归一没对上(netbios 大小写 / FQDN vs 短名)。
 
 [退出码] 0
 === done ===
