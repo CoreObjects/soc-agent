@@ -1,0 +1,38 @@
+=== dc-derive  2026-08-19 06:43Z ===
+主机    : localhost.localdomain   仓库 /home/soc/soc-agent
+代码版本: 4e68ce6 dc-derive 探针:量"能不能从遥测推导出哪台是 DC"
+
+########## [1] KDC 事件在不在、挂没挂 ON_HOST ##########
+    code=4769     activity=auth.ticket_request      136083 条,其中无 ON_HOST 0
+    code=4768     activity=auth.ticket_request       61472 条,其中无 ON_HOST 0
+  合计 197555 条,无 ON_HOST 0  (0.0%)
+
+########## [2] KDC 事件落在哪几台主机 ##########
+  ★干净的话应该只有那几台 DC。要是满图主机都在,说明 ON_HOST 挂的不是 KDC 而是发起方。
+      194552  winterfell.north.sevenkingdoms.local         codes=['4768', '4769']
+        1647  meereen.essos.local                          codes=['4768', '4769']
+        1356  kingslanding.sevenkingdoms.local             codes=['4768', '4769']
+  → 3 台 / 图里共 10 台主机
+
+########## [3] 交叉验证:4662(目录复制)落在哪几台 ##########
+  ★它同样只记在 DC 上。两组主机应当高度重合;不重合说明其中一组的 ON_HOST 语义不是我以为的那样。
+       42190  winterfell.north.sevenkingdoms.local
+        4526  kingslanding.sevenkingdoms.local
+         723  meereen.essos.local
+  两组交集 3 台;只在 KDC 组 [];只在 4662 组 []
+
+########## [4] ★决定性:推出的 DC 能不能和卡住的 actor 对上 ##########
+  短名归一复用 dcsync recipe 的 `_short`(同一份实现,不另写)。
+  推出的 DC 短名集合:['KINGSLANDING', 'MEEREEN', 'WINTERFELL']
+       3059  sam=kingslanding$        短名=KINGSLANDING     domain=SEVENKINGDOMS    ✅ 对上
+        236  sam=winterfell$          短名=WINTERFELL       domain=NORTH            ✅ 对上
+         46  sam=meereen$             短名=MEEREEN          domain=ESSOS            ✅ 对上
+  ⇒ **3341/3341(100.0%)的卡死告警,其 actor 就是推出来的 DC**
+  ⇒ 推导成立:把 is_dc 写进图,dcsync 这批就能拿到'头号良性'finding、不再全判 suspicious。
+
+########## [5] 现状:Host.role / Host.is_dc ##########
+  ★policy_from_graph 的 NEVER-TOUCH 自动化查的就是这两个字段。
+    role=(空)                      is_dc=(空)         10 台  例:['braavos.essos.local', 'meereen.essos.local', 'winterfell.north.sevenkingdoms.local', 'castelblack.north.sevenkingdoms.local', 'kingslanding.sevenkingdoms.local', 'braavos$']
+
+[退出码] 0   (1=推导路走不通:没有 KDC 事件、或全都没挂 ON_HOST)
+=== done ===
